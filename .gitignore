@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+*.sqlite3
+*.sqlite
+*.db
+.env
+.env.*
+!.env.example
+private_memory/
+secrets/
+*.gguf
+*.onnx
