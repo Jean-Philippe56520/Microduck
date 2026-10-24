@@ -56,9 +56,11 @@ class ExperienceMemory:
                 ON CONFLICT(identifier) DO UPDATE SET
                     sightings=sightings+1,
                     last_seen=excluded.last_seen,
-                    label=CASE WHEN objects.label='unknown' AND excluded.label!='unknown'
+                    label=CASE WHEN objects.label_source IN ('unknown','llm_suggestion')
+                               AND excluded.label!='unknown'
                                THEN excluded.label ELSE objects.label END,
-                    label_source=CASE WHEN objects.label='unknown' AND excluded.label!='unknown'
+                    label_source=CASE WHEN objects.label_source IN ('unknown','llm_suggestion')
+                               AND excluded.label!='unknown'
                                       THEN excluded.label_source ELSE objects.label_source END
             """, (identifier, label, source, time.time()))
         return self.get(identifier)

@@ -72,6 +72,14 @@ class AutonomyTests(unittest.TestCase):
             "llm_suggestion", self.memory.get("obj").label_source
         )
 
+    def test_sensor_overrides_llm_guess(self):
+        self.memory.observe("obj")
+        self.memory.suggest_label("obj", "unknown_box")
+        self.memory.observe("obj", "ball")
+        entity = self.memory.get("obj")
+        self.assertEqual("ball", entity.label)
+        self.assertEqual("sensor", entity.label_source)
+
     def test_memory_persists(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "test.sqlite"
