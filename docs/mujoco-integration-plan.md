@@ -11,7 +11,16 @@ Ce document est le plan exécutable qui suit [le contrat de perception v1](../mi
 - Les 40 tests Python (13 historiques et 27 de perception) ont réussi sur la branche de développement du précédent jalon ; leur exécution ne démontre pas un fonctionnement MuJoCo.
 - Les sous-modules `upstream/microduck` et `upstream/microduck_rl` sont épinglés ; respecter les révisions du dépôt et ne pas modifier les sources officielles pour contourner les interfaces.
 
-**Non réalisé :** démarrage validé de `duck-sim` pour ce projet, client JSON-RPC de nos modules, preuve de sol sûr à partir de MuJoCo, perception de vrais objets, mouvements déclenchés par notre cerveau, mesure de latence dans le simulateur.
+**Non réalisé :** démarrage validé de `duck-sim` pour ce projet, preuve de sol sûr à partir de MuJoCo, perception de vrais objets, mouvements déclenchés par notre cerveau, mesure de latence dans le simulateur. Le client JSON-RPC en lecture seule et le pont conservateur de perception sont désormais codés et testés sur faux sockets Unix (voir point d'avancement ci-dessous).
+
+## Point d'avancement au 25 octobre 2026
+
+- **J2a codé et testé :** `sim_ipc.py`, `sim_probe.py`, télémétrie `robot.health`, `robot.state` et `tof.frame` en lecture seule.
+- **J2b codé et testé sur faux sockets :** `sim_bridge.py`, `sim_observer.py`, conversion conservatrice vers `PerceptionSnapshot` et décision `halt` en l'absence de preuve de sol sûr.
+- **81 tests Python réussis localement**, compilation Python contrôlée ; test de prérequis `sh scripts/sim-smoke.sh check` exécuté, signalant l'absence de Rust/Cargo et du dépôt complet.
+- **MuJoCo non lancé :** aucun chiffre de performance, aucune mesure physique, aucune intention motrice envoyée par le compagnon. Le script `sh scripts/sim-smoke.sh run` est préparé pour un environnement Linux/WSL2 doté des prérequis.
+
+Le pont n'émet jamais `floor_clear=True` ni `safe_area=True` ; cette absence est une condition délibérée de sécurité. Le prochain jalon exige un fournisseur de vérité terrain simulée réellement vérifié ou restera limité à l'observation.
 
 ## Architecture minimale visée
 
