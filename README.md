@@ -61,6 +61,18 @@ L'ancienne méthode `choose(Scene(...))` est maintenue pour les essais synthéti
 
 Exécuter `python -m unittest discover -s tests -v` pour les tests de sécurité. La connexion du simulateur MuJoCo et le contrôle de ses cadences sont les étapes suivantes.
 
+## Sonde de télémétrie JSON-RPC (J2a, lecture seule)
+
+Le module `microduck_companion/sim_ipc.py` sait lire `robot.health`, souscrire à `robot.subscribe` (`robot.state`) et `tof.stream` (`tof.frame`) sur les sockets Unix des démons officiels. Il limite la taille des trames, la cadence demandée et les délais de réception ; les données malformées ou manquantes sont rejetées. Les 64 mesures ToF sont conservées avec leurs statuts bruts : **elles ne prouvent pas que le sol est sûr**.
+
+Quand `duck-sim` aura été démarré sur Linux/WSL2, exécuter depuis la racine du dépôt :
+
+```sh
+python -m microduck_companion.sim_probe --state-dir "$HOME/.cache/duck-sim"
+```
+
+La commande affiche l'état et des échantillons de télémétrie, sans envoyer aucune intention motrice. Elle renvoie un code non nul si `robotd` est malade ou si le flux est inaccessible. Les tests actuels du client reposent sur **des faux services Unix** : ce client n'a **pas encore été testé contre un vrai `duck-sim`**. Il ne construit pas encore les événements `floor_clear` ou `safe_area` nécessaires pour autoriser une exploration.
+
 ## Audit matériel et mémoire
 
 - [Audit de faisabilité du matériel, de la vision, de la RAM et du stockage](docs/hardware-feasibility-audit-2026-10-25.md)
