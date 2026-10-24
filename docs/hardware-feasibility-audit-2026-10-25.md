@@ -143,3 +143,10 @@ Le script `scripts/resource-audit.sh` mesure, en lecture seule, `MemAvailable`, 
 Le prototype `microduck_companion` possède maintenant un contrat `PerceptionEvent` / `PerceptionSnapshot` v1. Il filtre les lectures par environnement déclaré, type de source, confiance et durée de validité ; il refuse l'exploration quand une donnée essentielle (zone, sol, obstacle ou batterie) manque ou n'est pas assez fiable. Les objets fictifs, simulés et déclarés par capteur sont distingués dans la mémoire SQLite. Les essais automatisés couvrent les capteurs manquants, les lectures périmées, les contradictions, les hypothèses LLM et la provenance des objets.
 
 **Aucune source physique n'est encore branchée et aucune preuve d'authenticité n'est fournie par la simple chaîne `source`.** Les limites du ToF 8×8 et de la caméra demeurent inchangées ; le logiciel ne doit pas prétendre que le sol est sûr à partir d'un capteur non validé. Ce travail ne modifie pas `robotd`, sa boucle à 50 Hz, ses politiques ONNX ni les garanties de sécurité matérielles. Les mesures de RAM, chaleur, CPU, espace libre et latence sur un Microduck physique restent à effectuer avec `scripts/resource-audit.sh`.
+
+
+## Vérification du lien vers les démons (prototype de lecture seule)
+
+Le nouveau module `sim_ipc.py` prépare l'acquisition de `robot.health`, `robot.state` et `tof.frame` par sockets Unix. Les messages de santé et de télémétrie sont validés (délais, formats, horodatage local, cellules ToF et statuts). Une sonde `sim_probe.py` affiche les résultats sans commande moteur et n'attribue jamais la propriété `floor_clear` aux distances ToF.
+
+Les tests ont été exécutés avec des sockets Unix de démonstration, **pas avec les démons officiels en fonctionnement**. Les 65 tests logiciels du dépôt n'établissent donc ni la compatibilité en situation MuJoCo, ni la détection d'obstacle sûre, ni une mesure sur matériel. Ces points restent expressément à vérifier avant toute commande via `robotd`.
