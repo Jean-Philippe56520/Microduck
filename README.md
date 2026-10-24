@@ -48,6 +48,19 @@ La [feuille de route détaillée](docs/roadmap.md) définit les six phases, leur
 
 **Pas besoin de posséder le Microduck pour commencer à développer.**
 
+## Contrat de perception (prototype V0)
+
+Le module `microduck_companion/perception.py` fournit `PerceptionEvent` et `PerceptionSnapshot` (schéma v1). Chaque événement déclare sa provenance (`mock`, `simulator`, `sensor`, `robotd`, etc.), sa confiance, une heure monotone et une durée de validité limitée. Le moteur utilise `AutonomyBrain.choose_from_snapshot(snapshot)` pour obtenir une `Scene` conservatrice :
+
+- absence ou expiration du signal de sol, de zone, d'obstacle ou de batterie : intention `halt` (ou `rest` si la batterie faible est confirmée) ;
+- contradiction ou manque de confiance dans une mesure de sécurité : pas d'autorisation de déplacement ;
+- les affirmations de Qwen n'attestent jamais la sécurité et ne sont jamais promues en observation de capteur ;
+- étiquettes `mock`, `simulator` et `sensor` conservées distinctement en SQLite ; un souvenir fictif ne prouve pas une reconnaissance réelle.
+
+L'ancienne méthode `choose(Scene(...))` est maintenue pour les essais synthétiques et **ne doit pas devenir un adaptateur de commande motrice**. Les sources ne sont pas encore authentifiées par un pilote, et aucun vrai capteur n'alimente ces événements : ce sont des protections de prototype, pas une homologation matérielle. `robotd` demeure seul responsable des moteurs et de la sécurité.
+
+Exécuter `python -m unittest discover -s tests -v` pour les tests de sécurité. La connexion du simulateur MuJoCo et le contrôle de ses cadences sont les étapes suivantes.
+
 ## Audit matériel et mémoire
 
 - [Audit de faisabilité du matériel, de la vision, de la RAM et du stockage](docs/hardware-feasibility-audit-2026-10-25.md)

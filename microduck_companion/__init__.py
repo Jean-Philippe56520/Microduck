@@ -1,5 +1,9 @@
 """Microduck Companion: experimental local autonomy, not a motor controller."""
 from .autonomy import AutonomyBrain, Motivations, Plan, Scene
 from .episodic_memory import ExperienceMemory
+from .perception import PerceptionEvent, PerceptionSnapshot
 
-__all__ = ["AutonomyBrain", "Motivations", "Plan", "Scene", "ExperienceMemory"]
+__all__ = [
+    "AutonomyBrain", "Motivations", "Plan", "Scene", "ExperienceMemory",
+    "PerceptionEvent", "PerceptionSnapshot",
+]

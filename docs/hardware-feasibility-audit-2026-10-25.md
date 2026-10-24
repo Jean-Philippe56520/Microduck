@@ -136,3 +136,10 @@ Relever aussi la température du SoC, la fréquence CPU, le nombre de ticks mote
 ## Outil de diagnostic préparé dans notre dépôt
 
 Le script `scripts/resource-audit.sh` mesure, en lecture seule, `MemAvailable`, la mémoire CMA, la charge mémoire des processus, l'utilisation des partitions, la température et la fréquence CPU sur un robot où un shell est autorisé. Il n'a **pas encore été exécuté sur un Microduck physique**. Comparer repos, caméra active, et caméra + mouvements avant d'ajouter de nouveaux modèles.
+
+
+## Avancement logiciel après l'audit du 25 octobre 2026
+
+Le prototype `microduck_companion` possède maintenant un contrat `PerceptionEvent` / `PerceptionSnapshot` v1. Il filtre les lectures par environnement déclaré, type de source, confiance et durée de validité ; il refuse l'exploration quand une donnée essentielle (zone, sol, obstacle ou batterie) manque ou n'est pas assez fiable. Les objets fictifs, simulés et déclarés par capteur sont distingués dans la mémoire SQLite. Les essais automatisés couvrent les capteurs manquants, les lectures périmées, les contradictions, les hypothèses LLM et la provenance des objets.
+
+**Aucune source physique n'est encore branchée et aucune preuve d'authenticité n'est fournie par la simple chaîne `source`.** Les limites du ToF 8×8 et de la caméra demeurent inchangées ; le logiciel ne doit pas prétendre que le sol est sûr à partir d'un capteur non validé. Ce travail ne modifie pas `robotd`, sa boucle à 50 Hz, ses politiques ONNX ni les garanties de sécurité matérielles. Les mesures de RAM, chaleur, CPU, espace libre et latence sur un Microduck physique restent à effectuer avec `scripts/resource-audit.sh`.

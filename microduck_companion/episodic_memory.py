@@ -45,10 +45,13 @@ class ExperienceMemory:
     def close(self) -> None:
         self.conn.close()
 
-    def observe(self, identifier: str, label: str = "unknown") -> KnownObject:
+    def observe(self, identifier: str, label: str = "unknown",
+                source: str = "sensor") -> KnownObject:
         if not identifier:
             raise ValueError("identifier cannot be empty")
-        source = "sensor" if label != "unknown" else "unknown"
+        if source not in {"sensor", "simulator", "mock"}:
+            raise ValueError("observation source must be sensor, simulator or mock")
+        source = source if label != "unknown" else "unknown"
         with self.conn:
             self.conn.execute("""
                 INSERT INTO objects(identifier,label,label_source,sightings,last_seen)
@@ -56,12 +59,20 @@ class ExperienceMemory:
                 ON CONFLICT(identifier) DO UPDATE SET
                     sightings=sightings+1,
                     last_seen=excluded.last_seen,
-                    label=CASE WHEN objects.label_source IN ('unknown','llm_suggestion')
-                               AND excluded.label!='unknown'
-                               THEN excluded.label ELSE objects.label END,
-                    label_source=CASE WHEN objects.label_source IN ('unknown','llm_suggestion')
-                               AND excluded.label!='unknown'
-                                      THEN excluded.label_source ELSE objects.label_source END
+                    label=CASE WHEN excluded.label!='unknown' AND (
+                        objects.label_source IN ('unknown','llm_suggestion')
+                        OR (excluded.label_source='sensor'
+                            AND objects.label_source IN ('simulator','mock'))
+                        OR (excluded.label_source='simulator'
+                            AND objects.label_source='mock')
+                    ) THEN excluded.label ELSE objects.label END,
+                    label_source=CASE WHEN excluded.label!='unknown' AND (
+                        objects.label_source IN ('unknown','llm_suggestion')
+                        OR (excluded.label_source='sensor'
+                            AND objects.label_source IN ('simulator','mock'))
+                        OR (excluded.label_source='simulator'
+                            AND objects.label_source='mock')
+                    ) THEN excluded.label_source ELSE objects.label_source END
             """, (identifier, label, source, time.time()))
         return self.get(identifier)
 
