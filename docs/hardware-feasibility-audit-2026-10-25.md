@@ -8,6 +8,9 @@ Le Microduck permet raisonnablement de viser : mémoire persistante locale, mote
 
 ## Sources de vérité et révisions
 
+- Système Yocto constructeur : https://github.com/pollen-robotics/microduck_yocto
+- Carte beta avec stockage eMMC : https://github.com/pollen-robotics/microduck_yocto/blob/main/docs/agents/beta-board.md
+- Plan des partitions de l'image : https://github.com/pollen-robotics/microduck_yocto/blob/main/meta-microduck-bsp/files/wic/microduck-ab.wks.in
 - Fiche constructeur : https://store.pollen-robotics.com/products/microduck
 - Kit presse : https://pollen-robotics.com/microduck/press-kit/
 - Architecture et IPC : https://github.com/pollen-robotics/microduck/blob/main/docs/design/architecture.md
@@ -76,6 +79,20 @@ Le code distingue `Board::Zero3` (Radxa Zero 3W, IMX219, BMI088) et `Board::Beta
 
 Le module `pet-detect` n'identifie pas les chats et chiens. Un petit modèle de vision supplémentaire ne reconnaît pas automatiquement un individu précis : classifier l'espèce, retrouver un individu et garantir sa position sont trois problèmes distincts.
 
+## Système d'exploitation officiel : stockage réellement réservé
+
+Le troisième dépôt officiel `pollen-robotics/microduck_yocto` fournit le système Linux Yocto, les pilotes de cartes et la mise à jour A/B RAUC. À la date de cet audit, la fiche commerciale annonce **32 Go de stockage**, mais les documents d'une **carte beta** indiquent **64 Go eMMC, 1 Go LPDDR4X, sans slot SD**. Ce n'est pas une garantie de capacité de la version commerciale.
+
+Le plan d'image `meta-microduck-bsp/files/wic/microduck-ab.wks.in` définit notamment :
+- `rootfs_a` : **2 Gio** ;
+- `rootfs_b` : **2 Gio** ;
+- `data` : **8 Gio**, montée dans `/var/lib/robot` et persistante à travers les mises à jour A/B ;
+- des petites partitions de démarrage, pour environ **12,1 Gio partitionnés** au total.
+
+La partition `data` comporte déjà des politiques motrices, sons, configurations, profils Wi-Fi et autres données. **8 Gio est la capacité de la partition, pas l'espace libre mesuré**. Sur une puce 32 ou 64 Go, le reste peut demeurer non partitionné : ne pas confondre capacité eMMC et capacité immédiatement exploitable, et ne pas modifier les partitions sans procédure compatible avec les mises à jour signées du constructeur.
+
+La mémoire SQLite du compagnon devrait vivre dans un répertoire propre sous `/var/lib/robot/` avec permissions privées et sauvegarde explicite, sans être mise sur GitHub. Le système Yocto destiné au client peut ne pas fournir SSH/root ; l'audit en ligne de commande nécessitera un accès développeur autorisé.
+
 ## Budget de ressources : règles de conception proposées, pas résultats mesurés
 
 1. Conserver une grande marge RAM pour Linux, `robotd`, `mediad`, buffers vidéo et contrôleurs. Fixer un **objectif initial** de mémoire ajoutée très faible pour notre cerveau, puis arrêter l'intégration si `MemAvailable` ou les délais moteurs se dégradent. Ne pas annoncer un budget libre chiffré avant mesure.
@@ -114,3 +131,8 @@ Relever aussi la température du SoC, la fréquence CPU, le nombre de ticks mote
 5. Différer la décision d'un modèle vision supplémentaire tant que RAM libre, température et cadence du système final n'ont pas été mesurées.
 
 **Statut final : faisabilité d'architecture établie, marge chiffrée de RAM/stockage et fiabilité en conditions réelles non encore établies.**
+
+
+## Outil de diagnostic préparé dans notre dépôt
+
+Le script `scripts/resource-audit.sh` mesure, en lecture seule, `MemAvailable`, la mémoire CMA, la charge mémoire des processus, l'utilisation des partitions, la température et la fréquence CPU sur un robot où un shell est autorisé. Il n'a **pas encore été exécuté sur un Microduck physique**. Comparer repos, caméra active, et caméra + mouvements avant d'ajouter de nouveaux modèles.

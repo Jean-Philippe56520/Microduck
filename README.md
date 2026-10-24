@@ -41,3 +41,11 @@ Le dépôt ne doit contenir ni souvenirs personnels, ni enregistrements audio/vi
 - [ ] Vérifier les ressources, la vitesse et la sécurité sur le matériel réel.
 
 **Pas besoin de posséder le Microduck pour commencer à développer.**
+
+## Audit matériel et mémoire
+
+- [Audit de faisabilité du matériel, de la vision, de la RAM et du stockage](docs/hardware-feasibility-audit-2026-10-25.md)
+- [Script de mesures en lecture seule pour une unité réelle](scripts/resource-audit.sh)
+- Troisième source officielle : [microduck_yocto — OS, partitions et carte beta](https://github.com/pollen-robotics/microduck_yocto).
+
+L'image OS décrite en octobre 2026 prévoit une partition persistante de 8 Gio ; la RAM réellement disponible et l'espace libre ne sont pas encore mesurés sur l'unité commerciale.
