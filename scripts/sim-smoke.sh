@@ -1,0 +1,80 @@
+#!/bin/sh
+# Read-only MuJoCo Companion smoke test. Run from a checked-out Git repository.
+# Does not enable movements from the autonomous brain; official duck-sim may
+# move its own simulated robot to stand when started.
+set -eu
+
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+MODE=${1:-check}
+SIM="$ROOT/upstream/microduck/scripts/duck-sim"
+export DUCK_SIM_RL="$ROOT/upstream/microduck_rl"
+export DUCK_SIM_STATE="${DUCK_SIM_STATE:-$HOME/.cache/duck-sim-companion}"
+export DUCK_SIM_PORT="${DUCK_SIM_PORT:-17801}"
+export DUCK_SIM_FRAME_PORT="${DUCK_SIM_FRAME_PORT:-17901}"
+export DUCK_SIM_DUCKS=1
+export DUCK_SIM_VIEWER=0
+export DUCK_SIM_CAMERAS=
+export DUCK_SIM_SCENE=
+export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"
+
+check() {
+    missing=0
+    for program in git cargo uv python3; do
+        if ! command -v "$program" >/dev/null 2>&1; then
+            printf 'Missing prerequisite: %s\n' "$program" >&2
+            missing=1
+        fi
+    done
+    if ! git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        printf 'Run this script inside a Git checkout of Microduck.\n' >&2
+        missing=1
+    fi
+    if [ "$missing" -ne 0 ]; then
+        printf 'Simulator not started. Install prerequisites on Linux/WSL2.\n' >&2
+        return 2
+    fi
+    printf 'Prerequisites present. State dir: %s ; MuJoCo TCP: %s\n' \
+        "$DUCK_SIM_STATE" "$DUCK_SIM_PORT"
+}
+
+case "$MODE" in
+    check)
+        check
+        exit 0
+        ;;
+    run)
+        check
+        ;;
+    *)
+        printf 'Usage: sh scripts/sim-smoke.sh [check|run]\n' >&2
+        exit 2
+        ;;
+esac
+
+git -C "$ROOT" submodule update --init --recursive
+[ -x "$SIM" ] || { printf 'Missing official duck-sim script\n' >&2; exit 2; }
+[ -f "$DUCK_SIM_RL/pyproject.toml" ] || {
+    printf 'Missing official microduck_rl checkout\n' >&2
+    exit 2
+}
+(
+    cd "$DUCK_SIM_RL"
+    # RL requires Python >=3.12,<3.13; uv manages its isolated environment.
+    uv sync --frozen --python 3.12
+)
+
+started=0
+cleanup() {
+    if [ "$started" -eq 1 ]; then
+        "$SIM" down || true
+    fi
+}
+trap cleanup EXIT HUP INT TERM
+started=1
+"$SIM" up
+"$SIM" status
+"$SIM" ctl health
+"$SIM" realtime
+python3 -m microduck_companion.sim_probe --state-dir "$DUCK_SIM_STATE"
+python3 -m microduck_companion.sim_observer --state-dir "$DUCK_SIM_STATE"
+printf 'Smoke test completed; official simulator is being stopped.\n'
