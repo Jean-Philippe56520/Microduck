@@ -49,6 +49,8 @@ Travaux :
 
 ## Phase 2 — Démarrer et observer le simulateur officiel (V1a ; prioritaire)
 
+Plan opérationnel avec critères de sortie et étapes de validation : [J1b → J2 — MuJoCo](mujoco-integration-plan.md).
+
 **But :** obtenir une base MuJoCo reproductible avant de connecter le cerveau.
 
 Travaux :
@@ -146,7 +148,7 @@ Les documents et les tests doivent toujours distinguer un **test logiciel**, une
 
 **Jalon J4 :** porter et valider sur matériel réel dès qu'il sera disponible (phase 6).
 
-La prochaine modification fonctionnelle devrait cibler **un contrat de perception versionné et des tests sur les observations périmées**. Pas de nouvelle fonctionnalité vocale, de reconnaissance individuelle ou de portage Rust avant la première boucle complète en simulation.
+Le contrat de perception versionné et ses tests sont désormais codés. **Prochaine modification fonctionnelle :** démarrer le simulateur, puis réaliser un adaptateur de télémétrie JSON-RPC en lecture seule. Suivre le [plan d'intégration MuJoCo J1b → J2](mujoco-integration-plan.md), qui distingue clairement lecture des capteurs, preuve du sol sûr, commandes autorisées et mémoire des conséquences. Pas de fonctionnalité vocale, de reconnaissance individuelle ni de portage Rust avant la première boucle complète en simulation.
 
 ## Références
 

@@ -36,7 +36,7 @@ Le dépôt ne doit contenir ni souvenirs personnels, ni enregistrements audio/vi
 
 La [feuille de route détaillée](docs/roadmap.md) définit les six phases, leurs dépendances, leurs critères de réussite, les métriques et les limites de validation.
 
-**Prochain jalon :** consolider le contrat de perception et démarrer un Microduck virtuel sain avec `scripts/duck-sim` ; ensuite relier les décisions du cerveau à `robotd` via des intentions autorisées, sans moteur commandé directement.
+**Prochain jalon :** démarrer un Microduck virtuel sain avec `scripts/duck-sim`, puis connecter les états `robotd` et `tofd` au cerveau ; autoriser les intentions uniquement après validation de la zone et des sécurités. Voir le [plan opérationnel MuJoCo J1b → J2](docs/mujoco-integration-plan.md).
 
 ### Étapes principales
 
