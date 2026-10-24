@@ -47,6 +47,18 @@ Travaux :
 
 **Critère de sortie :** tous les tests sont verts ; pour chaque entrée incertaine ou dangereuse, aucune intention de déplacement non sûre ; apprentissage reproductible sur plusieurs épisodes ; aucun PC ou LLM requis pour choisir une intention locale.
 
+## Avancement J2a — client IPC en lecture seule (25 octobre 2026)
+
+- [x] `microduck_companion/sim_ipc.py` : client Unix JSON-RPC 2.0 NDJSON avec liste blanche stricte (`robot.health`, `robot.subscribe`, `tof.stream`), délais, validation des réponses et trames ToF 8×8 brutes.
+- [x] `microduck_companion/sim_probe.py` : outil de diagnostic ciblant les sockets locaux créés par `duck-sim` ; aucune commande moteur autorisée.
+- [x] 25 nouveaux tests sur sockets Unix fictifs (22 IPC + 3 sonde), soit **65 tests logiciels** dans le projet. Validation CI à contrôler lors de la fusion.
+- [ ] Démarrage réel de MuJoCo et du `duck-sim` officiel sur Linux/WSL2 (Rust/Cargo, Python 3.12 et téléchargement de dépendances nécessaires).
+- [ ] Vérifier les trames avec les vrais démons simulés, mesurer l'état du contrôleur et le facteur temps réel.
+- [ ] Convertir les lectures vérifiées en `PerceptionSnapshot` avec gestion d'incertitude ; les données ToF ne prouvent pas `floor_clear`.
+- [ ] Développer et tester ensuite les intentions autorisées via `robotd`.
+
+**Portée exacte :** tests avec faux sockets uniquement ; aucune simulation physique lancée, aucun capteur physique mesuré, aucune commande motrice émise. L'environnement d'exécution disponible ne possède pas Rust/Cargo ni Python 3.12 et n'autorise pas les téléchargements directs de GitHub nécessaires au simulateur. Continuer à bloquer le mouvement tant que le sol et la zone ne sont pas justifiés.
+
 ## Phase 2 — Démarrer et observer le simulateur officiel (V1a ; prioritaire)
 
 Plan opérationnel avec critères de sortie et étapes de validation : [J1b → J2 — MuJoCo](mujoco-integration-plan.md).
@@ -148,7 +160,7 @@ Les documents et les tests doivent toujours distinguer un **test logiciel**, une
 
 **Jalon J4 :** porter et valider sur matériel réel dès qu'il sera disponible (phase 6).
 
-Le contrat de perception versionné et ses tests sont désormais codés. **Prochaine modification fonctionnelle :** démarrer le simulateur, puis réaliser un adaptateur de télémétrie JSON-RPC en lecture seule. Suivre le [plan d'intégration MuJoCo J1b → J2](mujoco-integration-plan.md), qui distingue clairement lecture des capteurs, preuve du sol sûr, commandes autorisées et mémoire des conséquences. Pas de fonctionnalité vocale, de reconnaissance individuelle ni de portage Rust avant la première boucle complète en simulation.
+Le contrat de perception versionné et ses tests sont désormais codés. **Prochaine modification fonctionnelle :** démarrer le simulateur officiel et vérifier notre sonde JSON-RPC déjà codée avec de vraies trames simulées. Suivre le [plan d'intégration MuJoCo J1b → J2](mujoco-integration-plan.md), qui distingue clairement lecture des capteurs, preuve du sol sûr, commandes autorisées et mémoire des conséquences. Pas de fonctionnalité vocale, de reconnaissance individuelle ni de portage Rust avant la première boucle complète en simulation.
 
 ## Références
 
