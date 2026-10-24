@@ -22,6 +22,18 @@ Le robot doit conserver les fonctions essentielles sans PC ni Internet. `robotd`
 
 Les scènes du prototype sont **fictives**. Aucun mouvement réel, capteur réel, taux de reconnaissance ou budget de ressources matériel n'a été validé. Le robot physique n'est pas encore disponible.
 
+## Avancement du jalon J1 — 2026-10-25
+
+- [x] `PerceptionEvent` et `PerceptionSnapshot` v1 ajoutés : horodatage monotone, durée de validité, provenance, confiance, identifiant d'objet suivi et distinction des environnements `mock`, `simulator` et `robot`.
+- [x] Le moteur accepte `choose_from_snapshot` ; les données de sécurité manquantes, périmées, contradictoires, de faible confiance ou attribuées à une source non autorisée conduisent à `halt` (avec exception du repos sur batterie basse vérifiée).
+- [x] La mémoire SQLite conserve la provenance `mock` / `simulator` / `sensor` d'une étiquette, et les hypothèses LLM restent distinctes.
+- [x] 40 tests Python passés localement et sur GitHub Actions sur la branche de développement (13 tests historiques + 27 tests de perception).
+- [ ] Lier les événements aux démons du constructeur et **authentifier leur provenance** dans un adaptateur dédié ; le texte `source="sensor"` n'est pas une preuve matérielle.
+- [ ] Lancer `duck-sim` sur Linux/WSL2, relever sa santé et sa vitesse, puis connecter les observations MuJoCo.
+- [ ] Évaluer les garde-fous avec les capteurs, les pilotes et le matériel physique.
+
+**Frontière de confiance :** la méthode historique `choose(Scene(...))` reste un chemin de démonstration synthétique ; toute intégration devra passer par des mesures réellement produites et vérifiées par un adaptateur. Ce module ne contrôle aucun moteur et `robotd` conserve seul l'autorité de sécurité.
+
 ## Phase 1 — Consolider le cerveau sur PC (V0 ; en cours)
 
 **But :** disposer d'un moteur local déterministe, explicable, testable, séparé des capteurs et des commandes.
@@ -143,3 +155,7 @@ La prochaine modification fonctionnelle devrait cibler **un contrat de perceptio
 - [Simulateur officiel](https://github.com/pollen-robotics/microduck/blob/main/docs/robot/simulation.md)
 - [Source simulation RL](https://github.com/pollen-robotics/microduck_rl)
 - [Système Yocto officiel](https://github.com/pollen-robotics/microduck_yocto)
+
+## Idées à tester plus tard (hors périmètre des jalons actuels)
+
+Après la simulation d'autonomie et la perception : proposer des automatisations sous contrôle explicite, par exemple détecter l'ouverture d'une porte puis suggérer une alerte. Une détection fiable exigera un capteur adapté ou une validation visuelle mesurée ; tout envoi de message nécessitera un service de messagerie autorisé et une connexion. Aucune automatisation ou auto-modification de code n'est actuellement intégrée.
