@@ -30,9 +30,15 @@ Le module `microduck_companion` est actuellement un **prototype à observations 
 
 ## Confidentialité et sécurité
 
-Le dépôt ne doit contenir ni souvenirs personnels, ni enregistrements audio/vidéo, ni clés d'API, ni données privées. Les bases SQLite locales sont ignorées par Git. Le dépôt est actuellement public : le passer en privé est recommandé avant de commencer des expérimentations avec des données personnelles.
+Le dépôt ne doit contenir ni souvenirs personnels, ni enregistrements audio/vidéo, ni clés d'API, ni données privées. Les bases SQLite locales sont ignorées par Git. Le dépôt est actuellement privé. Les données personnelles doivent rester hors du dépôt, même privé.
 
-## Étapes
+## Plan de développement
+
+La [feuille de route détaillée](docs/roadmap.md) définit les six phases, leurs dépendances, leurs critères de réussite, les métriques et les limites de validation.
+
+**Prochain jalon :** consolider le contrat de perception et démarrer un Microduck virtuel sain avec `scripts/duck-sim` ; ensuite relier les décisions du cerveau à `robotd` via des intentions autorisées, sans moteur commandé directement.
+
+### Étapes principales
 
 - [x] Récupérer les deux bases officielles sous forme de sous-modules.
 - [x] Tester un premier moteur d'autonomie et une mémoire locale.
