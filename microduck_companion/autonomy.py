@@ -5,7 +5,11 @@ A physical adapter must separately validate safety and supported robotd intents.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from .episodic_memory import ExperienceMemory
+
+if TYPE_CHECKING:
+    from .perception import PerceptionSnapshot
 
 
 @dataclass(frozen=True)
@@ -18,6 +22,9 @@ class Scene:
     object_id: str | None = None
     object_label: str = "unknown"
     pc_connected: bool = False
+    object_source: str = "sensor"
+    environment: str = "legacy"  # Synthetic legacy path; never command motors.
+    perception_valid: bool = True
 
 
 @dataclass
@@ -49,6 +56,15 @@ class AutonomyBrain:
         self.motives.clamp()
         self.previous_intention: str | None = None
 
+    def choose_from_snapshot(self, snapshot: PerceptionSnapshot,
+                             now: float | None = None) -> Plan:
+        """Production-facing input boundary; stale/untrusted safety data halts.
+
+        This is still a prototype and never authorizes physical motor actions.
+        choose(Scene(...)) remains available for existing synthetic tests.
+        """
+        return self.choose(snapshot.to_scene(now=now))
+
     def choose(self, scene: Scene) -> Plan:
         if not 0 <= scene.battery_pct <= 100:
             raise ValueError("battery_pct must be in [0, 100]")
@@ -56,6 +72,8 @@ class AutonomyBrain:
             raise ValueError("obstacle distance cannot be negative")
         if scene.battery_pct <= 15:
             return self._record(Plan("rest", "Battery low: do not explore"))
+        if not scene.perception_valid:
+            return self._record(Plan("halt", "Required perception data is missing or uncertain"))
         if not scene.safe_area or not scene.floor_clear:
             return self._record(Plan("halt", "Safe area or floor not verified"))
         if scene.obstacle_m is not None and scene.obstacle_m < 0.35:
@@ -63,7 +81,9 @@ class AutonomyBrain:
 
         obj = None
         if scene.object_id:
-            obj = self.memory.observe(scene.object_id, scene.object_label)
+            obj = self.memory.observe(
+                scene.object_id, scene.object_label, source=scene.object_source
+            )
         scores = {
             "idle": 0.12,
             "rest": (1 - self.motives.energy) * 1.35,
@@ -79,7 +99,15 @@ class AutonomyBrain:
                 - self.motives.caution * 0.12
             )
             # A model guess cannot authorize a physical play action.
-            if obj.label in {"ball", "toy"} and obj.label_source == "sensor":
+            valid_sources = {
+                "legacy": {"sensor"}, "robot": {"sensor"},
+                "simulator": {"simulator"}, "mock": {"mock"},
+            }
+            if (obj.label in {"ball", "toy"}
+                    and scene.object_label == obj.label
+                    and obj.label_source in (
+                        valid_sources.get(scene.environment, set())
+                    )):
                 scores["play_with_object"] = (
                     self.motives.play * 0.75 + obj.preference * 0.55
                     + min(obj.sightings, 4) * 0.055
