@@ -27,6 +27,7 @@ from .episodic_memory import ExperienceMemory
 from .passive_memory import PassiveObservationJournal
 from .passive_observations import summarize_passive
 from .passive_sources import FixtureUnixReader, PassiveRead
+from .perception import PerceptionSnapshot
 
 _SESSION_NAMES = frozenset({"first", "second"})
 
@@ -149,7 +150,10 @@ def _passive_cycle(reading: PassiveRead, *, memory: ExperienceMemory,
 
     # F1-B only provides object/sound categories, no floor, zone, ToF, or
     # battery clearance. With no safety facts the existing brain MUST halt.
-    plan = brain.choose_from_snapshot(reading.snapshot, now=now_mono)
+    # Failed reads are NEVER allowed to carry a previous or forged snapshot.
+    safe_snapshot = (reading.snapshot if reading.status == "ok"
+                     else PerceptionSnapshot("mock", (), now_mono))
+    plan = brain.choose_from_snapshot(safe_snapshot, now=now_mono)
     if plan.intention != "halt":
         raise RuntimeError("passive-only data must never authorize an action")
 
