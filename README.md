@@ -44,6 +44,8 @@ La [PR #14](https://github.com/Jean-Philippe56520/Microduck/pull/14) ajoute un t
 
 Le [premier essai P0d officiel réussi](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40190232870) a montré les **deux pieds sous force normale > 0,1 N sur 126/126 relevés de marche**, des écarts entre les variations de commande et d'angle (roulis hanches gauche/droite particulièrement), ainsi que **2,222 mm** de déplacement net final malgré 23/24 politiques `walk` et `robot.stop` confirmé. Ce sont des **mesures de physique simulée**, pas du robot physique ; le diagnostic peut lui-même ajouter du temps CPU. La [suite logicielle durcie compte 190 tests réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40190697176).
 
+La [seconde exécution P0d avec sonde durcie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40190697090) confirme **les deux pieds chargés sur 132/132 trames de marche**, un déplacement de **1,597 mm**, et des écarts consigne/angle pour le roulis des hanches et les genoux. L'effort simulé est cohérent avec un gain positionnel d'environ 0,55 N·m/rad déclaré par le constructeur, mais ce rapprochement **n'explique pas encore pourquoi la démarche ne progresse pas**.
+
 Voir le [rapport de preuve P0d](docs/mujoco-p0d-live-solver-2026-10-25.md). **La cause racine est toujours inconnue, et P1a reste bloqué** ; la prochaine étude doit isoler l'écart de suivi des consignes et son rôle causal, sans retoucher les moteurs au hasard.
 
 ### P0c — Contacts géométriques reconstruits hors ligne (PR #13)

@@ -43,6 +43,37 @@ Ces valeurs sont issues des **consignes de position réellement présentes dans 
 - Essai J2e à **0,12 m/s**, `walk` rapporté **23/24** échantillons, **2,222 mm** de déplacement final XY (X monde +2,180 mm ; Y monde +0,429 mm), baseline propre à J2e **0,050 mm**, `robot.stop` confirmé, `no_progress_observed` écrit dans la SQLite éphémère. Seuil de progression de 10 mm **non atteint**.
 - Sur **888 trames validées**, coût déclaré de la capture synchrone : moyenne **139 µs**, maximum **452 µs** par relevé (un relevé toutes les ~20 ms) ; ce n'est pas le coût système total du thread écrivain ni une mesure énergétique. Le workflow a passé les contrôles de santé et cadence du simulateur, mais **l'instrumentation change la charge CPU** et les essais sans instrumentation ne sont pas strictement appariés statistiquement.
 
+## Répétition avec code durci et mesure du suivi (GitHub Actions #40190697090)
+
+Une [seconde exécution officielle MuJoCo](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40190697090) a réussi après le correctif garantissant qu'une exception de la sonde n'interrompe jamais `mj_step`, avec **190 tests Python réussis**. Nouvelle SQLite de CI indépendante et **mêmes** scène et politiques constructeur épinglées, aucune modification des gains OEM. Ces chiffres correspondent à **un autre essai**, et ne remplacent pas les mesures du premier essai ci-dessus.
+
+| Grandeur sur le deuxième essai | Valeur |
+| --- | ---: |
+| Trames natives valides au moment de l'analyse | **904** |
+| Repos `stand` / marche (fenêtres P0b) | **77 / 132** |
+| Pied gauche chargé > 0,1 N | **132/132** relevés de marche |
+| Pied droit chargé > 0,1 N | **132/132** relevés de marche |
+| Périodes de marche à un seul pied chargé parmi ces relevés | **0** |
+| Moyenne force normale gauche / droite | **3,246 / 3,984 N** |
+| Déplacement net final J2e | **1,597 mm** |
+| Statut moteur/mémoire | `robot.stop` confirmé, `no_progress_observed` |
+| Coût de capture synchrone moyenne / maximum | **93,9 / 243,9 µs** |
+
+Le fichier JSONL final peut contenir davantage de trames que les **904** validées au moment où l'analyse s'est terminée, car le moteur continue de simuler jusqu'à l'arrêt du scénario. Les **132** trames de marche se réfèrent uniquement à la fenêtre mesurée, et non au total du fichier.
+
+### Vérification du suivi apparent des actuateurs — deuxième essai
+
+| Articulation | Excursion consigne `ctrl` | Excursion angle `qpos` | RMS écart estimé | Force max. observée (valeur absolue) |
+| --- | ---: | ---: | ---: | ---: |
+| Roulis hanche gauche | 0,15475 rad | 0,00854 rad | 0,10651 rad | 0,10621 N·m |
+| Roulis hanche droite | 0,17958 rad | 0,00275 rad | 0,08345 rad | 0,10741 N·m |
+| Genou gauche | 0,10015 rad | 0,00882 rad | 0,13032 rad | 0,09336 N·m |
+| Genou droit | 0,03863 rad | 0,01282 rad | 0,18272 rad | 0,10678 N·m |
+
+Une estimation **descriptive**, par ajustement sans intercept de `force_simulée ≈ gain × (consigne − angle)` sur ces **132 trames**, donne environ **0,533**, **0,523**, **0,541**, **0,547 N·m/rad** pour les articulations listées. Ces coefficients sont proches du **gain positionnel `kp=0.55`** défini dans la classe `chosen_actuator` du [MJCF constructeur épinglé](https://github.com/pollen-robotics/microduck_rl/blob/b02fdea4902c2b93b7d34a83a6f05da4ececb7d3/src/mjlab_microduck/robot/microduck/joints_properties.xml). Les forces observées restent nettement sous le `forcerange` **−0,96 / +0,96 N·m** déclaré dans ce modèle : aucune saturation à cette borne n'est constatée dans les échantillons de ces quatre articulations.
+
+**Interprétation prudente :** ce rapprochement indique que les sorties d'effort semblent cohérentes avec la relation proportionnelle annoncée par le modèle. Il n'établit pas que ce gain est inadapté, ni que son changement améliorerait la marche. Le décalage intra-pas des valeurs `ctrl`/`qpos`, la posture moyenne et l'absence de phase d'appui unipodal dans les trames doivent être étudiés conjointement. **Ne modifier aucun gain constructeur sur cette base seule.**
+
 ## Séparation explicite des informations
 
 - **Mesuré dans le solveur original :** paires de contacts semelle/sol, forces normales et tangentielles MuJoCo, cibles de position (`data.ctrl`), angles, efforts simulés, pose du tronc et temps simulé.

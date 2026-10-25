@@ -235,3 +235,6 @@ La [première CI officielle P0d](https://github.com/Jean-Philippe56520/Microduck
 
 La sonde mesure des **forces numériques MuJoCo et cibles de position au sein de la simulation**, pas les courants, efforts ou contacts d'un robot réel. Les caches de contacts peuvent être associés à l'état pré-intégration alors que `qpos` est post-intégration ; l'écart consigne-angle est approximatif. La capture ajoute une charge au simulateur (139 µs en moyenne, 452 µs maximum pour la section synchrone du premier essai), non comparable directement à des ressources RK3566. [Rapport P0d et limites](mujoco-p0d-live-solver-2026-10-25.md).
 
+
+**Répétition P0d après durcissement :** [CI #40190697090](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40190697090) réussie, 190 tests Python, 132/132 trames de marche avec double appui sous charge, translation finale seulement **1,597 mm**. Le calcul descriptif de force par erreur de consigne (roulis hanches et genoux) donne **~0,52–0,55 N·m/rad**, cohérent avec le `kp=0.55` du MJCF épinglé. **Aucune saturation à ±0,96 N·m n'a été mesurée** pour ces articulations. Cette cohérence ne valide pas la locomotion et ne justifie pas un changement de gain sans étude contrôlée. Les limites de temps, de commande, de contact et de transposition au vrai robot restent celles du [rapport P0d](mujoco-p0d-live-solver-2026-10-25.md).
+
