@@ -133,6 +133,20 @@ class FullPipelineTests(unittest.TestCase):
         self.assertEqual(2, code)
         self.assertIsNone(report)
 
+    def test_skipped_and_repeated_sessions_leave_database_unchanged(self):
+        self.assertEqual(2, self.subprocess_session("second")[0])
+        with sqlite3.connect(self.db) as db:
+            self.assertEqual(0, db.execute(
+                "SELECT count(*) FROM passive_observation_log"
+            ).fetchone()[0])
+        self.assertEqual(0, self.subprocess_session("first")[0])
+        self.assertEqual(2, self.subprocess_session("first")[0])
+        with sqlite3.connect(self.db) as db:
+            self.assertEqual(5, db.execute(
+                "SELECT count(*) FROM passive_observation_log"
+            ).fetchone()[0])
+        self.assertEqual(0, self.subprocess_session("second")[0])
+
     def test_wrong_session_is_rejected(self):
         for invalid in ("robot", "both", "", "FIRST"):
             with self.subTest(session=invalid), self.assertRaises(ValueError):
