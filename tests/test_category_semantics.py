@@ -137,6 +137,16 @@ class SemanticMemoryTests(unittest.TestCase):
         self.assertEqual(0,self.mem.conn.execute(
             "SELECT COUNT(*) FROM objects").fetchone()[0])
 
+    def test_source_row_changed_underneath_cannot_remain_semantic_truth(self):
+        sid=self.record("cat")
+        self.assertTrue(self.remember(sid))
+        self.mem.conn.execute(
+            "UPDATE passive_observation_log SET category='dog' WHERE id=?",
+            (sid,))
+        self.assertEqual((),self.semantic.recall(now_wall_epoch_s=WALL))
+        self.assertEqual(0,self.mem.conn.execute(
+            "SELECT COUNT(*) FROM objects").fetchone()[0])
+
     def test_f4a_forgetting_reversible_source_but_not_resurrected(self):
         sid=self.record("toy")
         self.assertTrue(self.remember(sid))
