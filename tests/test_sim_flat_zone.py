@@ -129,9 +129,9 @@ class FlatGroundTruthTests(unittest.TestCase):
         self.assertFalse(disguised.to_scene(now=100.1).floor_clear)
 
     def test_read_verified_requires_pinned_scene_and_process_twice(self):
-        with patch("microduck_companion.sim_flat_zone.verify_flat_scene") as verify, (
-             patch("microduck_companion.sim_flat_zone.verify_body_process") as proc
-        ), patch("microduck_companion.sim_flat_zone._read_body", return_value=frame()):
+        with (patch("microduck_companion.sim_flat_zone.verify_flat_scene") as verify,
+              patch("microduck_companion.sim_flat_zone.verify_body_process") as proc,
+              patch("microduck_companion.sim_flat_zone._read_body", return_value=frame())):
             got = read_verified_flat_ground("/tmp/test", "/tmp/rl", port=17801)
         verify.assert_called_once()
         self.assertEqual(2, proc.call_count)
