@@ -77,6 +77,25 @@ class JointTraceTests(unittest.TestCase):
         self.assertIsNone(entry["foot_contacts"])
         self.assertIsNone(entry["joint_targets_rad"])
 
+    def test_oem_quaternion_is_preserved_or_explicitly_unknown(self):
+        no_orientation = parse_joint_observation(body(), 25.)
+        self.assertIsNone(no_orientation["trunk_quat_wxyz"])
+        with_orientation = body()
+        with_orientation["imu"]["quat"] = [1., 0., 0., 0.]
+        self.assertEqual([1., 0., 0., 0.],
+                         parse_joint_observation(with_orientation, 25.)
+                         ["trunk_quat_wxyz"])
+
+    def test_oem_quaternion_invalid_values_fail_closed(self):
+        for quat in ([0., 0., 0., 0.], [2., 0., 0., 0.],
+                     [1., False, 0., 0.], [float("inf"), 0., 0., 0.],
+                     [1., 0., 0.], "upright"):
+            with self.subTest(quat=quat):
+                payload = body()
+                payload["imu"]["quat"] = quat
+                with self.assertRaises(GroundTruthError):
+                    parse_joint_observation(payload, 25.)
+
     def test_reject_missing_wrong_length_nonfinite_or_boolean_joint_values(self):
         for field in ("positions", "velocities", "currents_ma"):
             for val in (None, [0.] * 14, [True] * 15,
