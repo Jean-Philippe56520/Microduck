@@ -41,7 +41,7 @@ Le comptage des tests correspond à cet état du dépôt : le mettre à jour **u
 
 | ID | Priorité | Lot / livraison attendue | Dépendance | État |
 | --- | --- | --- | --- | --- |
-| **P0** | **Immédiate, bloquante** | Expliquer l'absence de locomotion dans la scène MuJoCo épinglée | Simulateur officiel J2e | À faire |
+| **P0** | **Immédiate, bloquante** | Expliquer l'absence de locomotion dans la scène MuJoCo épinglée | Simulateur officiel J2e | **P0a en PR #11 ; cause non expliquée** |
 | **P1** | Haute | Démontrer une translation puis une démarche *mesurée* et sûre, sans contourner `robotd` | P0 | À faire |
 | **P2** | Haute | Boucle autonome répétable perception → intention → action → effet → mémoire → choix suivant | P1 pour le déplacement ; cognition sans déplacement indépendante | Partiellement codée |
 | **P3** | Haute | Vision/sons légers : catégories d'objets et d'animaux, signaux sociaux, inconnus | Contrats de perception existants ; validation d'une source mesurée | À faire |
@@ -132,7 +132,7 @@ Exemple déjà évoqué : **porte ouverte → alerte e-mail**. À tester plus ta
 
 | Livraison | Changement ciblé | Vérifications indispensables |
 | --- | --- | --- |
-| **PR suivante — P0a** | Instrumentation en lecture seule des articulations et des contacts MuJoCo, horodatée, associée à `robot.state.policy` et à la pose ; sans commande nouvelle | Tests sur trames manquantes, valeurs non finies, provenance, scène modifiée ; exécution sur le vrai simulateur |
+| **PR #11 — P0a (ouverte)** | Diagnostic passif et horodaté des articulations, vitesses, pose et `robot.state.policy` ; pas de commande nouvelle. Contacts et cibles articulaires **absents** du protocole OEM : `null`, sans inférence. | Tests Python de branche [réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40178580633), collecte MuJoCo [à exploiter](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40178580637) ; scène/processus épinglés et fail-closed. |
 | **P0b** | Diagnostic comparatif repos/`stand`/`walk` à modèle OEM identique ; mesurer la cause des millimètres observés | Journal des contacts, articulation, distance, dérive, limites et arrêt ; résultat « expliqué » ou « non expliqué », sans falsifier |
 | **P1a** | Seulement après diagnostic, correction ciblée de l'intégration et essai de translation courte | Trois essais mesurés, critère 10 mm, arrêt/deadman, absence de chute, état `robotd` et logs CI |
 
@@ -158,4 +158,4 @@ Les indicateurs de précision de vision, de RAM, de températures et d'énergie 
 - Des tests GitHub Actions verts ne signifient pas que la marche fonctionne. La fonction est acceptée seulement si **son propre critère physique/simulé** est atteint.
 - Ne pas attribuer de date de livraison ni de seuil de consommation tant que les contraintes et mesures réelles n'existent pas.
 
-**Décision actuelle : commencer par P0a, instrumentation des contacts et articulations dans MuJoCo, sans nouvelle commande motrice ni robot physique.**
+**Décision actuelle : terminer et analyser P0a ([PR #11](https://github.com/Jean-Philippe56520/Microduck/pull/11)), puis poursuivre P0b.** Les articulations et politiques sont accessibles via la lecture OEM ; les **contacts des pieds et les consignes articulaires ne sont pas exposés par ce protocole**, et ne doivent jamais être inventés. Aucun résultat de cette sonde ne valide une démarche ni le matériel réel.

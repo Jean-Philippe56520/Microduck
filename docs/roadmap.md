@@ -4,6 +4,15 @@ Mise à jour : 2026-10-25. **Les priorités opérationnelles et critères de pas
 
 **État courant :** 142 tests Python validés sur [GitHub Actions de `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176905506). Quatre essais MuJoCo J2e ont confirmé commande, arrêt et mémoire, **mais pas la marche** : 0,820–2,574 mm au lieu du critère initial de 10 mm. **Priorité P0a : contacts des pieds, articulations et dynamique du modèle, d'abord en lecture seule**. [Dernier essai](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176410817).
 
+## P0a — Diagnostic articulations et politiques (PR ouverte, 25 octobre 2026)
+
+- [x] **Code sur branche :** [PR #11](https://github.com/Jean-Philippe56520/Microduck/pull/11), nouvelle sonde passive `sim_joint_trace.py` et tests de formats, provenance, temps et cohérence des mesures.
+- [x] **Tests Python de la branche :** [GitHub Actions #40178580633](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40178580633), réussite logicielle. Le chiffre de **142** annoncé pour `main` en haut demeure la référence du dernier état fusionné.
+- [ ] **Exploitation de la trace MuJoCo :** le [smoke test P0a](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40178580637) lance la collecte passive à 5 Hz, 8 échantillons, en sauvegardant `joint-trace.json` si l'essai est concluant. Inspecter le résultat avant de conclure quoi que ce soit.
+- [ ] **Contacts des pieds :** indisponibles dans `op=read` du protocole OEM épinglé ; idem pour les cibles articulaires. Les valeurs restent explicitement inconnues ; examiner la possibilité d'un moyen de diagnostic constructeur compatible pour P0b, sans modifier ses mécanismes de sécurité.
+
+Le capteur de courant est une approximation fournie par le serveur MuJoCo (`abs(actuator_force) * 100`) et ne doit pas être interprété comme un courant électrique réel. L'activation de `policy=walk`, la variation des articulations et l'absence de chute ne suffisent pas à valider une démarche. **Aucune nouvelle commande motrice ne fait partie de P0a** et le robot physique reste indisponible.
+
 ## Vision et périmètre
 
 Créer un Microduck discret, curieux, explorateur et social : percevoir, retrouver ses souvenirs, choisir une intention sûre, agir, observer le résultat et adapter progressivement ses préférences. Il peut décider de ne rien faire. Le dialogue est secondaire.

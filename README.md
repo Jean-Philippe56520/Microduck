@@ -36,7 +36,33 @@ Le dépôt ne doit contenir ni souvenirs personnels, ni enregistrements audio/vi
 
 Le **[plan d'action consolidé](docs/plan-action.md)** est désormais la référence unique pour les priorités, dépendances, critères d'acceptation et trois prochaines PR. La [feuille de route](docs/roadmap.md) décrit les six phases et leur historique ; le [plan MuJoCo](docs/mujoco-integration-plan.md) conserve les procédures et essais J1b–J2e ; l'[audit matériel](docs/hardware-feasibility-audit-2026-10-25.md) rassemble les limites vérifiées.
 
-**Prochain jalon (P0a) :** instrumenter **en lecture seule** les articulations, contacts des pieds et trajectoires du vrai simulateur MuJoCo épinglé, pour expliquer l'absence de translation malgré la politique `walk` active. **Locomotion non validée :** quatre essais à 0,12 m/s ont produit seulement **0,820 à 2,574 mm** de mouvement du tronc (critère expérimental : 10 mm). Les commandes sont bornées et `robot.stop` confirmé ; la mémoire SQLite enregistre `no_progress_observed` et adapte lentement la préférence. [Dernière exécution MuJoCo](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176410817) · [142 tests Python réussis sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176905506).
+**Jalon en cours (P0a) :** instrumenter **en lecture seule** les articulations, contacts des pieds et trajectoires du vrai simulateur MuJoCo épinglé, pour expliquer l'absence de translation malgré la politique `walk` active. **Locomotion non validée :** quatre essais à 0,12 m/s ont produit seulement **0,820 à 2,574 mm** de mouvement du tronc (critère expérimental : 10 mm). Les commandes sont bornées et `robot.stop` confirmé ; la mémoire SQLite enregistre `no_progress_observed` et adapte lentement la préférence. [Dernière exécution MuJoCo](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176410817) · [142 tests Python réussis sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176905506).
+
+### Diagnostic passif P0a (PR #11)
+
+La [PR #11](https://github.com/Jean-Philippe56520/Microduck/pull/11) ajoute
+`microduck_companion/sim_joint_trace.py`. Après démarrage du simulateur officiel
+épinglé, cet outil échantillonne **sans commande motrice** `body_server` (uniquement
+`hello` puis `read`) et les notifications `robot.state` via `robot.subscribe` :
+
+```sh
+python3 -m microduck_companion.sim_joint_trace \
+  --state-dir "$HOME/.cache/duck-sim-companion" \
+  --rl-root "$PWD/upstream/microduck_rl" --port 17801 \
+  --samples 8 --hz 5 --output /tmp/microduck-joint-trace.json
+```
+
+Le JSON conserve les positions et vitesses des 15 entrées articulaires,
+les courants **simulés non calibrés** (proxy de force, pas des ampères réels),
+la pose du tronc, les horodatages, et les politiques/vitesses déclarées par
+`robotd`. La provenance du simulateur, l'intégrité de la scène et le processus
+`body_server` sont vérifiés. Toute donnée invalide ou périmée fait échouer la sonde.
+
+**Limite documentée :** le protocole officiel épinglé ne fournit ni les
+**contacts dynamiques des pieds** ni les **consignes articulaires** ; ces champs
+restent `null`. La télémétrie passive ne prouve pas une marche. Le workflow
+MuJoCo collecte `joint-trace.json` comme artefact ; les essais J2e antérieurs
+restent des résultats négatifs inchangés. Aucun pilote réel n'a été interrogé.
 
 ### Étapes principales
 
