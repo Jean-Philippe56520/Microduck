@@ -134,6 +134,14 @@ if [ "${DUCK_SIM_WALK_COMPARE:-NO}" = YES ]; then
         fi
     fi
 fi
+# P0c: replay contact geometry OFFLINE from the already stopped P0b trial.
+# Uses pinned MJCF in an independent MuJoCo model; no extra motor command.
+if [ "${DUCK_SIM_CONTACT_REPLAY:-NO}" = YES ]; then
+    "$DUCK_SIM_RL/.venv/bin/python" -m microduck_companion.sim_contact_replay \
+        --rl-root "$DUCK_SIM_RL" \
+        --input "$DUCK_SIM_STATE/walk-comparison.json" \
+        --output "$DUCK_SIM_STATE/contact-replay.json"
+fi
 # Opt-in J2e: one fixed-speed simulated gait trial with observed SQLite outcome.
 # Never run this on a physical robot; safety checks require pinned MuJoCo.
 if [ "${DUCK_SIM_WALK_TRIAL:-NO}" = YES ]; then

@@ -2,7 +2,7 @@
 
 Date : 2026-10-25. Audit documentaire et revue de code, **sans accès au robot physique**. Les valeurs de RAM et stockage libres ne sont **pas mesurées**. Aucune capture d'image privée ou donnée biométrique ne doit être placée dans ce dépôt.
 
-**Mise à jour de cohérence :** le [plan d'action consolidé](plan-action.md) fixe les priorités et les critères de passage. Quatre essais MuJoCo J2e, documentés ci-dessous, ont validé la chaîne de commande et de mémoire **mais pas la locomotion** (au mieux **2,574 mm** de mouvement du tronc). **P0a : lecture articulations en MuJoCo confirmée ; P0b : comparaison `stand` / `walk` réalisée, cause non établie.** Les anciennes décisions de faisabilité ci-dessous sont conservées comme historique, pas comme une seconde liste de tâches à exécuter.
+**Mise à jour de cohérence :** le [plan d'action consolidé](plan-action.md) fixe les priorités et les critères de passage. Quatre essais MuJoCo J2e, documentés ci-dessous, ont validé la chaîne de commande et de mémoire **mais pas la locomotion** (au mieux **2,574 mm** de mouvement du tronc). **P0a/P0b : données passives et comparaison `stand`/`walk` effectuées ; P0c : reconstruction géométrique semelles-sol effectuée dans MuJoCo ; forces réelles et cause inconnues.** Les anciennes décisions de faisabilité ci-dessous sont conservées comme historique, pas comme une seconde liste de tâches à exécuter.
 
 ## Verdict
 
@@ -220,4 +220,11 @@ Dans chacun des quatre essais, la mémoire SQLite a mémorisé une **absence de 
 Dans le [workflow de simulation P0b réussi](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40187514292), **16 relevés passifs `stand`** ont été suivis d'**un** essai J2e à 0,12 m/s : 24 commandes, **23/24 politiques `walk`**, vitesse appliquée déclarée maximale 0,12 m/s, `robot.stop` confirmé ; **seulement 1,338 mm** de déplacement final XY (X monde +0,0178 mm, Y monde +1,3375 mm), `no_progress_observed`. Les genoux ont bougé très peu (gauche 0,0223 rad, droite 0,0081 rad), sans établir de pas ou de propulsion. Les fenêtres articulaires du repos et de la marche ne coïncident pas exactement avec la fenêtre de mesure finale de J2e : voir le [rapport distinct](mujoco-p0b-stand-walk-comparison-2026-10-25.md) pour éviter toute soustraction erronée.
 
 Le modèle épinglé comporte des géométries `left_foot_collision` et `right_foot_collision`, mais **aucune mesure des contacts dynamiques ni des cibles articulaires n'est exposée** par l'API constructeur `body_server.op=read`. L'activation `walk` ne prouve ni sol adhérent ni démarche ; cause toujours **inconnue**, seuil de 10 mm **non atteint**, aucun changement moteur OEM ni validation physique.
+
+
+### P0c — Géométrie des semelles, pas forces (25 octobre 2026)
+
+La [simulation officielle #40188553954](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40188553954) a validé le nouveau **replay géométrique hors ligne** de 40 poses P0b (quaternion complet + articulations), via `mj_forward` sur un MuJoCo séparé. **Les deux semelles chevauchent légèrement le sol à tous les instants échantillonnés** : 16/16 au repos et 24/24 en mouvement (distances de candidats à quelques dixièmes de millimètre). Dans ce **nouvel** essai, vitesse déclarée max 0,12 m/s, `walk` 23/24, déplacement net final seulement **1,997 mm**, `robot.stop` confirmé ; **179 tests Python réussis**.
+
+Il s'agit d'un **proxy de géométrie**, non des contacts dynamiques originaux : pas de mesure de force normale/tangentielle, de friction réelle, de cibles d'actionneur, de glissement ni de décollage éventuel entre trames de 10 Hz. La cause reste **inconnue**, la locomotion et la sécurité sur le robot réel **non validées**. [Rapport P0c](mujoco-p0c-contact-replay-2026-10-25.md).
 
