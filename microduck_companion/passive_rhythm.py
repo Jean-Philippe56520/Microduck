@@ -233,10 +233,11 @@ class PassiveRhythm:
                 self._cooldown_blocks += 1
                 continue
             score = self._score(intention, category, motivations)
-            # A small penalty encourages a genuinely different useful
-            # proposal, but never invents an event just for variety.
+            # Small, bounded same-intention penalty; a genuinely different
+            # fresh category must not be suppressed just because another
+            # category used the same passive verb on the prior tick.
             if self._recent and self._recent[-1] == intention:
-                score -= 0.15
+                score -= 0.02
             if score > best_score:
                 best_score = score
                 best_proposal = PassiveIntent(
