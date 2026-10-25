@@ -2,7 +2,15 @@
 
 Mise à jour : 2026-10-25. **Les priorités opérationnelles et critères de passage sont désormais définis dans le [plan d'action consolidé](plan-action.md).** Ce document garde l'historique technique et décrit les six phases. Une case cochée indique le niveau de preuve précisé à sa ligne (code, tests logiciels ou MuJoCo), **jamais** une validation sur robot physique sans mention expresse.
 
-**État courant :** [P0f audit ONNX testé sur le MuJoCo officiel #40200419709](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40200419709) et **207 tests Python réussis**. Modèles actifs `alpha_walking.onnx` et `alpha_stand.onnx` (jeu v8 déclaré) : **61 entrées / 14 actions**, feed-forward, HOME contrôleur/entraînement **identique à 0 rad**. Sur entrées **synthétiques**, variation brute de marche **0,147 L2** pour vx 0 → 0,12 m/s. Les géométries sources de tâches et la scène `duck-sim` diffèrent mais la **cause de non-marche reste inconnue**. P0f n'a pas envoyé de mouvement J2e ; dernière translation J2e **2,295 mm en P0e**, seuil 10 mm non atteint, arrêt confirmé. **P1a bloqué ; aucune validation sur robot réel.**
+**État courant :** [P0g testé avec succès dans le MuJoCo officiel](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40208635206), 214 tests Python sur la branche P0g. Trois variantes : **76/82/141 géométries compilées**, **2/10/69 géométries éligibles aux masques du sol**, contact/frottement des semelles identiques, 0 candidat statique au keyframe brut sans mouvement ni charge dynamique. P2a [217 tests sur branche et 8 cycles fictifs persistés](https://github.com/Jean-Philippe56520/Microduck/pull/17). Compteur combiné en attente de CI sur main. P1a bloqué, dernier mouvement P0e 2,295 mm ; aucun robot physique validé.
+
+## P0g — Contacts compilés statiques (PR #18, testé MuJoCo)
+
+- [x] Trois variantes constructeur en scènes temporaires, même STAND, **mj_forward seulement**, 0 commande moteur. [214 tests](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40208638362) et [MuJoCo OEM #40208635206 réussi](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40208635206).
+- [x] Geoms compilées Walk/Groundcontact/AllCollisions **76/82/141**, masques-sol éligibles **2/10/69**. Même pose, masse simulée 0,73724318 kg, mêmes friction/solref/solimp des pieds et du sol ; 0 contact candidat statique sans relaxation dynamique, ce qui ne mesure PAS les contacts en marche.
+- [ ] Cause inconnue, pas de correction motrice. **P0h** : audit de la provenance et sélection alpha_walking/velstand, puis comparaison contrôlée si justifiée. **P2b** : cycles cognitifs passifs MuJoCo indépendants de la locomotion.
+
+[Rapport P0g](mujoco-p0g-compiled-contacts-2026-10-25.md). P1a toujours bloqué, aucun test sur robot physique.
 
 ## P2a — Cycles fictifs multiples et mémoire persistante (PR #17)
 

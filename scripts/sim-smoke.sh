@@ -143,6 +143,15 @@ if [ "${DUCK_SIM_POLICY_AUDIT:-NO}" = YES ]; then
         --state-dir "$DUCK_SIM_STATE" \
         --output "$DUCK_SIM_STATE/policy-contract.json"
 fi
+# P0g: independent temporary XML copies at an identical STAND pose.
+# No motor command, no mj_step, no changes to the manufacturer checkout.
+if [ "${DUCK_SIM_GEOMETRY_COMPARE:-NO}" = YES ]; then
+    rm -f "$DUCK_SIM_STATE/compiled-geometry-variants.json"
+    "$DUCK_SIM_RL/.venv/bin/python" -m microduck_companion.sim_geometry_variants \
+        --rl-root "$DUCK_SIM_RL" \
+        --output "$DUCK_SIM_STATE/compiled-geometry-variants.json"
+fi
+
 # This double-opt-in is valid ONLY for the verified flat-floor simulator.
 # On main/manual smoke runs it is disabled; no movement is emitted by default.
 if [ "${DUCK_SIM_SHORT_MOVE:-NO}" = YES ]; then

@@ -16,6 +16,7 @@ on:
       - feat/p0d-live-solver-contact-tap-20261025
       - feat/p0e-actuator-gain-consistency-20261025
       - feat/p0f-policy-contract-audit-20261025
+      - feat/p0g-compiled-contact-variants-20261025
     paths:
       - ".github/workflows/mujoco-smoke.yml"
       - "scripts/sim-smoke.sh"
@@ -80,6 +81,7 @@ jobs:
           DUCK_SIM_ACTUATOR_AUDIT: ${{ github.ref_name == 'feat/p0e-actuator-gain-consistency-20261025' && 'YES' || 'NO' }}
           DUCK_SIM_CONTACT_REPLAY: ${{ github.ref_name == 'feat/p0c-replay-contact-geometry-20261025' && 'YES' || 'NO' }}
           DUCK_SIM_POLICY_AUDIT: ${{ github.ref_name == 'feat/p0f-policy-contract-audit-20261025' && 'YES' || 'NO' }}
+          DUCK_SIM_GEOMETRY_COMPARE: ${{ github.ref_name == 'feat/p0g-compiled-contact-variants-20261025' && 'YES' || 'NO' }}
         run: |
           set -o pipefail
           timeout --signal=TERM --kill-after=30s 18m             sh scripts/sim-smoke.sh run 2>&1 | tee "${{ runner.temp }}/mujoco-smoke-console.log"
@@ -108,3 +110,4 @@ jobs:
             /tmp/duck-sim-companion/solver-analysis.json
             /tmp/duck-sim-companion/actuator-gain-audit.json
             /tmp/duck-sim-companion/policy-contract.json
+            /tmp/duck-sim-companion/compiled-geometry-variants.json
