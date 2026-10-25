@@ -1,6 +1,6 @@
 # Jalon MuJoCo J1b → J2 : plan d'intégration du cerveau Microduck Companion
 
-Date : 2026-10-25 · État : **planifié, non exécuté en simulation**.
+Date : 2026-10-25 · État : **premier démarrage et lecture seule en simulation officielle validés**, mouvement autonome encore planifié.
 
 Ce document est le plan exécutable qui suit [le contrat de perception v1](../microduck_companion/perception.py) et complète la [feuille de route générale](roadmap.md). Il vise **un Microduck virtuel**, puis une boucle perception → décision → intention sûre → retour → mémoire, sans accès au robot physique.
 
@@ -11,16 +11,28 @@ Ce document est le plan exécutable qui suit [le contrat de perception v1](../mi
 - Les 40 tests Python (13 historiques et 27 de perception) ont réussi sur la branche de développement du précédent jalon ; leur exécution ne démontre pas un fonctionnement MuJoCo.
 - Les sous-modules `upstream/microduck` et `upstream/microduck_rl` sont épinglés ; respecter les révisions du dépôt et ne pas modifier les sources officielles pour contourner les interfaces.
 
-**Non réalisé :** démarrage validé de `duck-sim` pour ce projet, preuve de sol sûr à partir de MuJoCo, perception de vrais objets, mouvements déclenchés par notre cerveau, mesure de latence dans le simulateur. Le client JSON-RPC en lecture seule et le pont conservateur de perception sont désormais codés et testés sur faux sockets Unix (voir point d'avancement ci-dessous).
+**Non réalisé :** preuve de sol sûr à partir de MuJoCo, perception de vrais objets, mouvements déclenchés par notre cerveau, mesure de latence de bout en bout. La lecture des vrais services simulés est désormais vérifiée sur Linux CI, en complément des tests sur faux sockets.
 
 ## Point d'avancement au 25 octobre 2026
 
 - **J2a codé et testé :** `sim_ipc.py`, `sim_probe.py`, télémétrie `robot.health`, `robot.state` et `tof.frame` en lecture seule.
 - **J2b codé et testé sur faux sockets :** `sim_bridge.py`, `sim_observer.py`, conversion conservatrice vers `PerceptionSnapshot` et décision `halt` en l'absence de preuve de sol sûr.
 - **81 tests Python réussis localement**, compilation Python contrôlée ; test de prérequis `sh scripts/sim-smoke.sh check` exécuté, signalant l'absence de Rust/Cargo et du dépôt complet.
-- **MuJoCo non lancé :** aucun chiffre de performance, aucune mesure physique, aucune intention motrice envoyée par le compagnon. Le script `sh scripts/sim-smoke.sh run` est préparé pour un environnement Linux/WSL2 doté des prérequis.
+- **MuJoCo officiel lancé :** [GitHub Actions #40145369078](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40145369078) a vérifié l'intégration en lecture seule sur Ubuntu 24.04 : `robotd` sain (~50 Hz, 0 échéance manquée dans la période contrôlée), MuJoCo **1,00× temps réel**, ToF simulé **2 trames × 64 cellules**, cerveau `halt` (sol inconnu), sans intention motrice. Résultat enregistré dans les journaux de l'exécution.
+- **Aucune validation matérielle :** la machine CI ne mesure ni RAM utilisable, ni batterie réelle, ni chauffe sur RK3566. Les données du simulateur restent distinctes des observations sur robot.
 
 Le pont n'émet jamais `floor_clear=True` ni `safe_area=True` ; cette absence est une condition délibérée de sécurité. Le prochain jalon exige un fournisseur de vérité terrain simulée réellement vérifié ou restera limité à l'observation.
+
+## Compte rendu vérifié : 25 octobre 2026
+
+- **Exécution** : [MuJoCo headless smoke test #40145369078](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40145369078) — Ubuntu 24.04, un seul robot, sans caméra, sous-modules `microduck` (`942e58e3`) et `microduck_rl` (`b02fdea4`) épinglés.
+- **Conditions réelles du test** : installation du Python RL 3.12, MuJoCo 3.10.0, NumPy 2.5.4 et ONNX Runtime 1.28.0, compilation des démons Rust officiels, téléchargement de leurs politiques motrices et démarrage par `duck-sim up`.
+- **Résultats** : contrôleur `healthy`, lecture `robot.health` à 49,9957 Hz, 0 échéance manquée dans les échantillons, MuJoCo à 1,00×, deux trames ToF de 64 zones, `sim_observer` retour `halt` et `errors=[]` ; `duck-sim down` réussit.
+- **81 tests unitaires Python réussis**, compilation Python vérifiée, syntaxe `sh` validée ; **aucune commande de mouvement du cerveau**.
+- **Diagnostic initial corrigé** : un premier essai CI réclamait OSMesa sans bibliothèque correspondante ; le backend MuJoCo headless sans caméra n'a pas besoin de cet override.
+- **Limites** : `tof.frame` n'atteste pas `floor_clear` ; pas de déplacement initié par notre cerveau ni d'identification d'objets. Pas de test sur Microduck réel, ni de mesure thermique/énergétique embarquée.
+
+La suite est le **lot C** : obtenir, avec une scène MuJoCo bornée et une source de vérité terrain vérifiée, des informations `safe_area` et `floor_clear` suffisamment fiables pour décider d'autoriser ou non un déplacement contrôlé.
 
 ## Architecture minimale visée
 
@@ -48,11 +60,11 @@ microduck_rl (duck-body / MuJoCo) ── TCP ── robotd --sim (50 Hz, sécuri
                                   mémoire SQLite du compagnon
 ```
 
-Les adaptateurs sont des **cibles de développement**, pas du code déjà présent. Aucune requête Qwen, aucune inférence NPU et aucune modification d'algorithme moteur pour J1b/J2.
+Les adaptateurs **de lecture seule** sont maintenant codés et exécutés contre les démons officiels simulés ; le filtre d'intentions et l'adaptateur de commande restent à développer. Aucune requête Qwen, aucune inférence NPU et aucune modification d'algorithme moteur pour J1b/J2.
 
-## Lot A — Environnement et lancement du simulateur (J1b, premier travail)
+## Lot A — Environnement et lancement du simulateur (J1b : validé sur Ubuntu CI)
 
-**Livrable :** journal de démarrage reproductible et checklist de prérequis.
+**Livrable :** journal de démarrage et checklist de prérequis. Essai CI disponible avec `DUCK_SIM_DEP_MODE=runtime sh scripts/sim-smoke.sh run` (MuJoCo 3.10.0, NumPy 2.5.4, ONNX Runtime 1.28.0), ou installation RL complète via `uv sync --frozen`.
 
 1. Utiliser Linux (natif ou WSL2 suffisamment configuré), Rust/Cargo, `uv`, Python **3.12** pour l'environnement `microduck_rl` (`requires-python >=3.12,<3.13` dans son `pyproject.toml`) et dépendances système nécessaires. Le prototype compagnon supporte Python >=3.10 et ses tests CI utilisent Python 3.11 : garder les environnements distincts si utile.
 2. Initialiser les sous-modules avec `git submodule update --init --recursive`. Ne pas substituer `main` ou `develop` à la révision épinglée sans revue de compatibilité.
@@ -79,9 +91,9 @@ upstream/microduck/scripts/duck-sim down
 
 **Attention :** les commandes ci-dessus sont une procédure à essayer, **non un compte rendu d'exécution**. Le script `scripts/duck-sim` exige ses dépendances, sa version et les politiques ONNX disponibles. Le retour de `robot.health` est plus important qu'une fenêtre MuJoCo simplement ouverte.
 
-**Acceptation A :** `duck-sim` démarre/arrête de manière reproductible ; `robotd` est sain, `tofd` est présent et les paramètres de cadence et de facteur temps réel sont archivés. Documenter tout échec ; ne pas passer à la commande autonome en cas de simulation instable.
+**Acceptation A : satisfaite pour un premier essai Ubuntu CI** ([journaux](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40145369078)). `duck-sim` a démarré, le robot s'est levé via son contrôleur constructeur, la santé a été mesurée et le simulateur a été arrêté proprement. Rejouer sur une autre machine pour vérifier la reproductibilité ; ne pas passer à la commande autonome en cas de simulation instable.
 
-## Lot B — Acquisition JSON-RPC, sans aucune commande motrice
+## Lot B — Acquisition JSON-RPC, sans aucune commande motrice (lecture validée en simulation)
 
 **Livrable :** adaptateur de télémétrie testable à partir de messages de sockets.
 
@@ -93,7 +105,7 @@ upstream/microduck/scripts/duck-sim down
 
 Le périmètre des mesures comporte : `battery_pct` dérivé de `robot.health` lorsque présent ; `obstacle_m` seulement si le ToF est interprétable, cohérent et pertinent dans le repère ; `person_visible` et `object_label` sont **inconnus** à cette étape, sauf injection de données fictives **explicitement étiquetées**.
 
-**Acceptation B :** capture de données authentiquement issues des démons simulés, mise à jour de la fraîcheur, tests sur timeout, déconnexion, trame erronée, données absentes et reconnexion. Le programme reste **en lecture seule**.
+**Acceptation B : partiellement satisfaite.** Capture de données authentiquement issues des démons simulés et tests des cas d'erreur (faux sockets) réussis. La reconnexion automatique, l'endurance et la robustesse sous pertes répétées restent à développer/vérifier. Le programme reste **en lecture seule**.
 
 ## Lot C — Contrat de sécurité et validité des zones
 
