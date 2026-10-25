@@ -18,6 +18,7 @@ from .autonomy import Motivations
 from .passive_intentions import (PassiveIntent, propose_passive_intention,
                                  _valid_motivations, _valid_scalar)
 from .passive_memory import PassiveObservationJournal
+from .passive_learning import PassiveLearning
 from .passive_observations import summarize_passive
 from .passive_sources import PassiveRead
 
@@ -121,7 +122,8 @@ class PassiveRhythm:
 
     def tick(self, reading: PassiveRead, *,
              journal: PassiveObservationJournal, motivations: Motivations,
-             now_monotonic_s: float, now_wall_epoch_s: float) -> PassiveIntent:
+             now_monotonic_s: float, now_wall_epoch_s: float,
+             learning: PassiveLearning | None = None) -> PassiveIntent:
         """One strictly passive, mock-only cognitive cycle.
 
         F2-A validation is called *inside* this module. The caller cannot
@@ -134,6 +136,11 @@ class PassiveRhythm:
             raise TypeError("expected F1-C passive journal")
         if not isinstance(motivations, Motivations):
             raise TypeError("expected existing motivations")
+        if learning is not None:
+            if not isinstance(learning, PassiveLearning):
+                raise TypeError("expected optional F2-C passive learning")
+            if learning._memory is not journal._memory:
+                raise ValueError("learning must share the journal SQLite")
         if not _valid_scalar(now_monotonic_s) or not _valid_scalar(now_wall_epoch_s):
             raise ValueError("clocks must be finite and nonnegative")
         now = float(now_monotonic_s)
@@ -233,6 +240,15 @@ class PassiveRhythm:
                 self._cooldown_blocks += 1
                 continue
             score = self._score(intention, category, motivations)
+            # Explicitly opt-in: F2-B callers keep their original fixed scores.
+            # These tiny values only rank passive proposals, never motor acts.
+            if learning is not None:
+                try:
+                    score += learning.preference(intention)
+                except (sqlite3.Error, ValueError):
+                    return self._record(self._idle("learning_unavailable"),
+                                        motivations=motivations,
+                                        update_energy=False)
             # Small, bounded same-intention penalty; a genuinely different
             # fresh category must not be suppressed just because another
             # category used the same passive verb on the prior tick.
