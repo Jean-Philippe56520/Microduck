@@ -28,7 +28,7 @@ jobs:
       DUCK_SIM_DEP_MODE: runtime
       PYTHONUNBUFFERED: "1"
       # Do not start a viewer or camera: keep the initial experiment cheap.
-      DUCK_SIM_STATE: ${{ runner.temp }}/duck-sim-companion
+      DUCK_SIM_STATE: /tmp/duck-sim-companion
       # Keep a CPU-only physics backend unless the official body needs others.
       MUJOCO_GL: osmesa
     steps:
@@ -72,7 +72,7 @@ jobs:
         if: always()
         run: |
           if [ -x upstream/microduck/scripts/duck-sim ]; then
-            DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"               DUCK_SIM_STATE="${{ runner.temp }}/duck-sim-companion"               DUCK_SIM_PORT=17801               upstream/microduck/scripts/duck-sim down || true
+            DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"               DUCK_SIM_STATE="/tmp/duck-sim-companion"               DUCK_SIM_PORT=17801               upstream/microduck/scripts/duck-sim down || true
           fi
 
       - name: Archive diagnostics, even if startup fails
@@ -84,4 +84,4 @@ jobs:
           retention-days: 7
           path: |
             ${{ runner.temp }}/mujoco-smoke-console.log
-            ${{ runner.temp }}/duck-sim-companion/*.log
+            /tmp/duck-sim-companion/*.log
