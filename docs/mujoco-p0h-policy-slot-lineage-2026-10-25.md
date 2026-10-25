@@ -1,6 +1,6 @@
 # P0h — Provenance et sélection des politiques ONNX (25 octobre 2026)
 
-**État : codé et vérifié sur le simulateur constructeur épinglé.** [243 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40219234669) et [CI MuJoCo officielle réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40219277997). Aucun nouvel essai moteur depuis P0h.
+**État : fusionné dans main ([PR #20](https://github.com/Jean-Philippe56520/Microduck/pull/20)) et vérifié sur le simulateur constructeur épinglé.** [243 tests Python réussis sur main](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40219827102) et [CI MuJoCo officielle réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40219277997). Aucun nouvel essai moteur depuis P0h.
 
 PR : https://github.com/Jean-Philippe56520/Microduck/pull/20
 
