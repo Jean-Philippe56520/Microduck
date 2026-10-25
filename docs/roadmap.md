@@ -2,7 +2,16 @@
 
 Mise à jour : 2026-10-25. **Les priorités opérationnelles et critères de passage sont désormais définis dans le [plan d'action consolidé](plan-action.md).** Ce document garde l'historique technique et décrit les six phases. Une case cochée indique le niveau de preuve précisé à sa ligne (code, tests logiciels ou MuJoCo), **jamais** une validation sur robot physique sans mention expresse.
 
-**État courant :** [P0g testé avec succès dans le MuJoCo officiel](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40208635206), 214 tests Python sur la branche P0g. Trois variantes : **76/82/141 géométries compilées**, **2/10/69 géométries éligibles aux masques du sol**, contact/frottement des semelles identiques, 0 candidat statique au keyframe brut sans mouvement ni charge dynamique. P2a [217 tests sur branche et 8 cycles fictifs persistés](https://github.com/Jean-Philippe56520/Microduck/pull/17). [224 tests Python réussis sur la branche combinée P0g + P2a](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40209415406) ; CI main après fusion à contrôler. P1a bloqué, dernier mouvement P0e 2,295 mm ; aucun robot physique validé.
+**État courant :** P0g testé sur le MuJoCo officiel ([CI](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40208635206)) ; géométries compilées **76/82/141**, éligibles aux collisions du sol **2/10/69**, cause de non-marche toujours inconnue. P2a : huit cycles fictifs avec SQLite persistante ([PR #17](https://github.com/Jean-Philippe56520/Microduck/pull/17)). **224 tests Python validés sur `main` après fusion** ([CI](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40209844446)). P2b : [PR #19](https://github.com/Jean-Philippe56520/Microduck/pull/19), **234 tests Python réussis** sur sa branche ; intégration multi-cycle réelle avec les démons MuJoCo en cours de vérification. P1a bloqué, dernier mouvement P0e 2,295 mm ; aucun robot physique testé.
+
+## P2b — Cycles cognitifs passifs reliés aux démons simulés (PR #19)
+
+- [x] Exécuteur `sim_passive_cycles.py` : télémétries datées `robotd`/`tofd` via RPC limités en lecture, choix `AutonomyBrain`, journal SQLite de qualité/intention et reprise entre sessions, **sans API moteur et sans récompense**.
+- [x] **234 tests Python réussis** sur branche : [CI P2b](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216199119). Dix tests nouveaux, y compris sockets Unix fictives, reprise SQLite, horodatages, répétitions, pertes de capteurs et refus sûrs.
+- [ ] [CI MuJoCo constructeur](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216199277) : six cycles sur deux sessions réouvrant une même SQLite et JSON archivés ; résultat attendu avant acceptation.
+- [ ] Aucun résultat moteur, visuel ou physique validé. Suite indépendante : P0h et, ultérieurement, perceptions visuelles/sonores non motrices.
+
+[Rapport P2b](p2b-passive-mujoco-cycles-2026-10-25.md).
 
 ## P0g — Contacts compilés statiques (PR #18, testé MuJoCo)
 
