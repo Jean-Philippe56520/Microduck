@@ -13,12 +13,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
+import sqlite3
 from typing import TYPE_CHECKING
 
 from .autonomy import Motivations
 from .passive_memory import PassiveObservationJournal
 from .passive_observations import summarize_passive, PASSIVE_KINDS
 from .passive_sources import PassiveRead
+from .perception import PerceptionSnapshot
 
 if TYPE_CHECKING:
     from .passive_observations import PassiveObservation
@@ -123,13 +125,18 @@ def propose_passive_intention(
     if type(reading.sequence) is not int or not 0 <= reading.sequence < 2**63:
         return _still("invalid_sequence")
     snapshot = reading.snapshot
+    if not isinstance(snapshot, PerceptionSnapshot):
+        return _still("invalid_snapshot")
     if snapshot.environment != "mock":
         return _still("untrusted_environment")
     if any(event.kind not in PASSIVE_KINDS or event.source != "mock"
            for event in snapshot.events):
         return _still("untrusted_or_nonpassive_event")
 
-    observations = summarize_passive(snapshot, now=now_monotonic_s)
+    try:
+        observations = summarize_passive(snapshot, now=now_monotonic_s)
+    except (ValueError, TypeError):
+        return _still("invalid_observation_batch")
     if any(obs.claimed_source != "mock" for obs in observations):
         return _still("untrusted_observation")
     if any(obs.status in {"future", "stale", "untrusted"}
@@ -166,9 +173,12 @@ def propose_passive_intention(
         for obs in observations:
             if obs.kind != "object_label" or not obs.usable_category:
                 continue
-            count = journal.category_count(
-                obs.kind, obs.category, now_wall_epoch_s=now_wall_epoch_s,
-            )
+            try:
+                count = journal.category_count(
+                    obs.kind, obs.category, now_wall_epoch_s=now_wall_epoch_s,
+                )
+            except sqlite3.Error:
+                return _still("history_unavailable")
             if count == 0:
                 return PassiveIntent(
                     "observe", "new_fictional_category_in_local_history",
