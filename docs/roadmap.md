@@ -4,6 +4,15 @@ Mise à jour : 2026-10-25. **Les priorités opérationnelles et critères de pas
 
 **État courant :** P0h fusionné ([PR #20](https://github.com/Jean-Philippe56520/Microduck/pull/20)) : [243 tests Python sur main](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40219827102) et [audit MuJoCo OEM / ONNX réussi](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40219277997). Le simulateur force `alpha_walking`/`alpha_stand` tandis que `robotd` utilise normalement `velstand`. Trois modèles v8 conformes et comparés sur observations synthétiques, **cause de non-marche toujours inconnue**. P2b [fusionné dans `main` (PR #19)](https://github.com/Jean-Philippe56520/Microduck/pull/19), avec **[234 tests Python réussis sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216649169)** et [six cycles cognitifs passifs testés sous MuJoCo officiel](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216199277) (3 puis 6 lignes persistées en SQLite, six `halt`, zéro moteur). P2a avait démontré huit cycles fictifs persistés. P0g : modèles compilés 76/82/141 géométries, 2/10/69 éligibles aux masques du sol ; la cause de non-marche demeure inconnue. Dernier essai moteur P0e 2,295 mm ; P1a bloqué, aucun robot physique testé.
 
+## P0i — Deux politiques constructeur, deux essais MuJoCo indépendants (PR #21)
+
+- [x] Protocole borné : deux démarrages `duck-sim` officiels, même scène plane, même posture initiale et mêmes paramètres ; le bras A utilise la paire `alpha`, le bras B `velstand` seul installé par `robotctl`. Trois SHA-256 P0h et chemins réellement signalés par `robotd` vérifiés avant toute commande.
+- [x] **[257 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40221379918)** sur la branche : 14 nouveaux tests de sécurité, d'identité des modèles, de lecture des slots, de refus conservateurs et de validation des deux rapports.
+- [ ] [Essais MuJoCo constructeur](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40221380012) en cours : une seule exécution par bras à 0,12 m/s pendant environ 2,4 s, `robot.stop` confirmé, nouvelle SQLite et PID entre bras, déplacement X/Y, dérive et vitesse appliquée vérifiés.
+- [ ] Le seuil de translation indicative de 10 mm ne prouve ni contacts pied-sol ni marche contrôlée. **Une mesure par bras ne permet pas d'identifier la cause.** Aucun robot physique testé.
+
+[Rapport P0i](mujoco-p0i-controlled-policy-pair-2026-10-25.md).
+
 ## P0h — Sélection et filiation des politiques ONNX (PR #20)
 
 - [x] **Contrat source :** `robotd` utilise normalement `velstand.onnx` sans slot debout, mais `duck-sim` force la paire `alpha_walking.onnx` / `alpha_stand.onnx` (seuil `0,05`). Provenance W&B déclarée dans les sources RL épinglées, sans preuve cryptographique d'identité des poids.
