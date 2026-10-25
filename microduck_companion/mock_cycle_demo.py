@@ -35,11 +35,19 @@ def main(argv: list[str] | None = None) -> int:
         runner = MockCycleRunner(memory, session=args.session)
         t = float(runner.sequence * 10 + 100)
         records = [runner.step(mock_snapshot(t), now=t+.1)]
-        records.append(runner.step(
-            mock_snapshot(t+2., target="fictive-toy"), now=t+2.5,
-            followup=mock_snapshot(t+2.4, target="fictive-toy"),
-            consequence=MockConsequence("fictive-toy", "positive", t+2.3),
-        ))
+        # A remembered mock toy may be preferred for play rather than
+        # inspection on restart. Do not inject success for an unexecuted plan.
+        known = memory.get("fictive-toy")
+        if known is None:
+            records.append(runner.step(
+                mock_snapshot(t+2., target="fictive-toy"), now=t+2.5,
+                followup=mock_snapshot(t+2.4, target="fictive-toy"),
+                consequence=MockConsequence("fictive-toy", "positive", t+2.3),
+            ))
+        else:
+            records.append(runner.step(
+                mock_snapshot(t+2., target="fictive-toy"), now=t+2.1,
+            ))
         records.append(runner.step(
             mock_snapshot(t+4., safe=False), now=t+4.1))
         records.append(runner.step(
