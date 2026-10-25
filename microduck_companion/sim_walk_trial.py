@@ -26,9 +26,9 @@ from .sim_policy_trace import PolicySample, parse_policy_sample, summarize_polic
 from .sim_motion import _healthy, _safe_ground, _send_stop, SimMotionError
 
 WALK_SPEED_MPS = 0.12  # Above OEM default standing threshold 0.05 m/s.
-WALK_TICKS = 12
+WALK_TICKS = 24
 WALK_PERIOD_S = 0.10
-MAX_COMMAND_WINDOW_S = 2.6
+MAX_COMMAND_WINDOW_S = 4.0
 BASELINE_WAIT_S = 0.30
 BASELINE_LIMIT_M = 0.005
 MAX_DISPLACEMENT_M = 0.30
