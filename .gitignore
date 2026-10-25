@@ -12,3 +12,8 @@ private_memory/
 secrets/
 *.gguf
 *.onnx
+
+# F3-A: local/licensed/consented assets and rights documentation stay outside Git.
+datasets/private/
+datasets/local/
+.local_visual_data/

@@ -29,3 +29,6 @@ jobs:
           # CPU, p50/p95 and RSS are HOST measurements, not RK3566 estimates.
           python -m microduck_companion.passive_resilience_demo --database "$RUNNER_TEMP/f2d-memory.sqlite3" --session first
           python -m microduck_companion.passive_resilience_demo --database "$RUNNER_TEMP/f2d-memory.sqlite3" --session second
+      - name: F3-A mock visual evaluation protocol (no media or model)
+        run: |
+          python -m microduck_companion.visual_dataset_demo
