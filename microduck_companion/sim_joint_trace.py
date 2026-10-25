@@ -47,6 +47,26 @@ def _vector(payload: dict, field: str, *, nonnegative: bool = False) -> list[flo
     return [float(value) for value in values]
 
 
+def _quaternion_or_unknown(payload: dict) -> list[float] | None:
+    """The OEM reports the full trunk orientation under imu.quat.
+
+    Old traces and synthetic tests may lack it: mark it UNKNOWN rather than
+    fabricating a horizontal trunk. A replay requires all four valid values.
+    """
+    imu = payload.get("imu", {})
+    quat = imu.get("quat") if isinstance(imu, dict) else None
+    if quat is None:
+        return None
+    if (not isinstance(quat, list) or len(quat) != 4
+            or any(type(v) not in (int, float) or not math.isfinite(v)
+                   for v in quat)):
+        raise GroundTruthError("invalid simulator trunk quaternion")
+    norm = math.sqrt(sum(float(v) ** 2 for v in quat))
+    if not math.isfinite(norm) or abs(norm - 1.0) > 0.01:
+        raise GroundTruthError("simulator trunk quaternion is not unit length")
+    return [float(v) / norm for v in quat]
+
+
 def parse_joint_observation(payload: dict, observed_at: float) -> dict:
     """Parse only telemetry the pinned body_server actually publishes."""
     pose = parse_flat_frame(payload, observed_at)
@@ -54,6 +74,7 @@ def parse_joint_observation(payload: dict, observed_at: float) -> dict:
         "observed_monotonic_s": pose.observed_at,
         "sim_time_s": pose.sim_time_s,
         "trunk_xyz_m": [pose.x_m, pose.y_m, pose.z_m],
+        "trunk_quat_wxyz": _quaternion_or_unknown(payload),
         "flat_scene_safe_area": pose.safe_area,
         "positions_rad": _vector(payload, "positions"),
         "velocities_rad_s": _vector(payload, "velocities"),
