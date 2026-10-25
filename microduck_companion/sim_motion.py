@@ -130,6 +130,7 @@ def move_once(
 
     socket_path = str(state / "duck-a.sock")
     count = 0
+    send_attempted = False
     stop_error: BaseException | None = None
     primary_error: BaseException | None = None
     previous_sim_time = before.sim_time_s
@@ -143,13 +144,14 @@ def move_once(
                     if time.monotonic() - started_at > 0.65:
                         raise SimMotionError("bounded movement deadline exceeded")
                     current = read_verified_flat_ground(state, rl, port=port)
-                    if (current.sim_time_s <= previous_sim_time
+                    if ((index > 0 and current.sim_time_s <= previous_sim_time)
                             or not _safe_ground(current)):
                         raise SimMotionError("ground truth changed or simulator stalled")
                     previous_sim_time = current.sim_time_s
                     latest = read_health(socket_path, timeout_s=0.35)
                     if not _healthy(latest):
                         raise SimMotionError("robotd health degraded during movement")
+                    send_attempted = True
                     _send_move(sock)
                     count += 1
                     if index + 1 < TICKS:
@@ -157,7 +159,7 @@ def move_once(
             except (OSError, GroundTruthError, TelemetryError, SimMotionError) as exc:
                 primary_error = exc
             finally:
-                if count:
+                if send_attempted:
                     try:
                         _send_stop(sock)
                     except (OSError, SimMotionError) as exc:
