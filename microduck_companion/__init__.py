@@ -4,10 +4,12 @@ from .episodic_memory import ExperienceMemory
 from .perception import PerceptionEvent, PerceptionSnapshot
 from .passive_observations import PassiveObservation, summarize_passive
 from .passive_memory import PassiveMemoryEntry, PassiveObservationJournal
+from .passive_intentions import PassiveIntent, propose_passive_intention
 
 __all__ = [
     "AutonomyBrain", "Motivations", "Plan", "Scene", "ExperienceMemory",
     "PerceptionEvent", "PerceptionSnapshot",
     "PassiveObservation", "summarize_passive",
     "PassiveMemoryEntry", "PassiveObservationJournal",
+    "PassiveIntent", "propose_passive_intention",
 ]

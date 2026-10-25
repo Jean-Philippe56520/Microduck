@@ -10,6 +10,9 @@ from .episodic_memory import ExperienceMemory
 
 if TYPE_CHECKING:
     from .perception import PerceptionSnapshot
+    from .passive_sources import PassiveRead
+    from .passive_memory import PassiveObservationJournal
+    from .passive_intentions import PassiveIntent
 
 
 @dataclass(frozen=True)
@@ -55,6 +58,30 @@ class AutonomyBrain:
         self.motives = motivations or Motivations()
         self.motives.clamp()
         self.previous_intention: str | None = None
+
+    def propose_passive(self, reading: PassiveRead, *,
+                        journal: PassiveObservationJournal,
+                        now_monotonic_s: float,
+                        now_wall_epoch_s: float) -> PassiveIntent:
+        """F2-A: propose attention without acting, speaking or requesting PC.
+
+        This is deliberately independent of the existing motion safety gate
+        in choose_from_snapshot(). The *same* local SQLite must be used for
+        the brain and category journal. A proposal is NOT an executed action
+        or a robotd command; callers must never treat it as motor permission.
+        """
+        from .passive_intentions import propose_passive_intention
+        from .passive_memory import PassiveObservationJournal
+
+        if not isinstance(journal, PassiveObservationJournal):
+            raise TypeError("a passive journal is required")
+        if journal._memory is not self.memory:
+            raise ValueError("brain and passive journal must share SQLite")
+        return propose_passive_intention(
+            reading, journal=journal, motivations=self.motives,
+            now_monotonic_s=now_monotonic_s,
+            now_wall_epoch_s=now_wall_epoch_s,
+        )
 
     def choose_from_snapshot(self, snapshot: PerceptionSnapshot,
                              now: float | None = None) -> Plan:
