@@ -2,7 +2,7 @@
 
 Date : 2026-10-25. Audit documentaire et revue de code, **sans accès au robot physique**. Les valeurs de RAM et stockage libres ne sont **pas mesurées**. Aucune capture d'image privée ou donnée biométrique ne doit être placée dans ce dépôt.
 
-**Mise à jour de cohérence :** le [plan d'action consolidé](plan-action.md) fixe les priorités et les critères de passage. Quatre essais MuJoCo J2e, documentés ci-dessous, ont validé la chaîne de commande et de mémoire **mais pas la locomotion** (au mieux **2,574 mm** de mouvement du tronc). **P0a–P0e : diagnostics passifs, forces et loi d'effort vérifiées en MuJoCo ; P0f : contrats ONNX et variantes de géométrie source audités, cause de faible translation toujours inconnue.** Les anciennes décisions de faisabilité ci-dessous sont conservées comme historique, pas comme une seconde liste de tâches à exécuter.
+**Mise à jour de cohérence :** le [plan d'action consolidé](plan-action.md) définit les priorités. P0g compare les modèles MuJoCo compilés, avec géométries différentes mais contacts de semelles/sol identiques sur les paramètres examinés ; ce n'est pas une preuve de marche. Dernier essai moteur P0e 2,295 mm, stop confirmé, cause inconnue. P2a fournit uniquement des cycles fictifs persistés. Aucun matériel Microduck réel n'a été mesuré.
 
 ## Verdict
 
@@ -254,3 +254,7 @@ Le code des tâches d'entraînement de vitesse, de VelStand et la scène headles
 
 **Conséquence pour la faisabilité :** nouvelle piste de comparaison de paramètres de contact et de géométries, **pas** un correctif moteur livré, ni une validation de marche. Le dernier essai mesuré reste P0e (**2,295 mm**, seuil 10 mm non atteint). P0g devra comparer hors ligne les trois modèles épinglés avec protocole contrôlé. Le matériel physique, ses capteurs, la chaleur et ses marges de ressource ne sont **toujours pas mesurés**. [Rapport P0f](mujoco-p0f-policy-contract-2026-10-25.md).
 
+
+### P0g — Comparaison MuJoCo compilée, sans dynamique (25 octobre 2026)
+
+[CI P0g officielle réussie #40208635206](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40208635206) : **214 tests Python sur branche P0g**, 3 variantes OEM en copies temporaires, posture STAND identique ; **76/82/141 geoms compilées** et **2/10/69 masques de contact éligibles pour le sol** pour Walk/Groundcontact/AllCollisions. Même masse de modèle 0,73724318 kg et mêmes paramètres compilés des semelles/sol (friction, solref, solimp), 0 candidat à l'état initial brut **sans pas de physique**, résultat non représentatif du sol sous charge. Aucune modification OEM, aucune commande motrice, aucun test sur robot réel. La cause de non-marche reste inconnue ; la différence de sélection alpha_walking/velstand demeure une hypothèse de provenance à vérifier. [Rapport P0g](mujoco-p0g-compiled-contacts-2026-10-25.md).
