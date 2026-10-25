@@ -2,7 +2,16 @@
 
 Mise à jour : 2026-10-25. **Les priorités opérationnelles et critères de passage sont désormais définis dans le [plan d'action consolidé](plan-action.md).** Ce document garde l'historique technique et décrit les six phases. Une case cochée indique le niveau de preuve précisé à sa ligne (code, tests logiciels ou MuJoCo), **jamais** une validation sur robot physique sans mention expresse.
 
-**État courant :** 151 tests Python réussis sur la [branche d'intégration P0a](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40178580633). La [collecte passive officielle MuJoCo P0a](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40178580637) est réussie (8 échantillons `stand`, 0,991 mm de dérive du tronc en 1,4 s, sans commande). Quatre essais antérieurs J2e ont confirmé commande, arrêt et mémoire, **mais pas la marche** : 0,820–2,574 mm au lieu du critère initial de 10 mm. **Priorité suivante P0b : confronter les traces `stand` et `walk` et comprendre les contacts non exposés au protocole**. [Dernier essai](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176410817).
+**État courant :** **167 tests Python** réussis sur la [branche P0b](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40187514224), et [nouvelle comparaison officielle MuJoCo P0b réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40187514292) : 16 états `stand`, 24 états de marche (23 `walk`), **1,338 mm** de déplacement final, `robot.stop` confirmé. La **cause de l'absence de marche reste inconnue** et le seuil de 10 mm n'est pas atteint. La collecte passive P0a, fusionnée par [PR #11](https://github.com/Jean-Philippe56520/Microduck/pull/11), a précédemment établi une référence `stand` à 0,991 mm sans mouvement commandé ; les quatre essais historiques J2e (0,820 à 2,574 mm) restent inchangés.
+
+## P0b — Repos comparé à un essai `walk` (PR #12, testé en MuJoCo)
+
+- [x] **Code et tests :** la [PR #12](https://github.com/Jean-Philippe56520/Microduck/pull/12) ajoute `sim_walk_compare.py`, un crochet de mesure passive limité à la section J2e où `robot.stop` est garanti, et des tests d'arrêt sur perte de télémétrie. [167 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40187514224).
+- [x] **Essai OEM émulé :** [workflow MuJoCo #40187514292](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40187514292) réussi avec `stand` 16/16, `walk` 23/24, vitesse appliquée déclarée ~0,12 m/s, 24 commandes, `robot.stop` confirmé, déplacement final **1,338 mm** et `no_progress_observed`.
+- [x] **Excursions articulaires mesurées :** genou gauche 0,0223 rad et genou droit 0,0081 rad en fenêtre `walk`, distinctes des références repos ; ne pas déduire un cycle de pas de ces seules variations.
+- [ ] **Blocage non levé :** les contacts des pieds et cibles articulaires ne sont pas fournis par le serveur OEM. Origine du manque de progression **non établie** ; P1a reste bloquée. Priorité : méthode non intrusive pour obtenir contacts/forces dans la même simulation, puis interprétation causale fondée sur les données.
+
+Voir le [rapport de mesures P0b](mujoco-p0b-stand-walk-comparison-2026-10-25.md). Les mouvements et les métriques MuJoCo ne constituent pas une validation physique.
 
 ## P0a — Diagnostic articulations et politiques (testé en MuJoCo, 25 octobre 2026)
 
@@ -234,8 +243,8 @@ Les documents et les tests doivent toujours distinguer un **test logiciel**, une
 - **J1 — cerveau/perception contractuelle :** prototype codé et testé ; la reconnaissance visuelle et les capteurs réels restent à faire.
 - **J2a–J2c — services officiels, zone plane :** vérifiés dans MuJoCo ; pas sur matériel.
 - **J2d–J2e — commande bornée, arrêt, résultat, mémoire SQLite :** exécutés en simulation ; **aucune progression locomotrice démontrée**.
-- **Prochain changement P0a :** instrumentation en lecture seule de la cinématique et des contacts MuJoCo, pour expliquer les quelques millimètres mesurés.
-- **Ensuite :** P0b (diagnostic comparatif), P1a (translation de 10 mm mesurée sur trois essais), P2 (autonomie multi-cycles avec mémoire durable) ; perception non motrice en parallèle si P0 persiste.
+- **P0a terminé et fusionné :** mesure passive des articulations et de la politique (contacts dynamiques non exposés). **P0b en PR #12 :** comparaison `stand` / `walk` testée, insuffisance de marche confirmée, cause encore inconnue.
+- **Ensuite :** compléter l'analyse de contacts et de propulsion avant P1a (translation de 10 mm sur trois essais) ; P2 (autonomie multi-cycles avec mémoire durable) et perception non motrice parallèles si P0 persiste.
 - **Plus tard :** vision/social, Qwen PC facultatif, optimisation Rust/ressources, robot physique, puis automatisations optionnelles.
 
 Les essais réussis en simulation ne valident **ni** la navigation domestique **ni** le stockage, la chaleur, la RAM et la batterie du Microduck réel.

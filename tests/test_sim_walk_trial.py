@@ -235,7 +235,7 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
         self.addCleanup(robot.join)
         return robot
 
-    def invoke(self, *, poses=None, readings=None, sensor=None):
+    def invoke(self, *, poses=None, readings=None, sensor=None, on_policy_sample=None):
         if poses is None:
             poses = [ground(1 + i*.1, .02 + i*.001) for i in range(WALK_TICKS+4)]
         if readings is None:
@@ -251,7 +251,8 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
               patch("microduck_companion.sim_walk_trial.ReadOnlyUnixRpc",
                     FakePolicyStream),
               patch("microduck_companion.sim_walk_trial.time.sleep")):
-            return run_walk_trial(self.root, "/fake/rl", self.db)
+            return run_walk_trial(self.root, "/fake/rl", self.db,
+                                  on_policy_sample=on_policy_sample)
 
     def test_12_bounded_moves_then_stop_and_memory(self):
         robot = self.start()
@@ -390,6 +391,36 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
         mem = ExperienceMemory(self.db)
         self.addCleanup(mem.close)
         self.assertEqual([], mem.simulated_motion_history())
+
+    def test_p0b_passive_hook_receives_all_policy_samples(self):
+        robot = self.start()
+        observed = []
+        result = self.invoke(on_policy_sample=observed.append)
+        self.assertTrue(result.stop_confirmed)
+        self.assertEqual(WALK_TICKS, len(observed))
+        self.assertTrue(all(note.policy == 'walk' for note in observed))
+        self.assertEqual('robot.stop', robot.requested[-1]['method'])
+
+    def test_p0b_passive_read_failure_stops_and_prevents_memory_write(self):
+        robot = self.start()
+        def failed_read(_sample):
+            raise GroundTruthError('pinned simulator body read lost')
+        with self.assertRaisesRegex(SimMotionError, 'aborted'):
+            self.invoke(on_policy_sample=failed_read)
+        self.assertEqual(['robot.move', 'robot.stop'],
+                         [p['method'] for p in robot.requested])
+        mem = ExperienceMemory(self.db)
+        self.addCleanup(mem.close)
+        self.assertEqual([], mem.simulated_motion_history())
+
+    def test_p0b_passive_policy_alignment_failure_stops(self):
+        robot = self.start()
+        def failed_alignment(_sample):
+            raise TelemetryError('policy observation misaligned')
+        with self.assertRaisesRegex(SimMotionError, 'aborted'):
+            self.invoke(on_policy_sample=failed_alignment)
+        self.assertEqual(['robot.move', 'robot.stop'],
+                         [p['method'] for p in robot.requested])
 
     def test_cli_demands_explicit_enable(self):
         with patch.dict("os.environ", {}, clear=True):
