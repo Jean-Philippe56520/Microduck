@@ -8,10 +8,10 @@ Mise à jour : 2026-10-25. **La [nouvelle organisation opérationnelle F0–F8](
 
 ## F2-C — Corrections et ajustement de l'attention (PR #30, en revue)
 
-- [ ] `PassiveLearning` réutilise les observations F1-C **fictives**, dans la même SQLite, pour enregistrer première catégorie, répétition, doublon de trame, incertitude ou rejet ; source `mock_fixture_journal` obligatoire. Aucun effet d'action réellement exécutée n'est inféré.
-- [ ] Corrections traçables : retrait d'une contribution erronée et recomposition du biais d'attention ; contributions par catégorie plafonnées entre −0,12 et +0,12, sans affecter l'apprentissage de locomotion MuJoCo.
-- [ ] Biais F2-C activable explicitement dans `AutonomyBrain.propose_balanced_passive(..., learning=...)` ; par défaut, l'algorithme F2-B est inchangé. Contrôle de source absente/incorrecte, observations périmées, redémarrage SQLite et refus de commande motrice.
-- [ ] **Preuve finale conditionnée à la CI de la branche et à la revue/merge de la [PR #30](https://github.com/Jean-Philippe56520/Microduck/pull/30)** ; aucune perception ni énergie physique validée. [Rapport](f2c-reversible-mock-learning-2026-10-25.md).
+- [x] `PassiveLearning` réutilise les observations F1-C **fictives**, dans la même SQLite, pour enregistrer première catégorie, répétition, doublon de trame, incertitude ou rejet ; source `mock_fixture_journal` obligatoire. Aucun effet d'action réellement exécutée n'est inféré.
+- [x] Corrections traçables : retrait d'une contribution erronée et recomposition du biais d'attention ; contributions par catégorie plafonnées entre −0,12 et +0,12, sans affecter l'apprentissage de locomotion MuJoCo.
+- [x] Biais F2-C activable explicitement dans `AutonomyBrain.propose_balanced_passive(..., learning=...)` ; par défaut, l'algorithme F2-B est inchangé. Contrôle de source absente/incorrecte, observations périmées, redémarrage SQLite et refus de commande motrice.
+- [x] **[425 tests Python réussis sur la branche](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40240139625)**, 16 nouveaux F2-C. [ ] PR #30 non fusionnée : revue et décision de merge restent à faire. Aucune perception ni énergie physique validée. [Rapport](f2c-reversible-mock-learning-2026-10-25.md).
 
 ## F2-B — Arbitre motivé, cooldown et repos fictif (PR #29, fusionnée/testée sur `main`)
 
