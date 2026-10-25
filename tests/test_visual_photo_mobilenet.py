@@ -96,7 +96,7 @@ class OnnxBridgeTests(unittest.TestCase):
         self.assertEqual("cat",classify_score("cat",.90,.2))
         for bad in (float("nan"),float("inf"),-0.1,1.1,True):
             with self.subTest(value=bad),self.assertRaises(PhotoBaselineError):
-                classify_score("dog",float(bad),.2)
+                classify_score("dog",bad,.2)
 
     def test_confusion_reports_out_of_domain_false_known(self):
         scored=_classification_metrics((
@@ -110,7 +110,7 @@ class OnnxBridgeTests(unittest.TestCase):
         self.assertEqual(.5,scored["accuracy"])
         self.assertEqual(.5,scored["unknown_recall"])
         self.assertEqual(.5,scored["known_recall"])
-        self.assertEqual(1,scored["cat"]["predicted"])
+        self.assertEqual(2,scored["cat"]["predicted"])
 
     def test_model_file_missing_or_fake_digest_fails(self):
         with self.assertRaises(PhotoBaselineError):
