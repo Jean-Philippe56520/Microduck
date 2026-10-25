@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from .passive_sources import PassiveRead
     from .passive_memory import PassiveObservationJournal
     from .passive_intentions import PassiveIntent
+    from .passive_rhythm import PassiveRhythmMetrics
 
 
 @dataclass(frozen=True)
@@ -58,6 +59,9 @@ class AutonomyBrain:
         self.motives = motivations or Motivations()
         self.motives.clamp()
         self.previous_intention: str | None = None
+        # F2-B state is process-local, lazy and strictly cognitive. It never
+        # replaces the existing robot safety path or SQLite memory.
+        self._passive_rhythm = None
 
     def propose_passive(self, reading: PassiveRead, *,
                         journal: PassiveObservationJournal,
@@ -82,6 +86,39 @@ class AutonomyBrain:
             now_monotonic_s=now_monotonic_s,
             now_wall_epoch_s=now_wall_epoch_s,
         )
+
+    def propose_balanced_passive(self, reading: PassiveRead, *,
+                                 journal: PassiveObservationJournal,
+                                 now_monotonic_s: float,
+                                 now_wall_epoch_s: float) -> PassiveIntent:
+        """F2-B: pace *proposals*, never execute an action or contact robotd.
+
+        Reuses F2-A provenance checking and the same ExperienceMemory journal.
+        Only the simulated motivation-energy variable is advanced per valid
+        passive cycle; neither battery nor verified physical outcomes exist.
+        """
+        from .passive_rhythm import PassiveRhythm
+        from .passive_memory import PassiveObservationJournal
+
+        if not isinstance(journal, PassiveObservationJournal):
+            raise TypeError("a passive journal is required")
+        if journal._memory is not self.memory:
+            raise ValueError("brain and passive journal must share SQLite")
+        if self._passive_rhythm is None:
+            self._passive_rhythm = PassiveRhythm()
+        return self._passive_rhythm.tick(
+            reading, journal=journal, motivations=self.motives,
+            now_monotonic_s=now_monotonic_s,
+            now_wall_epoch_s=now_wall_epoch_s,
+        )
+
+    def passive_rhythm_metrics(self) -> PassiveRhythmMetrics:
+        """F2-B: counted proposals only, not executed actions or power use."""
+        from .passive_rhythm import PassiveRhythm
+
+        if self._passive_rhythm is None:
+            self._passive_rhythm = PassiveRhythm()
+        return self._passive_rhythm.metrics(self.motives)
 
     def choose_from_snapshot(self, snapshot: PerceptionSnapshot,
                              now: float | None = None) -> Plan:
