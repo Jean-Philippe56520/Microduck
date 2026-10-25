@@ -61,10 +61,11 @@ class PassiveCycleUnitTests(unittest.TestCase):
                          {c["outcome"] for c in runner.history()})
         self.assertEqual({0}, {c["motor_commands"] for c in runner.history()})
         self.assertEqual({None}, {c["reward"] for c in runner.history()})
-        self.assertEqual(0, self.memory.experience_count() - 3 if False else
-                         self.memory.conn.execute(
-                             "SELECT count(*) FROM sim_motion_trials"
-                         ).fetchone()[0])
+        self.assertEqual(3, self.memory.experience_count())
+        self.assertEqual(
+            0, self.memory.conn.execute(
+                "SELECT count(*) FROM sim_motion_trials"
+            ).fetchone()[0])
         self.assertEqual(
             0, self.memory.conn.execute(
                 "SELECT count(*) FROM intent_preferences"
