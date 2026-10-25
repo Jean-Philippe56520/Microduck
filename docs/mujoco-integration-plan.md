@@ -146,6 +146,16 @@ La PR J2d introduit `sim_motion.py`, séparé de la perception et des contrôleu
 
 Le contrôle d'exécution exige deux autorisations explicites (paramètre CLI et variable d'environnement). Le workflow sur la branche principale ne les émet pas ; l'essai CI est limité à la branche expérimentale. **Validation CI [#40173809463](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40173809463) :** 115 tests Python, MuJoCo sain à 1,00×, 4 notifications `robot.move`, `robot.stop` confirmé, et variation positionnelle du tronc de **0,0001848 m** sur 0,36 s simulée. **La communication motrice et le stop sont validés en simulation, pas le déplacement effectif**, car cette variation de 0,185 mm peut provenir du maintien d'équilibre. L'essai ne mesure ni collisions en maison, ni comportement autour d'un animal.
 
+## Expérience J2e — choisir, agir, mesurer, mémoriser (en vérification)
+
+Le contrôleur officiel a un seuil par défaut de sélection de politique de station debout de 0,05 m/s (`duck-control/src/policy.rs`). L'essai précédent à cette vitesse n'a confirmé que l'ordre/arrêt avec ~0,185 mm de mouvement du tronc. Le nouvel essai `sim_walk_trial.py` utilise une vitesse avant fixe 0,12 m/s pendant au maximum 12 notifications espacées de 0,1 s. Il ne peut fonctionner que sur la scène MuJoCo épinglée, sans obstacles ni caméra, et exige une sécurité vérifiée et une batterie simulée suffisante.
+
+Avant toute notification, il compare deux positions du tronc à ~0,3 s d'intervalle sans mouvement demandé, afin de mesurer la dérive de référence. Chaque pas vérifie à nouveau l'identité de la scène/processus, l'horloge MuJoCo, la position et la santé `robotd`. Il réclame `robot.stop` en fin de séquence, et n'enregistre que des conséquences mesurées après cet arrêt. Toute observation contradictoire annule l'essai. Une seule séquence est possible, avec opt-in explicitement demandé.
+
+La base SQLite privée conserve `sim_motion_trials` et `intent_preferences` pour l'environnement `simulator`, indépendamment des objets individuels. Un déplacement de plus d'1 cm, suffisamment supérieur à la dérive initiale et accompagné de confirmations d'arrêt et de sécurité, peut produire une faible préférence positive ; l'absence de progression vérifiée produit une faible préférence négative. Dérive élevée et confirmation incertaine sont conservées sans récompense. Il s'agit d'**apprentissage d'une préférence mémorisée**, pas d'entraînement d'un modèle. Le choix suivant de `AutonomyBrain` lit cet état. La translation du tronc n'atteste pas à elle seule la marche.
+
+**Vérification du véritable MuJoCo :** le workflow expérimental doit encore confirmer l'exécution des commandes, la distance, la comparaison avec la dérive, la persistance SQLite et la stabilité. Aucune garantie matérielle.
+
 ## Lot E — Boucle d'autonomie observable et apprentissage
 
 **Livrable :** démonstration reproductible entièrement locale, sans Qwen.
