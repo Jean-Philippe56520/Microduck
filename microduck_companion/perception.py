@@ -20,7 +20,14 @@ DETECTION_CONFIDENCE = 0.80
 
 _KINDS = frozenset({
     "safe_area", "floor_clear", "obstacle_m", "battery_pct",
-    "person_visible", "object_label",
+    "person_visible", "object_label", "sound_label",
+})
+# Additive v1 observation kind. Sound labels are *categories*, never a
+# transcript, biometric voiceprint, acoustic raw data or an emergency stop.
+# No official sound classifier has been integrated with mediad yet.
+_SOUND_CATEGORIES = frozenset({
+    "unknown", "ambient", "knock", "bark", "meow", "speech",
+    "keyword_microduck", "keyword_stop", "keyword_viens",
 })
 _SOURCES = frozenset({
     "operator", "robotd", "sensor", "simulator", "mock", "llm_suggestion",
@@ -36,6 +43,7 @@ _TRUSTED = {
         "battery_pct": frozenset({"simulator", "robotd"}),
         "person_visible": frozenset({"simulator"}),
         "object_label": frozenset({"simulator"}),
+        "sound_label": frozenset({"simulator"}),
     },
     "robot": {
         "safe_area": frozenset({"operator"}),
@@ -44,6 +52,7 @@ _TRUSTED = {
         "battery_pct": frozenset({"robotd"}),
         "person_visible": frozenset({"sensor"}),
         "object_label": frozenset({"sensor"}),
+        "sound_label": frozenset({"sensor"}),
     },
 }
 
@@ -100,6 +109,9 @@ class PerceptionEvent:
                 raise ValueError("object_label needs a nonempty label")
             if not isinstance(self.track_id, str) or not self.track_id.strip():
                 raise ValueError("object_label needs a nonempty track_id")
+        elif self.kind == "sound_label":
+            if type(self.value) is not str or self.value not in _SOUND_CATEGORIES:
+                raise ValueError("sound_label must be a non-transcript category")
         if self.kind != "object_label" and self.track_id is not None:
             raise ValueError("track_id belongs only to object_label")
 
