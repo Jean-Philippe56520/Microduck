@@ -99,7 +99,7 @@ def _read_live_policies(state: Path, robot_root: Path) -> dict:
         str(ctl),
         "--robot-socket", str(state / "duck-a.sock"),
         "--socket", str(state / "duck-a-updater.sock"),
-        "policy", "--file", str(state / "robotd.toml"), "list", "--json",
+        "policy", "--file", str(state / "robotd-duck-a.toml"), "list", "--json",
     )
     try:
         result = subprocess.run(argv, check=True, text=True,
@@ -116,7 +116,7 @@ def verify_active_arm(state: Path, robot_root: Path, arm: str) -> dict:
     """Require config AND live daemon slots to match the exact pinned model."""
     require(arm in EXPERIMENT_ARMS, "unknown experiment arm")
     files = _official_files(state)
-    policy = _load_toml(state / "robotd.toml")
+    policy = _load_toml(state / "robotd-duck-a.toml")
     require(policy.get("enabled") is True and "mode" not in policy,
             "unexpected OEM mode or disabled policies")
     for key in ("action_scale", "standing_action_scale",
@@ -128,7 +128,7 @@ def verify_active_arm(state: Path, robot_root: Path, arm: str) -> dict:
         actual_walk = Path(policy["walk"]).resolve(strict=True)
     except (OSError, TypeError, KeyError) as exc:
         raise SimMotionError("P0i: configured walk path missing") from exc
-    require(actual_walk == expected_walk, "wrong walk model in robotd.toml")
+    require(actual_walk == expected_walk, "wrong walk model in active robotd-duck-a.toml")
     if stand_role is None:
         require(policy.get("stand") == "none",
                 "velstand must be the sole gait network (stand = none)")
@@ -139,7 +139,7 @@ def verify_active_arm(state: Path, robot_root: Path, arm: str) -> dict:
             actual_stand = Path(policy["stand"]).resolve(strict=True)
         except (OSError, TypeError, KeyError) as exc:
             raise SimMotionError("P0i: configured stand path missing") from exc
-        require(actual_stand == expected_stand, "wrong standing model in robotd.toml")
+        require(actual_stand == expected_stand, "wrong standing model in active robotd-duck-a.toml")
 
     live = _read_live_policies(state, robot_root)
     require(live.get("mode") == "walk" and live.get("enabled") is True,
