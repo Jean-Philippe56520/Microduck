@@ -119,6 +119,17 @@ upstream/microduck/scripts/duck-sim down
 
 **Critère de sortie :** démarrage et arrêt reproductibles, santé du robot virtuel contrôlée, facteur de temps réel mesuré et journaux diagnostiques disponibles. Le maintien de la boucle officielle à 50 Hz reste vérifié par les outils et journaux du constructeur, pas présumé.
 
+## Avancement J2c — zone simulée à preuve bornée (25 octobre 2026)
+
+- [x] `sim_flat_zone.py` : contrôle strict de la révision et de l'intégrité du simulateur officiel, de l'identité du processus `body_server`, de sa scène par défaut sans caméra et de sa pose dynamique. **Sans ces attestations, aucune preuve de sol sûr.**
+- [x] `sim_zone_probe.py` : déduit `safe_area`, `floor_clear` et une distance à la **limite virtuelle** de la zone ; n'utilise jamais le ToF 8×8 pour inventer un sol sûr, et n'envoie aucun mouvement.
+- [x] 22 nouveaux tests logiciels vérifiant limites, pose, trames invalides, sources périmées, scène non épinglée et processus inconnu ; 103 tests Python réussis sur GitHub Actions.
+- [x] Sonde vérifiée en **véritable MuJoCo** : [CI #40173323079](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40173323079), scène épinglée validée, réserve 0,7134 m, robot debout (tronc z=0,1155 m), décision `explore` sans commande motrice.
+- [ ] Autoriser seulement ensuite une intention courte en simulation, limitée en vitesse/durée et protégée par arrêt/deadman de `robotd`.
+- [ ] Aucun portage des preuves MuJoCo vers un Microduck physique : il faudra des sources de sécurité adaptées au matériel réel.
+
+**Statut : contrôles de zone codés, 103 tests logiciels verts et preuve sur MuJoCo officiel validée en lecture seule.** Déplacements encore interdits jusqu'à l'ajout d'un adaptateur motrice spécialement borné ; aucune transposition sur robot réel.
+
 ## Phase 3 — Boucler perception, décision et action dans MuJoCo (V1b)
 
 **But :** démontrer la première autonomie observable, sans modifier le contrôle moteur officiel.

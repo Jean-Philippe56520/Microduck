@@ -120,6 +120,14 @@ Le ToF 8×8 orienté par la tête n'est **pas** un capteur de sol garantissant l
 
 **Acceptation C :** les décisions `halt`/`rest` sont démontrées pour observation périmée, donnée incohérente, obstacle, capteur perdu et batterie simulée faible. Toute autorisation de mouvement porte une justification provenant d'une source simulée réellement vérifiée.
 
+## Lot C — Première preuve de zone par scène MuJoCo épinglée (en cours)
+
+Une scène plane officielle contenant un seul Microduck et un sol infini permet une **preuve de géométrie limitée au monde simulé**, pas une preuve à partir du ToF. `sim_flat_zone.py` vérifie : commit RL exact, checkout propre, hash Git de `scene.xml`, processus Linux authentifié par PID et ligne de commande du serveur du corps (scène par défaut, `--headless`, `--ducks 1`), puis pose lue par `op=read`.
+
+Le centre de test est l'origine de la scène. Rayon maximal 0,90 m, marge d'encombrement 0,16 m, arrêt si la distance résiduelle à la limite devient inférieure à 0,35 m. L'altitude du tronc et la gravité projetée doivent indiquer un robot debout ; un autre scénario, une pose absente ou une valeur non finie entraînent le refus. La preuve de pose expire après 0,35 s, et les télémétries `robotd`/`tofd` doivent rester fraîches et cohérentes.
+
+**La vérification en situation MuJoCo officielle a réussi** ([CI #40173323079](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40173323079)) : pose (0,0257 ; 0,0069 ; 0,1155) m, réserve de zone 0,7134 m et première intention `explore` fondée sur une preuve de simulation, aucune commande moteur. L'API demeure limitée à `sim_zone_probe` en lecture seule jusqu'au lot de commande distinct.
+
 ## Lot D — Passer des intentions de haut niveau aux commandes officielles
 
 **Livrable :** adaptateur de commandes indépendant du cerveau, initialement désactivé.

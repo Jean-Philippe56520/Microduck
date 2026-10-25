@@ -36,13 +36,14 @@ Le dépôt ne doit contenir ni souvenirs personnels, ni enregistrements audio/vi
 
 La [feuille de route détaillée](docs/roadmap.md) définit les six phases, leurs dépendances, leurs critères de réussite, les métriques et les limites de validation.
 
-**Prochain jalon :** démarrer un Microduck virtuel sain avec `scripts/duck-sim`, puis connecter les états `robotd` et `tofd` au cerveau ; autoriser les intentions uniquement après validation de la zone et des sécurités. Voir le [plan opérationnel MuJoCo J1b → J2](docs/mujoco-integration-plan.md).
+**Prochain jalon :** contrôler une petite zone plane de simulation à partir de la pose fournie par MuJoCo, puis envisager des intentions courtes et bornées via `robotd` après vérification de ce contrôle. Le premier démarrage MuJoCo et la télémétrie en lecture seule sont validés. Voir le [plan opérationnel MuJoCo J1b → J2](docs/mujoco-integration-plan.md).
 
 ### Étapes principales
 
 - [x] Récupérer les deux bases officielles sous forme de sous-modules.
 - [x] Tester un premier moteur d'autonomie et une mémoire locale.
-- [ ] Brancher les observations au vrai simulateur MuJoCo.
+- [x] Brancher les observations aux démons officiels du simulateur MuJoCo (lecture seule).
+- [ ] Valider la zone plane bornée et les commandes de déplacement autorisées en simulation.
 - [ ] Tester l'analyse d'objets avec Qwen sur le PC.
 - [ ] Vérifier les ressources, la vitesse et la sécurité sur le matériel réel.
 
@@ -103,3 +104,20 @@ Le script constructeur peut lever **son robot virtuel** pendant l'initialisation
 - Troisième source officielle : [microduck_yocto — OS, partitions et carte beta](https://github.com/pollen-robotics/microduck_yocto).
 
 L'image OS décrite en octobre 2026 prévoit une partition persistante de 8 Gio ; la RAM réellement disponible et l'espace libre ne sont pas encore mesurés sur l'unité commerciale.
+
+
+## J2c — Contrôle d'une zone plane dans MuJoCo (simulation uniquement)
+
+Le module expérimental `microduck_companion/sim_flat_zone.py` **ne transforme pas les distances ToF en preuve de sol sûr**. Il consulte directement le serveur du corps simulé (`op=read`) et vérifie au préalable le dépôt `microduck_rl` épinglé, son absence de modifications suivies, le hash Git exact de la scène `scene.xml`, le processus Linux `body_server` et ses paramètres (un seul robot, scène par défaut, sans caméra). Toute autre scène ou version est refusée.
+
+Sur la scène officielle plane et vide, la pose `trunk`, la hauteur et la gravité projetée permettent de tester une petite zone virtuelle radiale de **0,90 m**, avec marge de **0,16 m** autour du robot et interdiction d'approcher à moins de **0,35 m** de la limite. Ce sont des **paramètres expérimentaux du simulateur**, pas des distances d'obstacles mesurées sur robot réel.
+
+Pour tester sans commandes motrices, après démarrage du simulateur officiel :
+
+```sh
+python -m microduck_companion.sim_zone_probe \
+    --state-dir "$HOME/.cache/duck-sim-companion" \
+    --rl-root "$PWD/upstream/microduck_rl" --port 17801
+```
+
+Une pose incertaine, un processus inconnu, une source périmée ou une scène modifiée donnent `halt`. Le script `scripts/sim-smoke.sh` exécute désormais cette sonde après les vérifications initiales. **Ce jalon ne délivre aucune commande `robot.move`.** La [validation officielle MuJoCo #40173323079](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40173323079) a **réussi** : scène certifiée, zone sûre, tronc à (0,0257 ; 0,0069 ; 0,1155) m, réserve de 0,7134 m, décision du cerveau `explore` et aucune commande motrice. Les **103 tests Python** sont également réussis. Prochaine étape : une seule impulsion de mouvement, limitée en vitesse et en durée et envoyée uniquement à `robotd`.

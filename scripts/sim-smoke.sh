@@ -101,4 +101,6 @@ started=1
 "$SIM" realtime
 python3 -m microduck_companion.sim_probe --state-dir "$DUCK_SIM_STATE"
 python3 -m microduck_companion.sim_observer --state-dir "$DUCK_SIM_STATE"
+python3 -m microduck_companion.sim_zone_probe --state-dir "$DUCK_SIM_STATE" \
+    --rl-root "$DUCK_SIM_RL" --port "$DUCK_SIM_PORT"
 printf 'Smoke test completed; official simulator is being stopped.\n'
