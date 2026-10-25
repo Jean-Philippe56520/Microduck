@@ -148,6 +148,7 @@ class BehaviorMemoryTests(unittest.TestCase):
             (seq,))
         self.assertEqual(0.,self.behavior.summary(
             now_wall_epoch_s=WALL).bias)
+        self.assertEqual((),self.behavior.history(now_wall_epoch_s=WALL))
 
     def test_manual_retraction_recomputes_without_reward_replay(self):
         seq=self.step()
