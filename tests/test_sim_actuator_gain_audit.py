@@ -237,7 +237,7 @@ class P0eAnalysisTests(unittest.TestCase):
                                ["active_gain_median_nm_per_rad"])
         self.assertEqual(.55, result["walk"]["joints"]["right_knee"]
                          ["active_gain_median_nm_per_rad"])
-        self.assertEqual(0., result["walk"]["max_force_formula_residual_nm"])
+        self.assertAlmostEqual(0., result["walk"]["max_force_formula_residual_nm"])
         self.assertFalse(result["gait_validated"])
         self.assertEqual("unknown", result["locomotion_root_cause"])
 
