@@ -158,6 +158,16 @@ if [ "${DUCK_SIM_POLICY_AUDIT:-NO}" = YES ]; then
         --state-dir "$DUCK_SIM_STATE" \
         --output "$DUCK_SIM_STATE/policy-contract.json"
 fi
+# P0h: compare the ACTUAL seeded alpha and velstand ONNX in independent
+# read-only CPU sessions. No changed robotd policy, robot.move or mj_step.
+if [ "${DUCK_SIM_POLICY_LINEAGE:-NO}" = YES ]; then
+    rm -f "$DUCK_SIM_STATE/policy-lineage.json"
+    "$DUCK_SIM_RL/.venv/bin/python" -m microduck_companion.sim_policy_lineage \
+        --robot-root "$ROOT/upstream/microduck" \
+        --rl-root "$DUCK_SIM_RL" \
+        --state-dir "$DUCK_SIM_STATE" \
+        --output "$DUCK_SIM_STATE/policy-lineage.json"
+fi
 # P0g: independent temporary XML copies at an identical STAND pose.
 # No motor command, no mj_step, no changes to the manufacturer checkout.
 if [ "${DUCK_SIM_GEOMETRY_COMPARE:-NO}" = YES ]; then
