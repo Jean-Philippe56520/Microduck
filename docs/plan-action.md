@@ -39,7 +39,7 @@ Créer un Microduck **curieux, explorateur, social et peu bavard**. Sa boucle ci
 | Phase | Priorité / état | Livrable de fin de phase | Prérequis déterminant |
 | --- | --- | --- | --- |
 | **F0 — Socle existant** | Acquis au niveau prototype/tests ; maintien continu | Contrats, démos et sécurité de base documentés ; CI verte | Aucun |
-| **F1 — Perception passive et mémoire d'observations** | **À faire en premier** | Événements sourcés, inconnus, lecture différée SQLite, zéro moteur | F0 |
+| **F1 — Perception passive et mémoire d'observations** | **En cours : F1-A codé/testé, F1-B prochain** | Événements sourcés, inconnus, lecture différée SQLite, zéro moteur | F0 |
 | **F2 — Autonomie cognitive sans locomotion** | Ensuite | Plusieurs décisions motivées, peu répétitives ; conséquence observée ; relecture après reprise | F1, mémoire F0 |
 | **F3 — Vision et sons légers** | Ensuite, avec lots indépendants | Détection de *catégories*, suivi et signaux sonores mesurés ; `unknown` crédible | F1 ; banc d'essai et données autorisées |
 | **F4 — Sociabilité et mémoires enrichies** | Après observations fiables | Rencontres, préférences, lieux incertains et interactions volontaires | F2 + F3 |
@@ -59,18 +59,18 @@ Créer un Microduck **curieux, explorateur, social et peu bavard**. Sa boucle ci
 
 **Sortie / contrôle permanent :** suite Python complète verte sur chaque PR, révisions constructeur indiquées lorsqu'elles interviennent, signalement explicite des sorties fictives, aucune donnée privée et aucun mouvement ajouté incidemment.
 
-### F1 — Perception passive et traces sourcées (PROCHAINE PHASE)
+### F1 — Perception passive et traces sourcées (EN COURS, F1-A TESTÉ)
 
 **Objectif :** faire entrer une observation non motrice dans le cerveau, avec horodatage, source, confiance, catégorie éventuellement inconnue, puis mémoriser sa découverte. Ne pas faire croire que les capteurs du simulateur voient des objets : **MuJoCo n'émule ni caméra, ni microphones, ni NPU**.
 
 **Lots de travail, dans l'ordre :**
 
-- **F1-A — Contrat minimal d'événements passifs (première PR).** Inspecter les interfaces existantes `perception.py`, `autonomy.py`, mémoire et la disponibilité documentaire de `mediad`. Réutiliser `PerceptionEvent`/`PerceptionSnapshot` ; ne changer la version qu'avec migration/tests. Définir la frontière entre observation, classification et autorisation de déplacement. Ajouter des fixtures fictives `objet familier` / `objet inconnu` / `signal sonore`, source, confiance, TTL, identifiant de suivi éphémère et conflit. **Pas de modèle de vision, pas de capture privée, zéro API moteur.**
+- **F1-A — Contrat minimal d'événements passifs ([PR #24](https://github.com/Jean-Philippe56520/Microduck/pull/24), codé et testé logiciellement).** Inspecter les interfaces existantes `perception.py`, `autonomy.py`, mémoire et la disponibilité documentaire de `mediad`. Réutiliser `PerceptionEvent`/`PerceptionSnapshot` ; ne changer la version qu'avec migration/tests. Définir la frontière entre observation, classification et autorisation de déplacement. Ajouter des fixtures fictives `objet familier` / `objet inconnu` / `signal sonore`, source, confiance, TTL, identifiant de suivi éphémère et conflit. **Pas de modèle de vision, pas de capture privée, zéro API moteur.** **Résultat F1-A :** [295 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40232960339), dont 26 nouveaux ; catégories `object_label` et `sound_label`, confiance, TTL, source déclarée et refus de contradictions, via [rapport F1-A](f1a-passive-observation-contract-2026-10-25.md). Les interfaces `mediad` observées dans le code OEM n'ont pas été raccordées : une chaîne `sensor` n'est pas une authentification. `keyword_stop` n'est pas un arrêt moteur.
 - **F1-B — Adaptateur de lecture non motrice.** Construire l'adaptateur vers l'interface constructeur **seulement si les méthodes officielles ont été inspectées et sont accessibles** ; sinon conserver un adaptateur synthétique annoncé comme tel. Gestion des timeouts, données répétées, erreurs, déconnexion, fréquences et absence de stockage de média brut. Ne pas attribuer une provenance `sensor` à des données fictives.
 - **F1-C — Journalisation passive et reprise.** Enregistrer en SQLite un minimum d'observations sourcées et horodatées ; réouvrir la même base dans un deuxième processus, retrouver un objet observé et prouver la distinction `inconnu` / `identifié`. Limiter rétention, volume et redondance ; sans images/voix.
 - **F1-D — Démonstration de bout en bout.** Enchaîner plusieurs observations sur fixtures fictives avec scénario nouveau / déjà vu / incertain / capteur perdu ; sauvegarde et relecture ; **aucune action motrice**. Si la source constructeur est disponible, documenter distinctement les preuves réelles acquises par cet adaptateur.
 
-**Critères de sortie F1 :** au moins deux sessions indépendantes sur une seule SQLite ; fraîcheur, origine, conflits et confiance testés ; `unknown` maintenu si ambigu ; aucun mouvement ni faux `safe_area`/`floor_clear` ; suite CI verte ; rapport distinguant fixtures et services officiels. **La première PR ne livre que F1-A.**
+**Critères de sortie F1 :** au moins deux sessions indépendantes sur une seule SQLite ; fraîcheur, origine, conflits et confiance testés ; `unknown` maintenu si ambigu ; aucun mouvement ni faux `safe_area`/`floor_clear` ; suite CI verte ; rapport distinguant fixtures et services officiels. **F1-A couvre seulement le contrat et les fixtures fictives ; F1-B (adaptateur), F1-C (persistance) et F1-D (démonstration) restent à faire.**
 
 ### F2 — Intention et apprentissage comportemental sans déplacement
 
@@ -124,15 +124,15 @@ Exemple : **porte ouverte → alerte e-mail** sur événement fiable et configur
 
 **Reprise uniquement sur demande ciblée**, avec une hypothèse falsifiable (ex. force tangentielle **signée** et vitesse relative pied/sol dans le solveur d'origine), plan de collecte minimal, état initial/fin, invariants constructeur et budget d'essais fixé. Aucune retouche arbitraire des gains/politiques, aucune augmentation automatique de vitesse. À terme, l'exploration mobile exige d'abord une translation mesurée et reproductible (ancien critère de diagnostic : ≥10 mm sur trois essais indépendants, séparée de la dérive), puis une démarche soutenue et sûre, et ensuite une validation physique surveillée. **F1–F6 n'attendent pas cette preuve pour les parties immobiles.**
 
-## 6. Les trois prochaines PR, une seule à la fois
+## 6. Les trois prochains lots de PR, une seule à la fois
 
 | Ordre | PR de travail | Fichiers/prototypes concernés | Preuve obligatoire |
 | --- | --- | --- | --- |
-| **1 (prochaine)** | **F1-A — Contrat d'observations passives** | `perception.py`, tests ciblés, éventuel module d'adaptation pur, contrat documenté. Auditer d'abord les RPC `mediad`. | Fixtures nouveau/connu/inconnu, TTL, sources et contradictions ; aucun certificat de sol, aucune commande moteur ; tous tests Python verts |
-| **2 (après fusion 1)** | **F1-B — Adaptateur de source passive** | Couche adapter lecture seule et simulateur de service fictif ; OEM `mediad` si capacité vérifiée | Timeout/déconnexion, source authentique distincte de `mock`, débits limités, pas de média brut conservé ; tests + preuve réelle seulement si disponible |
-| **3 (après fusion 2)** | **F1-C — SQLite et relecture de découvertes** | Journal minimal persistant, reprise de processus et tests de sélection `unknown` | Deux sessions sur une base ; nouvelles/anciennes observations et contradictions correctement conservées ; 0 moteur et CI verte |
+| **1 (prochaine après F1-A)** | **F1-B — Adaptateur de source passive** | Adaptateur lecture seule et simulateur de service fictif ; endpoint OEM `mediad` uniquement si un accès local vérifiable et adapté existe | Timeout, déconnexion, provenance réellement établie ou `mock` explicite, débit borné, pas de média brut conservé ; tests ; aucune commande moteur |
+| **2 (après F1-B)** | **F1-C — SQLite et relecture de découvertes** | Journal minimal persisté, origine temporelle précisée, reprise de processus et test `unknown` | Deux sessions sur une base ; ambiguïtés et catégories conservées sans image/voix ; aucun moteur et CI verte |
+| **3 (après F1-C)** | **F1-D — Démonstration passive complète** | Plusieurs événements fictifs : nouveau, déjà vu, contradiction, perte d'une source, reprise SQLite | Décision uniquement passive, preuves de mémoire sur deux sessions, test du repli sûr et séparation stricte capteur simulé / capteur réel |
 
-**Après ces trois PR :** F1-D pour la démonstration de bout en bout, puis F2-A, etc. L'ordre est **conditionnel à la preuve de la PR précédente**, pas à une date. Ne pas fusionner une PR si elle masque des tests en échec, supprime un contrôle de sécurité ou revendique une capacité sensorielle non mesurée.
+**Après ces trois PR :** vérifier les critères de sortie F1 puis engager **F2-A**. Aucun lot ultérieur n'est lancé automatiquement. L'ordre est **conditionnel à la preuve de la PR précédente**, pas à une date. Ne pas fusionner une PR si elle masque des tests en échec, supprime un contrôle de sécurité ou revendique une capacité sensorielle non mesurée.
 
 ## 7. Protocole de travail pour chaque lot
 
@@ -148,4 +148,4 @@ Exemple : **porte ouverte → alerte e-mail** sur événement fiable et configur
 
 ## 8. Décision opérationnelle actuelle
 
-**Le prochain développement est F1-A : contrat de perception passive et jeux de tests fictifs, sans déplacement, sans Qwen, sans reconnaissance individuelle.** Le chantier de marche reste suspendu en l'absence de nouvelle hypothèse démontrable ; P1a **n'est pas** débloqué. Le robot physique n'est toujours pas disponible. Aucun nouvel essai moteur ou portage Rust n'est impliqué par l'adoption de ce plan.
+**F1-A est codé et testé sur [PR #24](https://github.com/Jean-Philippe56520/Microduck/pull/24) : [295 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40232960339), 26 nouveaux, catégories objet/son fictives, provenance déclarée, TTL et ambiguïtés filtrés ; zéro moteur. La phase F1 est encore incomplète. Le prochain développement est F1-B : adaptateur de lecture non motrice avec source vérifiable ou stub explicitement fictif, sans modèle de vision.** Le chantier de marche reste suspendu en l'absence de nouvelle hypothèse démontrable ; P1a **n'est pas** débloqué. Le robot physique n'est toujours pas disponible. Aucun nouvel essai moteur ou portage Rust n'est impliqué par l'adoption de ce plan.
