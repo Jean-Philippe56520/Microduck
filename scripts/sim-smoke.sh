@@ -61,7 +61,8 @@ git -C "$ROOT" submodule update --init --recursive
 }
 # The complete RL environment contains training dependencies (including PyTorch).
 # For the official headless *body server only*, its imports require just MuJoCo,
-# NumPy and ONNX Runtime. This optional runtime mode does not install or modify
+# NumPy and ONNX Runtime. Pin versions verified in GitHub Actions smoke run
+# 40145369078; this optional runtime mode does not install or modify
 # the motor policies, the official daemons, or the simulator's source.
 case "${DUCK_SIM_DEP_MODE:-full}" in
     full)
@@ -73,7 +74,7 @@ case "${DUCK_SIM_DEP_MODE:-full}" in
     runtime)
         uv venv --python 3.12 "$DUCK_SIM_RL/.venv"
         uv pip install --python "$DUCK_SIM_RL/.venv/bin/python" \
-            'mujoco>=3.10,<3.11' 'numpy>=2,<3' 'onnxruntime>=1.24.4,<1.29'
+            'mujoco==3.10.0' 'numpy==2.5.4' 'onnxruntime==1.28.0'
         # The lean environment deliberately skips editable RL-package
         # installation. Python must therefore find its pinned source tree.
         export PYTHONPATH="$DUCK_SIM_RL/src:$PYTHONPATH"
