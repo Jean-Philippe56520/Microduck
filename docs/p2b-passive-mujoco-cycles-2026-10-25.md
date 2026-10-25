@@ -1,6 +1,6 @@
 # P2b — Cycles cognitifs passifs avec la télémétrie MuJoCo (25 octobre 2026)
 
-**État : codé, 234 tests Python réussis, testé dans les démons du MuJoCo constructeur épinglé.** [CI MuJoCo réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216199277). Aucun essai sur le Microduck physique.
+**État : fusionné sur `main`, [234 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216649169), testé dans les démons du MuJoCo constructeur épinglé.** [CI MuJoCo réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216199277). Aucun essai sur le Microduck physique.
 
 ## Objectif limité
 
