@@ -1,0 +1,28 @@
+name: F3-B real CC0 photo baseline
+on:
+  pull_request:
+    paths:
+      - 'microduck_companion/visual_photo_*.py'
+      - 'tests/test_visual_photo_baseline.py'
+      - '.github/workflows/f3b-real-photos.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-photos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install tiny image decoder for host-only benchmark
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Download only curated Wikimedia Commons CC0 thumbnails into RAM and measure
+        run: |
+          # This may fail closed on HTTP errors, invalid JPEGs or missing photos.
+          # No images, trained weights, or personal data are committed/uploaded.
+          python -m microduck_companion.visual_photo_baseline_demo
