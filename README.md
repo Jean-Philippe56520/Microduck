@@ -142,7 +142,7 @@ Le script `sim-smoke.sh` ne lance cette démonstration que si `DUCK_SIM_SHORT_MO
 
 ## J2e — Mesurer une translation et conserver l'expérience (MuJoCo seulement)
 
-Le code constructeur choisit la politique de station debout lorsque la norme de la vitesse demandée est au plus égale à **0,05 m/s**. C'est probablement pour cela que le premier essai, à exactement 0,05 m/s, n'a produit qu'une variation de **0,185 mm** (hypothèse à vérifier). Le nouveau module expérimental `sim_walk_trial.py` demande une seule séquence à **0,12 m/s**, donc au-dessus de ce seuil, sans rotation ni déplacement latéral. Il effectue jusqu'à **12 notifications de 0,1 s** sous réserve d'une zone sûre : soit environ 1,2 s de commandes, avec un budget d'exécution maximal de 2,6 s et `robot.stop` obligatoire.
+Le code constructeur choisit la politique de station debout lorsque la norme de la vitesse demandée est au plus égale à **0,05 m/s**. C'est probablement pour cela que le premier essai, à exactement 0,05 m/s, n'a produit qu'une variation de **0,185 mm** (hypothèse à vérifier). Le nouveau module expérimental `sim_walk_trial.py` demande une seule séquence à **0,12 m/s**, donc au-dessus de ce seuil, sans rotation ni déplacement latéral. Il effectue jusqu'à **24 notifications espacées de 0,1 s** sous réserve d'une zone sûre : soit environ 2,4 s de commandes, avec un budget d'exécution maximal de 4,0 s et `robot.stop` obligatoire.
 
 Le contrôleur vérifie systématiquement le simulateur épinglé, sa scène sans obstacles, la santé `robotd`, la cadence, la position et la marge à la zone. Une **dérive du tronc sans mouvement commandé** est mesurée d'abord. Si la dérive dépasse 5 mm, si une source est douteuse ou si le cerveau ne choisit pas `explore`, **aucun mouvement n'est envoyé**. Aucune adaptation constructeur n'est modifiée.
 
@@ -158,4 +158,16 @@ MICRODUCK_SIM_WALK_TEST=YES python3 -m microduck_companion.sim_walk_demo \
   --port 17801
 ```
 
-En CI, `DUCK_SIM_WALK_TRIAL=YES` est volontairement activé **seulement** sur `feat/measured-sim-walk-learning-v1`. Sur la branche principale, aucun nouveau mouvement n'est autorisé par défaut. La réussite d'un échange de commandes, ou même une variation de position du tronc, **ne prouve pas à elle seule une démarche stable**. Il faut vérifier les résultats mesurés dans MuJoCo, puis instrumenter la marche et les contacts au sol.
+En CI, `DUCK_SIM_WALK_TRIAL=YES` est volontairement activé **seulement** sur `feat/measured-sim-walk-learning-v1`. Sur la branche principale, aucun nouveau mouvement n'est autorisé par défaut. Le CLI renvoie **3 si la translation mesurée reste sous le seuil**, ce qui n'est ni un plantage du protocole, ni une validation de marche. Le script CI classe explicitement ce cas `WALK_TRANSLATION_ACCEPTANCE=NOT_MET` et n'accepte aucun échec de communication ou de `robot.stop`.
+
+### Mesures MuJoCo officielles — résultats négatifs
+
+| Essai | Vitesse demandée | Commandes | Politique / vitesse appliquée | Déplacement du tronc | Dérive avant commande | Résultat |
+| --- | ---: | ---: | --- | ---: | ---: | --- |
+| [J2e-A](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40175133570) | 0,12 m/s | 12 | non instrumentée | 1,242 mm | 0,105 mm | pas de progression validée |
+| [J2e-B](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40175696383) | 0,12 m/s | 12 | `walk` 11/12 ; 0,12 m/s appliqué | 0,820 mm | 0,037 mm | pas de progression validée |
+| [J2e-C](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176018018) | 0,12 m/s | 24 | `walk` 23/24 ; 0,12 m/s appliqué | 1,399 mm | 0,273 mm | pas de progression validée |
+
+Dans les trois essais, `robot.stop` a été accusé, les mesures ont été obtenues du véritable serveur MuJoCo épinglé et la mémoire a consigné `no_progress_observed`, récompense `-0,5`, variation de préférence d'exploration **0 → −0,075**. Ces bases de CI sont **éphémères** ; la persistance entre essais est testée avec SQLite par les tests automatisés, mais les essais CI ne réutilisent pas la même base. Un échantillon de J2e-C mentionne `deadman` parmi les limitations, tout en rapportant une vitesse appliquée nominale lors d'autres échantillons.
+
+**Conclusion : la chaîne décision → commande → stop → observation → mémoire fonctionne en simulation ; aucune marche effective n'est encore validée.** Le fait que `robotd` choisisse `walk` ne prouve pas la translation. Les prochains essais devront analyser les contacts des pieds, la cinématique et le comportement du modèle OEM, sans modifier ni affaiblir ses mécanismes de sécurité.
