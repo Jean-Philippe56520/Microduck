@@ -142,6 +142,10 @@ class MockCycleTests(unittest.TestCase):
                            followup=mock_snapshot(20.4, target="toy"),
                            consequence=MockConsequence("toy", "positive", 20.3))
                 before = mem2.get("toy").preference
+                # The other runner selected its plan from an outdated memory
+                # state; make inspection win so the atomic UNIQUE constraint,
+                # rather than the motor-feedback gate, is tested.
+                stale.brain.motives.play = 0.
                 with self.assertRaises(sqlite3.IntegrityError):
                     stale.step(mock_snapshot(21., target="toy"), now=21.5,
                                followup=mock_snapshot(21.4, target="toy"),
