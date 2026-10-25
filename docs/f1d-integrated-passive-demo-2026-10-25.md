@@ -1,6 +1,6 @@
 # F1-D — Démonstration passive intégrée : découverte, souvenir et repli sûr
 
-**Date : 25 octobre 2026. Statut : logiciel sur données FICTIVES, sans moteur.** Cette étape réunit [F1-A](f1a-passive-observation-contract-2026-10-25.md), [F1-B](f1b-passive-source-2026-10-25.md) et [F1-C](f1c-passive-sqlite-memory-2026-10-25.md) sans ajouter de modèle d'IA, de commande motrice ou de service parallèle.
+**Date : 25 octobre 2026. Statut : fusionné dans `main` ([PR #27](https://github.com/Jean-Philippe56520/Microduck/pull/27)), [351 tests Python + deux processus CLI réussis sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40235779649). Démonstration sur données FICTIVES, sans moteur.** Cette étape réunit [F1-A](f1a-passive-observation-contract-2026-10-25.md), [F1-B](f1b-passive-source-2026-10-25.md) et [F1-C](f1c-passive-sqlite-memory-2026-10-25.md) sans ajouter de modèle d'IA, de commande motrice ou de service parallèle.
 
 ## Objectif et protocole réel des tests
 
