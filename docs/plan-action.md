@@ -87,7 +87,7 @@ L'ordre P0 → P1 → P2 est le **chemin critique pour l'exploration mobile**. L
 ### P3 — Perception d'objets, animaux et signaux sonores
 
 1. Construire des jeux de test **fictifs ou expressément autorisés**, cloisonnés des données personnelles. Tester l'acheminement des événements par `mediad`/adaptateurs et le suivi d'objets ; MuJoCo n'émule pas les pilotes caméra/NPU.
-2. Distinguer **détection d'une catégorie** (chien, chat, personne, jouet) et **identité individuelle**. La classe « chien » ne prouve pas « Nessquick » ; la classe « chat » ne prouve pas « Kitty ». Conserver « inconnu » si la confiance manque.
+2. Distinguer **détection d'une catégorie** (chien, chat, personne, jouet) et **identité individuelle**. Détecter « chien » ou « chat » ne prouve pas que l'animal est un individu familier. Conserver « inconnu » si la confiance manque.
 3. Étudier de petits modèles légers, RKNN/NPU si effectivement compatibles et repli ONNX/CPU, avec cadence limitée et mesure de précision/rappel/faux positifs sur un ensemble séparé. Les mesures constructeur YOLO ne valident pas nos modèles.
 4. Étudier les sons déjà accessibles ; essayer un détecteur de mots-clés local (« Microduck », « stop », « viens ») sans imposer de dialogue constant. `stop` doit conserver une voie de sécurité claire et prioritaire.
 
@@ -97,7 +97,7 @@ L'ordre P0 → P1 → P2 est le **chemin critique pour l'exploration mobile**. L
 
 1. Ajouter une mémoire sémantique (propriétés d'objets), spatiale (repères avec incertitude) et comportementale (préférences/conséquences) sans multiplier les schémas inutiles.
 2. Faire évoluer les motivations **progressivement** selon les résultats ; autoriser le repos, la curiosité, le jeu et les interactions discrètes.
-3. Pour les individus familiers, privilégier des interactions ou balises **volontaires**. Pour Malo, contrôle parental et **aucune biométrie permanente** ; données privées hors dépôt. Pour Nessquick et Kitty, ne pas confirmer l'identité sans mesure appropriée.
+3. Pour les personnes familières, privilégier des interactions ou balises **volontaires**, avec contrôle parental quand un enfant est concerné, **aucune biométrie permanente** et aucune identité privée dans le dépôt. Pour les animaux familiers, ne confirmer aucune identité individuelle sans preuve mesurée et autorisation adaptée.
 
 **Sortie P4 :** interactions en simulation reproductibles, inconnus correctement préservés, souvenirs réellement consultés et absence de collecte permanente de voix/images.
 
