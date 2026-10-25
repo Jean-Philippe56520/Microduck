@@ -143,6 +143,15 @@ class JournalTests(unittest.TestCase):
         self.assertEqual(0, self.append(x))
         self.assertEqual(1, len(self.journal.recent(now_wall_epoch_s=WALL)))
 
+    def test_reused_sequence_cannot_add_a_different_second_category(self):
+        self.assertEqual(1, self.append(read(event(category="ball"), seq=7)))
+        second = read(event(category="ball"),
+                      event("sound_label", "meow"), seq=7)
+        self.assertEqual(0, self.append(second, wall=WALL+1))
+        entries = self.journal.recent(now_wall_epoch_s=WALL+1)
+        self.assertEqual(1, len(entries))
+        self.assertEqual("ball", entries[0].category)
+
     def test_sequence_with_multiple_categories_counts_actual_insertions(self):
         reading = read(event(category="ball"),
                        event("sound_label", "bark"), seq=12)
