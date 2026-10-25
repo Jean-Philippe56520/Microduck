@@ -26,7 +26,7 @@ Sur Windows, le prototype Python peut être exécuté normalement. La simulation
 2. **PC local (facultatif)** : Qwen pour interpréter des images, suggérer des hypothèses et analyser les nouveautés.
 3. **GitHub** : conserver le code et les versions ; GitHub n'exécute pas l'IA.
 
-Le module `microduck_companion` est actuellement un **prototype autonome avec lecture seule des flux du simulateur officiel validée le 25 octobre 2026**, pas un contrôleur moteur ni une autonomie de déplacement validée. Aucune action ne doit être envoyée au robot réel sans un adaptateur validé et ses protections.
+Le module `microduck_companion` est actuellement un **prototype autonome testé avec les services officiels simulés**, y compris une impulsion `robot.move` suivie de `robot.stop`. Il n'est pas un contrôleur moteur ni une solution de navigation autonome validée. Aucune action ne doit être envoyée au robot réel sans un adaptateur validé et ses protections.
 
 ## Confidentialité et sécurité
 
@@ -36,7 +36,7 @@ Le dépôt ne doit contenir ni souvenirs personnels, ni enregistrements audio/vi
 
 La [feuille de route détaillée](docs/roadmap.md) définit les six phases, leurs dépendances, leurs critères de réussite, les métriques et les limites de validation.
 
-**Prochain jalon :** contrôler une petite zone plane de simulation à partir de la pose fournie par MuJoCo, puis envisager des intentions courtes et bornées via `robotd` après vérification de ce contrôle. Le premier démarrage MuJoCo et la télémétrie en lecture seule sont validés. Voir le [plan opérationnel MuJoCo J1b → J2](docs/mujoco-integration-plan.md).
+**Prochain jalon :** vérifier une translation mesurable dans la zone plane MuJoCo, enregistrer les conséquences réellement observées en SQLite et adapter graduellement le choix d'exploration. Le premier démarrage MuJoCo et la télémétrie en lecture seule sont validés. Voir le [plan opérationnel MuJoCo J1b → J2](docs/mujoco-integration-plan.md).
 
 ### Étapes principales
 
@@ -138,3 +138,24 @@ MICRODUCK_SIM_MOTION_TEST=YES python -m microduck_companion.sim_motion_demo \
 Le script `sim-smoke.sh` ne lance cette démonstration que si `DUCK_SIM_SHORT_MOVE=YES` est explicitement présent. Le workflow GitHub Actions ne définit cette variable que pour la branche expérimentale `feat/one-bounded-sim-intent-20261025` ; sur `main`, il reste en lecture seule.
 
 **Essai MuJoCo effectué et réussi :** [GitHub Actions #40173809463](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40173809463), 115 tests Python verts, `robotd` sain à ~50 Hz, 1,00× temps réel, **4 notifications `robot.move`**, `robot.stop` confirmé. Évolution observée du tronc : **0,0001848 m (0,185 mm)** en ~0,36 s de temps simulé. Cette très faible variation ne prouve **pas** une marche ; elle peut provenir de la stabilisation en posture. Aucune navigation autonome, aucun évitement d'objets mobiles et aucune validation physique.
+
+
+## J2e — Mesurer une translation et conserver l'expérience (MuJoCo seulement)
+
+Le code constructeur choisit la politique de station debout lorsque la norme de la vitesse demandée est au plus égale à **0,05 m/s**. C'est probablement pour cela que le premier essai, à exactement 0,05 m/s, n'a produit qu'une variation de **0,185 mm** (hypothèse à vérifier). Le nouveau module expérimental `sim_walk_trial.py` demande une seule séquence à **0,12 m/s**, donc au-dessus de ce seuil, sans rotation ni déplacement latéral. Il effectue jusqu'à **12 notifications de 0,1 s** sous réserve d'une zone sûre : soit environ 1,2 s de commandes, avec un budget d'exécution maximal de 2,6 s et `robot.stop` obligatoire.
+
+Le contrôleur vérifie systématiquement le simulateur épinglé, sa scène sans obstacles, la santé `robotd`, la cadence, la position et la marge à la zone. Une **dérive du tronc sans mouvement commandé** est mesurée d'abord. Si la dérive dépasse 5 mm, si une source est douteuse ou si le cerveau ne choisit pas `explore`, **aucun mouvement n'est envoyé**. Aucune adaptation constructeur n'est modifiée.
+
+Après l'accusé de réception de `robot.stop`, une nouvelle position et la santé de `robotd` sont contrôlées. Le module `episodic_memory.py` conserve une table SQLite distincte des souvenirs d'objets (`sim_motion_trials`), avec provenance, déplacement horizontal, dérive de référence, état de sécurité et résultat. Les catégories sont `translation_observed`, `no_progress_observed`, `inconclusive_drift` et `unverified`. Une préférence d'exploration évolue **lentement** uniquement sur une conséquence fiable : cette mise à jour de mémoire n'est **pas un entraînement du modèle**.
+
+Exemple, uniquement sur Linux avec la simulation officielle déjà lancée :
+
+```sh
+MICRODUCK_SIM_WALK_TEST=YES python3 -m microduck_companion.sim_walk_demo \
+  --enable-once --state-dir "$HOME/.cache/duck-sim-companion" \
+  --rl-root "$PWD/upstream/microduck_rl" \
+  --memory "$HOME/.local/share/microduck-companion/sim-motion.sqlite" \
+  --port 17801
+```
+
+En CI, `DUCK_SIM_WALK_TRIAL=YES` est volontairement activé **seulement** sur `feat/measured-sim-walk-learning-v1`. Sur la branche principale, aucun nouveau mouvement n'est autorisé par défaut. La réussite d'un échange de commandes, ou même une variation de position du tronc, **ne prouve pas à elle seule une démarche stable**. Il faut vérifier les résultats mesurés dans MuJoCo, puis instrumenter la marche et les contacts au sol.
