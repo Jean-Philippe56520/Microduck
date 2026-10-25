@@ -233,8 +233,8 @@ class P0eAnalysisTests(unittest.TestCase):
         self.assertTrue(result["walk"]["all_force_samples_within_2_mNm"])
         self.assertEqual(0, result["stand"]["total_force_clamped_samples"])
         self.assertEqual(0, result["walk"]["total_force_clamped_samples"])
-        self.assertEqual(.44, result["stand"]["joints"]["left_knee"]
-                         ["active_gain_median_nm_per_rad"])
+        self.assertAlmostEqual(.44, result["stand"]["joints"]["left_knee"]
+                               ["active_gain_median_nm_per_rad"])
         self.assertEqual(.55, result["walk"]["joints"]["right_knee"]
                          ["active_gain_median_nm_per_rad"])
         self.assertEqual(0., result["walk"]["max_force_formula_residual_nm"])

@@ -252,6 +252,7 @@ class SolverTap:
         self.count = 0
         self.names = None
         self.model = None
+        self.header_sent = False
         self.disabled = False
 
     def _disable(self, exc: Exception, step: int) -> None:
@@ -290,6 +291,7 @@ class SolverTap:
             if self.names is None:
                 self.names = _resolve_names(model, self.mj)
                 self.model = model
+            if not self.header_sent:
                 from .sim_flat_zone import RL_COMMIT, FLAT_SCENE_BLOB
                 self.writer.submit({
                     "kind": "header",
@@ -302,6 +304,7 @@ class SolverTap:
                     "capture_is_not_actuator_authority": True,
                     "p0e_active_gain_pre_step": self.audit,
                 })
+                self.header_sent = True
             if model is not self.model:
                 raise TapError("more than one MuJoCo model under instrumented server")
             frame = capture_solver_step(model, data, self.mj, self.names, self.count)
