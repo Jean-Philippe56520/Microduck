@@ -1,6 +1,6 @@
 # F1-B — Adaptateur passif borné et vérification locale de mediad
 
-**Date : 25 octobre 2026. État : codé et testé dans GitHub Actions sur service Unix entièrement fictif.** [315 tests Python réussis sur branche](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40233787298) (295 existants + **20 nouveaux**). **Aucun Microduck physique ni mediad constructeur réellement lancé/testé. Aucun média brut, aucune image, aucun microphone, aucun modèle de vision ou audio. Aucune commande motrice.**
+**Date : 25 octobre 2026. État : fusionné dans `main` via [PR #25](https://github.com/Jean-Philippe56520/Microduck/pull/25), testé dans GitHub Actions sur service Unix entièrement fictif.** [315 tests Python réussis sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40234054024) (295 existants + **20 nouveaux**). **Aucun Microduck physique ni mediad constructeur réellement lancé/testé. Aucun média brut, aucune image, aucun microphone, aucun modèle de vision ou audio. Aucune commande motrice.**
 
 La [phase F1](plan-action.md) reste **en cours** : F1-A contrat de catégories est livré, F1-B livre seulement des **lectures fictives et un contrôle de disponibilité OEM**, F1-C devra mémoriser les découvertes en SQLite, puis F1-D fera la démonstration.
 
@@ -35,7 +35,7 @@ L'exemple n'est **pas** une observation réelle de caméra ou de microphone.
 ## Tests exécutés en CI (données fictives exclusivement)
 
 - 20 nouveaux tests `tests/test_passive_sources.py` : vraie connexion Unix vers un faux service, objet connu/inconnu, mot-clé `stop` sans action, imitation des sources `sensor`/`robot` refusée, `safe_area` et commandes rejetées, séquences en double ou régressives, limite de fréquence, panne puis reprise sans réutiliser de donnée, déconnexion, délai silencieux, trame surdimensionnée, socket remplacé par fichier/lien, faux `hello`, API/révision incorrecte, horloge, limites de confiance/TTL, JSON dupliqué et valeurs non finies.
-- [Exécution Python complète](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40233787298) : **315 tests réussis**, syntaxe Python vérifiée. Pas de commande moteur ni d'accès à une API payante.
+- [Exécution Python complète sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40234054024) : **315 tests réussis**, syntaxe Python vérifiée. Pas de commande moteur ni d'accès à une API payante.
 - **Aucun test sur robot physique**, et les deux validations « vraie lecture de catégories depuis `mediad` » / « UID de service `mediad` sur système constructeur » restent **non réalisées**. Les fixtures de CI n'en constituent pas une preuve.
 
 ## Décision et prochain lot
