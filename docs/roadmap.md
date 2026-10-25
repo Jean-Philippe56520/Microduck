@@ -141,6 +141,17 @@ upstream/microduck/scripts/duck-sim down
 
 **Statut : code + tests vérifiés ; chemin de commande et arrêt testés en vrai MuJoCo.** Une intention `explore` a déclenché un essai très bref sans preuve de locomotion effective. Aucun moteur réel ni pilote constructeur modifié.
 
+## J2e — Translation mesurable et mémoire des conséquences (en cours, 25 octobre 2026)
+
+- [x] Revue du constructeur : le seuil par défaut de la politique station debout / marche est `0,05 m/s` ; précédente commande `vx=0,05 m/s` au seuil, seulement 0,185 mm de variation de position du tronc.
+- [x] `sim_walk_trial.py` : essai unique `vx=0,12 m/s`, 12 notifications espacées de 0,1 s au maximum, observation de la dérive au repos, contrôles des zones et santé avant chaque commande, `robot.stop` confirmé.
+- [x] `episodic_memory.py` : persistance en SQLite des essais simulés ; résultats fiables distingués des hypothèses, préférences qui évoluent doucement et décisions suivantes adaptées. Aucun effet sur les intentions du vrai robot.
+- [x] Tests unitaires avec faux sockets et mémoire persistante, y compris reprise, refus pour zone/connexion, apprentissage négatif et absence d'effet des résultats incertains.
+- [ ] Exécuter l'essai avec les démons officiels MuJoCo sur GitHub Actions, consigner déplacement, dérive, contrôle d'arrêt, santé et éventuels échecs.
+- [ ] Mesurer ensuite la locomotion effective (contacts au sol et vitesse soutenue), pas seulement la translation du tronc ; aucune validation physique possible pour l'instant.
+
+**Portée :** un seul essai autorisé volontairement sur la branche expérimentale. Le workflow standard et le robot réel ne reçoivent aucune commande.
+
 ## Phase 3 — Boucler perception, décision et action dans MuJoCo (V1b)
 
 **But :** démontrer la première autonomie observable, sans modifier le contrôle moteur officiel.
@@ -213,7 +224,7 @@ Les documents et les tests doivent toujours distinguer un **test logiciel**, une
 
 **Jalon J4 :** porter et valider sur matériel réel dès qu'il sera disponible (phase 6).
 
-Le contrat de perception versionné et ses tests sont désormais codés. **Prochaine modification fonctionnelle :** fournir une **preuve de zone et de sol sûrs côté simulateur**, puis concevoir un filtre d'intentions bornées vers `robotd` ; maintenir l'arrêt par défaut tant que cette preuve est absente. Suivre le [plan d'intégration MuJoCo J1b → J2](mujoco-integration-plan.md), qui distingue clairement lecture des capteurs, preuve du sol sûr, commandes autorisées et mémoire des conséquences. Pas de fonctionnalité vocale, de reconnaissance individuelle ni de portage Rust avant la première boucle complète en simulation.
+Le contrat de perception versionné et ses tests sont désormais codés. **Prochaine modification fonctionnelle :** mesurer la translation du robot virtuel sous une commande au-dessus du seuil de sélection de marche, puis enregistrer le résultat vérifié dans la mémoire SQLite. Ne pas confondre translation et locomotion stable. Suivre le [plan d'intégration MuJoCo J1b → J2](mujoco-integration-plan.md), qui distingue clairement lecture des capteurs, preuve du sol sûr, commandes autorisées et mémoire des conséquences. Pas de fonctionnalité vocale, de reconnaissance individuelle ni de portage Rust avant la première boucle complète en simulation.
 
 ## Références
 
