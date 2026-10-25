@@ -1,5 +1,7 @@
 #!/bin/sh
 # Read-only MuJoCo Companion smoke test. Run from a checked-out Git repository.
+# DUCK_SIM_DEP_MODE=runtime installs only the official body-server dependencies,
+# which is useful on headless CI runners; default full uses the RL uv.lock.
 # Does not enable movements from the autonomous brain; official duck-sim may
 # move its own simulated robot to stand when started.
 set -eu
@@ -57,11 +59,33 @@ git -C "$ROOT" submodule update --init --recursive
     printf 'Missing official microduck_rl checkout\n' >&2
     exit 2
 }
-(
-    cd "$DUCK_SIM_RL"
-    # RL requires Python >=3.12,<3.13; uv manages its isolated environment.
-    uv sync --frozen --python 3.12
-)
+# The complete RL environment contains training dependencies (including PyTorch).
+# For the official headless *body server only*, its imports require just MuJoCo,
+# NumPy and ONNX Runtime. Pin versions verified in GitHub Actions smoke run
+# 40145369078; this optional runtime mode does not install or modify
+# the motor policies, the official daemons, or the simulator's source.
+case "${DUCK_SIM_DEP_MODE:-full}" in
+    full)
+        (
+            cd "$DUCK_SIM_RL"
+            uv sync --frozen --python 3.12
+        )
+        ;;
+    runtime)
+        uv venv --python 3.12 "$DUCK_SIM_RL/.venv"
+        uv pip install --python "$DUCK_SIM_RL/.venv/bin/python" \
+            'mujoco==3.10.0' 'numpy==2.5.4' 'onnxruntime==1.28.0'
+        # The lean environment deliberately skips editable RL-package
+        # installation. Python must therefore find its pinned source tree.
+        export PYTHONPATH="$DUCK_SIM_RL/src:$PYTHONPATH"
+        "$DUCK_SIM_RL/.venv/bin/python" -c \
+            'import mjlab_microduck.sim.body_server'
+        ;;
+    *)
+        printf 'Unknown DUCK_SIM_DEP_MODE (use full or runtime)\n' >&2
+        exit 2
+        ;;
+esac
 
 started=0
 cleanup() {
