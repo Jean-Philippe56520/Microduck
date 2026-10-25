@@ -176,3 +176,10 @@ Lors du développement initial J2a, les tests avaient été exécutés avec des 
 Cette preuve établit uniquement que **les démons officiels simulés peuvent fournir des données au cerveau et fonctionner à cadence nominale dans cet environnement CI**. Les valeurs de batterie, de capteurs, de température et d'énergie du robot réel ne sont pas mesurées. L'absence de collision, la reconnaissance d'un animal, la fiabilité des escaliers et l'autonomie sans PC auxiliaire sur la carte RK3566 restent à démontrer.
 
 **Avant mouvement autonome :** construire une preuve explicite de `safe_area` et `floor_clear` issue du simulateur (et non d'une supposition à partir du ToF 8×8), puis utiliser exclusivement un adaptateur filtrant les intentions à travers `robotd`. Aucun pilote ni mécanisme de sécurité du constructeur n'a été modifié pendant cet essai.
+
+
+## Essai de certification de sol purement virtuel (J2c)
+
+La passerelle `sim_flat_zone.py` prépare un contrôle basé sur la scène MuJoCo **officielle et épinglée** plutôt que sur les 64 valeurs ToF. Elle exige un processus `body_server` local, dans la scène plane par défaut, un robot unique, une position (vérité terrain) cohérente et un espace de travail artificiellement borné. **Cette vérification n'existe pas sur le Microduck réel**, qui n'a pas accès à sa position parfaite ni à la géométrie exacte d'une maison.
+
+Ces contrôles sont codés et leur comportement est testé sur données fictives. La validation de cette nouvelle étape sur le vrai MuJoCo est en cours dans le workflow CI dédié. Cela ne change pas l'inconnue concernant les escaliers, l'évitement d'animaux ou la navigation sûre en milieu réel. Aucune valeur de RAM disponible, de température ou d'énergie n'a été mesurée sur le RK3566.
