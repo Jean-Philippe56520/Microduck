@@ -97,7 +97,7 @@ class MotionMemoryTests(unittest.TestCase):
                 stop_confirmed=True, healthy_after=True, safe_after=True,
             )
         brain = AutonomyBrain(memory)
-        self.assertEqual("idle", brain.choose(safe_scene()).intention)
+        self.assertEqual("rest", brain.choose(safe_scene()).intention)
         self.assertEqual("explore", brain.choose(safe_scene("mock")).intention)
 
     def test_inconclusive_drift_preserves_preferences(self):
@@ -329,7 +329,7 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
             )
         mem.close()
         poses = [ground(1.), ground(1.3)]
-        with self.assertRaisesRegex(SimMotionError, "idle"):
+        with self.assertRaisesRegex(SimMotionError, "rest"):
             self.invoke(poses=poses)
 
     def test_cli_demands_explicit_enable(self):
