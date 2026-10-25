@@ -18,7 +18,7 @@ from .passive_observations import (
     OBJECT_CATEGORIES, PASSIVE_KINDS, summarize_passive,
 )
 from .passive_sources import PassiveRead
-from .perception import _SOUND_CATEGORIES
+from .perception import PerceptionSnapshot, _SOUND_CATEGORIES
 
 MAX_STORED_OBSERVATIONS = 512
 RETENTION_SECONDS = 14 * 24 * 3600
@@ -138,6 +138,8 @@ class PassiveObservationJournal:
                 or not 0 <= reading.sequence < 2**63):
             raise ValueError("invalid fixture sequence")
         snapshot = reading.snapshot
+        if not isinstance(snapshot, PerceptionSnapshot):
+            raise TypeError("reading must contain a PerceptionSnapshot")
         if snapshot.environment != "mock":
             raise ValueError("only mock snapshots may be journaled in F1-C")
         if any(event.kind not in PASSIVE_KINDS
@@ -154,31 +156,25 @@ class PassiveObservationJournal:
             _check_category(p.kind, p.category)
             if p.status != "identified" and p.category != "unknown":
                 raise ValueError("uncertain category must be unknown")
-        before = self._memory.conn.total_changes
+        inserted = 0
         with self._memory.conn:
             self._prune(wall)
             for ordinal, p in enumerate(projections):
-                self._memory.conn.execute("""
+                result = self._memory.conn.execute("""
                     INSERT OR IGNORE INTO passive_observation_log(
                         session_id,sequence,ordinal,recorded_epoch_s,
                         observed_monotonic_s,kind,category,status,
                         source,confidence,channel)
-                    VALUES (?,?,?,?,?,?,?,?,?,'mock_fixture_unix')
+                    VALUES (?,?,?,?,?,?,?,?,?,?,'mock_fixture_unix')
                 """, (
                     self.session_id, reading.sequence, ordinal, wall,
                     p.observed_at, p.kind, p.category, p.status,
                     "mock", p.confidence,
                 ))
+                inserted += result.rowcount
             self._prune(wall)
-        # total_changes includes deletions performed by retention. We must
-        # return INSERT count only, even when pruning removed older rows.
-        return sum(
-            self._memory.conn.execute("""
-                SELECT COUNT(*) FROM passive_observation_log
-                WHERE session_id=? AND sequence=? AND ordinal=?
-            """, (self.session_id, reading.sequence, i)).fetchone()[0]
-            for i in range(len(projections))
-        ) if self._memory.conn.total_changes > before else 0
+        # Do not count pruned rows or already-existing duplicate sequences.
+        return inserted
 
     def _prune(self, wall: float) -> None:
         cutoff = wall - RETENTION_SECONDS
@@ -238,9 +234,9 @@ class PassiveObservationJournal:
         evidence a particular animal, object instance or person returned.
         """
         _check_category(kind, category)
+        wall = _check_wall(now_wall_epoch_s)
         if category == "unknown":
             return 0
-        wall = _check_wall(now_wall_epoch_s)
         return int(self._memory.conn.execute("""
             SELECT COUNT(*) FROM passive_observation_log
             WHERE kind=? AND category=? AND status='identified'
