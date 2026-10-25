@@ -98,7 +98,17 @@ if [ "${DUCK_SIM_SOLVER_TRACE:-NO}" = YES ]; then
     python3 -c 'import os,pathlib; from microduck_companion.sim_flat_zone import verify_flat_scene; verify_flat_scene(pathlib.Path(os.environ["DUCK_SIM_RL"]))'
     rm -f "$DUCK_SIM_STATE/solver-tap.jsonl" "$DUCK_SIM_STATE/solver-analysis.json"
     export MICRODUCK_SIM_SOLVER_TRACE=YES
+    if [ "${DUCK_SIM_ACTUATOR_AUDIT:-NO}" = YES ]; then
+        export MICRODUCK_SIM_ACTUATOR_AUDIT=YES
+        rm -f "$DUCK_SIM_STATE/actuator-gain-audit.json"
+    fi
     export PYTHONPATH="$ROOT/scripts/solver-tap:$PYTHONPATH"
+fi
+
+if [ "${DUCK_SIM_ACTUATOR_AUDIT:-NO}" = YES ] && \
+   [ "${DUCK_SIM_SOLVER_TRACE:-NO}" != YES ]; then
+    printf 'P0e actuator audit requires the live solver probe.\n' >&2
+    exit 2
 fi
 
 started=0
@@ -156,6 +166,15 @@ if [ "${DUCK_SIM_SOLVER_TRACE:-NO}" = YES ]; then
         --input "$DUCK_SIM_STATE/solver-tap.jsonl" \
         --p0b "$DUCK_SIM_STATE/walk-comparison.json" \
         --output "$DUCK_SIM_STATE/solver-analysis.json"
+fi
+
+# P0e: OFFLINE compare exact pre-step MuJoCo actuator parameters with
+# the native solver's force output after J2e's verified robot.stop.
+if [ "${DUCK_SIM_ACTUATOR_AUDIT:-NO}" = YES ]; then
+    python3 -m microduck_companion.sim_actuator_gain_audit \
+        --input "$DUCK_SIM_STATE/solver-tap.jsonl" \
+        --p0b "$DUCK_SIM_STATE/walk-comparison.json" \
+        --output "$DUCK_SIM_STATE/actuator-gain-audit.json"
 fi
 
 # P0c: replay contact geometry OFFLINE from the already stopped P0b trial.

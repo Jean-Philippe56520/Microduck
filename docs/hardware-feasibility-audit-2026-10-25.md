@@ -2,7 +2,7 @@
 
 Date : 2026-10-25. Audit documentaire et revue de code, **sans accès au robot physique**. Les valeurs de RAM et stockage libres ne sont **pas mesurées**. Aucune capture d'image privée ou donnée biométrique ne doit être placée dans ce dépôt.
 
-**Mise à jour de cohérence :** le [plan d'action consolidé](plan-action.md) fixe les priorités et les critères de passage. Quatre essais MuJoCo J2e, documentés ci-dessous, ont validé la chaîne de commande et de mémoire **mais pas la locomotion** (au mieux **2,574 mm** de mouvement du tronc). **P0a–P0c : diagnostics passifs et replay géométrique réalisés ; P0d : lecture des contacts/forces simulés originaux et cibles articulaires dans le processus MuJoCo, cause de locomotion toujours inconnue.** Les anciennes décisions de faisabilité ci-dessous sont conservées comme historique, pas comme une seconde liste de tâches à exécuter.
+**Mise à jour de cohérence :** le [plan d'action consolidé](plan-action.md) fixe les priorités et les critères de passage. Quatre essais MuJoCo J2e, documentés ci-dessous, ont validé la chaîne de commande et de mémoire **mais pas la locomotion** (au mieux **2,574 mm** de mouvement du tronc). **P0a–P0d : diagnostics passifs, reconstruction géométrique et forces du solveur MuJoCo ; P0e : gains actifs et loi d'effort vérifiés en simulation, cause de la faible translation toujours inconnue.** Les anciennes décisions de faisabilité ci-dessous sont conservées comme historique, pas comme une seconde liste de tâches à exécuter.
 
 ## Verdict
 
@@ -237,4 +237,11 @@ La sonde mesure des **forces numériques MuJoCo et cibles de position au sein de
 
 
 **Répétition P0d après durcissement :** [CI #40190697090](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40190697090) réussie, 190 tests Python, 132/132 trames de marche avec double appui sous charge, translation finale seulement **1,597 mm**. Le calcul descriptif de force par erreur de consigne (roulis hanches et genoux) donne **~0,52–0,55 N·m/rad**, cohérent avec le `kp=0.55` du MJCF épinglé. **Aucune saturation à ±0,96 N·m n'a été mesurée** pour ces articulations. Cette cohérence ne valide pas la locomotion et ne justifie pas un changement de gain sans étude contrôlée. Les limites de temps, de commande, de contact et de transposition au vrai robot restent celles du [rapport P0d](mujoco-p0d-live-solver-2026-10-25.md).
+
+
+### P0e — Loi d'effort et gains actifs (MuJoCo seulement, 25 octobre 2026)
+
+Le [scénario P0e officiel #40193139617](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40193139617) a réussi avec **199 tests Python**. La sonde facultative du simulateur épinglé a capturé les paramètres d'actionneur **avant** l'appel original `mj_step` (gain, biais, consigne, position, vitesse et limites), et les forces générées par ce même pas. Gains observés **0,44 N·m/rad** au repos (79/79 trames), **0,55 N·m/rad** sur 123/127 trames de marche (4 trames à 0,44). **2 884 valeurs d'effort** des 14 actionneurs correspondent exactement à la loi numérique du modèle, sans écrêtage à ±0,96 N·m sur les phases mesurées. Les deux pieds sont chargés à **127/127 instants de marche**. Pourtant, **2,295 mm** seulement de déplacement net final J2e et arrêt confirmé : la locomotion demeure **non validée**, cause inconnue.
+
+Il ne s'agit pas d'une mesure de moteurs ni d'efforts réels sur RK3566/Microduck. L'instrumentation ajoute une charge Python au simulateur ; le coût de la lecture **avant** pas n'est pas quantifié et le temps de capture après pas ne mesure pas l'impact total. Le résultat mathématique ne démontre pas que la politique ONNX, les gains ou l'adhérence sont adaptés à une démarche physique. [Rapport détaillé P0e](mujoco-p0e-actuator-gains-2026-10-25.md).
 
