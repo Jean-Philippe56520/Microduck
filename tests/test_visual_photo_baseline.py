@@ -249,9 +249,9 @@ class TinyModelTests(unittest.TestCase):
         self.assertEqual(20,len(dataset.samples))
         self.assertEqual(6,len(dataset.partition("test")))
         self.assertEqual(20,len({s.group_id for s in dataset.samples}))
-        self.assertNotIn("Malo",manifest)
-        self.assertNotIn("Nessquick",manifest)
-        self.assertNotIn("Kitty",manifest)
+        self.assertNotIn("private-child-example",manifest)
+        self.assertNotIn("private-dog-example",manifest)
+        self.assertNotIn("private-cat-example",manifest)
         self.assertNotIn("image_path",manifest)
         self.assertNotIn("image_bytes",manifest)
 
