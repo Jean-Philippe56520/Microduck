@@ -29,8 +29,7 @@ jobs:
       PYTHONUNBUFFERED: "1"
       # Do not start a viewer or camera: keep the initial experiment cheap.
       DUCK_SIM_STATE: /tmp/duck-sim-companion
-      # Keep a CPU-only physics backend unless the official body needs others.
-      MUJOCO_GL: osmesa
+      # No MUJOCO_GL override: body-only headless physics opens no GL context.
     steps:
       - uses: actions/checkout@v4
         with:
@@ -46,7 +45,7 @@ jobs:
       - name: Install system build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y             libudev-dev pkg-config libasound2-dev             libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev             libgstreamer-plugins-bad1.0-dev
+          sudo apt-get install -y libudev-dev pkg-config libasound2-dev
 
       - name: Check pinned simulator sources and runtime
         run: |
