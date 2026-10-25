@@ -32,3 +32,7 @@ jobs:
       - name: F3-A mock visual evaluation protocol (no media or model)
         run: |
           python -m microduck_companion.visual_dataset_demo
+      - name: F3-C mock mediad notification shapes and audio-cue contract
+        run: |
+          # OEM-shaped JSON only. No WebRTC, media.frame, real audio or motor.
+          python -m microduck_companion.passive_media_demo
