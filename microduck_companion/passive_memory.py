@@ -156,7 +156,7 @@ class PassiveObservationJournal:
             _check_category(p.kind, p.category)
             if p.status != "identified" and p.category != "unknown":
                 raise ValueError("uncertain category must be unknown")
-        inserted = 0
+        retained = 0
         with self._memory.conn:
             self._prune(wall)
             # A sequence is one atomic F1-B receipt. Do not let a repeated
@@ -167,8 +167,8 @@ class PassiveObservationJournal:
             """, (self.session_id, reading.sequence)).fetchone() is not None:
                 return 0
             for ordinal, p in enumerate(projections):
-                result = self._memory.conn.execute("""
-                    INSERT OR IGNORE INTO passive_observation_log(
+                self._memory.conn.execute("""
+                    INSERT INTO passive_observation_log(
                         session_id,sequence,ordinal,recorded_epoch_s,
                         observed_monotonic_s,kind,category,status,
                         source,confidence,channel)
@@ -178,10 +178,13 @@ class PassiveObservationJournal:
                     p.observed_at, p.kind, p.category, p.status,
                     "mock", p.confidence,
                 ))
-                inserted += result.rowcount
             self._prune(wall)
-        # Do not count pruned rows or already-existing duplicate sequences.
-        return inserted
+            retained = int(self._memory.conn.execute("""
+                SELECT COUNT(*) FROM passive_observation_log
+                WHERE session_id=? AND sequence=?
+            """, (self.session_id, reading.sequence)).fetchone()[0])
+        # Count only rows still retained after the hard capacity cap.
+        return retained
 
     def _prune(self, wall: float) -> None:
         cutoff = wall - RETENTION_SECONDS
