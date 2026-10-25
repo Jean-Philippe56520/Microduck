@@ -144,13 +144,13 @@ upstream/microduck/scripts/duck-sim down
 ## J2e — Translation mesurable et mémoire des conséquences (en cours, 25 octobre 2026)
 
 - [x] Revue du constructeur : le seuil par défaut de la politique station debout / marche est `0,05 m/s` ; précédente commande `vx=0,05 m/s` au seuil, seulement 0,185 mm de variation de position du tronc.
-- [x] `sim_walk_trial.py` : essai unique `vx=0,12 m/s`, 12 notifications espacées de 0,1 s au maximum, observation de la dérive au repos, contrôles des zones et santé avant chaque commande, `robot.stop` confirmé.
+- [x] `sim_walk_trial.py` : essai unique `vx=0,12 m/s`, **24 notifications** espacées de 0,1 s au maximum, observation de la dérive au repos, contrôles des zones et santé avant chaque commande, `robot.stop` confirmé.
 - [x] `episodic_memory.py` : persistance en SQLite des essais simulés ; résultats fiables distingués des hypothèses, préférences qui évoluent doucement et décisions suivantes adaptées. Aucun effet sur les intentions du vrai robot.
 - [x] Tests unitaires avec faux sockets et mémoire persistante, y compris reprise, refus pour zone/connexion, apprentissage négatif et absence d'effet des résultats incertains.
-- [ ] Exécuter l'essai avec les démons officiels MuJoCo sur GitHub Actions, consigner déplacement, dérive, contrôle d'arrêt, santé et éventuels échecs.
-- [ ] Mesurer ensuite la locomotion effective (contacts au sol et vitesse soutenue), pas seulement la translation du tronc ; aucune validation physique possible pour l'instant.
+- [x] Essais sur le **vrai MuJoCo** : [12 commandes, 1,242 mm](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40175133570), [12 commandes avec politique, 0,820 mm](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40175696383), [24 commandes avec politique, 1,399 mm](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176018018). `robot.stop` confirmé ; résultat **`no_progress_observed`**, préférence `explore` 0 → −0,075 pour chaque base éphémère de CI.
+- [ ] Déterminer **pourquoi** la politique OEM `walk` est exécutée à la vitesse prévue mais le tronc ne progresse que de 1 à 1,4 mm ; examiner contacts au sol, actions de la politique et vitesse soutenue sans changer sa sécurité. Aucune validation physique possible pour l'instant.
 
-**Portée :** un seul essai autorisé volontairement sur la branche expérimentale. Le workflow standard et le robot réel ne reçoivent aucune commande.
+**Portée et verdict :** 142 tests Python dont le renforcement de l'accusé `robot.stop`, et boucle mesure → mémoire réellement exécutée sous MuJoCo. **Locomotion non validée** malgré `policy=walk` 23 fois sur 24 et `max_applied_vx≈0,12 m/s`. Le résultat d'acceptation de la translation reste `NOT_MET`. Un seul essai par lancement sur la branche expérimentale ; la CI principale et le robot réel ne reçoivent aucune commande.
 
 ## Phase 3 — Boucler perception, décision et action dans MuJoCo (V1b)
 
@@ -224,7 +224,7 @@ Les documents et les tests doivent toujours distinguer un **test logiciel**, une
 
 **Jalon J4 :** porter et valider sur matériel réel dès qu'il sera disponible (phase 6).
 
-Le contrat de perception versionné et ses tests sont désormais codés. **Prochaine modification fonctionnelle :** mesurer la translation du robot virtuel sous une commande au-dessus du seuil de sélection de marche, puis enregistrer le résultat vérifié dans la mémoire SQLite. Ne pas confondre translation et locomotion stable. Suivre le [plan d'intégration MuJoCo J1b → J2](mujoco-integration-plan.md), qui distingue clairement lecture des capteurs, preuve du sol sûr, commandes autorisées et mémoire des conséquences. Pas de fonctionnalité vocale, de reconnaissance individuelle ni de portage Rust avant la première boucle complète en simulation.
+Le contrat de perception versionné et ses tests sont désormais codés. **Prochaine modification fonctionnelle :** diagnostiquer la quasi-absence de translation malgré la sélection vérifiée de `walk` et instrumenter les contacts / commandes de la politique dans MuJoCo. La chaîne de mesure et la mémoire SQLite sont désormais exécutées et enregistrent correctement les essais infructueux. Suivre le [plan d'intégration MuJoCo J1b → J2](mujoco-integration-plan.md), qui distingue clairement lecture des capteurs, preuve du sol sûr, commandes autorisées et mémoire des conséquences. Pas de fonctionnalité vocale, de reconnaissance individuelle ni de portage Rust avant la première boucle complète en simulation.
 
 ## Références
 
