@@ -95,7 +95,7 @@ if [ "${DUCK_SIM_SOLVER_TRACE:-NO}" = YES ]; then
         printf 'P0d requires the verified single P0b trial.\n' >&2
         exit 2
     fi
-    python3 -c 'import pathlib; from microduck_companion.sim_flat_zone import verify_flat_scene; verify_flat_scene(pathlib.Path("${DUCK_SIM_RL}"))'
+    python3 -c 'import os,pathlib; from microduck_companion.sim_flat_zone import verify_flat_scene; verify_flat_scene(pathlib.Path(os.environ["DUCK_SIM_RL"]))'
     rm -f "$DUCK_SIM_STATE/solver-tap.jsonl" "$DUCK_SIM_STATE/solver-analysis.json"
     export MICRODUCK_SIM_SOLVER_TRACE=YES
     export PYTHONPATH="$ROOT/scripts/solver-tap:$PYTHONPATH"
