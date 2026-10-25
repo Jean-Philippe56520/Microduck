@@ -1,6 +1,6 @@
 # F3-E — Revue de données et précontrôle d'acquisition locale
 
-**26 octobre 2026.** Branche `feat/f3e-data-review-20261026`. Portée : **contrats logiciels sur métadonnées, sans robot, sans image acquise et sans commande motrice**. Après F3-D ([PR #35 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/35)). Cette étape ne constitue ni une validation des droits d'auteur ni une preuve de fonctionnement du capteur.
+**26 octobre 2026.** [PR #36](https://github.com/Jean-Philippe56520/Microduck/pull/36), non fusionnée. Portée : **contrats logiciels sur métadonnées, sans robot, sans image acquise et sans commande motrice**. Après F3-D ([PR #35 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/35)). Cette étape ne constitue ni une validation des droits d'auteur ni une preuve de fonctionnement du capteur.
 
 ## 1. Pourquoi F3-E est nécessaire
 
@@ -35,7 +35,7 @@ Le code constructeur inspecté à la révision épinglée `942e58e3aa6dbb28e7037
 
 ## 4. Tests et niveaux de validation
 
-`tests/test_visual_annotation_review.py`, `tests/test_oem_frame_header.py` et `tests/test_oem_capture_checklist.py` couvrent les avis concordants/conflictuels, l'absence de preuve de droits, les champs interdits, les en-têtes UYVY et les refus des demandes non autorisées. La démonstration `python -m microduck_companion.f3e_demo` lit seulement **un registre vide**, sans images. Le dépôt dispose de **593 tests Python réussis** (23 nouveaux tests F3-E) sur [GitHub Actions](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40245528480) avant les mises à jour documentaires.
+`tests/test_visual_annotation_review.py`, `tests/test_oem_frame_header.py` et `tests/test_oem_capture_checklist.py` couvrent les avis concordants/conflictuels, l'absence de preuve de droits, les champs interdits, les en-têtes UYVY et les refus des demandes non autorisées. La démonstration `python -m microduck_companion.f3e_demo` lit seulement **un registre vide**, sans images. Le dépôt dispose de **598 tests Python réussis** (28 nouveaux tests F3-E) sur [GitHub Actions](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40245623218) avant les mises à jour documentaires.
 
 ```bash
 python -m unittest discover -s tests -v
