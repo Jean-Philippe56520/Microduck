@@ -43,9 +43,9 @@ class VisualDatasetTests(unittest.TestCase):
         self.assertEqual(
             {"unknown", "ball", "toy", "dog", "cat", "person",
              "microduck", "other_object"}, set(CATEGORIES))
-        self.assertNotIn("Malo", CATEGORIES)
-        self.assertNotIn("Nessquick", CATEGORIES)
-        self.assertNotIn("Kitty", CATEGORIES)
+        self.assertNotIn("private-child-example", CATEGORIES)
+        self.assertNotIn("private-dog-example", CATEGORIES)
+        self.assertNotIn("private-cat-example", CATEGORIES)
         self.assertNotIn("keyword_stop", CATEGORIES)
 
     def test_mock_evaluation_reports_correct_mislabels_and_abstentions(self):
@@ -121,9 +121,9 @@ class VisualDatasetTests(unittest.TestCase):
                 "sample_id", "group_id", "fingerprint_sha256",
                 "split", "category", "source_kind", "rights_basis",
                 "annotation_basis"}, set(sample))
-        self.assertNotIn("Malo", self.manifest_json)
-        self.assertNotIn("Kitty", self.manifest_json)
-        self.assertNotIn("Nessquick", self.manifest_json)
+        self.assertNotIn("private-child-example", self.manifest_json)
+        self.assertNotIn("private-cat-example", self.manifest_json)
+        self.assertNotIn("private-dog-example", self.manifest_json)
         self.assertNotIn("filename", self.manifest_json)
         self.assertNotIn("image_path", self.manifest_json)
 
@@ -165,9 +165,9 @@ class VisualDatasetTests(unittest.TestCase):
 
     def test_non_opaque_identifiers_are_forbidden(self):
         for field, bad in (
-            ("sample_id", "dog-Malo"),
+            ("sample_id", "dog-private-child-example"),
             ("sample_id", "s-short"),
-            ("group_id", "g-Kitty"),
+            ("group_id", "g-private-cat-example"),
             ("fingerprint_sha256", "NOT_A_DIGEST"),
             ("fingerprint_sha256", "a"*63),
         ):
@@ -178,7 +178,7 @@ class VisualDatasetTests(unittest.TestCase):
                 self.manifest["samples"] = json.loads(self.manifest_json)["samples"]
 
     def test_personal_identity_or_audio_not_ground_truth_categories(self):
-        for category in ("Nessquick", "Kitty", "Malo",
+        for category in ("private-dog-example", "private-cat-example", "private-child-example",
                          "bark", "keyword_stop", "llm_guess", ""):
             with self.subTest(category=category):
                 self.manifest["samples"][0]["category"] = category
@@ -306,7 +306,7 @@ class VisualDatasetTests(unittest.TestCase):
             self.scored()
 
     def test_unrecognized_predicted_label_rejected(self):
-        for category in ("Malo", "dog+cat", "keyword_stop", ""):
+        for category in ("private-child-example", "dog+cat", "keyword_stop", ""):
             self.predictions = json.loads(self.prediction_json)
             self.predictions["predictions"][0]["category"] = category
             with self.subTest(category=category), self.assertRaises(
