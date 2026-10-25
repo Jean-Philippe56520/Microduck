@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from .passive_memory import PassiveObservationJournal
     from .passive_intentions import PassiveIntent
     from .passive_rhythm import PassiveRhythmMetrics
+    from .passive_learning import PassiveLearning
 
 
 @dataclass(frozen=True)
@@ -90,8 +91,9 @@ class AutonomyBrain:
     def propose_balanced_passive(self, reading: PassiveRead, *,
                                  journal: PassiveObservationJournal,
                                  now_monotonic_s: float,
-                                 now_wall_epoch_s: float) -> PassiveIntent:
-        """F2-B: pace *proposals*, never execute an action or contact robotd.
+                                 now_wall_epoch_s: float,
+                                 learning: PassiveLearning | None = None) -> PassiveIntent:
+        """F2-B/F2-C: pace non-motor proposals; optional mock-only bias.
 
         Reuses F2-A provenance checking and the same ExperienceMemory journal.
         Only the simulated motivation-energy variable is advanced per valid
@@ -99,17 +101,23 @@ class AutonomyBrain:
         """
         from .passive_rhythm import PassiveRhythm
         from .passive_memory import PassiveObservationJournal
+        from .passive_learning import PassiveLearning
 
         if not isinstance(journal, PassiveObservationJournal):
             raise TypeError("a passive journal is required")
         if journal._memory is not self.memory:
             raise ValueError("brain and passive journal must share SQLite")
+        if learning is not None:
+            if not isinstance(learning, PassiveLearning):
+                raise TypeError("F2-C learning must be PassiveLearning")
+            if learning._memory is not self.memory:
+                raise ValueError("F2-C learning must share the brain SQLite")
         if self._passive_rhythm is None:
             self._passive_rhythm = PassiveRhythm()
         return self._passive_rhythm.tick(
             reading, journal=journal, motivations=self.motives,
             now_monotonic_s=now_monotonic_s,
-            now_wall_epoch_s=now_wall_epoch_s,
+            now_wall_epoch_s=now_wall_epoch_s, learning=learning,
         )
 
     def passive_rhythm_metrics(self) -> PassiveRhythmMetrics:
