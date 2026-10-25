@@ -10,6 +10,7 @@ on:
       - feat/sim-flat-zone-20261025
       - feat/one-bounded-sim-intent-20261025
       - feat/measured-sim-walk-learning-v1
+      - feat/p0a-readonly-joint-trace-20261025
     paths:
       - ".github/workflows/mujoco-smoke.yml"
       - "scripts/sim-smoke.sh"
@@ -90,3 +91,4 @@ jobs:
           path: |
             ${{ runner.temp }}/mujoco-smoke-console.log
             /tmp/duck-sim-companion/*.log
+            /tmp/duck-sim-companion/joint-trace.json
