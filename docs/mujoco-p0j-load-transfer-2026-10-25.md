@@ -1,4 +1,4 @@
-# P0j — Transfert de charge pied gauche/droit, relecture hors ligne du solveur MuJoCo
+# P0j — Transfert de charge pied gauche/droit, relecture hors ligne du solveur MuJoCo (PR #22)
 
 **Date : 25 octobre 2026.** **État : codé, testé logiciellement et reproduit sur l'archive P0e.** Aucune commande motrice, aucun redémarrage du simulateur et aucun test matériel dans ce lot.
 
