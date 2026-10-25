@@ -30,6 +30,7 @@ JOINT_COUNT = 15
 ZONE_RADIUS_M = 0.90
 ROBOT_RADIUS_MARGIN_M = 0.16
 MAX_GROUND_AGE_S = 0.35
+MAX_TELEMETRY_AGE_S = 1.00
 
 
 class GroundTruthError(RuntimeError):
@@ -207,7 +208,7 @@ def flat_zone_snapshot(
     cannot enter this simulator-only path.
     """
     timestamp = time.monotonic() if now is None else now
-    base = telemetry.to_snapshot(now=timestamp, max_age_s=MAX_GROUND_AGE_S)
+    base = telemetry.to_snapshot(now=timestamp, max_age_s=MAX_TELEMETRY_AGE_S)
     if ground is None or not base.events:
         return base
     age = timestamp - ground.observed_at
