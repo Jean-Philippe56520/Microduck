@@ -249,4 +249,57 @@ if [ "${DUCK_SIM_WALK_TRIAL:-NO}" = YES ]; then
         fi
     fi
 fi
+# P0i: ONE fixed J2e motor trial on each of TWO fresh official simulator
+# boots. This branch-only experiment never patches OEM files, never changes
+# safety tuning, and never sends actuator targets directly. The upstream
+# robotd remains the only motor authority, and the existing J2e stop/deadman
+# verification is reused on both arms. No subsequent automatic retry.
+if [ "${DUCK_SIM_POLICY_PAIR:-NO}" = YES ]; then
+    # Fresh files from a failed earlier job must never count as evidence.
+    rm -f "$DUCK_SIM_STATE/p0i-alpha.json" \
+          "$DUCK_SIM_STATE/p0i-velstand.json" \
+          "$DUCK_SIM_STATE/p0i-comparison.json" \
+          "$DUCK_SIM_STATE/p0i-alpha.sqlite3" \
+          "$DUCK_SIM_STATE/p0i-velstand.sqlite3"
+    # Arm A is the alpha pair configured by the pinned duck-sim launcher.
+    MICRODUCK_SIM_P0I=YES python3 -m microduck_companion.sim_policy_pair \
+        --arm alpha --enable-once \
+        --state-dir "$DUCK_SIM_STATE" \
+        --robot-root "$ROOT/upstream/microduck" \
+        --rl-root "$DUCK_SIM_RL" \
+        --memory "$DUCK_SIM_STATE/p0i-alpha.sqlite3" \
+        --output "$DUCK_SIM_STATE/p0i-alpha.json"
+
+    # Stop ALL OEM services and boot a fresh robot (new body_server PID,
+    # simulator time, model sessions and SQLite); repeat NO A trial.
+    "$SIM" down
+    "$SIM" up
+    "$SIM" status
+    "$SIM" realtime
+
+    # Only the official robotctl API changes policy slots, not the motors or
+    # safety configuration. Both commands must be accepted and reflected in
+    # the live robotd policy report before P0i permits any movement.
+    "$SIM" ctl policy --file "$DUCK_SIM_STATE/robotd.toml" \
+        load walk "$DUCK_SIM_STATE/policies/current/velstand.onnx"
+    "$SIM" ctl policy --file "$DUCK_SIM_STATE/robotd.toml" \
+        load stand none
+    sleep 3
+    "$SIM" ctl health
+
+    MICRODUCK_SIM_P0I=YES python3 -m microduck_companion.sim_policy_pair \
+        --arm velstand --enable-once \
+        --state-dir "$DUCK_SIM_STATE" \
+        --robot-root "$ROOT/upstream/microduck" \
+        --rl-root "$DUCK_SIM_RL" \
+        --memory "$DUCK_SIM_STATE/p0i-velstand.sqlite3" \
+        --output "$DUCK_SIM_STATE/p0i-velstand.json"
+
+    # Refuse mismatched model identities, same PID, missing stop or absent
+    # telemetry. Two measurements remain preliminary, not proof of gait.
+    python3 -m microduck_companion.sim_policy_pair --compare \
+        --alpha-json "$DUCK_SIM_STATE/p0i-alpha.json" \
+        --velstand-json "$DUCK_SIM_STATE/p0i-velstand.json" \
+        --output "$DUCK_SIM_STATE/p0i-comparison.json"
+fi
 printf 'Smoke test completed; official simulator is being stopped.\n'
