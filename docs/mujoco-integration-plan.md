@@ -126,7 +126,7 @@ Une scène plane officielle contenant un seul Microduck et un sol infini permet 
 
 Le centre de test est l'origine de la scène. Rayon maximal 0,90 m, marge d'encombrement 0,16 m, arrêt si la distance résiduelle à la limite devient inférieure à 0,35 m. L'altitude du tronc et la gravité projetée doivent indiquer un robot debout ; un autre scénario, une pose absente ou une valeur non finie entraînent le refus. La preuve de pose expire après 0,35 s, et les télémétries `robotd`/`tofd` doivent rester fraîches et cohérentes.
 
-**La zone plane a été vérifiée par revue du modèle XML épinglé, mais son interrogation sur la simulation tournante reste à valider dans le workflow headless.** L'API est volontairement limitée à un diagnostic en lecture seule `sim_zone_probe`. Aucun ordre moteur n'a été ajouté.
+**La vérification en situation MuJoCo officielle a réussi** ([CI #40173323079](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40173323079)) : pose (0,0257 ; 0,0069 ; 0,1155) m, réserve de zone 0,7134 m et première intention `explore` fondée sur une preuve de simulation, aucune commande moteur. L'API demeure limitée à `sim_zone_probe` en lecture seule jusqu'au lot de commande distinct.
 
 ## Lot D — Passer des intentions de haut niveau aux commandes officielles
 
