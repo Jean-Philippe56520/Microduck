@@ -1,9 +1,9 @@
 # P0j — Transfert de charge pied gauche/droit, relecture hors ligne du solveur MuJoCo (PR #22)
 
-**Date : 25 octobre 2026.** **État : codé, testé logiciellement et reproduit sur l'archive P0e.** Aucune commande motrice, aucun redémarrage du simulateur et aucun test matériel dans ce lot.
+**Date : 25 octobre 2026.** **État : fusionné dans `main` ([PR #22](https://github.com/Jean-Philippe56520/Microduck/pull/22)), testé logiciellement et reproduit sur l'archive P0e.** Aucune commande motrice, aucun redémarrage du simulateur et aucun test matériel dans ce lot.
 
 - **Source de mesure :** [GitHub Actions P0e #40193139617](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40193139617), archive `mujoco-headless-diagnostics`. L'essai source P0e avait 24 notifications de `robot.move` à 0,12 m/s et un `robot.stop` confirmé ; **P0j n'en émet aucune**.
-- **Nouvelle vérification P0j :** [GitHub Actions #40229765655](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40229765655) : **269 tests Python réussis** et replay du fichier JSONL original sur Ubuntu 24.04, **sans checkout des sous-modules ni démarrage de `robotd`/MuJoCo**. Rapport `p0j-load-transfer.json` archivé.
+- **Nouvelle vérification P0j :** [GitHub Actions #40229765655](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40229765655) : **269 tests Python réussis** et replay du fichier JSONL original sur Ubuntu 24.04, **sans checkout des sous-modules ni démarrage de `robotd`/MuJoCo**. Rapport `p0j-load-transfer.json` archivé. Les [269 tests Python ont aussi réussi sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40230029946), après fusion.
 - **Révisions sources P0e :** `microduck_rl` `b02fdea4902c2b93b7d34a83a6f05da4ececb7d3`, scène Git blob `a3848be52113a50138d54921748733f09488d496`.
 - **Module :** `microduck_companion/sim_p0j_load_transfer.py` ; tests `tests/test_sim_p0j_load_transfer.py` ; workflow `.github/workflows/p0j-offline.yml`.
 
