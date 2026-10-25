@@ -71,7 +71,7 @@ class SemanticMemoryTests(unittest.TestCase):
         sid=self.record()
         self.assertTrue(self.remember(sid))
         (item,)=self.semantic.recall(now_wall_epoch_s=WALL)
-        self.assertEqual(("ball","visual_label",".96"),
+        self.assertEqual(("ball","visual_label","0.96"),
                          (item.category,item.modality,str(item.reported_confidence)))
         self.assertTrue(item.historical_only)
         self.assertFalse(item.real_sensor_verified)
