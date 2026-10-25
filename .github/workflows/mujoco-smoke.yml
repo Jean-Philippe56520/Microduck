@@ -1,0 +1,87 @@
+# Opt-in integration experiment: run the OFFICIAL microduck MuJoCo daemons
+# with the companion's read-only probe. No autonomy motor commands.
+name: MuJoCo headless smoke test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ci/mujoco-headless-smoke-20261025
+    paths:
+      - ".github/workflows/mujoco-smoke.yml"
+      - "scripts/sim-smoke.sh"
+      - "microduck_companion/**"
+      - "tests/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mujoco-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      DUCK_SIM_DEP_MODE: runtime
+      PYTHONUNBUFFERED: "1"
+      # Do not start a viewer or camera: keep the initial experiment cheap.
+      DUCK_SIM_STATE: ${{ runner.temp }}/duck-sim-companion
+      # Keep a CPU-only physics backend unless the official body needs others.
+      MUJOCO_GL: osmesa
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "upstream/microduck_rl/uv.lock"
+
+      - name: Install system build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y             libudev-dev pkg-config libasound2-dev             libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev             libgstreamer-plugins-bad1.0-dev
+
+      - name: Check pinned simulator sources and runtime
+        run: |
+          python3 -V
+          cargo -V
+          uv --version
+          git submodule status
+          uv python install 3.12
+          sh -n scripts/sim-smoke.sh
+          sh scripts/sim-smoke.sh check
+
+      - name: Run companion unit tests
+        run: |
+          python3 -m unittest discover -s tests -v
+          python3 -m compileall -q microduck_companion tests
+
+      - name: Start official simulated duck and run read-only probes
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=30s 18m             sh scripts/sim-smoke.sh run 2>&1 | tee "${{ runner.temp }}/mujoco-smoke-console.log"
+
+      - name: Stop any remaining simulated services
+        if: always()
+        run: |
+          if [ -x upstream/microduck/scripts/duck-sim ]; then
+            DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"               DUCK_SIM_STATE="${{ runner.temp }}/duck-sim-companion"               DUCK_SIM_PORT=17801               upstream/microduck/scripts/duck-sim down || true
+          fi
+
+      - name: Archive diagnostics, even if startup fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mujoco-headless-diagnostics
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            ${{ runner.temp }}/mujoco-smoke-console.log
+            ${{ runner.temp }}/duck-sim-companion/*.log
