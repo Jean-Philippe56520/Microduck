@@ -192,6 +192,25 @@ def run_session(database: str | Path, *, session: str) -> dict:
     memory = ExperienceMemory(database)
     try:
         journal = PassiveObservationJournal(memory)
+        # Fail BEFORE any new events if the caller skipped/repeated a stage.
+        # The two CLI sessions are not interchangeable and must use the same
+        # historical SQLite file, not two identical sets of fake observations.
+        prior = journal.recent(now_wall_epoch_s=1_770_000_020., limit=20)
+        if session == "first" and prior:
+            raise RuntimeError("first session requires empty passive history")
+        if session == "second":
+            expected_pairs = [
+                ("ball", "identified"), ("ball", "identified"),
+                ("unknown", "conflict"), ("unknown", "unknown"),
+                ("knock", "identified"),
+            ]
+            if (len(prior) != 5
+                    or [(x.category, x.status) for x in reversed(prior)]
+                       != expected_pairs
+                    or journal.category_count(
+                        "object_label", "ball",
+                        now_wall_epoch_s=1_770_000_020.) != 2):
+                raise RuntimeError("second session requires completed first history")
         brain = AutonomyBrain(memory)
         with tempfile.TemporaryDirectory(prefix="microduck-f1d-") as folder:
             path = Path(folder) / "mock.sock"
