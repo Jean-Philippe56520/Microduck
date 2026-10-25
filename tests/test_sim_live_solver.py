@@ -269,6 +269,19 @@ class NativeSolverTests(unittest.TestCase):
         self.assertTrue(tap.disabled)
         self.assertEqual(["header"], [row["kind"] for row in writer.rows])
 
+    def test_unexpected_diagnostic_exception_never_interrupts_original_solver(self):
+        model, data, writer = FakeModel(), FakeData(), FakeWriter()
+        with patch.object(FakeMuJoCo, "mj_contactForce",
+                          side_effect=RuntimeError("optional telemetry bug")):
+            tap = install_solver_tap(Path("/fake"), mj=FakeMuJoCo,
+                                     writer=writer)
+            for _ in range(8):
+                FakeMuJoCo.mj_step(model, data)
+        self.assertTrue(tap.disabled)
+        self.assertEqual(8, FakeMuJoCo.calls.count("original_mj_step"))
+        self.assertEqual(["header", "error"], [r["kind"] for r in writer.rows])
+        self.assertIn("optional telemetry bug", writer.rows[-1]["reason"])
+
     def test_exact_process_required_for_activation(self):
         with tempfile.TemporaryDirectory() as tmp:
             binary = Path(tmp) / "python"
@@ -316,6 +329,14 @@ class LiveAnalysisTests(unittest.TestCase):
         self.assertGreater(
             result["walk"]["actuator_control_range_rad"]["left_knee"], 0.0,
         )
+        self.assertEqual(result["walk"]["frames"],
+                         result["walk"]["both_feet_with_force_gt_0_1n_frames"])
+        self.assertEqual(0, result["walk"]
+                         ["exactly_one_foot_with_force_gt_0_1n_frames"])
+        self.assertGreater(result["walk"]["rms_control_minus_joint_angle_rad"]
+                           ["left_knee"], 0.0)
+        self.assertTrue(result[
+            "joint_target_tracking_estimate_not_time_aligned_servo_test"])
         self.assertGreater(
             result["walk"]["original_solver_contacts"]["left"]
             ["max_foot_site_world_xy_speed_during_consecutive_load_mps"], 0.0,

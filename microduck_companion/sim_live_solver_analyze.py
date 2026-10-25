@@ -172,13 +172,36 @@ def _phase_summary(rows: list[dict]) -> dict:
                 max(speed_during_consecutive_load, default=None),
             "site_speed_is_not_true_contact_patch_slip": True,
         }
+    joint_error_rms = {
+        name: math.sqrt(statistics.fmean(
+            (row["actuator_position_controls_rad"][name]
+             - row["joint_angles_post_integration_rad"][name]) ** 2
+            for row in rows
+        ))
+        for name in JOINT_NAMES
+    }
+    feet_loaded = [
+        tuple(row["contacts_original_solver"][side]["normal_force_n"]
+              > MIN_NORMAL_LOAD_N for side in ("left", "right"))
+        for row in rows
+    ]
     return {
         "frames": len(rows),
         "sim_time_start_s": rows[0]["sim_time_s"],
         "sim_time_end_s": rows[-1]["sim_time_s"],
         "original_solver_contacts": foot_summary,
+        "both_feet_with_force_gt_0_1n_frames": sum(
+            left and right for left, right in feet_loaded),
+        "exactly_one_foot_with_force_gt_0_1n_frames": sum(
+            left != right for left, right in feet_loaded),
+        "no_foot_with_force_gt_0_1n_frames": sum(
+            not left and not right for left, right in feet_loaded),
         "actuator_control_range_rad": _range(rows, "actuator_position_controls_rad"),
         "joint_angle_range_rad": _range(rows, "joint_angles_post_integration_rad"),
+        # Original ctrl is the position-actuator target, but the post-integration
+        # qpos can be displaced one physical step in time relative to solver
+        # caches. These are DIAGNOSTIC tracking proxies, not servo benchmarks.
+        "rms_control_minus_joint_angle_rad": joint_error_rms,
         "actuator_force_range_nm": _range(rows, "actuator_force_simulated_nm"),
         "net_trunk_xy_m": math.hypot(
             rows[-1]["trunk_xyz_after_integration_m"][0]
@@ -233,6 +256,7 @@ def analyze_live_solver(trace: dict, raw_frames: list[dict]) -> dict:
         "original_solver_foot_contacts_observed": True,
         "original_solver_contact_forces_observed": True,
         "original_actuator_controls_observed": True,
+        "joint_target_tracking_estimate_not_time_aligned_servo_test": True,
         "diagnostic_adds_processing_to_simulator": True,
         "never_modified_oem_joint_targets": True,
         "gait_validated": False,
@@ -285,6 +309,18 @@ def main(argv: list[str] | None = None) -> int:
                     for name, value in result["walk"]["actuator_control_range_rad"].items()
                     if name.startswith(("left_", "right_"))
                 },
+                "leg_actual_joint_ranges_rad": {
+                    name: value
+                    for name, value in result["walk"]["joint_angle_range_rad"].items()
+                    if name.startswith(("left_", "right_"))
+                },
+                "leg_tracking_error_rms_rad": {
+                    name: value
+                    for name, value in result["walk"]["rms_control_minus_joint_angle_rad"].items()
+                    if name.startswith(("left_", "right_"))
+                },
+                "both_feet_loaded_frames":
+                    result["walk"]["both_feet_with_force_gt_0_1n_frames"],
             },
             "gait_validated": False,
             "locomotion_root_cause": "unknown",

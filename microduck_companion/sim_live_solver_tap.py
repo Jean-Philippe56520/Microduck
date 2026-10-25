@@ -188,7 +188,8 @@ class NonBlockingWriter:
                     row = self.queue.get()
                     file.write(json.dumps(row, allow_nan=False, separators=(",", ":"))
                                + "\n")
-        except (OSError, ValueError, TypeError) as exc:
+        except Exception as exc:
+            # The writer is optional diagnostic work: never affect OEM physics.
             self.writer_error = f"{type(exc).__name__}: {exc}"
 
     def submit(self, record: dict) -> None:
@@ -238,13 +239,15 @@ class SolverTap:
                 time.perf_counter_ns() - started
             ) / 1000.0
             self.writer.submit(frame)
-        except (TapError, OSError, ValueError, TypeError, IndexError) as exc:
+        except Exception as exc:
+            # A broken optional diagnostic must NEVER interrupt mj_step or
+            # change the manufacturer's real-time controller behaviour.
             self.disabled = True
             try:
                 self.writer.submit({"kind": "error", "reason": str(exc),
                                     "step": self.count})
-            except TapError:
-                pass  # the offline analyzer fails on missing/gapped frames too
+            except Exception:
+                pass  # analyzer rejects missing/gapped frames, including writer failure
 
 
 def install_solver_tap(output: Path, *, mj=None,
