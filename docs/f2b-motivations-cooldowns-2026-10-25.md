@@ -1,6 +1,6 @@
 # F2-B — Arbitrage des motivations, rythme et repos simulé
 
-**Date : 25 octobre 2026. Statut : code et tests logiciels sur catégories fictives, [PR #29](https://github.com/Jean-Philippe56520/Microduck/pull/29).** Aucun robot physique, servo, caméra/microphone ou API Qwen n'est intervenu dans les vérifications. [409 tests Python réussis sur branche](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40238854728) (378 existants + **31 nouveaux tests F2-B**).
+**Date : 25 octobre 2026. Statut : fusionné dans `main` via [PR #29](https://github.com/Jean-Philippe56520/Microduck/pull/29), testé en logiciel sur catégories fictives.** Aucun robot physique, servo, caméra/microphone ou API Qwen n'est intervenu dans les vérifications. [409 tests Python réussis sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40239148712) (378 existants + **31 nouveaux tests F2-B**).
 
 ## 1. Pourquoi cette étape
 
@@ -50,7 +50,7 @@ La suite `tests/test_passive_rhythm.py` contient **31 nouveaux tests**, avec don
 - [x] **Vrai socket Unix local avec faux serveur** pour cinq cycles ; F2-B propose `observe`, `idle`, `inspect`, `listen`, `idle`, tandis que la voie de sécurité distincte propose `halt` à chaque étape.
 - [x] Reprise par un autre processus Python et la même SQLite : catégorie `ball` déjà présente, mais cadence et énergie synthétique repartant à l'état **du nouveau cerveau**, sans reconnaissance d'un objet individuel.
 - [x] Mesures logicielles accessibles : `cycles`, décompte par intention, `cooldown_blocks`, `consecutive_active_repeats`, historique circulaire de **32 propositions max** et `simulated_motivation_energy`. **Ce ne sont ni des wattheures, ni des mesures CPU/RAM ou de taux de reconnaissance.**
-- [x] [CI de branche réussie : 409 tests Python](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40238854728), plus la CI habituelle du projet. Aucune commande motrice F2-B.
+- [x] [CI sur `main` réussie : 409 tests Python](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40239148712), plus la CI habituelle du projet. Aucune commande motrice F2-B.
 
 Commandes reproductibles en environnement Python compatible :
 
