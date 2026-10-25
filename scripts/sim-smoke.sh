@@ -103,6 +103,12 @@ python3 -m microduck_companion.sim_probe --state-dir "$DUCK_SIM_STATE"
 python3 -m microduck_companion.sim_observer --state-dir "$DUCK_SIM_STATE"
 python3 -m microduck_companion.sim_zone_probe --state-dir "$DUCK_SIM_STATE" \
     --rl-root "$DUCK_SIM_RL" --port "$DUCK_SIM_PORT"
+# P0a: passive read-only OEM body joints and robotd policy; NO motor commands.
+# Foot contacts and per-joint targets are not available via this protocol.
+python3 -m microduck_companion.sim_joint_trace \
+    --state-dir "$DUCK_SIM_STATE" --rl-root "$DUCK_SIM_RL" \
+    --port "$DUCK_SIM_PORT" --samples 8 --hz 5 \
+    --output "$DUCK_SIM_STATE/joint-trace.json"
 # This double-opt-in is valid ONLY for the verified flat-floor simulator.
 # On main/manual smoke runs it is disabled; no movement is emitted by default.
 if [ "${DUCK_SIM_SHORT_MOVE:-NO}" = YES ]; then

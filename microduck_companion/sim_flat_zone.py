@@ -180,11 +180,16 @@ def parse_flat_frame(payload: dict, observed_at: float) -> FlatGroundTruth:
     )
 
 
-def read_verified_flat_ground(
+def read_verified_body_state(
     state_dir: str | Path, rl_root: str | Path, *,
     port: int = 17801, timeout_s: float = 0.5,
-) -> FlatGroundTruth:
-    """Read-only simulator truth; never use with any physical robot."""
+) -> tuple[dict, float]:
+    """Read the raw pinned simulator body frame WITHOUT any write operation.
+
+    This diagnostic-only API returns more data than FlatGroundTruth, including
+    joint states. It has the same scene/process checks as the safety probe.
+    Callers must separately validate each raw field before interpreting it.
+    """
     if type(port) is not int or not 1024 <= port <= 65535:
         raise ValueError("invalid simulator TCP port")
     if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 3:
@@ -192,9 +197,20 @@ def read_verified_flat_ground(
     root, state = Path(rl_root).resolve(), Path(state_dir).resolve()
     verify_flat_scene(root)
     verify_body_process(state, root, port)
-    pose = _read_body(port, float(timeout_s))
+    payload = _read_body(port, float(timeout_s))
     verify_body_process(state, root, port)
-    return parse_flat_frame(pose, time.monotonic())
+    return payload, time.monotonic()
+
+
+def read_verified_flat_ground(
+    state_dir: str | Path, rl_root: str | Path, *,
+    port: int = 17801, timeout_s: float = 0.5,
+) -> FlatGroundTruth:
+    """Read-only simulator truth; never use with any physical robot."""
+    payload, at = read_verified_body_state(
+        state_dir, rl_root, port=port, timeout_s=timeout_s,
+    )
+    return parse_flat_frame(payload, at)
 
 
 def flat_zone_snapshot(
