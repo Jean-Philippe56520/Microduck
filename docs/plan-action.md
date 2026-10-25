@@ -33,7 +33,7 @@ Architecture à préserver :
 | Qwen sur PC et repli hors connexion | **Prévu, non intégré au compagnon** | Aucune commande LLM de moteur autorisée |
 | Cerveau embarqué et autonomie matérielle | **Non validés** | Robot physique indisponible ; CPU, RSS, RAM libre, chauffe et batterie réelle non mesurés |
 
-**Tests logiciels :** **151 tests Python** réussis sur [GitHub Actions de la branche P0a](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40178580633). Le dernier essai MuJoCo J2e a terminé avec succès **technique**, mais avec `WALK_TRANSLATION_ACCEPTANCE=NOT_MET` : [journal du test](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176410817).
+**Tests logiciels :** **167 tests Python** réussis sur [GitHub Actions de la branche P0b](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40187514224). Le [diagnostic P0b sur MuJoCo officiel](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40187514292) a réussi techniquement et observé **1,338 mm** de déplacement final (24 commandes, arrêt confirmé, résultat `no_progress_observed`) ; locomotion toujours non validée. Le dernier essai MuJoCo J2e a terminé avec succès **technique**, mais avec `WALK_TRANSLATION_ACCEPTANCE=NOT_MET` : [journal du test](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176410817).
 
 Le comptage des tests correspond à cet état du dépôt : le mettre à jour **uniquement après un nouveau résultat CI**, pas à chaque révision documentaire.
 
@@ -41,7 +41,7 @@ Le comptage des tests correspond à cet état du dépôt : le mettre à jour **u
 
 | ID | Priorité | Lot / livraison attendue | Dépendance | État |
 | --- | --- | --- | --- | --- |
-| **P0** | **Immédiate, bloquante** | Expliquer l'absence de locomotion dans la scène MuJoCo épinglée | Simulateur officiel J2e | **P0a instrumenté et testé en MuJoCo ; P0b à faire, cause inconnue** |
+| **P0** | **Immédiate, bloquante** | Expliquer l'absence de locomotion dans la scène MuJoCo épinglée | Simulateur officiel J2e | **P0a et P0b instrumentés, P0b testé en MuJoCo ; contacts dynamiques manquants, cause inconnue** |
 | **P1** | Haute | Démontrer une translation puis une démarche *mesurée* et sûre, sans contourner `robotd` | P0 | À faire |
 | **P2** | Haute | Boucle autonome répétable perception → intention → action → effet → mémoire → choix suivant | P1 pour le déplacement ; cognition sans déplacement indépendante | Partiellement codée |
 | **P3** | Haute | Vision/sons légers : catégories d'objets et d'animaux, signaux sociaux, inconnus | Contrats de perception existants ; validation d'une source mesurée | À faire |
@@ -133,7 +133,7 @@ Exemple déjà évoqué : **porte ouverte → alerte e-mail**. À tester plus ta
 | Livraison | Changement ciblé | Vérifications indispensables |
 | --- | --- | --- |
 | **PR #11 — P0a (validée en collecte MuJoCo)** | Diagnostic passif et horodaté des articulations, vitesses, pose et `robot.state.policy` ; pas de commande nouvelle. Contacts et cibles articulaires **absents** du protocole OEM : `null`, sans inférence. | Tests Python de branche [réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40178580633), collecte passive MuJoCo [réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40178580637) : 8 échantillons `stand`, 0,991 mm de dérive en 1,4 s, 0 commande ; scène/processus épinglés et fail-closed. Cause de la marche encore inconnue. |
-| **P0b** | Diagnostic comparatif repos/`stand`/`walk` à modèle OEM identique ; mesurer la cause des millimètres observés | Journal des contacts, articulation, distance, dérive, limites et arrêt ; résultat « expliqué » ou « non expliqué », sans falsifier |
+| **PR #12 — P0b (testée dans MuJoCo)** | Comparatif `stand` 16 relevés / `walk` 24 relevés dans le modèle OEM épinglé, sans changer vitesse, protections ou commande. | [CI Python 167 tests](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40187514224) + [MuJoCo réel](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40187514292) : 1,338 mm final, 23/24 `walk`, arrêt confirmé ; [rapport](mujoco-p0b-stand-walk-comparison-2026-10-25.md). Cause **non expliquée**, contacts/forces et cibles articulaires absents du protocole. |
 | **P1a** | Seulement après diagnostic, correction ciblée de l'intégration et essai de translation courte | Trois essais mesurés, critère 10 mm, arrêt/deadman, absence de chute, état `robotd` et logs CI |
 
 Si P0 révèle un problème dans une politique officielle impossible à corriger proprement, **ne pas bloquer tout le projet** : poursuivre en parallèle la cognition immobile, la perception sur jeux de test et la mémoire, sans présenter ces fonctions comme une navigation autonome.
@@ -158,4 +158,4 @@ Les indicateurs de précision de vision, de RAM, de températures et d'énergie 
 - Des tests GitHub Actions verts ne signifient pas que la marche fonctionne. La fonction est acceptée seulement si **son propre critère physique/simulé** est atteint.
 - Ne pas attribuer de date de livraison ni de seuil de consommation tant que les contraintes et mesures réelles n'existent pas.
 
-**Décision actuelle : passer à P0b après [PR #11](https://github.com/Jean-Philippe56520/Microduck/pull/11) et [test P0a MuJoCo réussi](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40178580637).** Les articulations et politiques sont accessibles via la lecture OEM ; les **contacts des pieds et les consignes articulaires ne sont pas exposés par ce protocole**, et ne doivent jamais être inventés. Aucun résultat de cette sonde ne valide une démarche ni le matériel réel.
+**Décision actuelle : analyser les contacts/forces et l'actionnement depuis des observations constructeur non intrusives, suite à la [PR #12](https://github.com/Jean-Philippe56520/Microduck/pull/12) et au [test P0b MuJoCo réussi](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40187514292).** P1a reste bloquée faute de cause isolée. Les articulations et politiques sont accessibles via la lecture OEM ; les **contacts des pieds et les consignes articulaires ne sont pas exposés par ce protocole**, et ne doivent jamais être inventés. Aucun résultat de cette sonde ne valide une démarche ni le matériel réel.

@@ -2,7 +2,7 @@
 
 Date : 2026-10-25. Audit documentaire et revue de code, **sans accès au robot physique**. Les valeurs de RAM et stockage libres ne sont **pas mesurées**. Aucune capture d'image privée ou donnée biométrique ne doit être placée dans ce dépôt.
 
-**Mise à jour de cohérence :** le [plan d'action consolidé](plan-action.md) fixe les priorités et les critères de passage. Quatre essais MuJoCo J2e, documentés ci-dessous, ont validé la chaîne de commande et de mémoire **mais pas la locomotion** (au mieux **2,574 mm** de mouvement du tronc). **P0a : diagnostiquer contacts et articulations en lecture seule.** Les anciennes décisions de faisabilité ci-dessous sont conservées comme historique, pas comme une seconde liste de tâches à exécuter.
+**Mise à jour de cohérence :** le [plan d'action consolidé](plan-action.md) fixe les priorités et les critères de passage. Quatre essais MuJoCo J2e, documentés ci-dessous, ont validé la chaîne de commande et de mémoire **mais pas la locomotion** (au mieux **2,574 mm** de mouvement du tronc). **P0a : lecture articulations en MuJoCo confirmée ; P0b : comparaison `stand` / `walk` réalisée, cause non établie.** Les anciennes décisions de faisabilité ci-dessous sont conservées comme historique, pas comme une seconde liste de tâches à exécuter.
 
 ## Verdict
 
@@ -213,4 +213,11 @@ La nouvelle tentative demande `vx=0,12 m/s` en simulation bornée, après mesure
 
 Dans chacun des quatre essais, la mémoire SQLite a mémorisé une **absence de progression** comme fait simulé vérifié (`no_progress_observed`), puis modifié faiblement la préférence `explore` de **0 à −0,075**. Les bases de CI sont éphémères ; la persistance d'un lancement à un autre est vérifiée par tests Python, **pas** par le partage d'une base entre ces **quatre** exécutions.
 
-**Verdict après quatre essais :** le chemin d'intention, l'arrêt, les mesures et la mémoire simulée fonctionnent. **La locomotion n'est pas validée**, malgré `walk` et la vitesse appliquée. Les origines possibles (contacts, adhérence, dynamique du modèle, politique ONNX) restent des **hypothèses**, à investiguer en **P0a** sans nouvelle commande motrice. Ne pas assimiler ces millimètres à une marche réelle, ne pas modifier les limites OEM sans analyse ciblée et ne jamais transposer une preuve de scène MuJoCo en preuve de sécurité physique. Pas d'autonomie matérielle mesurée.
+**Verdict des quatre essais historiques J2e (inchangés) :** le chemin d'intention, l'arrêt, les mesures et la mémoire simulée fonctionnent. **La locomotion n'est pas validée**, malgré `walk` et la vitesse appliquée. Les origines possibles (contacts, adhérence, dynamique du modèle, politique ONNX) restent des **hypothèses**, désormais examinées par les diagnostics P0a/P0b sans modification de sécurité motrice. Ne pas assimiler ces millimètres à une marche réelle, ne pas modifier les limites OEM sans analyse ciblée et ne jamais transposer une preuve de scène MuJoCo en preuve de sécurité physique. Pas d'autonomie matérielle mesurée.
+
+### P0b — Mesures comparatives officielles MuJoCo (25 octobre 2026)
+
+Dans le [workflow de simulation P0b réussi](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40187514292), **16 relevés passifs `stand`** ont été suivis d'**un** essai J2e à 0,12 m/s : 24 commandes, **23/24 politiques `walk`**, vitesse appliquée déclarée maximale 0,12 m/s, `robot.stop` confirmé ; **seulement 1,338 mm** de déplacement final XY (X monde +0,0178 mm, Y monde +1,3375 mm), `no_progress_observed`. Les genoux ont bougé très peu (gauche 0,0223 rad, droite 0,0081 rad), sans établir de pas ou de propulsion. Les fenêtres articulaires du repos et de la marche ne coïncident pas exactement avec la fenêtre de mesure finale de J2e : voir le [rapport distinct](mujoco-p0b-stand-walk-comparison-2026-10-25.md) pour éviter toute soustraction erronée.
+
+Le modèle épinglé comporte des géométries `left_foot_collision` et `right_foot_collision`, mais **aucune mesure des contacts dynamiques ni des cibles articulaires n'est exposée** par l'API constructeur `body_server.op=read`. L'activation `walk` ne prouve ni sol adhérent ni démarche ; cause toujours **inconnue**, seuil de 10 mm **non atteint**, aucun changement moteur OEM ni validation physique.
+
