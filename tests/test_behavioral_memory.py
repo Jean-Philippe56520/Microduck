@@ -144,7 +144,7 @@ class BehaviorMemoryTests(unittest.TestCase):
         self.behavior.record(runner=self.runner,sequence=seq,
                              now_wall_epoch_s=WALL)
         self.mem.conn.execute(
-            "UPDATE mock_cognitive_cycles SET source='simulator' WHERE sequence=?",
+            "UPDATE mock_cognitive_cycles SET reward=0.0 WHERE sequence=?",
             (seq,))
         self.assertEqual(0.,self.behavior.summary(
             now_wall_epoch_s=WALL).bias)
