@@ -16,6 +16,10 @@ Le [banc F3-D sur 28 nouvelles photos publiques déclarées CC0](https://github.
 
 Sur le jeu additionnel, **8/16 photos de chiens/chats** sont reconnues selon les étiquettes publiques (3/8 chats et 5/8 chiens), avec **12/12 photos hors des deux catégories** rejetées. Ces données ne sont pas tirées au hasard, leurs descriptions n'ont pas de deuxième annotation indépendante, et la présence éventuelle des images dans le jeu de préentraînement ImageNet n'a pas été auditée. **Aucune reconnaissance fiable d'animaux ni navigation sûre n'est démontrée.** Voir [rapport détaillé F3-D et inventaire des 28 sources](f3d-open-set-resource-benchmark-2026-10-26.md). Les mesures du script `scripts/resource-audit.sh` sur un Microduck réel restent **non effectuées**.
 
+## F3-E — limite documentaire
+
+Le nouveau contrat F3-E teste des en-têtes `media.frame` sur fixtures, sans capture physique. Les 48 photos publiques n'ont pas été contre-annotées indépendamment. RAM et capteurs du robot restent inconnus. [Rapport F3-E](f3e-annotation-frame-preflight-2026-10-26.md).
+
 ## Verdict
 
 Le Microduck permet raisonnablement de viser : mémoire persistante locale, moteur d'autonomie, exploration prudente, observation visuelle événementielle, identification de catégories d'animaux et interaction sociale élémentaire. Il reste à développer et à valider : détection personnalisée d'animaux, identification non biométrique des personnes familières, reconnaissance vocale, exploration sûre en environnement non contrôlé, et intégration du cerveau autonome à robotd. Qwen multimodal se placera initialement sur un PC local.
