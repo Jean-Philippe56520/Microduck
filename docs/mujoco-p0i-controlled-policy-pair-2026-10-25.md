@@ -1,6 +1,6 @@
 # P0i — Comparaison contrôlée de politiques : paire alpha contre VelStand
 
-**Date :** 25 octobre 2026. **État : codé et testé sous MuJoCo constructeur.** [257 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40221939158) et [comparaison A/B officielle réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40221935528), avec deux arrêts confirmés et **aucune translation supérieure à 10 mm**. Aucun robot physique testé. **Cause de non-marche inconnue.**
+**Date :** 25 octobre 2026. **État : fusionné dans `main` ([PR #21](https://github.com/Jean-Philippe56520/Microduck/pull/21)), codé et testé sous MuJoCo constructeur.** [257 tests Python réussis sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40222688915) et [comparaison A/B officielle réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40221935528), avec deux arrêts confirmés et **aucune translation supérieure à 10 mm**. Aucun robot physique testé. **Cause de non-marche inconnue.**
 
 ## Question expérimentale
 
