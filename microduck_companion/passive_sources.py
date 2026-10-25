@@ -18,7 +18,6 @@ import json
 import math
 import os
 from pathlib import Path
-import pwd
 import socket
 import stat
 import struct
@@ -293,7 +292,11 @@ def probe_official_mediad(path: str | Path = OEM_SOCKET, *,
         if result["daemon_version"] is not None and type(result["daemon_version"]) is not str:
             raise PassiveSourceError("invalid daemon version")
         actual_owner = p.lstat().st_uid
-        expected_uid = pwd.getpwnam(OEM_UID_NAME).pw_uid if not testing_path else None
+        if testing_path:
+            expected_uid = None
+        else:
+            import pwd  # Unix-only: a Windows prototype may import this module.
+            expected_uid = pwd.getpwnam(OEM_UID_NAME).pw_uid
         verified = (not testing_path and uid is not None
                     and uid == expected_uid and actual_owner == expected_uid
                     and version == OEM_API_VERSION
