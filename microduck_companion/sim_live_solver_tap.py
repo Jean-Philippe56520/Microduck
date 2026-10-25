@@ -88,6 +88,7 @@ def _resolve_names(model, mj) -> dict:
         actuators[name] = {
             "actuator": actuator,
             "qpos": int(model.jnt_qposadr[joint]),
+            "qvel": int(model.jnt_dofadr[joint]),
         }
     if abs(_finite(model.opt.timestep, "timestep") - EXPECTED_TIMESTEP_S) > 1e-8:
         raise TapError("unexpected live OEM MuJoCo timestep")
@@ -170,6 +171,48 @@ def capture_solver_step(model, data, mj, names: dict, step: int) -> dict:
     }
 
 
+def capture_actuators_before_step(model, data, names: dict) -> dict:
+    """P0e: copy the *input* that the original next mj_step will consume.
+
+    OEM World.step already serializes physics and joint writes using its own
+    lock. This function never assigns to model/data. All floating point
+    values are checked before being written to the diagnostic queue.
+
+    The pinned MJCF uses position actuators with gear 1. The qpos/qvel and
+    ctrl entries copied here PRECEDE the physics integration; the measured
+    actuator_force captured AFTER step is therefore not compared with a
+    future/post-integration angle.
+    """
+    actual = {}
+    for name, joint in names["actuators"].items():
+        a, qpos, dof = joint["actuator"], joint["qpos"], joint["qvel"]
+        limited = bool(model.actuator_forcelimited[a])
+        low, high = model.actuator_forcerange[a]
+        actual[name] = {
+            "control_rad": _finite(data.ctrl[a], f"{name} pre ctrl"),
+            "position_rad": _finite(data.qpos[qpos], f"{name} pre qpos"),
+            "velocity_rad_s": _finite(data.qvel[dof], f"{name} pre qvel"),
+            "gain_p_nm_per_rad": _finite(
+                model.actuator_gainprm[a, 0], f"{name} active gain"),
+            "bias_position_nm_per_rad": _finite(
+                model.actuator_biasprm[a, 1], f"{name} active position bias"),
+            "bias_velocity_nm_s_per_rad": _finite(
+                model.actuator_biasprm[a, 2], f"{name} active velocity bias"),
+            "gear": _finite(model.actuator_gear[a, 0], f"{name} gear"),
+            "force_limited": limited,
+            "force_min_nm": _finite(low, f"{name} force lower"),
+            "force_max_nm": _finite(high, f"{name} force upper"),
+            "joint_damping_nm_s": _finite(
+                model.dof_damping[dof], f"{name} damping"),
+            "joint_frictionloss_nm": _finite(
+                model.dof_frictionloss[dof], f"{name} frictionloss"),
+        }
+    return {
+        "time_before_step_s": _finite(data.time, "pre step clock"),
+        "actuators": actual,
+    }
+
+
 class NonBlockingWriter:
     """A small bounded channel; file I/O NEVER executes on the solver thread."""
 
@@ -202,7 +245,8 @@ class NonBlockingWriter:
 
 
 class SolverTap:
-    def __init__(self, mj, writer: NonBlockingWriter):
+    def __init__(self, mj, writer: NonBlockingWriter, *, audit: bool = False):
+        self.audit = audit
         self.mj = mj
         self.writer = writer
         self.count = 0
@@ -210,7 +254,32 @@ class SolverTap:
         self.model = None
         self.disabled = False
 
-    def after_step(self, model, data) -> None:
+    def _disable(self, exc: Exception, step: int) -> None:
+        self.disabled = True
+        try:
+            self.writer.submit({
+                "kind": "error", "reason": f"{type(exc).__name__}: {exc}",
+                "step": step,
+            })
+        except Exception:
+            pass  # An incomplete or gapped stream fails offline validation.
+
+    def before_step(self, model, data) -> dict | None:
+        """Capture only every fourth *future* step; never obstruct OEM physics."""
+        if not self.audit or self.disabled or (self.count + 1) % EVERY_N_STEPS:
+            return None
+        try:
+            if self.names is None:
+                self.names = _resolve_names(model, self.mj)
+                self.model = model
+            if model is not self.model:
+                raise TapError("more than one MuJoCo model under audit")
+            return capture_actuators_before_step(model, data, self.names)
+        except Exception as exc:
+            self._disable(exc, self.count + 1)
+            return None
+
+    def after_step(self, model, data, *, pre_step: dict | None = None) -> None:
         if self.disabled:
             return
         self.count += 1
@@ -231,10 +300,17 @@ class SolverTap:
                     "sample_every_n_physics_steps": EVERY_N_STEPS,
                     "model_timestep_s": EXPECTED_TIMESTEP_S,
                     "capture_is_not_actuator_authority": True,
+                    "p0e_active_gain_pre_step": self.audit,
                 })
             if model is not self.model:
                 raise TapError("more than one MuJoCo model under instrumented server")
             frame = capture_solver_step(model, data, self.mj, self.names, self.count)
+            if self.audit:
+                if pre_step is None:
+                    raise TapError("pre-step audit frame unavailable")
+                # Only data, never a control output. Pre-step and force-cache
+                # epochs can now be evaluated without a post-step offset.
+                frame["pre_step_actuators"] = pre_step
             frame["capture_us"] = (
                 time.perf_counter_ns() - started
             ) / 1000.0
@@ -242,16 +318,12 @@ class SolverTap:
         except Exception as exc:
             # A broken optional diagnostic must NEVER interrupt mj_step or
             # change the manufacturer's real-time controller behaviour.
-            self.disabled = True
-            try:
-                self.writer.submit({"kind": "error", "reason": str(exc),
-                                    "step": self.count})
-            except Exception:
-                pass  # analyzer rejects missing/gapped frames, including writer failure
+            self._disable(exc, self.count)
 
 
 def install_solver_tap(output: Path, *, mj=None,
-                       writer: NonBlockingWriter | None = None) -> SolverTap:
+                       writer: NonBlockingWriter | None = None,
+                       audit: bool = False) -> SolverTap:
     """Patch ONLY mj_step; original method remains the entire physics authority."""
     if mj is None:
         import mujoco as mj
@@ -260,16 +332,19 @@ def install_solver_tap(output: Path, *, mj=None,
     original = mj.mj_step
     if getattr(original, "_microduck_p0d_wrapped", False):
         raise TapError("MuJoCo solver tap already installed")
-    tap = SolverTap(mj, writer)
+    tap = SolverTap(mj, writer, audit=audit)
 
     def wrapped(model, data, *args, **kwargs):
+        # Even an unexpected Python read error cannot suppress mj_step.
+        pre_step = (tap.before_step(model, data)
+                    if not args and not kwargs else None)
         result = original(model, data, *args, **kwargs)
         if args or kwargs:
             # Official body_server invokes exactly mj_step(model, data).
             # An unknown invocation must never be given false diagnostics.
             tap.disabled = True
         else:
-            tap.after_step(model, data)
+            tap.after_step(model, data, pre_step=pre_step)
         return result
 
     wrapped._microduck_p0d_wrapped = True
@@ -296,5 +371,6 @@ def activate_if_exact_body_server() -> bool:
     verify_flat_scene(root)
     output = state / "solver-tap.jsonl"
     # File belongs to a temporary CI state directory, never a tracked source.
-    install_solver_tap(output)
+    install_solver_tap(
+        output, audit=os.environ.get("MICRODUCK_SIM_ACTUATOR_AUDIT") == "YES")
     return True
