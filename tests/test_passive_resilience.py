@@ -169,7 +169,9 @@ class SupervisorTests(unittest.TestCase):
         self.moment[0],self.wall[0] = 101.1,WALL+1
         second=runner.run_once()
         self.assertEqual(("ok","ok"),(first.status,second.status))
-        self.assertEqual(("inspect","inspect"),
+        # The second unresolved category shares F2-B's 3 s cooldown:
+        # it is still journalled, but inspection is not repeated.
+        self.assertEqual(("inspect","idle"),
                          (first.intention,second.intention))
         self.assertEqual(2,runner.metrics().scored_consequences)
         self.assertEqual(0.,self.learning.preference("observe"))
