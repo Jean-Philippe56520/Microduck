@@ -1,6 +1,6 @@
 # P2b — Cycles cognitifs passifs avec la télémétrie MuJoCo (25 octobre 2026)
 
-**État : code et tests Python réussis ; validation du scénario MuJoCo officiel à confirmer dans la CI de la PR #19.** Aucun essai sur le Microduck physique.
+**État : codé, 234 tests Python réussis, testé dans les démons du MuJoCo constructeur épinglé.** [CI MuJoCo réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216199277). Aucun essai sur le Microduck physique.
 
 ## Objectif limité
 
@@ -18,7 +18,7 @@ Relier plusieurs décisions du cerveau local aux télémétries datées de `robo
 
 - [x] [234 tests Python réussis sur la branche](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216199119), contre 224 sur `main` avant P2b.
 - [x] Dix nouveaux tests : trames valides, invalides et répétées ; persistance entre deux ouvertures SQLite ; perte de capteur ; batterie basse ; sources et limites d'entrée ; faux services Unix JSON-RPC avec vérification stricte des trois méthodes autorisées.
-- [ ] [Scénario `duck-sim` officiel](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216199277) : six cycles en deux sessions, une seule base SQLite et preuves JSON archivées ; résultat à vérifier.
+- [x] [Scénario `duck-sim` officiel](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216199277) réussi : première session **3/3 cycles cohérents**, seconde **3/3 cycles cohérents** ; journal SQLite réouvert contenant **3 puis 6 cycles**. Séquences ToF distinctes : 157, 167, 177, puis 179, 189, 199 ; **six intentions `halt`**, aucun sol certifié, zéro commande motrice, zéro conséquence causale ou récompense.
 
 La vérification MuJoCo utilise le script existant `scripts/sim-smoke.sh`, avec `DUCK_SIM_PASSIVE_CYCLES=YES` uniquement sur la branche P2b. Deux appels distincts à `python -m microduck_companion.sim_passive_cycles` demandent trois cycles chacun ; aucun appel `robot.move` supplémentaire.
 
