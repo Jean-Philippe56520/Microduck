@@ -174,7 +174,7 @@ class FakeRobotd:
                                 answer = {
                                     "jsonrpc": "2.0",
                                     "id": 1 if valid_stop else 10,
-                                    "result": {"stopped": True},
+                                    "result": {"accepted": True},
                                 }
                                 conn.sendall((json.dumps(answer)+"\n").encode())
                                 break
