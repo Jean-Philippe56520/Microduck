@@ -38,6 +38,23 @@ Le **[plan d'action consolidé](docs/plan-action.md)** est désormais la référ
 
 **État vérifié au 25 octobre 2026 :** P0a–P0f sont codés et testés avec le simulateur OEM épinglé ; [207 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40200419766) et [audit ONNX MuJoCo P0f réussi](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40200419709). Les deux réseaux v8 chargés ont un contrat **61 observations / 14 actions**, leur pose HOME de référence concorde exactement avec l'entraînement et leurs réponses aux entrées synthétiques sont finies. **Différence documentée entre les variantes de géométrie des tâches d'entraînement et la scène headless**, sans lien causal démontré. **Aucune marche validée** : dernier essai moteur P0e, distinct de P0f, **2,295 mm** seulement, arrêt confirmé. Cause racine inconnue, P1a bloquée ; aucune validation physique.
 
+**Cognition sans mouvement (P2a) :** [217 tests Python](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40207932413) et **deux sessions fictives successives** sur une même SQLite. Journal de 8 cycles, préférence fictive persistée, tout mouvement non exécuté. Cela ne résout pas le blocage locomoteur P1a.
+
+### P2a — Cycles autonomes fictifs et mémoire durable (PR #17)
+
+La [PR #17](https://github.com/Jean-Philippe56520/Microduck/pull/17) ajoute **quatre cycles de décision consécutifs par session fictive**, avec journal SQLite de chaque intention, décision ultérieure sensible aux préférences mémorisées, et réouverture effective de la même base lors d'une seconde session. [217 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40207932413) ; démonstration de CI : **4 puis 8 cycles persistés**, préférence fictive pour un jouet **0,06 maintenue après redémarrage**.
+
+Le système **ne commande jamais un moteur** : `explore` et `play_with_object` sont journalisées comme **non exécutées** ; un retour positif ou négatif n'est pris en compte que s'il est **explicitement fictif**, daté, attaché à une inspection `mock` ciblée et corroboré par une seconde observation fictive fraîche. Sans cette confirmation, aucune préférence n'est modifiée. Une perte de preuves de sûreté produit `halt`, même après un précédent résultat positif.
+
+Commande de reproduction purement locale :
+
+```bash
+python -m microduck_companion.mock_cycle_demo --database /tmp/p2a-local.sqlite3 --session first
+python -m microduck_companion.mock_cycle_demo --database /tmp/p2a-local.sqlite3 --session second
+```
+
+Ce jalon **n'est pas** une boucle de navigation autonome validée dans MuJoCo ni sur un robot physique. Prochain P2b : exécuter plusieurs cycles **sans déplacement** avec les observations datées `robotd` et `tofd` de MuJoCo, sans transformer une intention de marche en commande physique. Voir le [rapport P2a](docs/p2a-mock-cycles-2026-10-25.md).
+
 ### P0f — Politiques ONNX et variantes de simulation (PR #16)
 
 La [PR #16](https://github.com/Jean-Philippe56520/Microduck/pull/16) ajoute un audit **sans commande motrice** des deux ONNX nommés par `duck-sim` (`alpha_walking` et `alpha_stand`, jeu v8 déclaré) et du contrat de `robotd`. [207 tests Python](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40200419766) et [smoke MuJoCo headless](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40200419709) réussis : chaque ONNX répond à **61 observations / 14 actions float32**, **non récurrent**, et les constantes HOME présentent **0 rad d'écart** entre contrôle et entraînement. Une entrée **synthétique** vx 0 → 0,12 m/s fait varier la sortie brute du modèle de marche de **0,147 L2**.

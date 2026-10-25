@@ -43,7 +43,7 @@ Le comptage des tests correspond à cet état du dépôt : le mettre à jour **u
 | --- | --- | --- | --- | --- |
 | **P0** | **Immédiate, bloquante** | Expliquer l'absence de locomotion dans la scène MuJoCo épinglée | Simulateur officiel J2e | **P0a–P0f testés sur MuJoCo ; gains, ONNX et géométries source audités, causalité de non-marche inconnue** |
 | **P1** | Haute | Démontrer une translation puis une démarche *mesurée* et sûre, sans contourner `robotd` | P0 | À faire |
-| **P2** | Haute | Boucle autonome répétable perception → intention → action → effet → mémoire → choix suivant | P1 pour le déplacement ; cognition sans déplacement indépendante | Partiellement codée |
+| **P2** | Haute | Boucle autonome répétable perception → intention → action → effet → mémoire → choix suivant | P1 pour le déplacement ; cognition sans déplacement indépendante | **P2a mock multi-cycle avec persistance testé (217 tests) ; P2b passif sur MuJoCo à faire** |
 | **P3** | Haute | Vision/sons légers : catégories d'objets et d'animaux, signaux sociaux, inconnus | Contrats de perception existants ; validation d'une source mesurée | À faire |
 | **P4** | Moyenne | Mémoire sémantique/spatiale et comportement social prudent, reconnaissance individuelle volontaire | P2 + P3 | À faire |
 | **P5** | Moyenne | Assistance Qwen locale facultative (PC), hypothèses vérifiables et repli autonome | P2 + premières observations P3 | À faire |
@@ -75,6 +75,10 @@ L'ordre P0 → P1 → P2 est le **chemin critique pour l'exploration mobile**. L
 **Premier seuil de sortie :** au moins **10 mm de translation nette**, distinguables de la dérive, sur **trois essais indépendants** sans perte des protections. Ce seuil est un **critère proposé**, pas une performance actuelle. Il valide une translation, **pas** une démarche stable. Pour parler de démarche, ajouter ensuite un essai de progression soutenue d'au moins **5 cm** avec contacts, stabilité et absence de chute contrôlés ; revoir ces critères à partir du comportement réel du modèle plutôt que forcer les chiffres.
 
 ### P2 — Boucle d'autonomie et mémoire durable
+
+**P2a exécuté sur données fictives :** [217 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40207932413), deux sessions sur une SQLite (4 puis 8 cycles), résultat fictif explicite avec deuxième observation corroborante, préférence fictive conservée **0,06**, aucune commande motrice. [Rapport P2a](p2a-mock-cycles-2026-10-25.md). **P2 n'est pas terminé :** il reste à relier plusieurs cycles passifs aux télémétries `robotd`/`tofd` de MuJoCo et à valider la persistance entre sessions simulées, sans réclamer une locomotion.
+
+
 
 1. Séparer clairement un essai diagnostic volontaire (J2e actuel) d'une boucle autonome non bloquante, avec intentions à durée limitée et aucun pilotage direct des articulations.
 2. Gérer plusieurs décisions sûres (observer, regarder, explorer seulement si autorisé, jouer, `idle`, `rest`), plafonner la fréquence des initiatives, éviter les répétitions et supporter la perte de capteur au milieu de l'action.
@@ -163,4 +167,4 @@ Les indicateurs de précision de vision, de RAM, de températures et d'énergie 
 - Des tests GitHub Actions verts ne signifient pas que la marche fonctionne. La fonction est acceptée seulement si **son propre critère physique/simulé** est atteint.
 - Ne pas attribuer de date de livraison ni de seuil de consommation tant que les contraintes et mesures réelles n'existent pas.
 
-**Décision actuelle : P0f a vérifié les contrats ONNX et la pose HOME et a identifié des différences dans les inventaires de géométries constructeur, sans démontrer qu'elles expliquent l'absence de marche.** Une sortie ONNX synthétique n'est pas une sortie interne de `robotd` au même tick. **P0g** devra tester en simulation indépendante les paramètres de contact et les différences géométriques entre les modèles OEM, et établir la provenance des poids ONNX v8, en lecture seule. **P1a reste bloqué** ; poursuivre **P2 (autonomie et mémoire multi-cycles sans locomotion)** en parallèle pour ne pas immobiliser le développement du cerveau. Aucune commande/gain OEM modifié, aucun essai robot physique.
+**Décision actuelle : P0f a vérifié les contrats ONNX et la pose HOME et a identifié des différences dans les inventaires de géométries constructeur, sans démontrer qu'elles expliquent l'absence de marche.** Une sortie ONNX synthétique n'est pas une sortie interne de `robotd` au même tick. **P0g** devra tester en simulation indépendante les paramètres de contact et les différences géométriques entre les modèles OEM, et établir la provenance des poids ONNX v8, en lecture seule. **P1a reste bloqué** ; poursuivre **P2 (autonomie et mémoire multi-cycles sans locomotion)** en parallèle pour ne pas immobiliser le développement du cerveau. Aucune commande/gain OEM modifié, aucun essai robot physique. **P2a mock est codé/testé ; prochain P2b = cycles passifs sur les services officiels MuJoCo, indépendamment de P0g.**

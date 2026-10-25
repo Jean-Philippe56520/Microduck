@@ -4,6 +4,14 @@ Mise à jour : 2026-10-25. **Les priorités opérationnelles et critères de pas
 
 **État courant :** [P0f audit ONNX testé sur le MuJoCo officiel #40200419709](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40200419709) et **207 tests Python réussis**. Modèles actifs `alpha_walking.onnx` et `alpha_stand.onnx` (jeu v8 déclaré) : **61 entrées / 14 actions**, feed-forward, HOME contrôleur/entraînement **identique à 0 rad**. Sur entrées **synthétiques**, variation brute de marche **0,147 L2** pour vx 0 → 0,12 m/s. Les géométries sources de tâches et la scène `duck-sim` diffèrent mais la **cause de non-marche reste inconnue**. P0f n'a pas envoyé de mouvement J2e ; dernière translation J2e **2,295 mm en P0e**, seuil 10 mm non atteint, arrêt confirmé. **P1a bloqué ; aucune validation sur robot réel.**
 
+## P2a — Cycles fictifs multiples et mémoire persistante (PR #17)
+
+- [x] **Boucle logique hors connexion, mock uniquement :** perception sourcée et horodatée → mémoire SQLite → motivation et intention → aucune exécution motrice → résultat fictif explicite avec observation fraîche → préférence graduelle → cycle suivant. Les intentions de marche/jeu sont marquées `blocked_motion`, jamais exécutées ni récompensées.
+- [x] **Vérification CI :** [217 tests réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40207932413). Deux sessions avec une même base de données montrent **4 puis 8 lignes de journal**, une préférence fictive `0,06` réutilisée et **zéro commande moteur**. Tests de redémarrage, doublons, source LLM refusée, horodatages, perte de sécurité et retour sans preuve.
+- [ ] **P2b, à faire :** plusieurs cycles passifs reliés à `robotd`/`tofd` réels **du simulateur**, sans activer `robot.move` ; garder les cas limites de fraîcheur, déconnexion et reprise SQLite. Pas de preuve de mobilité ni de validation embarquée.
+
+[Rapport P2a](p2a-mock-cycles-2026-10-25.md).
+
 ## P0f — Contrats ONNX et variantes de géométrie (PR #16, testé en MuJoCo)
 
 - [x] **Audit contrôlé :** lecture seule des sous-modules constructeur et RL épinglés, vérification des contrats du code d'observation (61), des actions (14, `mouth` exclue), de la pose HOME et du filtrage/échelle de `robotd`, de la provenance locale des fichiers `alpha_walking`/`alpha_stand` et de leurs SHA-256.
