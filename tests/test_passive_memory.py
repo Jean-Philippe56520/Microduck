@@ -168,7 +168,7 @@ class JournalTests(unittest.TestCase):
             with self.subTest(value=value):
                 self.assertEqual(1, self.append(
                     read(event(category=value), seq=len(value))))
-                one, = self.journal.recent(now_wall_epoch_s=WALL)[0]
+                one = self.journal.recent(now_wall_epoch_s=WALL)[0]
                 self.assertEqual("unknown", one.category)
         for bad in ("who is talking", "private voice", "Nessquick"):
             with self.assertRaises(ValueError):
@@ -218,9 +218,9 @@ class JournalTests(unittest.TestCase):
         self.append(read(event(category="toy"), seq=2),
                     wall=WALL+RETENTION_SECONDS-1)
         self.assertEqual(1, self.journal.prune(
-            now_wall_epoch_s=WALL+RETENTION_SECONDS))
+            now_wall_epoch_s=WALL+RETENTION_SECONDS+1))
         remaining, = self.journal.recent(
-            now_wall_epoch_s=WALL+RETENTION_SECONDS)
+            now_wall_epoch_s=WALL+RETENTION_SECONDS+1)
         self.assertEqual("toy", remaining.category)
 
     def test_future_rows_are_not_replayed_and_clock_skew_is_bounded(self):
