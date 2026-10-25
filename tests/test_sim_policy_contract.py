@@ -140,8 +140,10 @@ class P0fUnitTests(unittest.TestCase):
                 call.return_value = types.SimpleNamespace(stdout="wrong revision\n")
                 with self.assertRaises(GroundTruthError):
                     verify_oem_sources(Path("/does-not-exist"), Path("/not-used"))
-                self.assertEqual(1, call.call_count)
-                command = call.call_args.args[0]
+                # Both read-only Git queries are executed before evaluating
+                # the combined revision/dirty-tree safety gate.
+                self.assertEqual(2, call.call_count)
+                command = call.call_args_list[0].args[0]
                 self.assertEqual("rev-parse", command[3])
 
     def test_audit_never_loads_model_when_provenance_not_verified(self):
