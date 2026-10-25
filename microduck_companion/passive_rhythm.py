@@ -109,14 +109,14 @@ class PassiveRhythm:
         fatigue = 1.0 - motives.energy
         if intention == "observe":
             toy_attention = motives.play * 0.22 if category in {"ball", "toy"} else 0.
-            return (0.32 + 0.63 * motives.curiosity + toy_attention
-                    - 0.45 * motives.caution - 0.12 * fatigue)
+            return (0.12 + 0.70 * motives.curiosity + toy_attention
+                    - 0.45 * motives.caution - 0.10 * fatigue)
         if intention == "inspect":
-            return (0.25 + 0.70 * motives.curiosity
-                    - 0.55 * motives.caution - 0.12 * fatigue)
+            return (0.13 + 0.80 * motives.curiosity
+                    - 0.55 * motives.caution - 0.10 * fatigue)
         if intention == "listen":
-            return (0.28 + 0.68 * motives.sociability
-                    - 0.36 * motives.caution - 0.12 * fatigue)
+            return (0.18 + 0.80 * motives.sociability
+                    - 0.28 * motives.caution - 0.10 * fatigue)
         raise ValueError("unsupported active attention")
 
     def tick(self, reading: PassiveRead, *,
