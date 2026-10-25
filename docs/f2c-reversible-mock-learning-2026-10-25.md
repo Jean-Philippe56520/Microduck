@@ -1,6 +1,6 @@
 # F2-C — Conséquences passives fictives, corrections et préférences graduelles
 
-**25 octobre 2026 — Lot logiciel F2-C, branche dédiée.**
+**25 octobre 2026 — Lot logiciel F2-C, [PR #30](https://github.com/Jean-Philippe56520/Microduck/pull/30) en revue, non fusionnée.**
 **Portée :** observations de catégories **fictives** déjà présentes dans la SQLite F1-C, sans capteur ni action réellement exécutée.
 
 ## Objectif et distinction des preuves
@@ -30,7 +30,7 @@ python -m unittest discover -s tests -v
 python -m compileall -q microduck_companion tests
 ```
 
-L'environnement de preuve est **Python et SQLite sur fixtures fictives**, pas un simulateur MuJoCo de perception, ni le RK3566.
+**Preuve CI de branche : [425 tests Python réussis et étapes de validation réussies](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40240139625)**, soit 409 tests de référence F2-B + **16 nouveaux tests F2-C**. La CI exécute également `compileall`, la vérification shell et les anciennes démos fictives P2a/F1-D. L'environnement de preuve est **Python et SQLite sur fixtures fictives**, pas un simulateur MuJoCo de perception, ni le RK3566.
 
 ## Limites et décision de suite
 
