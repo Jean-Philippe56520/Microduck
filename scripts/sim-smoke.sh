@@ -110,4 +110,12 @@ if [ "${DUCK_SIM_SHORT_MOVE:-NO}" = YES ]; then
         --state-dir "$DUCK_SIM_STATE" --rl-root "$DUCK_SIM_RL" \
         --port "$DUCK_SIM_PORT" --enable-once
 fi
+# Opt-in J2e: one fixed-speed simulated gait trial with observed SQLite outcome.
+# Never run this on a physical robot; safety checks require pinned MuJoCo.
+if [ "${DUCK_SIM_WALK_TRIAL:-NO}" = YES ]; then
+    MICRODUCK_SIM_WALK_TEST=YES python3 -m microduck_companion.sim_walk_demo \
+        --state-dir "$DUCK_SIM_STATE" --rl-root "$DUCK_SIM_RL" \
+        --memory "$DUCK_SIM_STATE/companion-motion.sqlite" \
+        --port "$DUCK_SIM_PORT" --enable-once
+fi
 printf 'Smoke test completed; official simulator is being stopped.\n'
