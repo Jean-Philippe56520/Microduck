@@ -9,6 +9,7 @@ on:
       - ci/mujoco-headless-smoke-20261025
       - feat/sim-flat-zone-20261025
       - feat/one-bounded-sim-intent-20261025
+      - feat/measured-sim-walk-learning-v1
     paths:
       - ".github/workflows/mujoco-smoke.yml"
       - "scripts/sim-smoke.sh"
@@ -67,6 +68,7 @@ jobs:
       - name: Run pinned simulator safety gate and optional one-shot motion
         env:
           DUCK_SIM_SHORT_MOVE: ${{ github.ref_name == 'feat/one-bounded-sim-intent-20261025' && 'YES' || 'NO' }}
+          DUCK_SIM_WALK_TRIAL: ${{ github.ref_name == 'feat/measured-sim-walk-learning-v1' && 'YES' || 'NO' }}
         run: |
           set -o pipefail
           timeout --signal=TERM --kill-after=30s 18m             sh scripts/sim-smoke.sh run 2>&1 | tee "${{ runner.temp }}/mujoco-smoke-console.log"
