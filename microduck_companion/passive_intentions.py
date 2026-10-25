@@ -18,9 +18,9 @@ from typing import TYPE_CHECKING
 
 from .autonomy import Motivations
 from .passive_memory import PassiveObservationJournal
-from .passive_observations import summarize_passive, PASSIVE_KINDS
+from .passive_observations import summarize_passive, PASSIVE_KINDS, OBJECT_CATEGORIES
 from .passive_sources import PassiveRead
-from .perception import PerceptionSnapshot
+from .perception import PerceptionSnapshot, _SOUND_CATEGORIES
 
 if TYPE_CHECKING:
     from .passive_observations import PassiveObservation
@@ -50,7 +50,6 @@ class PassiveIntent:
     reason: str
     target_kind: str | None = None
     target_category: str | None = None
-    previously_seen_category: bool = False
     source: str = "mock"
     executed: bool = False
     motor_commands_issued: int = 0
@@ -65,8 +64,17 @@ class PassiveIntent:
             raise ValueError("Qwen requests are outside F2-A")
         if self.target_kind not in (None, "object_label", "sound_label"):
             raise ValueError("unsupported passive attention kind")
-        if (self.target_kind is None) != (self.target_category is None):
-            raise ValueError("passive target kind and category must agree")
+        if self.intention in {"idle", "rest"}:
+            if self.target_kind is not None or self.target_category is not None:
+                raise ValueError("idle/rest cannot name a target")
+        elif self.intention in {"observe", "inspect"}:
+            if (self.target_kind != "object_label"
+                    or self.target_category not in OBJECT_CATEGORIES):
+                raise ValueError("object attention requires a bounded category")
+        elif self.intention == "listen":
+            if (self.target_kind != "sound_label"
+                    or self.target_category not in _SOUND_CATEGORIES):
+                raise ValueError("sound attention requires a bounded category")
 
 
 def _still(reason: str) -> PassiveIntent:
