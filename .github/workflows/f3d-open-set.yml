@@ -1,0 +1,34 @@
+name: F3-D frozen open-set challenge and host resource benchmark
+on:
+  pull_request:
+    paths:
+      - 'microduck_companion/visual_photo_f3d_*.py'
+      - 'tests/test_visual_photo_f3d*.py'
+      - '.github/workflows/f3d-open-set.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frozen-challenge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install reproducible host-only JPEG decoder and CPU ONNX dependencies
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0 numpy==1.26.4 onnxruntime==1.21.0
+      - name: Get Apache-2.0 declared MobileNetV2 weights, verify pinned digest
+        run: |
+          curl --fail --location --retry 2 --max-time 120 \
+            --output "$RUNNER_TEMP/mobilenetv2-12.onnx" \
+            "https://huggingface.co/onnxmodelzoo/mobilenetv2-12/resolve/main/mobilenetv2-12.onnx"
+          echo "c0c3f76d93fa3fd6580652a45618618a220fced18babf65774ed169de0432ad5  $RUNNER_TEMP/mobilenetv2-12.onnx" | sha256sum --check
+      - name: Measure 28 NEW CC0 public photo cases with F3-B frozen threshold
+        run: |
+          # All failures abort; no partial scores, media artifacts or robot control.
+          # RAM/RSS/CPU/latency numbers refer ONLY to GitHub Actions host process.
+          python -m microduck_companion.visual_photo_f3d_benchmark --model "$RUNNER_TEMP/mobilenetv2-12.onnx"
