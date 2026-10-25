@@ -18,7 +18,7 @@ python -m unittest discover -s tests -v
 python -m microduck_companion.autonomy_demo
 ```
 
-Sur Windows, le prototype Python peut être exécuté normalement. La simulation officielle complète nécessitera un environnement Linux adapté, par exemple WSL2, ainsi que des dépendances supplémentaires.
+Sur Windows, le prototype Python peut être exécuté normalement. La simulation officielle s'exécute sur Linux ou WSL2 correctement configuré ; son démarrage headless a déjà été validé sur Ubuntu dans GitHub Actions.
 
 ## Architecture cible
 
@@ -34,20 +34,23 @@ Le dépôt ne doit contenir ni souvenirs personnels, ni enregistrements audio/vi
 
 ## Plan de développement
 
-La [feuille de route détaillée](docs/roadmap.md) définit les six phases, leurs dépendances, leurs critères de réussite, les métriques et les limites de validation.
+Le **[plan d'action consolidé](docs/plan-action.md)** est désormais la référence unique pour les priorités, dépendances, critères d'acceptation et trois prochaines PR. La [feuille de route](docs/roadmap.md) décrit les six phases et leur historique ; le [plan MuJoCo](docs/mujoco-integration-plan.md) conserve les procédures et essais J1b–J2e ; l'[audit matériel](docs/hardware-feasibility-audit-2026-10-25.md) rassemble les limites vérifiées.
 
-**Prochain jalon :** vérifier une translation mesurable dans la zone plane MuJoCo, enregistrer les conséquences réellement observées en SQLite et adapter graduellement le choix d'exploration. Le premier démarrage MuJoCo et la télémétrie en lecture seule sont validés. Voir le [plan opérationnel MuJoCo J1b → J2](docs/mujoco-integration-plan.md).
+**Prochain jalon (P0a) :** instrumenter **en lecture seule** les articulations, contacts des pieds et trajectoires du vrai simulateur MuJoCo épinglé, pour expliquer l'absence de translation malgré la politique `walk` active. **Locomotion non validée :** quatre essais à 0,12 m/s ont produit seulement **0,820 à 2,574 mm** de mouvement du tronc (critère expérimental : 10 mm). Les commandes sont bornées et `robot.stop` confirmé ; la mémoire SQLite enregistre `no_progress_observed` et adapte lentement la préférence. [Dernière exécution MuJoCo](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176410817) · [142 tests Python réussis sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176905506).
 
 ### Étapes principales
 
 - [x] Récupérer les deux bases officielles sous forme de sous-modules.
 - [x] Tester un premier moteur d'autonomie et une mémoire locale.
 - [x] Brancher les observations aux démons officiels du simulateur MuJoCo (lecture seule).
-- [ ] Valider la zone plane bornée et les commandes de déplacement autorisées en simulation.
-- [ ] Tester l'analyse d'objets avec Qwen sur le PC.
+- [x] Vérifier la zone plane épinglée, les intentions bornées et l'arrêt via `robotd` en **simulation**, sans preuve de marche effective.
+- [ ] Diagnostiquer la locomotion et démontrer une progression mesurée de plus de 10 mm en simulation (critère proposé, pas atteint).
+- [ ] Répéter la boucle perception → action → observation → mémoire sur plusieurs cycles et sessions.
+- [ ] Développer une perception mesurée d'objets/animaux et les interactions sociales prudentes.
+- [ ] Tester Qwen sur le PC en mode **facultatif**, avec repli autonome hors connexion.
 - [ ] Vérifier les ressources, la vitesse et la sécurité sur le matériel réel.
 
-**Pas besoin de posséder le Microduck pour commencer à développer.**
+**Le robot physique n'est pas encore disponible.** Les étapes P0–P5 peuvent être étudiées en simulation, avec des jeux de test ou sur le PC, sans présenter ces travaux comme une validation matérielle.
 
 ## Contrat de perception (prototype V0)
 
