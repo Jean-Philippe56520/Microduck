@@ -343,7 +343,7 @@ class FixtureIntegrationTests(unittest.TestCase):
                 b"",  # Disconnection in the actual fake Unix socket
             )
             moments = [100.1, 101.1, 102.1, 103.1, 104.1]
-            with ExperienceMemory(db) if False else _memory_context(db) as mem:
+            with _memory_context(db) as mem:
                 brain = AutonomyBrain(mem)
                 journal = PassiveObservationJournal(mem)
                 clock = [moments[0]]
