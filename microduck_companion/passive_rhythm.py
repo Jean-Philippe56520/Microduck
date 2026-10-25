@@ -1,0 +1,249 @@
+"""F2-B: bounded, deterministic *proposals* of passive attention.
+
+The existing AutonomyBrain owns one PassiveRhythm state. It consumes F2-A's
+already validated mock-only PassiveRead and the existing category journal.
+This module NEVER calls robotd, mediad, motors, speakers, a PC or a network.
+
+'energy' is a *simulated motivation variable*: this bookkeeping does NOT
+measure battery, CPU consumption, sleep or actual effects of an action.
+No rewards or object preferences are updated in F2-B (reserved for F2-C).
+"""
+from __future__ import annotations
+
+from collections import deque
+from dataclasses import dataclass
+import sqlite3
+
+from .autonomy import Motivations
+from .passive_intentions import PassiveIntent, _valid_motivations, _valid_scalar
+from .passive_memory import PassiveObservationJournal
+from .passive_observations import summarize_passive
+from .passive_sources import PassiveRead
+
+MIN_CYCLE_GAP_S = 0.5
+ATTENTION_COOLDOWN_S = 3.0
+REST_ENTER_ENERGY = 0.22
+REST_EXIT_ENERGY = 0.34
+REST_GAIN_PER_TICK = 0.04
+IDLE_GAIN_PER_TICK = 0.005
+ATTENTION_COST_PER_TICK = 0.015
+_HISTORY_LIMIT = 32
+_VALID_BASELINE_IDLE = frozenset({
+    "no_current_observation", "no_new_safe_passive_attention",
+})
+_ACTIVE = frozenset({"observe", "inspect", "listen"})
+
+
+@dataclass(frozen=True)
+class PassiveRhythmMetrics:
+    """Measurements of *proposals*, not of real or simulated execution."""
+
+    cycles: int
+    counts: tuple[tuple[str, int], ...]
+    cooldown_blocks: int
+    consecutive_active_repeats: int
+    recent_intentions: tuple[str, ...]
+    simulated_motivation_energy: float
+
+    def count(self, intention: str) -> int:
+        return dict(self.counts).get(intention, 0)
+
+
+class PassiveRhythm:
+    """Small process-local cadence state, owned by the EXISTING brain.
+
+    No SQLite changes and no cross-process cooldown claims. A caller should
+    pass each new F1-B read once, BEFORE optionally journaling it in F1-C.
+    """
+
+    def __init__(self) -> None:
+        self._last_tick_s: float | None = None
+        self._last_sequence: int | None = None
+        self._cooldown_until: dict[tuple[str, str, str], float] = {}
+        self._resting = False
+        self._recent: deque[str] = deque(maxlen=_HISTORY_LIMIT)
+        self._counts = {key: 0 for key in
+                        ("observe", "inspect", "listen", "idle", "rest")}
+        self._cooldown_blocks = 0
+        self._active_repeats = 0
+
+    def metrics(self, motivations: Motivations) -> PassiveRhythmMetrics:
+        if not isinstance(motivations, Motivations):
+            raise TypeError("the existing Motivations state is required")
+        return PassiveRhythmMetrics(
+            cycles=sum(self._counts.values()),
+            counts=tuple(sorted(self._counts.items())),
+            cooldown_blocks=self._cooldown_blocks,
+            consecutive_active_repeats=self._active_repeats,
+            recent_intentions=tuple(self._recent),
+            simulated_motivation_energy=motivations.energy,
+        )
+
+    def _record(self, proposal: PassiveIntent, *, motivations: Motivations,
+                update_energy: bool) -> PassiveIntent:
+        if self._recent and (proposal.intention in _ACTIVE
+                             and self._recent[-1] == proposal.intention):
+            self._active_repeats += 1
+        self._recent.append(proposal.intention)
+        self._counts[proposal.intention] += 1
+        # Only a validated *fictional cognitive cycle* changes simulated
+        # energy, never a failed read, malformed datum or rate-limited tick.
+        if update_energy:
+            if proposal.intention == "rest":
+                delta = REST_GAIN_PER_TICK
+            elif proposal.intention == "idle":
+                delta = IDLE_GAIN_PER_TICK
+            else:
+                delta = -ATTENTION_COST_PER_TICK
+            motivations.energy = max(0., min(1., motivations.energy + delta))
+        return proposal
+
+    @staticmethod
+    def _idle(reason: str) -> PassiveIntent:
+        return PassiveIntent("idle", reason)
+
+    @staticmethod
+    def _score(intention: str, category: str, motives: Motivations) -> float:
+        """All five motives participate; scoring remains fixed in F2-B."""
+        fatigue = 1.0 - motives.energy
+        if intention == "observe":
+            toy_attention = motives.play * 0.22 if category in {"ball", "toy"} else 0.
+            return (0.32 + 0.63 * motives.curiosity + toy_attention
+                    - 0.45 * motives.caution - 0.12 * fatigue)
+        if intention == "inspect":
+            return (0.25 + 0.70 * motives.curiosity
+                    - 0.55 * motives.caution - 0.12 * fatigue)
+        if intention == "listen":
+            return (0.28 + 0.68 * motives.sociability
+                    - 0.36 * motives.caution - 0.12 * fatigue)
+        raise ValueError("unsupported active attention")
+
+    def tick(self, reading: PassiveRead, *, baseline: PassiveIntent,
+             journal: PassiveObservationJournal, motivations: Motivations,
+             now_monotonic_s: float, now_wall_epoch_s: float) -> PassiveIntent:
+        """One strictly passive, mock-only cognitive cycle.
+
+        F2-A first verifies provenance, TTL and the existing brain/journal
+        relationship. Invalid F2-A responses cannot be promoted by scoring.
+        The underlying snapshot is NEVER interpreted when F2-A failed.
+        """
+        if not isinstance(reading, PassiveRead):
+            raise TypeError("expected F1-B PassiveRead")
+        if not isinstance(baseline, PassiveIntent):
+            raise TypeError("F2-A validated proposal required")
+        if not isinstance(journal, PassiveObservationJournal):
+            raise TypeError("expected F1-C passive journal")
+        if not isinstance(motivations, Motivations):
+            raise TypeError("expected existing motivations")
+        if not _valid_scalar(now_monotonic_s) or not _valid_scalar(now_wall_epoch_s):
+            raise ValueError("clocks must be finite and nonnegative")
+        now = float(now_monotonic_s)
+
+        # A monotonic reset is not a legitimate new observation. Require a
+        # separate future tick after reset; never reuse cooldowns/sequence.
+        if self._last_tick_s is not None and now < self._last_tick_s:
+            self._last_tick_s = now
+            self._last_sequence = None
+            self._cooldown_until.clear()
+            self._resting = False
+            return self._record(self._idle("clock_reset_requires_new_read"),
+                                motivations=motivations, update_energy=False)
+        if (self._last_tick_s is not None
+                and now - self._last_tick_s < MIN_CYCLE_GAP_S):
+            return self._record(self._idle("cycle_rate_limited"),
+                                motivations=motivations, update_energy=False)
+        self._last_tick_s = now
+
+        if (not _valid_motivations(motivations)
+                or (baseline.intention == "idle"
+                    and baseline.reason not in _VALID_BASELINE_IDLE)):
+            reason = ("invalid_motivations" if not _valid_motivations(motivations)
+                      else baseline.reason)
+            return self._record(self._idle(reason), motivations=motivations,
+                                update_energy=False)
+        # F2-A validates both sequence type/bounds and mock-only channel.
+        if (reading.status != "ok" or reading.channel != "mock_fixture_unix"
+                or type(reading.sequence) is not int
+                or not 0 <= reading.sequence < 2**63):
+            return self._record(self._idle("invalid_fixture_read"),
+                                motivations=motivations, update_energy=False)
+        if (self._last_sequence is not None
+                and reading.sequence <= self._last_sequence):
+            return self._record(self._idle("duplicate_source_sequence"),
+                                motivations=motivations, update_energy=False)
+        self._last_sequence = reading.sequence
+
+        # A valid read with too little simulated motivational energy can
+        # propose rest, with two thresholds to avoid oscillating decisions.
+        if motivations.energy <= REST_ENTER_ENERGY:
+            self._resting = True
+        if self._resting and motivations.energy < REST_EXIT_ENERGY:
+            return self._record(
+                PassiveIntent("rest", "simulated_energy_recovery_hysteresis"),
+                motivations=motivations, update_energy=True,
+            )
+        self._resting = False
+
+        # F2-A returned a valid baseline (possibly idle for an already-known
+        # category): therefore provenance + fresh timestamps have passed.
+        observations = summarize_passive(reading.snapshot, now=now)
+        idle_score = (0.24 + 0.35 * motivations.caution
+                      + 0.25 * (1.0 - motivations.energy))
+        best_score, best_proposal = idle_score, self._idle(
+            "no_high_scoring_passive_attention")
+        candidates: list[tuple[str, str, str, str]] = []
+        for obs in observations:
+            if obs.kind == "object_label":
+                if obs.status in {"unknown", "conflict"}:
+                    candidates.append(("inspect", "object_label", "unknown",
+                                       "uncertain_mock_object_category"))
+                elif obs.usable_category:
+                    try:
+                        known = journal.category_count(
+                            "object_label", obs.category,
+                            now_wall_epoch_s=now_wall_epoch_s)
+                    except sqlite3.Error:
+                        return self._record(self._idle("history_unavailable"),
+                                            motivations=motivations,
+                                            update_energy=False)
+                    if known == 0:
+                        candidates.append(("observe", "object_label",
+                                           obs.category,
+                                           "novel_mock_category"))
+            elif obs.kind == "sound_label" and obs.status in {
+                "identified", "unknown", "conflict",
+            }:
+                candidates.append(("listen", "sound_label", obs.category,
+                                   "fictional_sound_category"))
+
+        # Keep category-only cooldowns: never retain raw frames, track IDs,
+        # transcripts or identities in scheduler state.
+        self._cooldown_until = {
+            key: until for key, until in self._cooldown_until.items()
+            if until > now
+        }
+        seen: set[tuple[str, str, str]] = set()
+        for intention, kind, category, reason in candidates:
+            key = (intention, kind, category)
+            if key in seen:
+                continue
+            seen.add(key)
+            if self._cooldown_until.get(key, 0.) > now:
+                self._cooldown_blocks += 1
+                continue
+            score = self._score(intention, category, motivations)
+            # A small penalty encourages a genuinely different useful
+            # proposal, but never invents an event just for variety.
+            if self._recent and self._recent[-1] == intention:
+                score -= 0.15
+            if score > best_score:
+                best_score = score
+                best_proposal = PassiveIntent(
+                    intention, reason, kind, category)
+
+        if best_proposal.intention in _ACTIVE:
+            key = (best_proposal.intention, best_proposal.target_kind,
+                   best_proposal.target_category)
+            self._cooldown_until[key] = now + ATTENTION_COOLDOWN_S
+        return self._record(best_proposal, motivations=motivations,
+                            update_energy=True)
