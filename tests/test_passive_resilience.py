@@ -101,7 +101,8 @@ class SupervisorTests(unittest.TestCase):
         self.assertGreaterEqual(m.p95_elapsed_ms,0)
         self.assertGreaterEqual(m.mean_process_cpu_ms,0)
         self.assertGreaterEqual(m.max_elapsed_ms,m.p95_elapsed_ms)
-        self.assertIn(result.process_peak_rss_kib,(None,result.process_peak_rss_kib))
+        self.assertTrue(result.process_peak_rss_kib is None
+                        or result.process_peak_rss_kib >= 0)
 
     def test_repeat_category_is_not_perpetually_reannounced(self):
         self.frames.append(receipt(event(mono=101.),sequence=2,at=101.))
@@ -238,7 +239,7 @@ class SupervisorTests(unittest.TestCase):
         self.assertEqual(1,len(self.learning.history()))
 
     def test_soft_source_budget_rejects_before_any_proposal(self):
-        perf=iter((0,5_000_000,6_000_000))
+        perf=iter((0,0,5_000_000,6_000_000))
         runner=self.supervisor(
             limits=PassiveCycleLimits(max_read_ms=1,max_cycle_ms=50),
             perf_counter_ns=lambda: next(perf),
@@ -251,7 +252,7 @@ class SupervisorTests(unittest.TestCase):
         self.assertEqual(0,len(self.learning.history()))
 
     def test_soft_cycle_budget_before_commit(self):
-        perf=iter((0,1_000_000,100_000_000,110_000_000))
+        perf=iter((0,0,1_000_000,100_000_000,110_000_000))
         runner=self.supervisor(
             limits=PassiveCycleLimits(max_read_ms=10,max_cycle_ms=20),
             perf_counter_ns=lambda: next(perf),
@@ -265,7 +266,7 @@ class SupervisorTests(unittest.TestCase):
         self.assertAlmostEqual(.785,self.brain.motives.energy)
 
     def test_late_after_commit_is_reported_not_pretended_undone(self):
-        perf=iter((0,1_000_000,2_000_000,100_000_000,110_000_000))
+        perf=iter((0,0,1_000_000,2_000_000,100_000_000,110_000_000))
         runner=self.supervisor(
             limits=PassiveCycleLimits(max_read_ms=10,max_cycle_ms=20),
             perf_counter_ns=lambda: next(perf),
@@ -337,6 +338,9 @@ class SupervisorTests(unittest.TestCase):
         stats=runner.metrics()
         self.assertEqual(70,stats.cycles_attempted)
         self.assertEqual(MAX_METRIC_SAMPLES,stats.recent_samples)
+        self.assertGreaterEqual(stats.cooldown_blocks,0)
+        self.assertGreaterEqual(stats.consecutive_active_repeats,0)
+        self.assertTrue(0 <= stats.simulated_motivation_energy <= 1)
         self.assertEqual((("source_unavailable",70),),stats.status_counts)
         self.assertEqual(0.,self.learning.preference("observe"))
 
