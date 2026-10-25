@@ -52,6 +52,7 @@ Le code distingue `Board::Zero3` (Radxa Zero 3W, IMX219, BMI088) et `Board::Beta
 - `pet-detect` : classificateur audio de frottements/grattouilles du robot (~20 Ko), **pas** de détection d'animaux.
 - `nfc`/`nfcd` : lecture de tags, actuellement utilisée pour l'appairage des manettes ; adaptation nécessaire pour souvenirs d'interaction.
 - Cerveau autonome M9 encore à construire/intégrer ; ne pas le confondre avec les politiques motrices.
+- **Limite du diagnostic MuJoCo (P0a) :** le protocole officiel épinglé `body_server` expose les positions/vitesses de 15 articulations, la pose du tronc et des courants **simulés non calibrés** ; ni les contacts réels des pieds dans MuJoCo, ni les cibles articulaires n'apparaissent dans l'opération `read`. Notre [sonde passive P0a](https://github.com/Jean-Philippe56520/Microduck/pull/11) a été [testée sur MuJoCo](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40178580637) (8 échantillons `stand`, 0,991 mm de dérive au repos, aucune commande). Cela ne dit rien sur les contacts d'un robot physique et ne résout pas la locomotion J2e.
 - Le simulateur `scripts/duck-sim` exécute les vrais démons contre MuJoCo, avec capteurs simulés ; n'exerce pas les vrais pilotes NPU, ISP, BLE, servomoteurs ni la thermique.
 
 ## Mesures du fabricant sur carte Radxa Zero 3 (non représentatives garanties du produit final)
