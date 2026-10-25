@@ -136,10 +136,10 @@ upstream/microduck/scripts/duck-sim down
 - [x] `robot.stop` (appel discret) vérifié en fin d'essai, y compris sur pertes de capteur pendant une séquence de mouvement ; deadman constructeur conservé.
 - [x] Double consentement explicite `--enable-once` + `MICRODUCK_SIM_MOTION_TEST=YES` ; le workflow normal sur `main` ne lance pas de mouvement.
 - [x] 12 tests de contrôle de mouvement avec faux services Unix, **115 tests logiciels** réussis.
-- [ ] Vérifier l'impulsion avec le vrai `robotd` connecté à MuJoCo sur CI et mesurer le déplacement, l'arrêt, la santé et les délais manqués.
+- [x] Impulsion exécutée sur le vrai `robotd` simulé : [CI #40173809463](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40173809463), 4 `robot.move`, `robot.stop` confirmé, contrôleur sain ~50 Hz, MuJoCo 1,00×. Déplacement observé du tronc **0,185 mm** (trop faible pour valider la marche).
 - [ ] Après cet essai, développer une vraie boucle continue perception → décision → action → conséquence → mémoire, avec limites réévaluées, sans Qwen.
 
-**Statut : code + tests vérifiés ; mouvement MuJoCo encore en cours de validation.** Aucun moteur réel ni pilote constructeur modifié.
+**Statut : code + tests vérifiés ; chemin de commande et arrêt testés en vrai MuJoCo.** Une intention `explore` a déclenché un essai très bref sans preuve de locomotion effective. Aucun moteur réel ni pilote constructeur modifié.
 
 ## Phase 3 — Boucler perception, décision et action dans MuJoCo (V1b)
 
