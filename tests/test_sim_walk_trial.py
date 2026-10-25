@@ -18,7 +18,7 @@ from unittest.mock import patch
 from microduck_companion import AutonomyBrain, ExperienceMemory, Scene
 from microduck_companion.sim_bridge import SimulatorTelemetry
 from microduck_companion.sim_flat_zone import FlatGroundTruth, GroundTruthError
-from microduck_companion.sim_ipc import DepthReading, HealthReading, StateReading
+from microduck_companion.sim_ipc import DepthReading, HealthReading, StateReading, Notification, TelemetryError
 from microduck_companion.sim_motion import SimMotionError
 from microduck_companion.sim_walk_demo import main
 from microduck_companion.sim_walk_trial import (
@@ -193,6 +193,36 @@ class FakeRobotd:
             raise self.error
 
 
+class FakePolicyStream:
+    """A separate read-only robot.state subscriber, not a motor controller."""
+
+    def __init__(self, path, *, timeout_s=.45):
+        self.calls = 0
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return None
+
+    def request(self, method, *, hz):
+        if method != "robot.subscribe" or hz != 10:
+            raise AssertionError("unexpected telemetry subscription")
+        return {"accepted": True}
+
+    def next_notification(self):
+        self.calls += 1
+        return Notification(
+            "robot.state",
+            {"policy": "walk", "move": {
+                "requested": [.12, 0., 0.],
+                "applied": [.09, 0., 0.],
+                "limited_by": [],
+            }},
+            time.monotonic(),
+        )
+
+
 class WalkTrialFakeSocketTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -218,6 +248,8 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
                     side_effect=iter(readings)),
               patch("microduck_companion.sim_walk_trial.read_simulator_telemetry",
                     return_value=sensor),
+              patch("microduck_companion.sim_walk_trial.ReadOnlyUnixRpc",
+                    FakePolicyStream),
               patch("microduck_companion.sim_walk_trial.time.sleep")):
             return run_walk_trial(self.root, "/fake/rl", self.db)
 
@@ -230,6 +262,9 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
         self.assertEqual("mujoco_verified_pose", result.memory_source)
         self.assertEqual(1, result.trials_in_memory)
         self.assertEqual("explore", result.next_intention)
+        self.assertEqual(WALK_TICKS, result.policy_diagnostics["policy_samples"])
+        self.assertEqual(WALK_TICKS, result.policy_diagnostics["walk_policy_samples"])
+        self.assertAlmostEqual(.09, result.policy_diagnostics["max_applied_vx_mps"])
         self.assertGreater(result.preference_after, result.preference_before)
         self.assertEqual(WALK_TICKS+1, len(robot.requested))
         for p in robot.requested[:-1]:
@@ -331,6 +366,30 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
         poses = [ground(1.), ground(1.3)]
         with self.assertRaisesRegex(SimMotionError, "rest"):
             self.invoke(poses=poses)
+
+    def test_lost_policy_stream_stops_motion_and_prevents_learning(self):
+        robot = self.start()
+        class OnePolicyFrame(FakePolicyStream):
+            def next_notification(self):
+                if self.calls:
+                    raise TelemetryError("robot.state stream lost")
+                return super().next_notification()
+        with (patch("microduck_companion.sim_walk_trial.ReadOnlyUnixRpc",
+                    OnePolicyFrame),
+              patch("microduck_companion.sim_walk_trial._read_ground",
+                    side_effect=[ground(1.), ground(1.3), ground(1.4), ground(1.5)]),
+              patch("microduck_companion.sim_walk_trial.read_health",
+                    side_effect=[health(), health()]),
+              patch("microduck_companion.sim_walk_trial.read_simulator_telemetry",
+                    return_value=telemetry()),
+              patch("microduck_companion.sim_walk_trial.time.sleep")):
+            with self.assertRaisesRegex(SimMotionError, "aborted"):
+                run_walk_trial(self.root, "/fake/rl", self.db)
+        self.assertEqual(["robot.move", "robot.move", "robot.stop"],
+                         [p["method"] for p in robot.requested])
+        mem = ExperienceMemory(self.db)
+        self.addCleanup(mem.close)
+        self.assertEqual([], mem.simulated_motion_history())
 
     def test_cli_demands_explicit_enable(self):
         with patch.dict("os.environ", {}, clear=True):
