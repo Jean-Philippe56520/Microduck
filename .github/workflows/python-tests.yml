@@ -23,3 +23,9 @@ jobs:
           # mediad, MuJoCo, media recording, or motor actions.
           python -m microduck_companion.passive_demo --database "$RUNNER_TEMP/f1d-memory.sqlite3" --session first
           python -m microduck_companion.passive_demo --database "$RUNNER_TEMP/f1d-memory.sqlite3" --session second
+      - name: F2-D two separate mock Unix processes and measured host budgets
+        run: |
+          # Two independent Python processes; SQLite is the only shared state.
+          # CPU, p50/p95 and RSS are HOST measurements, not RK3566 estimates.
+          python -m microduck_companion.passive_resilience_demo --database "$RUNNER_TEMP/f2d-memory.sqlite3" --session first
+          python -m microduck_companion.passive_resilience_demo --database "$RUNNER_TEMP/f2d-memory.sqlite3" --session second
