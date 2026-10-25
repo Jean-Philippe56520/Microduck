@@ -120,6 +120,14 @@ Le ToF 8×8 orienté par la tête n'est **pas** un capteur de sol garantissant l
 
 **Acceptation C :** les décisions `halt`/`rest` sont démontrées pour observation périmée, donnée incohérente, obstacle, capteur perdu et batterie simulée faible. Toute autorisation de mouvement porte une justification provenant d'une source simulée réellement vérifiée.
 
+## Lot C — Première preuve de zone par scène MuJoCo épinglée (en cours)
+
+Une scène plane officielle contenant un seul Microduck et un sol infini permet une **preuve de géométrie limitée au monde simulé**, pas une preuve à partir du ToF. `sim_flat_zone.py` vérifie : commit RL exact, checkout propre, hash Git de `scene.xml`, processus Linux authentifié par PID et ligne de commande du serveur du corps (scène par défaut, `--headless`, `--ducks 1`), puis pose lue par `op=read`.
+
+Le centre de test est l'origine de la scène. Rayon maximal 0,90 m, marge d'encombrement 0,16 m, arrêt si la distance résiduelle à la limite devient inférieure à 0,35 m. L'altitude du tronc et la gravité projetée doivent indiquer un robot debout ; un autre scénario, une pose absente ou une valeur non finie entraînent le refus. La preuve de pose n'expire pas après 0,35 s, et les télémétries `robotd`/`tofd` doivent rester fraîches et cohérentes.
+
+**La zone plane a été vérifiée par revue du modèle XML épinglé, mais son interrogation sur la simulation tournante reste à valider dans le workflow headless.** L'API est volontairement limitée à un diagnostic en lecture seule `sim_zone_probe`. Aucun ordre moteur n'a été ajouté.
+
 ## Lot D — Passer des intentions de haut niveau aux commandes officielles
 
 **Livrable :** adaptateur de commandes indépendant du cerveau, initialement désactivé.
