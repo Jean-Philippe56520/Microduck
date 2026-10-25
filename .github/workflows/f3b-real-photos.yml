@@ -26,3 +26,11 @@ jobs:
           # This may fail closed on HTTP errors, invalid JPEGs or missing photos.
           # No images, trained weights, or personal data are committed/uploaded.
           python -m microduck_companion.visual_photo_baseline_demo
+      - name: MobileNetV2 Apache-2.0 ONNX, pinned weights, CPU-only independent test
+        run: |
+          python -m pip install --disable-pip-version-check numpy==1.26.4 onnxruntime==1.21.0
+          curl --fail --location --retry 2 --max-time 120 \
+            --output "$RUNNER_TEMP/mobilenetv2-12.onnx" \
+            "https://huggingface.co/onnxmodelzoo/mobilenetv2-12/resolve/main/mobilenetv2-12.onnx"
+          echo "c0c3f76d93fa3fd6580652a45618618a220fced18babf65774ed169de0432ad5  $RUNNER_TEMP/mobilenetv2-12.onnx" | sha256sum --check
+          python -m microduck_companion.visual_photo_mobilenet_demo --model "$RUNNER_TEMP/mobilenetv2-12.onnx"
