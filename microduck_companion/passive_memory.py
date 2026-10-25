@@ -159,6 +159,13 @@ class PassiveObservationJournal:
         inserted = 0
         with self._memory.conn:
             self._prune(wall)
+            # A sequence is one atomic F1-B receipt. Do not let a repeated
+            # number append more categories by altering its event count.
+            if self._memory.conn.execute("""
+                SELECT 1 FROM passive_observation_log
+                WHERE session_id=? AND sequence=? LIMIT 1
+            """, (self.session_id, reading.sequence)).fetchone() is not None:
+                return 0
             for ordinal, p in enumerate(projections):
                 result = self._memory.conn.execute("""
                     INSERT OR IGNORE INTO passive_observation_log(
