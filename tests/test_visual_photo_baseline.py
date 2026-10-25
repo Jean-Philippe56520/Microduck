@@ -103,6 +103,10 @@ class PublicCatalogTests(unittest.TestCase):
         with self.assertRaises(PhotoBaselineError):
             fetch_thumbnail(arbitrary,opener=lambda *_args,**_kwargs:None)
 
+    def test_official_thumb_domain_is_allowed(self):
+        self.assertTrue(_check_jpeg_bytes(FakeResponse(
+            url="https://thumb.wikimedia.org/wikipedia/commons/thumb/test.jpg")))
+
     def test_network_redirect_and_mime_type_are_fail_closed(self):
         for bad in (
             FakeResponse(url="https://malicious.example.com/a.jpg"),
