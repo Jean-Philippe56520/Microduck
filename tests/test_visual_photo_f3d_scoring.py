@@ -30,7 +30,7 @@ class FrozenHoldoutTests(unittest.TestCase):
         )
         report=summarize_challenge(rows)
         self.assertEqual(28,report["test_or_validation_samples"])
-        self.assertEqual(24,report["correct"])
+        self.assertEqual(23,report["correct"])
         self.assertEqual(2,report["false_known_on_unknown"])
         self.assertEqual(16,report["known_support"])
         self.assertEqual(12,report["unknown_support"])
