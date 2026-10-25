@@ -36,3 +36,6 @@ jobs:
         run: |
           # OEM-shaped JSON only. No WebRTC, media.frame, real audio or motor.
           python -m microduck_companion.passive_media_demo
+      - name: F3-E public-photo review ledger (no human votes)
+        run: |
+          python -m microduck_companion.f3e_demo
