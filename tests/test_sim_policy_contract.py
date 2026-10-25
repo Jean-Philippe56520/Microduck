@@ -123,8 +123,9 @@ class P0fUnitTests(unittest.TestCase):
             conf.write_text(
                 conf.read_text() + "action_scale = 9.0\n"
             )
-            # A local override must be visible, not silently interpreted as default.
-            # The P0f source check itself never changes controller parameters.
+            with self.assertRaises(GroundTruthError):
+                policy_paths(state)
+            conf.write_text(conf.read_text().replace("action_scale = 9.0\n", ""))
             conf.write_text(conf.read_text().replace('enabled = true', 'enabled = false'))
             with self.assertRaises(GroundTruthError):
                 policy_paths(state)

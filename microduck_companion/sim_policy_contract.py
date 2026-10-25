@@ -219,6 +219,13 @@ def policy_paths(state_dir: Path) -> tuple[dict[str, Path], dict]:
     except (OSError, UnicodeError, ValueError, KeyError, TypeError) as exc:
         raise GroundTruthError("P0f: missing or invalid official robotd policy TOML") from exc
     _require(values.get("enabled") is True, "policy disabled")
+    # duck-sim generates a baseline TOML with these tuning keys absent. Any
+    # present override means the static defaults we compare are not proven.
+    for setting in ("action_scale", "standing_action_scale",
+                    "standing_gain_ratio", "gain",
+                    "head_lowpass", "legs_lowpass"):
+        _require(setting not in values,
+                 "simulator changed nominal controller tuning: " + setting)
     paths = {}
     for key, name in (("walk", "alpha_walking.onnx"),
                       ("stand", "alpha_stand.onnx")):

@@ -133,6 +133,16 @@ python3 -m microduck_companion.sim_joint_trace \
     --state-dir "$DUCK_SIM_STATE" --rl-root "$DUCK_SIM_RL" \
     --port "$DUCK_SIM_PORT" --samples 8 --hz 5 \
     --output "$DUCK_SIM_STATE/joint-trace.json"
+# P0f: one READ-ONLY policy contract audit in a separate ONNX CPU session.
+# It does NOT inspect robotd internal input/state or drive motors.
+if [ "${DUCK_SIM_POLICY_AUDIT:-NO}" = YES ]; then
+    rm -f "$DUCK_SIM_STATE/policy-contract.json"
+    "$DUCK_SIM_RL/.venv/bin/python" -m microduck_companion.sim_policy_contract \
+        --robot-root "$ROOT/upstream/microduck" \
+        --rl-root "$DUCK_SIM_RL" \
+        --state-dir "$DUCK_SIM_STATE" \
+        --output "$DUCK_SIM_STATE/policy-contract.json"
+fi
 # This double-opt-in is valid ONLY for the verified flat-floor simulator.
 # On main/manual smoke runs it is disabled; no movement is emitted by default.
 if [ "${DUCK_SIM_SHORT_MOVE:-NO}" = YES ]; then
