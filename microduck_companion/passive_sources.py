@@ -239,8 +239,12 @@ class FixtureUnixReader:
                 return no_events("rate_limited")
         self._last_attempt = now
         try:
+            deadline = time.monotonic() + self.timeout_s
             with _connect_unix(self.path, self.timeout_s) as conn:
-                frame = _strict_json(_recv_line(conn, self.timeout_s))
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise PassiveSourceError("source deadline exceeded")
+                frame = _strict_json(_recv_line(conn, remaining))
             received = self.clock()
             if not _finite(received) or received < now:
                 return no_events("clock_reset")
@@ -267,6 +271,7 @@ def probe_official_mediad(path: str | Path = OEM_SOCKET, *,
     p = Path(path)
     testing_path = str(p) != OEM_SOCKET
     try:
+        deadline = time.monotonic() + timeout_s
         with _connect_unix(p, timeout_s) as conn:
             uid = None
             if hasattr(socket, "SO_PEERCRED"):
@@ -274,8 +279,15 @@ def probe_official_mediad(path: str | Path = OEM_SOCKET, *,
                     socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize("3i"))
                 _, uid, _ = struct.unpack("3i", credentials)
             msg = b'{"jsonrpc":"2.0","id":1,"method":"hello"}\n'
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise PassiveSourceError("source deadline exceeded")
+            conn.settimeout(remaining)
             conn.sendall(msg)
-            frame = _strict_json(_recv_line(conn, timeout_s, max_bytes=2048))
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise PassiveSourceError("source deadline exceeded")
+            frame = _strict_json(_recv_line(conn, remaining, max_bytes=2048))
         if (set(frame) != {"jsonrpc", "id", "result"}
                 or frame.get("jsonrpc") != "2.0"
                 or type(frame.get("id")) is not int or frame["id"] != 1):
