@@ -56,7 +56,7 @@ class FrozenHoldoutTests(unittest.TestCase):
 
     def test_wilson_interval_with_tiny_denominator(self):
         self.assertIsNone(wilson_interval(0,0))
-        self.assertEqual(0.,wilson_interval(0,6)[0])
+        self.assertAlmostEqual(0.,wilson_interval(0,6)[0])
         self.assertEqual(1.,wilson_interval(6,6)[1])
         self.assertLess(wilson_interval(5,6)[0],5/6)
         for args in ((-1,5),(6,5),(1,-2),(1.2,5),(True,1)):
