@@ -95,7 +95,8 @@ def _send_stop(sock: socket.socket) -> None:
         raise SimMotionError("robot.stop returned invalid JSON") from exc
     if (not isinstance(response, dict) or response.get("jsonrpc") != "2.0"
             or type(response.get("id")) is not int or response["id"] != 1
-            or "error" in response or "result" not in response):
+            or "error" in response or not isinstance(response.get("result"), dict)
+            or response["result"].get("accepted") is not True):
         raise SimMotionError("robot.stop was not acknowledged")
 
 

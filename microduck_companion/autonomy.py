@@ -90,6 +90,14 @@ class AutonomyBrain:
             "explore": self.motives.curiosity * self.motives.energy * 0.72
                        - self.motives.caution * 0.28,
         }
+        # Only verified MuJoCo consequences can bias the simulator's choice.
+        # The physical robot and the synthetic legacy demo are unaffected.
+        # The adjustment is gradual and can eventually favor idle over
+        # repeated unsuccessful exploratory attempts.
+        if scene.environment == "simulator":
+            scores["explore"] += 0.60 * self.memory.intent_preference(
+                "simulator", "explore"
+            )
         if scene.person_visible:
             scores["look_at_person"] = self.motives.sociability * 0.94 + 0.20
         if obj is not None:

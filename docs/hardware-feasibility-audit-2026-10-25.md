@@ -190,3 +190,24 @@ Ces contrôles sont codés et leur comportement est testé sur données fictives
 `sim_motion.py` et `sim_motion_demo.py` préparent une première impulsion volontaire sur le Microduck virtuel, à vitesse avant fixe de 0,05 m/s pendant environ 0,4 s. Chaque impulsion passe uniquement par `robotd` et dépend de la géométrie MuJoCo épinglée, de la pose et des mesures de santé confirmées. `robot.stop` est requis ; le deadman de la politique constructeur n'est ni désactivé ni remplacé.
 
 **Vérification à ce stade :** 115 tests Python, dont 12 tests de mouvements fictifs sur sockets Unix, **et essai réel en MuJoCo validé** ([CI #40173809463](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40173809463)). 4 notifications `robot.move`, réponse à `robot.stop` vérifiée ; différence de position simulée de **0,185 mm**, insuffisante pour prouver une marche. L'essai ne mesure pas l'arrêt physique ni la gestion d'obstacles. Les conditions expérimentales de sol/position n'existent pas sur le RK3566 physique ; aucune validation des escaliers, RAM, énergie ou température n'est possible par ce test.
+
+
+## J2e — Démarche : seuil du constructeur et protocole de mesure simulé
+
+La sélection entre les politiques ONNX de station debout et de marche dépend de la norme de vitesse de commande. Dans la révision officielle épinglée, la valeur par défaut de séparation est **0,05 m/s** (source : `duck-control/src/policy.rs`). Le premier test de commande à exactement ce seuil a observé seulement 0,185 mm de variation du tronc ; l'hypothèse « politique de station debout » est à confronter aux mesures réelles de la seconde expérience.
+
+La nouvelle tentative demande `vx=0,12 m/s` en simulation bornée, après mesure de dérive. La base SQLite conserve uniquement des conséquences explicitement observées dans le simulateur vérifié ; les résultats incertains n'affectent pas les préférences. Une translation éventuelle ne démontre pas les contacts des pieds, la stabilité d'une démarche ou l'absence de glissade. Aucune commande physique, aucune mesure de l'énergie, de la température, du CPU ou de la RAM réelle n'est produite par cet essai.
+
+
+## Résultats réels du jalon J2e — 25 octobre 2026
+
+Trois exécutions du **simulateur MuJoCo officiel** à 0,12 m/s, avec zone plane épinglée, contrôle de santé et commande `robot.stop` confirmée, ont montré des variations de position inférieures au seuil de 1 cm :
+
+- [Essai A](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40175133570) : 12 commandes, translation **1,242 mm**, dérive initiale **0,105 mm**.
+- [Essai B](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40175696383) : 12 commandes, translation **0,820 mm**, dérive initiale **0,037 mm**, `policy=walk` sur **11/12** échantillons, vitesse appliquée maximale **0,12 m/s**, aucune limitation signalée.
+- [Essai C](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176018018) : 24 commandes, translation **1,399 mm**, dérive initiale **0,273 mm**, `policy=walk` sur **23/24** échantillons, vitesse appliquée maximale **0,12 m/s** ; `deadman` rapporté dans un échantillon.
+- [Essai D](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176410817) : 24 commandes, translation **2,574 mm**, dérive initiale **0,192 mm**, `walk` sur **23/24** échantillons, vitesse appliquée maximale **0,12 m/s**, arrêt confirmé et statut `WALK_TRANSLATION_ACCEPTANCE=NOT_MET` dans un workflow techniquement réussi (142 tests Python).
+
+Dans chacun des quatre essais, la mémoire SQLite a mémorisé une **absence de progression** comme fait simulé vérifié (`no_progress_observed`), puis modifié faiblement la préférence `explore` de **0 à −0,075**. Les bases de CI sont éphémères ; la persistance d'un lancement à un autre est vérifiée par tests Python, pas par le partage d'une base entre ces trois exécutions.
+
+**Verdict :** le chemin d'intention, l'arrêt, les mesures et la mémoire simulée fonctionnent. **La locomotion n'est pas validée**, malgré le choix de la politique `walk` et la vitesse appliquée. Les origines possibles (contacts, adhérence, dynamique du modèle, politique ONNX) restent des hypothèses non vérifiées. Ne pas assimiler ces chiffres à un déplacement en conditions réelles ni modifier les limites OEM sans une analyse ciblée. Pas d'autonomie matérielle mesurée.

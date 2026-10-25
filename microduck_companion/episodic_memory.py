@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import sqlite3
+import math
 import time
 from pathlib import Path
 
@@ -15,6 +16,20 @@ class KnownObject:
     sightings: int
     preference: float
     analysis_requested: bool
+
+
+@dataclass(frozen=True)
+class SimulatedMotionExperience:
+    """Observed MuJoCo outcome, never a physical-robot measurement."""
+
+    outcome: str
+    measured_m: float
+    baseline_m: float
+    simulated_duration_s: float
+    source: str
+    reward: float | None
+    updated_preference: float
+    observed_trials: int
 
 
 class ExperienceMemory:
@@ -38,6 +53,27 @@ class ExperienceMemory:
                 action TEXT NOT NULL,
                 outcome REAL,
                 note TEXT NOT NULL DEFAULT ''
+            );
+            CREATE TABLE IF NOT EXISTS sim_motion_trials (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp REAL NOT NULL,
+                source TEXT NOT NULL CHECK(source='mujoco_verified_pose'),
+                action TEXT NOT NULL CHECK(action='explore'),
+                measured_m REAL NOT NULL CHECK(measured_m>=0),
+                baseline_m REAL NOT NULL CHECK(baseline_m>=0),
+                simulated_duration_s REAL NOT NULL CHECK(simulated_duration_s>0),
+                stop_confirmed INTEGER NOT NULL,
+                healthy_after INTEGER NOT NULL,
+                safe_after INTEGER NOT NULL,
+                outcome TEXT NOT NULL,
+                reward REAL
+            );
+            CREATE TABLE IF NOT EXISTS intent_preferences (
+                environment TEXT NOT NULL,
+                action TEXT NOT NULL,
+                preference REAL NOT NULL DEFAULT 0,
+                observations INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY(environment, action)
             );
         """)
         self.conn.commit()
@@ -134,3 +170,96 @@ class ExperienceMemory:
 
     def experience_count(self) -> int:
         return self.conn.execute("SELECT count(*) FROM experiences").fetchone()[0]
+
+    def intent_preference(self, environment: str, action: str) -> float:
+        """Only verified trials can affect this simulator-specific preference."""
+        row = self.conn.execute(
+            """SELECT preference FROM intent_preferences
+               WHERE environment=? AND action=?""", (environment, action)
+        ).fetchone()
+        return float(row["preference"]) if row is not None else 0.0
+
+    def record_simulated_motion(
+        self, *, measured_m: float, baseline_m: float,
+        simulated_duration_s: float, stop_confirmed: bool,
+        healthy_after: bool, safe_after: bool,
+    ) -> SimulatedMotionExperience:
+        """Persist an observed simulator trial and learn *only* when verified.
+
+        Measured translation is not proof of walking: contact/gait and motor
+        effectiveness are not independently observed here. A large baseline
+        drift makes the result inconclusive. Unknown/unsafe cases are logged
+        but never used as reward. No LLM hypothesis enters this path.
+        """
+        for key, value in (
+            ("measured_m", measured_m), ("baseline_m", baseline_m),
+            ("simulated_duration_s", simulated_duration_s),
+        ):
+            if type(value) not in (float, int) or not math.isfinite(value):
+                raise ValueError(f"{key} must be a finite number")
+        if measured_m < 0 or baseline_m < 0 or not 0 < simulated_duration_s <= 10:
+            raise ValueError("invalid simulated trial measurements")
+        if any(type(x) is not bool for x in
+               (stop_confirmed, healthy_after, safe_after)):
+            raise ValueError("attestations must be booleans")
+        verified = stop_confirmed and healthy_after and safe_after
+        reward: float | None = None
+        if not verified:
+            outcome = "unverified"
+        elif baseline_m > 0.005:
+            outcome = "inconclusive_drift"
+        elif measured_m >= max(0.01, 3 * baseline_m + 0.005):
+            outcome, reward = "translation_observed", 0.5
+        else:
+            outcome, reward = "no_progress_observed", -0.5
+
+        with self.conn:
+            self.conn.execute(
+                """INSERT INTO sim_motion_trials(
+                      timestamp,source,action,measured_m,baseline_m,
+                      simulated_duration_s,stop_confirmed,healthy_after,
+                      safe_after,outcome,reward)
+                   VALUES (?,'mujoco_verified_pose','explore',?,?,?,?,?,?,?,?)""",
+                (time.time(), measured_m, baseline_m, simulated_duration_s,
+                 int(stop_confirmed), int(healthy_after), int(safe_after),
+                 outcome, reward),
+            )
+            if reward is not None:
+                previous = self.intent_preference("simulator", "explore")
+                # Small observed adjustment; never interpreted as model training.
+                updated = max(-1., min(1., previous * 0.85 + reward * 0.15))
+                self.conn.execute(
+                    """INSERT INTO intent_preferences(
+                         environment,action,preference,observations)
+                       VALUES ('simulator','explore',?,1)
+                       ON CONFLICT(environment,action) DO UPDATE SET
+                         preference=excluded.preference,
+                         observations=observations+1""",
+                    (updated,),
+                )
+        pref = self.intent_preference("simulator", "explore")
+        observed = self.conn.execute(
+            """SELECT COUNT(*) FROM sim_motion_trials
+               WHERE source='mujoco_verified_pose' AND action='explore'"""
+        ).fetchone()[0]
+        return SimulatedMotionExperience(
+            outcome, float(measured_m), float(baseline_m),
+            float(simulated_duration_s), "mujoco_verified_pose",
+            reward, pref, observed,
+        )
+
+    def simulated_motion_history(self) -> list[SimulatedMotionExperience]:
+        """Source-labelled trials; read without inferring anything about hardware."""
+        rows = self.conn.execute(
+            """SELECT measured_m,baseline_m,simulated_duration_s,outcome,reward
+               FROM sim_motion_trials ORDER BY id"""
+        ).fetchall()
+        preference = self.intent_preference("simulator", "explore")
+        return [
+            SimulatedMotionExperience(
+                r["outcome"], r["measured_m"], r["baseline_m"],
+                r["simulated_duration_s"], "mujoco_verified_pose",
+                r["reward"], preference, len(rows),
+            )
+            for r in rows
+        ]
