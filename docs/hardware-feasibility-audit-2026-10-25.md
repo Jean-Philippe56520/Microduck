@@ -10,6 +10,12 @@ Revue de la revision constructeur epinglee dans le depot (sans acces au robot) :
 
 Le parseur F3-C ne traite que des donnees fictives reproduisant les formats officiels : aucun capteur, moteur ou composant materiel n'a ete teste. Les voies de communication OEM doivent etre inspectees et autorisees de maniere independante avant toute integration reelle. Aucune nouvelle mesure thermique, RAM, NPU, batterie ou cadence motrice n'est disponible. Voir [rapport F3-C](f3c-oem-media-notifications-2026-10-26.md).
 
+## Addendum F3-D — 26 octobre 2026 (mesures Linux sur hôte de CI)
+
+Le [banc F3-D sur 28 nouvelles photos publiques déclarées CC0](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40244671367), toutes externes au foyer, utilise **MobileNetV2 ImageNet ONNX** sur le **CPU du runner GitHub Actions Ubuntu**, et aucun composant du Rockchip Microduck. La mesure de pic RSS est de **108 148 Kio (~105,6 Mio) pour tout le processus Python** (NumPy, Pillow, ONNX Runtime et bibliothèques comprises), avec **9,036 ms d'inférence CPU médiane** et p95 **9,240 ms** sur 28 images. Il est **incorrect** d'en déduire la RAM du modèle seul, les FPS réels, la marge de 1 Go de RAM, la chauffe ou la consommation de batterie du robot ; le modèle ne tourne pas sur le NPU Microduck dans cet essai.
+
+Sur le jeu additionnel, **8/16 photos de chiens/chats** sont reconnues selon les étiquettes publiques (3/8 chats et 5/8 chiens), avec **12/12 photos hors des deux catégories** rejetées. Ces données ne sont pas tirées au hasard, leurs descriptions n'ont pas de deuxième annotation indépendante, et la présence éventuelle des images dans le jeu de préentraînement ImageNet n'a pas été auditée. **Aucune reconnaissance fiable d'animaux ni navigation sûre n'est démontrée.** Voir [rapport détaillé F3-D et inventaire des 28 sources](f3d-open-set-resource-benchmark-2026-10-26.md). Les mesures du script `scripts/resource-audit.sh` sur un Microduck réel restent **non effectuées**.
+
 ## Verdict
 
 Le Microduck permet raisonnablement de viser : mémoire persistante locale, moteur d'autonomie, exploration prudente, observation visuelle événementielle, identification de catégories d'animaux et interaction sociale élémentaire. Il reste à développer et à valider : détection personnalisée d'animaux, identification non biométrique des personnes familières, reconnaissance vocale, exploration sûre en environnement non contrôlé, et intégration du cerveau autonome à robotd. Qwen multimodal se placera initialement sur un PC local.
