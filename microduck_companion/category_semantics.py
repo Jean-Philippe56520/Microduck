@@ -203,6 +203,9 @@ class CategorySemantics:
             WHERE s.active=1 AND l.active=1 AND j.status='identified'
               AND j.source='mock' AND j.channel='mock_fixture_unix'
               AND s.source='mock_fixture_journal'
+              AND s.category=j.category AND s.kind=j.kind
+              AND s.reported_confidence=j.confidence
+              AND l.outcome IN ('new_information','repeated_observation')
               AND s.recorded_epoch_s BETWEEN ? AND ?
               AND (? IS NULL OR s.category=?)
             ORDER BY s.recorded_epoch_s DESC,s.observation_id DESC LIMIT ?
