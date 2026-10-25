@@ -130,6 +130,17 @@ upstream/microduck/scripts/duck-sim down
 
 **Statut : contrôles de zone codés, 103 tests logiciels verts et preuve sur MuJoCo officiel validée en lecture seule.** Déplacements encore interdits jusqu'à l'ajout d'un adaptateur motrice spécialement borné ; aucune transposition sur robot réel.
 
+## J2d — Une seule intention robot.move bornée (25 octobre 2026)
+
+- [x] `sim_motion.py` : vitesse avant fixée à **0,05 m/s**, quatre notifications sur ~0,4 s, sans rotation ; lecture de la vraie pose MuJoCo et de la santé `robotd` avant chaque commande.
+- [x] `robot.stop` (appel discret) vérifié en fin d'essai, y compris sur pertes de capteur pendant une séquence de mouvement ; deadman constructeur conservé.
+- [x] Double consentement explicite `--enable-once` + `MICRODUCK_SIM_MOTION_TEST=YES` ; le workflow normal sur `main` ne lance pas de mouvement.
+- [x] 12 tests de contrôle de mouvement avec faux services Unix, **115 tests logiciels** réussis.
+- [ ] Vérifier l'impulsion avec le vrai `robotd` connecté à MuJoCo sur CI et mesurer le déplacement, l'arrêt, la santé et les délais manqués.
+- [ ] Après cet essai, développer une vraie boucle continue perception → décision → action → conséquence → mémoire, avec limites réévaluées, sans Qwen.
+
+**Statut : code + tests vérifiés ; mouvement MuJoCo encore en cours de validation.** Aucun moteur réel ni pilote constructeur modifié.
+
 ## Phase 3 — Boucler perception, décision et action dans MuJoCo (V1b)
 
 **But :** démontrer la première autonomie observable, sans modifier le contrôle moteur officiel.
