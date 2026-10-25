@@ -18,6 +18,7 @@ on:
       - feat/p0f-policy-contract-audit-20261025
       - feat/p0g-compiled-contact-variants-20261025
       - feat/p0h-policy-slot-lineage-20261025
+      - feat/p0i-controlled-policy-pair-20261025
       - feat/p2b-passive-mujoco-cycles-20261025
     paths:
       - ".github/workflows/mujoco-smoke.yml"
@@ -84,6 +85,7 @@ jobs:
           DUCK_SIM_CONTACT_REPLAY: ${{ github.ref_name == 'feat/p0c-replay-contact-geometry-20261025' && 'YES' || 'NO' }}
           DUCK_SIM_POLICY_AUDIT: ${{ github.ref_name == 'feat/p0f-policy-contract-audit-20261025' && 'YES' || 'NO' }}
           DUCK_SIM_POLICY_LINEAGE: ${{ github.ref_name == 'feat/p0h-policy-slot-lineage-20261025' && 'YES' || 'NO' }}
+          DUCK_SIM_POLICY_PAIR: ${{ github.ref_name == 'feat/p0i-controlled-policy-pair-20261025' && 'YES' || 'NO' }}
           DUCK_SIM_GEOMETRY_COMPARE: ${{ github.ref_name == 'feat/p0g-compiled-contact-variants-20261025' && 'YES' || 'NO' }}
           DUCK_SIM_PASSIVE_CYCLES: ${{ github.ref_name == 'feat/p2b-passive-mujoco-cycles-20261025' && 'YES' || 'NO' }}
         run: |
@@ -115,6 +117,9 @@ jobs:
             /tmp/duck-sim-companion/actuator-gain-audit.json
             /tmp/duck-sim-companion/policy-contract.json
             /tmp/duck-sim-companion/policy-lineage.json
+            /tmp/duck-sim-companion/p0i-alpha.json
+            /tmp/duck-sim-companion/p0i-velstand.json
+            /tmp/duck-sim-companion/p0i-comparison.json
             /tmp/duck-sim-companion/compiled-geometry-variants.json
             /tmp/duck-sim-companion/p2b-passive-session-a.json
             /tmp/duck-sim-companion/p2b-passive-session-b.json
