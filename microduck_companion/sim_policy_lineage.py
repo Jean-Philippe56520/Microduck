@@ -97,7 +97,7 @@ def selection_contract(
     produced_velstand = match(
         r'Current policy:\s*wandb \x60pollen-robotics/mjlab_microduck/'
         r'([a-z0-9]+)\x60 @ \x60model_(\d+)\.pt\x60'
-        r'[^\n]*\x60velstand\.onnx\x60[^\n]*tag \*\*(v\d+)\*\*',
+        r'[^\n]*\n\s*\x60velstand\.onnx\x60[^\n]*tag \*\*(v\d+)\*\*',
         lineage, "velstand release provenance",
     )
     require(produced_velstand.group(3) == EXPECTED_POLICY_SOURCE[1],
