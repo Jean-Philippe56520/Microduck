@@ -56,19 +56,25 @@ class PassiveObservationTests(unittest.TestCase):
         snap = snapshot(event("sound_label", "keyword_stop"))
         self.assertEqual("keyword_stop", summarize_passive(
             snap, now=100.2)[0].category)
-        with ExperienceMemory() as memory:
+        memory = ExperienceMemory()
+        try:
             plan = AutonomyBrain(memory).choose_from_snapshot(snap, now=100.2)
             self.assertEqual("halt", plan.intention)
             self.assertEqual(0, memory.conn.execute(
                 "SELECT count(*) FROM objects").fetchone()[0])
+        finally:
+            memory.close()
 
     def test_sound_cannot_be_recognized_person_or_safety_gate(self):
         audio = event("sound_label", "speech")
-        with ExperienceMemory() as memory:
+        memory = ExperienceMemory()
+        try:
             plan = AutonomyBrain(memory).choose_from_snapshot(
                 snapshot(audio), now=100.2,
             )
-        self.assertEqual("halt", plan.intention)
+            self.assertEqual("halt", plan.intention)
+        finally:
+            memory.close()
 
     def test_sound_is_not_a_transcript_or_identity(self):
         for invalid in ("hello there", "Nessquick", "Malo", "Please stop",
@@ -141,10 +147,13 @@ class PassiveObservationTests(unittest.TestCase):
         one, = summarize_passive(snap, now=100.2)
         self.assertEqual(("identified", "sensor"),
                          (one.status, one.claimed_source))
-        with ExperienceMemory() as memory:
+        memory = ExperienceMemory()
+        try:
             plan = AutonomyBrain(memory).choose_from_snapshot(snap, now=100.2)
             self.assertEqual("halt", plan.intention)
             self.assertIsNone(memory.get("track-1"))
+        finally:
+            memory.close()
 
     def test_untrusted_llm_cannot_override_fresh_sensor_category(self):
         good = event(source="sensor", category="cat")
