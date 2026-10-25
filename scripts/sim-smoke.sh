@@ -87,6 +87,20 @@ case "${DUCK_SIM_DEP_MODE:-full}" in
         ;;
 esac
 
+# P0d: external live solver tap. Only explicit opt-in, only on pinned CI branch.
+# The startup hook applies solely to the EXACT official body_server process;
+# it writes snapshots to a bounded asynchronous queue after native mj_step.
+if [ "${DUCK_SIM_SOLVER_TRACE:-NO}" = YES ]; then
+    if [ "${DUCK_SIM_WALK_COMPARE:-NO}" != YES ]; then
+        printf 'P0d requires the verified single P0b trial.\n' >&2
+        exit 2
+    fi
+    python3 -c 'import pathlib; from microduck_companion.sim_flat_zone import verify_flat_scene; verify_flat_scene(pathlib.Path("${DUCK_SIM_RL}"))'
+    rm -f "$DUCK_SIM_STATE/solver-tap.jsonl" "$DUCK_SIM_STATE/solver-analysis.json"
+    export MICRODUCK_SIM_SOLVER_TRACE=YES
+    export PYTHONPATH="$ROOT/scripts/solver-tap:$PYTHONPATH"
+fi
+
 started=0
 cleanup() {
     if [ "$started" -eq 1 ]; then
@@ -134,6 +148,16 @@ if [ "${DUCK_SIM_WALK_COMPARE:-NO}" = YES ]; then
         fi
     fi
 fi
+# P0d: analyze the native post-mj_step contact/force/control stream ONLY
+# after the existing bounded trial returned and confirmed robot.stop.
+if [ "${DUCK_SIM_SOLVER_TRACE:-NO}" = YES ]; then
+    sleep 0.3 # allow the non-blocking diagnostic writer to drain
+    python3 -m microduck_companion.sim_live_solver_analyze \
+        --input "$DUCK_SIM_STATE/solver-tap.jsonl" \
+        --p0b "$DUCK_SIM_STATE/walk-comparison.json" \
+        --output "$DUCK_SIM_STATE/solver-analysis.json"
+fi
+
 # P0c: replay contact geometry OFFLINE from the already stopped P0b trial.
 # Uses pinned MJCF in an independent MuJoCo model; no extra motor command.
 if [ "${DUCK_SIM_CONTACT_REPLAY:-NO}" = YES ]; then
