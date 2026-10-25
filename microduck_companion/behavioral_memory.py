@@ -154,6 +154,10 @@ class BehavioralMemory:
             WHERE b.active=1 AND b.recorded_epoch_s BETWEEN ? AND ?
               AND c.source='mock' AND c.disposition='mock_feedback'
               AND c.intention='inspect_object'
+              AND ((b.outcome='positive' AND
+                    c.outcome='explicit_mock_positive' AND c.reward=0.4)
+                OR (b.outcome='negative' AND
+                    c.outcome='explicit_mock_negative' AND c.reward=-0.4))
             ORDER BY b.recorded_epoch_s DESC,b.mock_cycle_id DESC
             LIMIT ?
         """,(now-RETENTION_S,now,limit)).fetchall()
