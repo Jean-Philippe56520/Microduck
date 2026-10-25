@@ -45,7 +45,7 @@ python -m compileall -q microduck_companion tests
 python -m microduck_companion.passive_media_demo
 ```
 
-Sur branche, la [suite complète a réussi avec **551 tests**](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40243777520) (520 tests F3-B existants + 31 tests F3-C). La preuve du **dernier commit** doit encore être confirmée avant fusion ; ce rapport ne prétend pas qu'un robot ou `mediad` live a été testé.
+Sur branche, la [suite complète a réussi avec **551 tests**](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40243777520) (520 tests F3-B existants + 31 tests F3-C). Le [workflow Python et sa démonstration F3-C](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40244042809) ont également réussi sur le commit documentaire vérifié, avant cette mise à jour du rapport. Les contrôles de compilation et de régression F1-D/F2-D/F3-A restent au vert. La revue et la fusion de PR #34 sont encore nécessaires ; ce rapport ne prétend pas qu'un robot ou `mediad` en direct a été testé.
 
 ## 4. Éléments non réalisés et prochaine décision
 
