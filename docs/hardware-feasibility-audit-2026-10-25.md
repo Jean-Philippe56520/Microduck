@@ -2,7 +2,7 @@
 
 Date : 2026-10-25. Audit documentaire et revue de code, **sans accès au robot physique**. Les valeurs de RAM et stockage libres ne sont **pas mesurées**. Aucune capture d'image privée ou donnée biométrique ne doit être placée dans ce dépôt.
 
-**Mise à jour de cohérence :** le [plan d'action consolidé](plan-action.md) définit les priorités. P0g compare les modèles MuJoCo compilés, avec géométries différentes mais contacts de semelles/sol identiques sur les paramètres examinés ; ce n'est pas une preuve de marche. Dernier essai moteur P0e 2,295 mm, stop confirmé, cause inconnue. P2a fournit uniquement des cycles fictifs persistés. Aucun matériel Microduck réel n'a été mesuré.
+**Mise à jour de cohérence :** le [plan d'action consolidé](plan-action.md) définit les priorités. P0g compare les modèles MuJoCo compilés, avec géométries différentes mais contacts de semelles/sol identiques sur les paramètres examinés ; ce n'est pas une preuve de marche. Dernier essai moteur P0e 2,295 mm, stop confirmé, cause inconnue. P2a fournit des cycles fictifs persistés. P2b ajoute sur [PR #19](https://github.com/Jean-Philippe56520/Microduck/pull/19) des cycles passifs alimentés par les télémétries simulées, testés logiciellement (234 tests Python) mais dont la démonstration MuJoCo officielle doit encore être confirmée ; aucune nouvelle commande motrice. Aucun matériel Microduck réel n'a été mesuré.
 
 ## Verdict
 
