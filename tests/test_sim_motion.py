@@ -59,10 +59,10 @@ class FakeMotorDaemon:
                             if frame["method"] == "robot.stop":
                                 response = (
                                     {"jsonrpc": "2.0", "id": 1,
-                                     "result": {"stopped": True}}
+                                     "result": {"accepted": True}}
                                     if self.acknowledge
                                     else {"jsonrpc": "2.0", "id": 999,
-                                          "result": {"stopped": True}}
+                                          "result": {"accepted": True}}
                                 )
                                 conn.sendall((json.dumps(response) + "\n").encode())
                                 break
