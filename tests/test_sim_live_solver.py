@@ -212,6 +212,14 @@ def header():
 
 class NativeSolverTests(unittest.TestCase):
     def setUp(self):
+        # Python companion unit tests intentionally require no native MuJoCo
+        # or NumPy installation; the pinned runtime does include both.
+        fake_numpy = types.SimpleNamespace(
+            zeros=lambda n, dtype=float: [0.0] * n
+        )
+        patcher = patch.dict(sys.modules, {"numpy": fake_numpy})
+        patcher.start()
+        self.addCleanup(patcher.stop)
         FakeMuJoCo.calls = []
         FakeMuJoCo.mj_step = lambda model, data: (
             FakeMuJoCo.calls.append("original_mj_step"),
