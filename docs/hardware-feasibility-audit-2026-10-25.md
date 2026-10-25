@@ -2,7 +2,7 @@
 
 Date : 2026-10-25. Audit documentaire et revue de code, **sans accès au robot physique**. Les valeurs de RAM et stockage libres ne sont **pas mesurées**. Aucune capture d'image privée ou donnée biométrique ne doit être placée dans ce dépôt.
 
-**Mise à jour de cohérence :** le [plan d'action consolidé](plan-action.md) fixe les priorités et les critères de passage. Quatre essais MuJoCo J2e, documentés ci-dessous, ont validé la chaîne de commande et de mémoire **mais pas la locomotion** (au mieux **2,574 mm** de mouvement du tronc). **P0a/P0b : données passives et comparaison `stand`/`walk` effectuées ; P0c : reconstruction géométrique semelles-sol effectuée dans MuJoCo ; forces réelles et cause inconnues.** Les anciennes décisions de faisabilité ci-dessous sont conservées comme historique, pas comme une seconde liste de tâches à exécuter.
+**Mise à jour de cohérence :** le [plan d'action consolidé](plan-action.md) fixe les priorités et les critères de passage. Quatre essais MuJoCo J2e, documentés ci-dessous, ont validé la chaîne de commande et de mémoire **mais pas la locomotion** (au mieux **2,574 mm** de mouvement du tronc). **P0a–P0c : diagnostics passifs et replay géométrique réalisés ; P0d : lecture des contacts/forces simulés originaux et cibles articulaires dans le processus MuJoCo, cause de locomotion toujours inconnue.** Les anciennes décisions de faisabilité ci-dessous sont conservées comme historique, pas comme une seconde liste de tâches à exécuter.
 
 ## Verdict
 
@@ -227,4 +227,11 @@ Le modèle épinglé comporte des géométries `left_foot_collision` et `right_f
 La [simulation officielle #40188553954](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40188553954) a validé le nouveau **replay géométrique hors ligne** de 40 poses P0b (quaternion complet + articulations), via `mj_forward` sur un MuJoCo séparé. **Les deux semelles chevauchent légèrement le sol à tous les instants échantillonnés** : 16/16 au repos et 24/24 en mouvement (distances de candidats à quelques dixièmes de millimètre). Dans ce **nouvel** essai, vitesse déclarée max 0,12 m/s, `walk` 23/24, déplacement net final seulement **1,997 mm**, `robot.stop` confirmé ; **179 tests Python réussis**.
 
 Il s'agit d'un **proxy de géométrie**, non des contacts dynamiques originaux : pas de mesure de force normale/tangentielle, de friction réelle, de cibles d'actionneur, de glissement ni de décollage éventuel entre trames de 10 Hz. La cause reste **inconnue**, la locomotion et la sécurité sur le robot réel **non validées**. [Rapport P0c](mujoco-p0c-contact-replay-2026-10-25.md).
+
+
+### P0d — Forces originales du solveur MuJoCo, toujours aucune validation matérielle (25 octobre 2026)
+
+La [première CI officielle P0d](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40190232870) a réussi techniquement avec un tap facultatif **dans le processus du simulateur**, sans changement de fichiers constructeur ni d'autorité motrice. Sur **126 trames** échantillonnées pendant l'essai `walk` (~50 Hz), les **deux pieds montrent chacun une force normale supérieure à 0,1 N sur 126/126 trames**. Forces normales moyennes simulées gauche **3,21 N** et droite **4,03 N**. Les consignes des hanches en roulis varient de **0,157 / 0,167 rad** tandis que les angles simulés varient de **0,011 / 0,006 rad**. Nouvel essai J2e : **2,222 mm** de translation, `robot.stop` confirmé, `no_progress_observed` : **marche non validée**.
+
+La sonde mesure des **forces numériques MuJoCo et cibles de position au sein de la simulation**, pas les courants, efforts ou contacts d'un robot réel. Les caches de contacts peuvent être associés à l'état pré-intégration alors que `qpos` est post-intégration ; l'écart consigne-angle est approximatif. La capture ajoute une charge au simulateur (139 µs en moyenne, 452 µs maximum pour la section synchrone du premier essai), non comparable directement à des ressources RK3566. [Rapport P0d et limites](mujoco-p0d-live-solver-2026-10-25.md).
 
