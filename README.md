@@ -26,7 +26,7 @@ Sur Windows, le prototype Python peut être exécuté normalement. La simulation
 2. **PC local (facultatif)** : Qwen pour interpréter des images, suggérer des hypothèses et analyser les nouveautés.
 3. **GitHub** : conserver le code et les versions ; GitHub n'exécute pas l'IA.
 
-Le module `microduck_companion` est actuellement un **prototype à observations simulées**, pas un contrôleur moteur ni une intégration au simulateur officiel. Aucune action ne doit être envoyée au robot réel sans un adaptateur validé et ses protections.
+Le module `microduck_companion` est actuellement un **prototype autonome avec lecture seule des flux du simulateur officiel validée le 25 octobre 2026**, pas un contrôleur moteur ni une autonomie de déplacement validée. Aucune action ne doit être envoyée au robot réel sans un adaptateur validé et ses protections.
 
 ## Confidentialité et sécurité
 
@@ -59,19 +59,19 @@ Le module `microduck_companion/perception.py` fournit `PerceptionEvent` et `Perc
 
 L'ancienne méthode `choose(Scene(...))` est maintenue pour les essais synthétiques et **ne doit pas devenir un adaptateur de commande motrice**. Les sources ne sont pas encore authentifiées par un pilote, et aucun vrai capteur n'alimente ces événements : ce sont des protections de prototype, pas une homologation matérielle. `robotd` demeure seul responsable des moteurs et de la sécurité.
 
-Exécuter `python -m unittest discover -s tests -v` pour les tests de sécurité. La connexion du simulateur MuJoCo et le contrôle de ses cadences sont les étapes suivantes.
+Exécuter `python -m unittest discover -s tests -v` pour les tests de sécurité. La **connexion en lecture seule à MuJoCo a été vérifiée** sur un exécuteur GitHub Actions ; une première démonstration de déplacement autonome sûr reste à construire.
 
 ## Sonde de télémétrie JSON-RPC (J2a, lecture seule)
 
 Le module `microduck_companion/sim_ipc.py` sait lire `robot.health`, souscrire à `robot.subscribe` (`robot.state`) et `tof.stream` (`tof.frame`) sur les sockets Unix des démons officiels. Il limite la taille des trames, la cadence demandée et les délais de réception ; les données malformées ou manquantes sont rejetées. Les 64 mesures ToF sont conservées avec leurs statuts bruts : **elles ne prouvent pas que le sol est sûr**.
 
-Quand `duck-sim` aura été démarré sur Linux/WSL2, exécuter depuis la racine du dépôt :
+Avec `duck-sim` démarré sur Linux/WSL2, exécuter depuis la racine du dépôt :
 
 ```sh
 python -m microduck_companion.sim_probe --state-dir "$HOME/.cache/duck-sim"
 ```
 
-La commande affiche l'état et des échantillons de télémétrie, sans envoyer aucune intention motrice. Elle renvoie un code non nul si `robotd` est malade ou si le flux est inaccessible. Les tests actuels du client reposent sur **des faux services Unix** : ce client n'a **pas encore été testé contre un vrai `duck-sim`**. Il ne construit pas encore les événements `floor_clear` ou `safe_area` nécessaires pour autoriser une exploration.
+La commande affiche l'état et des échantillons de télémétrie, sans envoyer aucune intention motrice. Elle renvoie un code non nul si `robotd` est malade ou si le flux est inaccessible. Le client possède des tests avec **faux services Unix** et a également été **exécuté avec les véritables services `robotd`/`tofd` en simulation MuJoCo**, lors de l'essai GitHub Actions du 25 octobre 2026. Il ne construit pas encore les événements `floor_clear` ou `safe_area` nécessaires pour autoriser une exploration.
 
 ### J2b — Observation conservatrice, sans commande motrice
 
@@ -83,14 +83,18 @@ Pour afficher cette décision quand un simulateur fonctionne déjà :
 python -m microduck_companion.sim_observer --state-dir "$HOME/.cache/duck-sim"
 ```
 
-Depuis un clone Git sur Linux/WSL2, le script suivant peut vérifier les prérequis puis **tenter** un démarrage isolé, sans caméra, avec arrêt en fin d'essai :
+Depuis un clone Git sur Linux/WSL2, le script suivant vérifie les prérequis puis démarre un environnement isolé sans caméra, avec arrêt en fin d'essai :
 
 ```sh
 sh scripts/sim-smoke.sh check
-sh scripts/sim-smoke.sh run
+DUCK_SIM_DEP_MODE=runtime sh scripts/sim-smoke.sh run
 ```
 
-Le mode `run` initialise les sous-modules épinglés et installe l'environnement RL Python 3.12 via `uv` (téléchargements nécessaires), puis utilise `duck-sim`, `sim_probe` et `sim_observer`. Le script constructeur peut placer **son robot virtuel** debout ; notre cerveau ne lui envoie aucune commande motrice. Le chemin de données est implémenté et testé avec de faux sockets, mais **MuJoCo n'a pas encore pu être exécuté ici**. Sur cet environnement de travail, `cargo` et Python 3.12 manquent, et les téléchargements GitHub directs sont indisponibles. Seuls les tests Python et la validation du script ont été effectués.
+Le mode `run` initialise les sous-modules épinglés puis utilise `duck-sim`, `sim_probe` et `sim_observer`. `DUCK_SIM_DEP_MODE=runtime` installe sur Python 3.12 un ensemble minimal **épinglé** et vérifié pour le simulateur sans caméra (MuJoCo 3.10.0, NumPy 2.5.4 et ONNX Runtime 1.28.0), afin d'éviter les lourdes dépendances d'entraînement. Sans cette variable, `uv sync --frozen` utilise l'environnement RL officiel complet. Les politiques motrices officielles sont toujours téléchargées par `duck-sim` ; elles ne sont pas remplacées par le compagnon.
+
+**Premier essai officiel réussi** : [GitHub Actions #40145369078](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40145369078) a exécuté les 81 tests et lancé MuJoCo en mode headless sur Ubuntu 24.04. `robotd` a rapporté ~50 Hz (0 échéance manquée dans la fenêtre observée), `duck-sim realtime` **1,00×**, deux trames ToF simulées de **64 cellules** et une décision du cerveau `halt` sans commandes motrices. Cette mesure concerne uniquement ce test sur une machine CI Linux, **pas** les ressources ni la sûreté sur le Microduck physique.
+
+Le script constructeur peut lever **son robot virtuel** pendant l'initialisation ; notre cerveau ne commande pas de mouvement. L'intégration validée est **lecture seule** : elle n'établit ni un sol sûr, ni une navigation autonome, ni une reconnaissance d'objets.
 
 ## Audit matériel et mémoire
 
