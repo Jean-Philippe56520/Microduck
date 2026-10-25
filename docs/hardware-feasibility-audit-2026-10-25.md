@@ -20,6 +20,10 @@ Sur le jeu additionnel, **8/16 photos de chiens/chats** sont reconnues selon les
 
 Le nouveau contrat F3-E teste des en-têtes `media.frame` sur fixtures, sans capture physique. Les 48 photos publiques n'ont pas été contre-annotées indépendamment. RAM et capteurs du robot restent inconnus. [Rapport F3-E](f3e-annotation-frame-preflight-2026-10-26.md).
 
+## Addendum F4-A — 26 octobre 2026 (mémoire logicielle uniquement)
+
+Le [lot F4-A](f4a-semantic-behavior-memory-2026-10-26.md) ajoute des tables bornées dans la SQLite existante : catégories F1-C/F2-C fictives, hypothèses non confirmées, succès/échecs explicitement fictifs issus de P2a. La durée de conservation configurée est 14 jours avec plafonds d'entrées et retractions ; **ce n'est pas une mesure de taille réelle de base, RAM libre, endurance eMMC ou performances du RK3566**. [Tests et redémarrage sur CPU GitHub Actions](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40246670514) valident le prototype Python, **pas les pilotes `mediad`/`tofd`, les capteurs ou l'énergie du robot**. Le script `scripts/resource-audit.sh` n'a pas été lancé sur matériel Microduck, qui reste indisponible. Aucun nouveau résultat sur la locomotion ou la thermie.
+
 ## Verdict
 
 Le Microduck permet raisonnablement de viser : mémoire persistante locale, moteur d'autonomie, exploration prudente, observation visuelle événementielle, identification de catégories d'animaux et interaction sociale élémentaire. Il reste à développer et à valider : détection personnalisée d'animaux, identification non biométrique des personnes familières, reconnaissance vocale, exploration sûre en environnement non contrôlé, et intégration du cerveau autonome à robotd. Qwen multimodal se placera initialement sur un PC local.
