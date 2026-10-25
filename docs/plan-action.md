@@ -1,173 +1,151 @@
-# Plan d'action consolidé — Microduck Companion
+# Plan directeur opérationnel — Microduck Companion
 
-**Référence opérationnelle unique · 25 octobre 2026 · Dépôt : `Jean-Philippe56520/Microduck`, branche `main`.**
+**Référence unique pour les prochains travaux · version du 25 octobre 2026 · dépôt `Jean-Philippe56520/Microduck` · branche de référence `main`.**
 
-Ce document précise **ce que nous faisons ensuite**, **dans quel ordre** et **quelles preuves autorisent à franchir un jalon**. La [roadmap](roadmap.md) conserve la vision à six phases et l'historique des changements ; le [plan technique MuJoCo](mujoco-integration-plan.md) conserve les protocoles et les essais J1b–J2e ; l'[audit matériel](hardware-feasibility-audit-2026-10-25.md) garde les limites et hypothèses des cartes. Ce plan est la **source de vérité pour les priorités courantes**, pas une promesse de délai.
+**Décision : priorité à l'autonomie cognitive et aux perceptions *sans déplacement*.** Le diagnostic de locomotion P0a–P0j est conservé, mais les nouveaux essais moteurs sont **mis en attente**, pas déclarés résolus. Le précédent ordre P0 → P1 → P2 est archivé dans [l'ancien plan](plan-action-historique-2026-10-25.md). La [roadmap](roadmap.md) conserve les résultats historiques, le [plan MuJoCo](mujoco-integration-plan.md) décrit les procédures et l'[audit matériel](hardware-feasibility-audit-2026-10-25.md) répertorie les limites connues. **Ce fichier définit seul les phases et lots prioritaires.**
 
-## 1. Cible et frontières de sécurité
+## 1. Mission, contrat de fonctionnement et limites
 
-Construire un petit robot **curieux, explorateur, social et peu bavard**, qui observe, consulte sa mémoire, choisit des **intentions** plutôt que des mouvements directs, évalue les conséquences et fait évoluer lentement ses préférences. `idle` et `rest` sont des choix légitimes. Les fonctions essentielles devront être autonomes **sans PC et sans Internet** ; le PC/Qwen demeure un outil facultatif d'analyse des nouveautés, pas le pilote du robot.
+Créer un Microduck **curieux, explorateur, social et peu bavard**. Sa boucle cible est : percevoir → comparer aux souvenirs → apprécier nouveauté, motivations et risques → choisir une intention sûre (y compris ne rien faire) → agir dans les limites autorisées → constater un effet → mémoriser et adapter lentement ses choix. Curiosité, sociabilité, jeu, énergie et prudence sont **des variables de décision**, ni émotions ni conscience.
 
-Architecture à préserver :
+**Architecture non négociable :**
 
-- `robotd` : seule autorité sur les moteurs, boucle ~50 Hz, politiques constructeur ONNX, garde-fous, arrêt/deadman.
-- `mediad` / `tofd` : capture et traitement caméra/audio et ToF 8×8 ; dialogue avec le compagnon via les interfaces officielles JSON-RPC.
-- Compagnon : perceptions horodatées et sourcées → SQLite locale → motivations → intention → contrôle indépendant de sûreté → `robotd` → observation du résultat → mémoire.
-- PC facultatif : Ollama + Qwen (d'abord 4B, puis 9B **si** les mesures le justifient), hypothèses avec provenance et confiance ; aucune sortie du LLM n'autorise directement une commande motrice.
-- Ressources, données personnelles et modèles : pas d'API payante indispensable ; pas d'images/voix stockées en continu ; identités et exemples privés **hors GitHub**.
+- **Local et autonome :** les réactions rapides, les motivations, la mémoire utile, le repos et les décisions essentielles fonctionnent sans PC ni Internet. Préférer un cerveau léger, puis Rust pour le portage embarqué si les mesures le justifient ; SQLite privée et persistante.
+- **Constructeur préservé :** `robotd` reste seul responsable des moteurs, de la boucle ~50 Hz, du deadman, des politiques ONNX et des protections. `mediad` gère caméra et audio ; `tofd` fournit le ToF 8×8. Réutiliser leurs interfaces officielles et contrôler la provenance des messages.
+- **Deux voies séparées :** une **voie cognitive passive** peut enregistrer une découverte ou choisir `observe`/`idle` sans autoriser de mouvement ; une **voie d'action physique** nécessite indépendamment capteurs, zone, état, délai et autorisation du contrôleur. Ne jamais transformer une perception d'objet ou un avis Qwen en certificat de sol.
+- **Assistance facultative :** PC/Ollama/Qwen pour situations nouvelles ou contradictoires, avec délai et quota ; une réponse est une **hypothèse**, jamais une commande moteur ni un fait vérifié.
+- **Vie privée :** pas de caméra/micro continuellement enregistrés, pas de données d'enfants ou animaux privés, de souvenirs identifiants ou de secrets sur GitHub ; préférer des jeux fictifs, stockage local privé et corrections possibles.
+- **Mesure honnête :** distinguer `prévu`, `codé`, `test logiciel`, `test simulateur`, `validé sur robot`. Aucun résultat MuJoCo ne garantit autonomie énergétique, sécurité domestique, NPU ou performances thermiques.
 
-**Invariant permanent :** source absente, sol incertain, déconnexion, chaleur excessive, batterie basse ou position incohérente → refuser le déplacement ou demander une action sûre. **Une scène MuJoCo certifiée ne certifie jamais le sol d'une habitation réelle.** Le ToF 8×8 n'est pas un LiDAR ni une preuve anti-escalier.
+**Sûreté :** un sol inconnu, un danger, une perte de ToF, des données périmées, une batterie insuffisante ou un état incohérent **interdisent tout déplacement**. Une observation passive reste possible si elle n'actionne aucun moteur et si sa source est exploitable. Une détection ToF 8×8 ne certifie pas escaliers, sol ni navigation dans toute la maison. Aucun essai autonome auprès d'enfants ou d'animaux.
 
-## 2. État réellement vérifié à la date du plan
+## 2. État de référence vérifié (avant cette réorganisation)
 
-| Domaine | État | Preuve / limite |
+| Sous-système | État constaté | Limite |
 | --- | --- | --- |
-| Cerveau Python et motivations | **Codé, testé** | Choix d'intentions, refus si perception incertaine, démonstrations fictives |
-| Mémoire SQLite | **Codée, testée** | Épisodes d'objets et expériences simulées ; préférences modifiées après conséquences vérifiées ; tests de persistance |
-| Connexion `robotd` et `tofd` | **Simulée et vérifiée** | Démons officiels sous MuJoCo, JSON-RPC, ToF 64 cellules, cadence ~50 Hz |
-| Zone de test MuJoCo | **Simulée et vérifiée** | Scène plane officielle épinglée, position du tronc, limites et état du contrôleur |
-| Commande `robot.move` puis `robot.stop` | **Simulée et vérifiée** | Ordres bornés via `robotd`, confirmation explicite d'arrêt ; jamais sur robot réel |
-| Chaîne résultat → mémoire → préférence | **Simulée et vérifiée pour un essai borné** | `no_progress_observed` et préférence d'exploration légèrement diminuée |
-| **Marche/translation effective** | **NON validée — blocage actuel** | À 0,12 m/s demandés et appliqués, seulement **0,820 à 2,574 mm** observés sur quatre essais J2e (seuil expérimental : 10 mm) |
-| Perception réelle chien/chat/personne, individus et voix | **À développer / mesurer** | Le détecteur officiel d'autres Microducks ne fournit pas ces catégories automatiquement |
-| Qwen sur PC et repli hors connexion | **Prévu, non intégré au compagnon** | Aucune commande LLM de moteur autorisée |
-| Cerveau embarqué et autonomie matérielle | **Non validés** | Robot physique indisponible ; CPU, RSS, RAM libre, chauffe et batterie réelle non mesurés |
+| Prototype Python : motivations, choix, PerceptionSnapshot, expériences, SQLite | Codé et testé | Pas un exécutable embarqué validé |
+| P2a : cycles fictifs et préférences | Test logiciel sur sessions persistantes | Résultats fictifs clairement étiquetés |
+| P2b : 6 cycles passifs sur `robotd`/`tofd` dans MuJoCo officiel, base SQLite réouverte | Test simulateur confirmé ; 6 intentions `halt`, zéro moteur | Ni vision `mediad` intégrée ni exploration physique |
+| Diagnostic locomoteur P0a–P0j | Test simulateur et relectures confirmés | P0i : 1,444 mm alpha / 1,968 mm VelStand ; seuil indicatif 10 mm non atteint ; cause inconnue |
+| P0j : charges normales du solveur P0e | Replay vérifié : 127/127 relevés de marche avec deux pieds en charge | Ni force XY signée de propulsion ni preuve de marche |
+| Tests automatisés | [269 tests Python réussis sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40230116442) | Nombre de tests ≠ nombre de fonctions validées |
+| Détection chien/chat/personne/voix sur nos données | Non développée ni validée | Un détecteur OEM d'autres Microducks ne remplit pas ce besoin |
+| Qwen intégré au cerveau ; Rust embarqué ; robot physique | Non validés | Microduck physique indisponible ; ressources réelles inconnues |
 
-**Contrôles vérifiés :** P0j fusionné via [PR #22](https://github.com/Jean-Philippe56520/Microduck/pull/22) : [269 tests Python sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40230029946) et [replay original P0e en lecture seule](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40229765655), **79/79 trames au repos et 127/127 en marche avec deux pieds chargés**, 0 nouveau moteur et part gauche **52,03 % → 44,54 %**, sans preuve de propulsion ni test physique. P0i fusionné via [PR #21](https://github.com/Jean-Philippe56520/Microduck/pull/21) : [257 tests Python réussis sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40222688915) et [MuJoCo constructeur A/B réussi](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40221935528) : 1,444 mm alpha contre 1,968 mm VelStand, 24 notifications chacun, 2 arrêts confirmés, 0 seuil 10 mm atteint, cause inconnue. P0h [243 tests Python réussis sur main](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40219827102) et [audit officiel MuJoCo/ONNX réussi](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40219277997) : `velstand` contre modèles `alpha` confirmés dans les slots, 3 ONNX v8 conformes avec empreintes uniques, comparaison purement synthétique, aucune causalité ni ordre moteur. P0g : [214 tests Python](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40208638362) et [MuJoCo OEM réussi](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40208635206), variations de géométrie sans causalité de marche identifiée. P2a : [217 tests Python sur branche](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40207932413), huit cycles fictifs, SQLite réouverte et zéro moteur. **P2b : [PR #19 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/19), [234 tests Python sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216649169) et [six cycles passifs MuJoCo](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216199277)** (3+3, journal 3→6, six `halt`, 0 moteur, 0 récompense). Dernier essai de marche P0e : 2,295 mm, arrêt confirmé. La cause de non-locomotion reste inconnue et aucun robot réel n'a été mesuré.
+**Éléments existants à réutiliser** : `microduck_companion/perception.py` (`PerceptionEvent`, `PerceptionSnapshot`, provenance/TTL), `autonomy.py` (`AutonomyBrain`, motivations), `episodic_memory.py` (SQLite), `sim_bridge.py` et `sim_passive_cycles.py` (télémétrie et journaux passifs). Ne pas reconstruire un deuxième cerveau, un deuxième schéma de mémoire ni un moteur maison.
 
-Le comptage des tests correspond à cet état du dépôt : le mettre à jour **uniquement après un nouveau résultat CI**, pas à chaque révision documentaire.
+## 3. Ordre des phases et règles de passage
 
-## 3. Ordre de réalisation et dépendances
+| Phase | Priorité / état | Livrable de fin de phase | Prérequis déterminant |
+| --- | --- | --- | --- |
+| **F0 — Socle existant** | Acquis au niveau prototype/tests ; maintien continu | Contrats, démos et sécurité de base documentés ; CI verte | Aucun |
+| **F1 — Perception passive et mémoire d'observations** | **À faire en premier** | Événements sourcés, inconnus, lecture différée SQLite, zéro moteur | F0 |
+| **F2 — Autonomie cognitive sans locomotion** | Ensuite | Plusieurs décisions motivées, peu répétitives ; conséquence observée ; relecture après reprise | F1, mémoire F0 |
+| **F3 — Vision et sons légers** | Ensuite, avec lots indépendants | Détection de *catégories*, suivi et signaux sonores mesurés ; `unknown` crédible | F1 ; banc d'essai et données autorisées |
+| **F4 — Sociabilité et mémoires enrichies** | Après observations fiables | Rencontres, préférences, lieux incertains et interactions volontaires | F2 + F3 |
+| **F5 — Qwen facultatif sur PC** | Après un cœur local fonctionnel | Hypothèses vérifiables avec timeout, quotas, repli hors réseau | F2 et contrats F3 |
+| **F6 — Préparation embarquée / performances** | Préparation possible sur PC ; validation différée | Interfaces compactes, portage ciblé Rust, plan de mesure matériel | F1–F5 selon modules ; robot pour chiffres réels |
+| **F7 — Validation progressive sur vrai Microduck** | **Suspendue à réception du matériel** | Mesures et tests physiques par sous-système, sécurité de mouvement surveillée | Robot disponible, ressources mesurées, fonctions pertinentes validées |
+| **F8 — Fonctions optionnelles** | Après socle sûr | Alertes consenties et petits services sans dépendance pour autonomie locale | Fonction concernée validée |
+| **L — Locomotion P0/P1, chantier indépendant** | **Mis en pause ; non résolu** | Preuve de translation puis de démarche dans le MuJoCo constructeur | Hypothèse testable, protocole mesuré, revue de sûreté |
 
-| ID | Priorité | Lot / livraison attendue | Dépendance | État |
-| --- | --- | --- | --- | --- |
-| **P0** | **Immédiate, bloquante** | Expliquer l'absence de locomotion dans la scène MuJoCo épinglée | Simulateur officiel J2e | **P0a–P0i testés ; P0j : 269 tests Python et replay hors ligne de P0e réussis, 127/127 appuis bilatéraux ; P1a toujours bloqué, cause inconnue** |
-| **P1** | Haute | Démontrer une translation puis une démarche *mesurée* et sûre, sans contourner `robotd` | P0 | À faire |
-| **P2** | Haute | Boucle autonome répétable perception → intention → action → effet → mémoire → choix suivant | P1 pour le déplacement ; cognition sans déplacement indépendante | **P2a fictif validé ; P2b fusionné main (PR #19) : 234 tests Python sur main, six cycles passifs validés MuJoCo, 6 lignes SQLite, 0 moteur** |
-| **P3** | Haute | Vision/sons légers : catégories d'objets et d'animaux, signaux sociaux, inconnus | Contrats de perception existants ; validation d'une source mesurée | À faire |
-| **P4** | Moyenne | Mémoire sémantique/spatiale et comportement social prudent, reconnaissance individuelle volontaire | P2 + P3 | À faire |
-| **P5** | Moyenne | Assistance Qwen locale facultative (PC), hypothèses vérifiables et repli autonome | P2 + premières observations P3 | À faire |
-| **P6** | Après mesures | Préparation embarquée Rust/SQLite, audits ressources, contrôle des latences | P2/P3 et accès au matériel pour la validation | À concevoir ; matériel absent |
-| **P7** | Après réception | Essais progressifs sur vrai Microduck en zone contrôlée | P1–P6 selon la fonction, mesures physiques | Non commencé |
-| **P8** | Optionnel | Automatisations sous consentement (ex. porte ouverte → alerte e-mail) | Détection fiable + réseau/service autorisé | Idée, pas une fonctionnalité codée |
+**Passage de phase :** une phase n'est « terminée » que lorsque ses critères de sortie propres sont démontrés dans le bon environnement. On peut avancer **les fonctions sans moteurs** même si L reste bloqué. En revanche, **aucune exploration mobile automatique** ne s'ouvre tant que locomotion, sol et garde-fous ne sont pas validés séparément.
 
-L'ordre P0 → P1 → P2 est le **chemin critique pour l'exploration mobile**. Les tests de perception **sans commande motrice** (P3) peuvent avancer en parallèle si P0 se révèle plus difficile que prévu. Aucun blocage de marche ne justifie de modifier arbitrairement les moteurs du constructeur.
+## 4. Détail phase par phase
 
-## 4. Exécution par lots et critères de sortie
+### F0 — Maintenir le socle sans régression (existant)
 
-### P0 — Diagnostiquer `walk` sans translation (première PR)
+**Portée :** conserver `robotd` et les politiques OEM, tests `unittest`, interface de perception versionnée et persistance SQLite. Réduire les risques de duplication des modules et maintenir README, roadmap, plan et audit cohérents. Le chiffre de 269 tests est **une référence au commit CI historique**, pas un objectif numérique.
 
-**Fait observé :** lors d'un essai de 24 notifications à 0,12 m/s, `robotd` a déclaré `walk` sur 23/24 échantillons, une vitesse appliquée proche de la commande et seulement **2,574 mm** de déplacement du tronc. L'activation de `walk` **ne prouve pas** une marche effective.
+**Sortie / contrôle permanent :** suite Python complète verte sur chaque PR, révisions constructeur indiquées lorsqu'elles interviennent, signalement explicite des sorties fictives, aucune donnée privée et aucun mouvement ajouté incidemment.
 
-1. Vérifier la révision épinglée et les références OEM : sélection de politique, normalisation des observations, repères et unités du simulateur, contrôle de l'état `stand`/`walk`/`held`.
-2. Ajouter **en lecture seule** un diagnostic horodaté : pose du tronc au cours du temps, vitesse mesurée, mouvements des articulations, commandes et états de politique, état et contacts des pieds si l'API MuJoCo les fournit. Ne pas inventer un contact que la source ne publie pas.
-3. Comparer **à paramètres inchangés** : repos, `vx=0,12`, politique appliquée, contacts, progression, échauffement impossible à simuler. Vérifier la cohérence du serveur du corps avec la physique sans retoucher les modèles OEM.
-4. Classer les hypothèses (ex. glissement, pieds verrouillés, repères/commandes, politique instable) comme **hypothèses** tant qu'un test n'a pas isolé la cause.
+### F1 — Perception passive et traces sourcées (PROCHAINE PHASE)
 
-**Sortie P0 :** journal reproductible sur un MuJoCo officiel épinglé, diagnostic de la cause avec preuve ou mention explicite « cause encore inconnue », et tests nouveaux pour les mesures ajoutées. Pas d'augmentation automatique de vitesse ni de désactivation du deadman.
+**Objectif :** faire entrer une observation non motrice dans le cerveau, avec horodatage, source, confiance, catégorie éventuellement inconnue, puis mémoriser sa découverte. Ne pas faire croire que les capteurs du simulateur voient des objets : **MuJoCo n'émule ni caméra, ni microphones, ni NPU**.
 
-### P1 — Établir une locomotion réelle dans la zone simulée
+**Lots de travail, dans l'ordre :**
 
-1. Corriger **notre intégration** si le diagnostic P0 démontre une erreur chez nous. Si l'origine est OEM, conserver les mécanismes et documenter l'écart ; proposer un changement constructeur seulement avec justification et revue de licence/compatibilité.
-2. Définir une courte trajectoire et mesurer : déplacement net, dérive sans commande, progression avant, écart latéral, contacts/pose et arrêt.
-3. Répéter l'essai dans la **même scène épinglée**, avec limites de zone, expiration des intentions, arrêt confirmé et santé `robotd` surveillée. Zéro décision de marche si le sol ou l'état deviennent inconnus.
+- **F1-A — Contrat minimal d'événements passifs (première PR).** Inspecter les interfaces existantes `perception.py`, `autonomy.py`, mémoire et la disponibilité documentaire de `mediad`. Réutiliser `PerceptionEvent`/`PerceptionSnapshot` ; ne changer la version qu'avec migration/tests. Définir la frontière entre observation, classification et autorisation de déplacement. Ajouter des fixtures fictives `objet familier` / `objet inconnu` / `signal sonore`, source, confiance, TTL, identifiant de suivi éphémère et conflit. **Pas de modèle de vision, pas de capture privée, zéro API moteur.**
+- **F1-B — Adaptateur de lecture non motrice.** Construire l'adaptateur vers l'interface constructeur **seulement si les méthodes officielles ont été inspectées et sont accessibles** ; sinon conserver un adaptateur synthétique annoncé comme tel. Gestion des timeouts, données répétées, erreurs, déconnexion, fréquences et absence de stockage de média brut. Ne pas attribuer une provenance `sensor` à des données fictives.
+- **F1-C — Journalisation passive et reprise.** Enregistrer en SQLite un minimum d'observations sourcées et horodatées ; réouvrir la même base dans un deuxième processus, retrouver un objet observé et prouver la distinction `inconnu` / `identifié`. Limiter rétention, volume et redondance ; sans images/voix.
+- **F1-D — Démonstration de bout en bout.** Enchaîner plusieurs observations sur fixtures fictives avec scénario nouveau / déjà vu / incertain / capteur perdu ; sauvegarde et relecture ; **aucune action motrice**. Si la source constructeur est disponible, documenter distinctement les preuves réelles acquises par cet adaptateur.
 
-**Premier seuil de sortie :** au moins **10 mm de translation nette**, distinguables de la dérive, sur **trois essais indépendants** sans perte des protections. Ce seuil est un **critère proposé**, pas une performance actuelle. Il valide une translation, **pas** une démarche stable. Pour parler de démarche, ajouter ensuite un essai de progression soutenue d'au moins **5 cm** avec contacts, stabilité et absence de chute contrôlés ; revoir ces critères à partir du comportement réel du modèle plutôt que forcer les chiffres.
+**Critères de sortie F1 :** au moins deux sessions indépendantes sur une seule SQLite ; fraîcheur, origine, conflits et confiance testés ; `unknown` maintenu si ambigu ; aucun mouvement ni faux `safe_area`/`floor_clear` ; suite CI verte ; rapport distinguant fixtures et services officiels. **La première PR ne livre que F1-A.**
 
-### P2 — Boucle d'autonomie et mémoire durable
+### F2 — Intention et apprentissage comportemental sans déplacement
 
-**P2a exécuté sur données fictives :** [217 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40207932413), deux sessions sur une SQLite (4 puis 8 cycles), résultat fictif explicite avec deuxième observation corroborante, préférence fictive conservée **0,06**, aucune commande motrice. [Rapport P2a](p2a-mock-cycles-2026-10-25.md). **P2b livré et testé en simulation passive :** [PR #19](https://github.com/Jean-Philippe56520/Microduck/pull/19), exécuteur passif avec journal SQLite et refus de télémétrie périmée/répétée, [234 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216199119). La [preuve MuJoCo à deux sessions](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216199277) a réussi : 3 puis 6 entrées SQLite pour six cycles cohérents, zéro commande moteur, six intentions `halt` faute de sol certifié. **P2 n'est pas une autonomie mobile validée :** aucune conséquence ne peut être attribuée à un mouvement non exécuté.
+**Objectif :** relier les perceptions F1 aux motivations, à l'ennui, à la nouveauté et à la mémoire, sans forcer la boucle moteur à attendre l'IA.
 
+**Lots :** F2-A intentions exclusivement passives (`observe`, `inspect`, `listen`, `idle`, `rest`) sans exécuter `look_at` ou marche ; F2-B arbitre des motivations, repos, cooldown et décisions non répétitives ; F2-C conséquences **vérifiées** (nouvelle information, observation répétée, tentative refusée) et préférences lentement ajustées, sans « entraîner le modèle » ; F2-D scénarios multi-sessions, panne/retard de capteur, budget de calcul et latence. **Un événement fictif n'est jamais une récompense physique.**
 
+**Critères de sortie F2 :** un scénario déterministe « nouveau → observer → retrouver le souvenir → décider autrement », contrôle `idle` et `rest`, un échec capteur qui n'autorise rien de dangereux, préférences stables et corrigibles, persistance après arrêt, tests et métriques de fréquence/répétition.
 
-1. Séparer clairement un essai diagnostic volontaire (J2e actuel) d'une boucle autonome non bloquante, avec intentions à durée limitée et aucun pilotage direct des articulations.
-2. Gérer plusieurs décisions sûres (observer, regarder, explorer seulement si autorisé, jouer, `idle`, `rest`), plafonner la fréquence des initiatives, éviter les répétitions et supporter la perte de capteur au milieu de l'action.
-3. En SQLite, conserver épisodes, provenance, horodatage, résultat, confiance et corrections. Ne modifier la préférence qu'après une conséquence **observée** ; séparer les hypothèses Qwen.
-4. Test de réouverture de base entre **deux sessions distinctes** (pas seulement une base éphémère CI par exécution) et vérification que des échecs répétés influencent réellement une décision ultérieure.
-5. Mesurer latence perception → intention, délai d'arrêt, cadence des moteurs, épisodes utiles, répétitions et raisons de refus.
+### F3 — Catégories visuelles et signaux sonores
 
-**Sortie P2 :** démonstration reproductible en simulation **sans Qwen**, avec plusieurs cycles et un souvenir réutilisé après redémarrage ; arrêt sûr sur perte de source ; pas de boucle motrice bloquée.
+**Objectif :** distinguer *catégorie* et *individu* ; mesurer sur données privées/autorisées et synthétiques avant toute confiance.
 
-### P3 — Perception d'objets, animaux et signaux sonores
+**Lots :** F3-A protocole de données annotées et train/test séparés, provenance/licences, jeux sans images personnelles dans GitHub ; F3-B ligne de base de détecteurs légers pour objet, jouet, personne, chien, chat, avec classe `unknown` et suivi ; F3-C routeur d'événements `mediad` si interface contrôlée, détection sonore/mots-clés légers (`Microduck`, `stop`, `viens`) sans dialogue obligatoire ; F3-D benchmark précision/rappel, matrice de confusion, faux positifs, latence et consommation mesurées dans l'environnement disponible.
 
-1. Construire des jeux de test **fictifs ou expressément autorisés**, cloisonnés des données personnelles. Tester l'acheminement des événements par `mediad`/adaptateurs et le suivi d'objets ; MuJoCo n'émule pas les pilotes caméra/NPU.
-2. Distinguer **détection d'une catégorie** (chien, chat, personne, jouet) et **identité individuelle**. Détecter « chien » ou « chat » ne prouve pas que l'animal est un individu familier. Conserver « inconnu » si la confiance manque.
-3. Étudier de petits modèles légers, RKNN/NPU si effectivement compatibles et repli ONNX/CPU, avec cadence limitée et mesure de précision/rappel/faux positifs sur un ensemble séparé. Les mesures constructeur YOLO ne valident pas nos modèles.
-4. Étudier les sons déjà accessibles ; essayer un détecteur de mots-clés local (« Microduck », « stop », « viens ») sans imposer de dialogue constant. `stop` doit conserver une voie de sécurité claire et prioritaire.
+**Critères de sortie F3 :** métriques par classe, ensemble d'évaluation indépendant, gestion de la fausse reconnaissance et de l'inconnu ; toute validation RKNN/INT8/NPU reste **à mesurer sur la carte cible**. Le mot « stop » vocal **ne remplace jamais** un mécanisme matériel ou `robotd` d'arrêt sûr.
 
-**Sortie P3 :** tests sur jeux annotés, métriques et taux d'inconnus documentés, provenance vérifiée et absence d'actions dangereuses en cas de fausse détection. Aucune promesse de reconnaissance individuelle par défaut.
+### F4 — Comportement social, personnalité légère et plusieurs mémoires
 
-### P4 — Comportement social, mémoire spatiale et reconnaissance volontaire
+**Objectif :** expériences utiles, familiarité progressive, préférences non répétitives, mouvements uniquement si voie motrice déjà autorisée.
 
-1. Ajouter une mémoire sémantique (propriétés d'objets), spatiale (repères avec incertitude) et comportementale (préférences/conséquences) sans multiplier les schémas inutiles.
-2. Faire évoluer les motivations **progressivement** selon les résultats ; autoriser le repos, la curiosité, le jeu et les interactions discrètes.
-3. Pour les personnes familières, privilégier des interactions ou balises **volontaires**, avec contrôle parental quand un enfant est concerné, **aucune biométrie permanente** et aucune identité privée dans le dépôt. Pour les animaux familiers, ne confirmer aucune identité individuelle sans preuve mesurée et autorisation adaptée.
+**Lots :** F4-A mémoire sémantique (objets/propriétés/confiance) et comportementale (succès/échecs) ; F4-B repères spatiaux avec incertitude, **sans inventer une carte de maison** ; F4-C interactions brèves et silencieuses (regard intentionnel non exécuté avant validation, sons courts, jeu simulé, repos) ; F4-D association **volontaire** d'identités sous contrôle humain. Distinguer « chien » de Nessquick et « chat » de Kitty ; une balise/interaction explicite est préférable à la biométrie constante. Pour Malo, contrôle parental et consentement, jamais de photos ou identifiants personnels dans le dépôt.
 
-**Sortie P4 :** interactions en simulation reproductibles, inconnus correctement préservés, souvenirs réellement consultés et absence de collecte permanente de voix/images.
+**Critères de sortie F4 :** mémoire observée vs hypothèse distinguées, correction et oubli local possibles, taux d'erreurs documenté, absence de stockage continu média, comportements interrompus par incertitude et aucun signe d'« émotion réelle » revendiqué.
 
-### P5 — Qwen facultatif sur PC local
+### F5 — Assistant Qwen facultatif sur PC local
 
-1. Expérimenter Ollama/Qwen multimodal **4B puis 9B** sur le PC disponible, en mesurant latence, consommation mémoire, qualité d'hypothèses et taux d'erreurs ; ne présumer aucune accélération GPU/NPU.
-2. N'appeler le PC qu'en cas de nouveauté, contradiction ou difficulté. Définir budget de requêtes, délai, réponse typée, provenance et moyen de corriger une hypothèse.
-3. Vérifier coupure réseau, PC absent et réponse fausse : choix sûr et fonctions locales maintenus ; **aucun chemin de commande moteur depuis Qwen**.
+**Lots :** F5-A contrat de requête/réponse typé (`observations`, `hypotheses`, `confidence`, `source`, `ttl`) et interdiction des ordres moteurs ; F5-B Ollama + comparaison Qwen multimodal **4B puis 9B** seulement si pertinent pour qualité/latence/consommation du PC ; F5-C déclenchement parcimonieux (nouveauté/contradiction), délais, quotas et repli local ; F5-D adversarial : hallucinations, sortie malformée, PC absent, coupure réseau et contradiction avec capteurs.
 
-**Sortie P5 :** scénarios avec/sans PC comparés et chiffrés, moteur autonome local intact, sorties du LLM vérifiables et jamais transformées en faits non observés.
+**Critères de sortie F5 :** un cycle complet continue **sans PC** ; aucun avis Qwen n'écrase une observation certifiée, n'autorise une zone ou ne pilote `robotd`. Mesures réelles de latence et de coût matériel sur le PC, sans accélération GPU/NPU supposée.
 
-### P6 — Préparation embarquée et ressources
+### F6 — Préparation embarquée et optimisation
 
-1. Réserver Rust aux fonctions embarquées qui le justifient, conserver les interfaces publiques et un SQLite persistant privé sous `/var/lib/robot/` ; aucun LLM embarqué obligatoire.
-2. Préparer les profils : RAM réellement disponible, RSS des services, stockage libre, CPU, température, fréquence `robotd`, latence des perceptions et arrêts ; comparer repos, vision et déplacement.
-3. Mesurer **sur la carte réellement reçue** avec `scripts/resource-audit.sh` ; distinguer carte Zero 3W et carte beta Seeed, stockage commercial et partitions disponibles. Ne pas inventer de marge mémoire ou d'autonomie énergétique.
-4. Limiter la vision/activité si ressources ou température se dégradent ; préserver les mécanismes Yocto et les mises à jour OEM.
+**Lots :** F6-A recenser fonctions indispensables hors PC, interfaces JSON-RPC OEM, installation/arrêt propre et stockage SQLite dans `/var/lib/robot` si confirmé ; F6-B comparer Python prototype à un noyau Rust ciblé seulement si la simplicité/mesure le justifie ; F6-C budget d'événements, débit et contrôle de la consommation ; F6-D plan d'audit `scripts/resource-audit.sh` au repos, en vision et en déplacement **uniquement une fois le robot disponible et la locomotion sûre**.
 
-**Sortie P6 :** profil matériel reproductible et budgets fondés sur les mesures. Tant que le robot est absent, ce lot est une **préparation**, jamais une validation.
+**Critères de sortie F6 :** intégration préparée sans remplacer `robotd`/`mediad`/`tofd`, aucune fonction critique liée au réseau ou PC, profils explicites et gardes thermiques prévus. RAM libre, RSS, stockage utilisable, fréquence, température et autonomie **ne sont pas validés tant que l'unité physique n'a pas été instrumentée**. Distinguer Zero 3W/IMX219 de Seeed beta/GC2093 et la capacité annoncée des partitions réellement disponibles.
 
-### P7 — Validation physique progressive (après livraison)
+### F7 — Validation physique, après réception
 
-Essais de repos/observations, puis orientations de tête, puis déplacements très courts en **zone fermée et surveillée**, enfin interactions prudentes. Ne pas déclarer les escaliers sûrs ni l'évitement d'animaux mobiles avant tests spécifiques. Tester perte réseau, perte ToF/caméra, batterie faible, chauffe et arrêt, avec enfants et animaux à l'écart des premiers déplacements.
+**Ordre obligatoire :** identifier exactement carte/révision, système constructeur et interfaces ; mesurer RAM libre, RSS, températures, stockage et cadence au repos ; tester observations et mémoire privées hors réseau ; valider réactions stationnaires ; seulement ensuite mouvements courts **sur sol contrôlé, sous surveillance, enfants/animaux éloignés**, après résolution indépendante du chantier L. Tester arrêts, panne de ToF, caméra absente, batterie faible, réseau coupé et reprise.
 
-**Sortie P7 :** mesures sur le robot réel et preuve des garde-fous dans le contexte physique ; autonomie hors PC démontrée. Les résultats MuJoCo ne remplacent aucune de ces preuves.
+**Critères de sortie F7 :** chaque capacité estampillée `validé sur robot` uniquement avec ses traces matérielles ; aucun chiffre MuJoCo converti en autonomie batterie ou fiabilité escaliers. Un prototype qui pense sans bouger peut être validé avant la marche.
 
-### P8 — Fonctions optionnelles, après le socle de sûreté
+### F8 — Options après les fonctions essentielles
 
-Exemple déjà évoqué : **porte ouverte → alerte e-mail**. À tester plus tard avec un capteur ou une perception de porte validée, règle utilisateur explicite, destinataire autorisé, délai anti-répétition et journal d'envoi. Une alerte e-mail nécessite réseau et service de messagerie configuré ; **ce n'est pas une fonction actuelle**, ni une priorité devant la sécurité et l'autonomie.
+Exemple : **porte ouverte → alerte e-mail** sur événement fiable et configuration consentie. Prévoir permission, destinataire explicite hors dépôt, anti-répétition, journal minimal, coupure réseau et absence d'alertes mensongères. Fonction réseau **facultative** et distincte de l'autonomie locale ; ne pas la déclarer codée avant tests.
 
-## 5. PR de diagnostic livrées et prochaine investigation
+## 5. Chantier L — locomotion constructeur (pause contrôlée)
 
-| Livraison | Changement ciblé | Vérifications indispensables |
-| --- | --- | --- |
-| **PR #11 — P0a (validée en collecte MuJoCo)** | Diagnostic passif et horodaté des articulations, vitesses, pose et `robot.state.policy` ; pas de commande nouvelle. Contacts et cibles articulaires **absents** du protocole OEM : `null`, sans inférence. | Tests Python de branche [réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40178580633), collecte passive MuJoCo [réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40178580637) : 8 échantillons `stand`, 0,991 mm de dérive en 1,4 s, 0 commande ; scène/processus épinglés et fail-closed. Cause de la marche encore inconnue. |
-| **PR #12 — P0b (testée dans MuJoCo)** | Comparatif `stand` 16 relevés / `walk` 24 relevés dans le modèle OEM épinglé, sans changer vitesse, protections ou commande. | [CI Python 167 tests](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40187514224) + [MuJoCo réel](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40187514292) : 1,338 mm final, 23/24 `walk`, arrêt confirmé ; [rapport](mujoco-p0b-stand-walk-comparison-2026-10-25.md). Cause **non expliquée**, contacts/forces et cibles articulaires absents du protocole. |
-| **PR #13 — P0c (testée sur MuJoCo)** | Replay hors ligne de `qpos` (tronc + quaternion OEM + articulations) sur un `MjData` séparé ; candidats géométriques semelles/sol, aucune commande. | [179 tests](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40188553954), [MuJoCo officiel réussi](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40188553954) : chevauchement statique sur 40/40 relevés, **1,997 mm** net et arrêt confirmé. Contacts/forces dynamiques **non disponibles**, cause **inconnue**. [Rapport P0c](mujoco-p0c-contact-replay-2026-10-25.md). |
-| **PR #14 — P0d (mesure du solveur original)** | Tap facultatif `mj_step` au sein du processus OEM headless épinglé, sans code OEM modifié ni commande nouvelle. Forces normales/tangentielles, contacts, cibles `data.ctrl`, angles à ~50 Hz, file asynchrone et validation d'intégrité. | [190 tests Python](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40190697176), [essais MuJoCo réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40190697090) : **126/126 puis 132/132 trames avec deux pieds sous charge**, amplitudes commande/angle discordantes, **2,222 puis 1,597 mm** finaux, arrêt confirmé. [Rapport P0d](mujoco-p0d-live-solver-2026-10-25.md). Cause inconnue. |
-| **PR #15 — P0e (testée MuJoCo)** | Capture des gains/biais/consignes/état **avant** le pas OEM, puis comparaison hors ligne aux forces du solveur, sans aucune modification du modèle ou des moteurs. | [199 tests + MuJoCo réussi](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40193139617) : **0,44/0,55 N·m/rad**, **2 884 efforts conformes au modèle**, 0 saturation, deux pieds chargés **127/127**, déplacement final **2,295 mm** et arrêt confirmé ; [rapport P0e](mujoco-p0e-actuator-gains-2026-10-25.md), cause encore inconnue. |
-| **PR #16 — P0f (testée sur MuJoCo)** | Audit **passif** des contrats ONNX réels (61/14), empreintes du jeu v8 local, HOME, filtres et géométries source (variantes vitesse/VelStand/runtime), avec inférences indépendantes synthétiques. | [207 tests](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40200419766), [MuJoCo #40200419709 réussi](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40200419709) : HOME concordante, sortie ONNX synthétique sensible à vx, géométries source différentes, **aucune sortie live `robotd` enregistrée et cause inconnue**. [Rapport P0f](mujoco-p0f-policy-contract-2026-10-25.md). |
-| **PR #18 — P0g (testée sur MuJoCo)** | Trois modèles OEM compilés séparément à même STAND, lecture seule, sans mj_step ni commande. | [214 tests](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40208638362), [MuJoCo #40208635206](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40208635206) : 76/82/141 geoms, 2/10/69 éligibles aux masques-sol, paramètres pied/sol identiques, cause inconnue. [Rapport P0g](mujoco-p0g-compiled-contacts-2026-10-25.md). |
-| **P0h — livré et vérifié sur PR #20** | Contraster `velstand` par défaut avec les slots `alpha` explicitement forcés dans `duck-sim`, vérifier les provenances W&B déclarées, le manifeste local et les trois modèles ONNX en CPU indépendant ; **pas d'essai moteur**. | [243 tests Python réussis sur main](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40219827102) ; [CI MuJoCo P0h réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40219277997), trois modèles v8 identifiés, L2 synthétiques 0,2296 et 0,1524 ; cause de non-marche toujours inconnue. |
-| **P0i — PR #21, fusionnée et testée sur MuJoCo** | Deux boots distincts et une exécution J2e bornée (24 notifications) par configuration, paire alpha puis VelStand seul ; états `robotd`, trois SHA-256 v8, arrêt, contrôle de santé et SQLite séparés. | [257 tests Python sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40222688915) ; [CI MuJoCo officielle](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40221935528) : **1,444 mm vs 1,968 mm**, 2 arrêts confirmés, seuil de 10 mm non atteint. Premier refus B documenté (confusion de fichier gabarit/actif corrigée). **Pas de gait ni cause prouvée.** [Rapport](mujoco-p0i-controlled-policy-pair-2026-10-25.md). |
-| **P0j — PR #22, fusionnée ; replay P0e réussi** | Analyse des charges droite/gauche sur l'archive solveur OEM P0e immuable ; **zéro commande motrice**, pas de nouveau simulateur. 888 trames et SHA-256 vérifiés, 79/127 trames dans les fenêtres P0b. | [269 tests Python sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40230029946) et [replay P0e réussi](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40229765655) : 127/127 relevés `walk` avec 2 pieds chargés, 0 unipodal ; gauche 52,03 % repos → 44,54 % marche. Forces tangentielles non signées, cinématique site ≠ glissement du patch ; **cause inconnue, P1a bloqué**. [Rapport](mujoco-p0j-load-transfer-2026-10-25.md). |
-| **P1a** | Seulement après diagnostic, correction ciblée de l'intégration et essai de translation courte | Trois essais mesurés, critère 10 mm, arrêt/deadman, absence de chute, état `robotd` et logs CI |
+**État : non résolu, non effacé.** Dernière comparaison P0i : **1,444 mm** alpha, **1,968 mm** VelStand sur une séquence courte dans MuJoCo OEM (deux arrêts confirmés, sous le seuil expérimental 10 mm). Relecture P0j : **127/127** relevés en marche avec les deux pieds chargés, différence de répartition ; ni force de traction signée ni origine du défaut démontrées. [Historique complet](plan-action-historique-2026-10-25.md).
 
-Si P0 révèle un problème dans une politique officielle impossible à corriger proprement, **ne pas bloquer tout le projet** : poursuivre en parallèle la cognition immobile, la perception sur jeux de test et la mémoire, sans présenter ces fonctions comme une navigation autonome.
+**Reprise uniquement sur demande ciblée**, avec une hypothèse falsifiable (ex. force tangentielle **signée** et vitesse relative pied/sol dans le solveur d'origine), plan de collecte minimal, état initial/fin, invariants constructeur et budget d'essais fixé. Aucune retouche arbitraire des gains/politiques, aucune augmentation automatique de vitesse. À terme, l'exploration mobile exige d'abord une translation mesurée et reproductible (ancien critère de diagnostic : ≥10 mm sur trois essais indépendants, séparée de la dérive), puis une démarche soutenue et sûre, et ensuite une validation physique surveillée. **F1–F6 n'attendent pas cette preuve pour les parties immobiles.**
 
-## 6. Mesures communes et validation de chaque PR
+## 6. Les trois prochaines PR, une seule à la fois
 
-Chaque livraison doit présenter :
+| Ordre | PR de travail | Fichiers/prototypes concernés | Preuve obligatoire |
+| --- | --- | --- | --- |
+| **1 (prochaine)** | **F1-A — Contrat d'observations passives** | `perception.py`, tests ciblés, éventuel module d'adaptation pur, contrat documenté. Auditer d'abord les RPC `mediad`. | Fixtures nouveau/connu/inconnu, TTL, sources et contradictions ; aucun certificat de sol, aucune commande moteur ; tous tests Python verts |
+| **2 (après fusion 1)** | **F1-B — Adaptateur de source passive** | Couche adapter lecture seule et simulateur de service fictif ; OEM `mediad` si capacité vérifiée | Timeout/déconnexion, source authentique distincte de `mock`, débits limités, pas de média brut conservé ; tests + preuve réelle seulement si disponible |
+| **3 (après fusion 2)** | **F1-C — SQLite et relecture de découvertes** | Journal minimal persistant, reprise de processus et tests de sélection `unknown` | Deux sessions sur une base ; nouvelles/anciennes observations et contradictions correctement conservées ; 0 moteur et CI verte |
 
-- **Statut distinct :** `prévu`, `codé`, `test logiciel réussi`, `validé en MuJoCo`, `validé sur robot`. Jamais « validé » sans nommer l'environnement.
-- **Résultat mesuré :** lien GitHub Actions, révision OEM, scène, source des signaux, unités, durée, répétitions, erreurs et limites. Pour une marche : ligne de base, trajectoire, contacts, glissement, chute et arrêt.
-- **Sécurité :** autorisation explicite, délai court, échec fermé, séparation cerveau/`robotd`, aucun blocage de la boucle à 50 Hz ; déconnexion et surchauffe traitées quand l'environnement les rend mesurables.
-- **Mémoire :** quelle observation est un fait, quelle hypothèse ne l'est pas, quelle préférence a changé, et preuve que la base peut être relue.
-- **Qualité :** tests pertinents ajoutés, suite CI verte, documentation mise à jour et aucune donnée privée dans les commits.
+**Après ces trois PR :** F1-D pour la démonstration de bout en bout, puis F2-A, etc. L'ordre est **conditionnel à la preuve de la PR précédente**, pas à une date. Ne pas fusionner une PR si elle masque des tests en échec, supprime un contrôle de sécurité ou revendique une capacité sensorielle non mesurée.
 
-Les indicateurs de précision de vision, de RAM, de températures et d'énergie doivent être **mesurés dans leur véritable environnement**. Ne pas convertir une taille de modèle en besoin de RAM ni une absence de chute MuJoCo en sécurité réelle.
+## 7. Protocole de travail pour chaque lot
 
-## 7. Règles de maintien de ce plan
+1. **Inspecter `main` avant modification** : README, ce plan, audit, sous-modules épinglés, fichiers directement concernés et tests existants. Reprendre l'existant, pas les hypothèses d'anciens échanges.
+2. **Une branche, une intention, une PR** ; changement minimal, licences OEM préservées, pas de secrets ni identités dans GitHub.
+3. **Ajouter des tests ciblés** : cas nominal, `unknown`, source absente ou fausse, horloge périmée, conflit, redémarrage, échec fermé. Comparer les métriques réellement observées.
+4. **Exécuter la CI** et, seulement si cela apporte une preuve nécessaire, la simulation officielle ; ne pas déclencher d'essai moteur lors d'une PR de cognition ou perception.
+5. **Documenter trois niveaux** : ce qui est codé, ce qui est testé et l'environnement exact de la preuve. Donner l'URL PR, SHA ou CI, et les limites restantes.
+6. **Mettre à jour le minimum nécessaire** : ce document pour l'état et la prochaine PR ; haut du README pour le résumé ; roadmap pour l'historique ; audit matériel uniquement si une nouvelle preuve matérielle change ses conclusions.
+7. **S'arrêter à la PR achevée** et ne pas enchaîner automatiquement les lots suivants.
 
-- **Ce fichier = prochaines actions et critères de passage.** `roadmap.md` = détail des phases et historique ; `mujoco-integration-plan.md` = procédures/essais J1b–J2e ; audit = limites matérielles. Ne pas gérer quatre backlogs concurrents.
-- Mettre à jour dans une même PR : état et prochaine action ici, résumé et lien en haut du README, historique du jalon dans la roadmap, audit **uniquement si** une nouvelle preuve change l'évaluation.
-- Garder les quatre essais négatifs J2e comme **historique inchangé** ([détails de mesure](hardware-feasibility-audit-2026-10-25.md)) et consigner séparément les prochains essais plutôt que réécrire les échecs.
-- Des tests GitHub Actions verts ne signifient pas que la marche fonctionne. La fonction est acceptée seulement si **son propre critère physique/simulé** est atteint.
-- Ne pas attribuer de date de livraison ni de seuil de consommation tant que les contraintes et mesures réelles n'existent pas.
+**Mesures suivies dans la durée :** taux de cycles locaux autonomes sans PC, fraîcheur et origine des perceptions, ratio d'inconnus/corrections, souvenirs réutilisés après reprise, diversité des intentions, faux positifs des catégories, latence, fréquence et ressources des services, mouvements refusés à juste titre, arrêts, dérive/chute et, plus tard, température/RSS/batterie réelles. Publier la valeur **uniquement si elle a été mesurée**, avec ses unités, contexte et limites.
 
-**Décision actuelle :** P0j est fusionné ([PR #22](https://github.com/Jean-Philippe56520/Microduck/pull/22)) : [269 tests Python réussis sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40230029946), [archive P0e reproduite en lecture seule sans nouvelle action motrice](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40229765655). Dans les **127 échantillons de marche, les deux pieds restent en appui au seuil 0,1 N** ; le rapport gauche/droit varie, mais aucun transfert en appui unipodal n'est observé. Cela **ne prouve pas la cause de la non-propulsion**, ne mesure pas le glissement de la zone de contact et ne valide pas une marche. **P1a reste bloqué** ; le prochain lot devra soit étudier le contact signé en conservant le contrôle OEM, soit avancer la perception sociale sans locomotion. [Rapport P0j](mujoco-p0j-load-transfer-2026-10-25.md). Historique : P0i est fusionné dans `main` ([PR #21](https://github.com/Jean-Philippe56520/Microduck/pull/21)) et a livré une comparaison MuJoCo des configurations de politiques OEM avec deux arrêts vérifiés ; la procédure expérimentale fonctionne, mais `alpha` (1,444 mm) et `velstand` (1,968 mm) **n'atteignent pas les 10 mm** au cours des 24 commandes à 0,12 m/s. La légère différence de 0,524 mm sur une seule exécution par configuration ne suffit pas à attribuer une cause. **P1a reste bloqué.** Aucune autre commande motrice n'est engagée ; poursuivre dans un lot distinct l'étude des conditions dynamiques de propulsion ou, indépendamment, la perception et la cognition sans déplacement. [Rapport P0i](mujoco-p0i-controlled-policy-pair-2026-10-25.md), [CI P0i](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40221935528). Les étapes P2a et P2b restent livrées et testées en mode passif ; aucun robot physique n'a été mesuré.
+## 8. Décision opérationnelle actuelle
+
+**Le prochain développement est F1-A : contrat de perception passive et jeux de tests fictifs, sans déplacement, sans Qwen, sans reconnaissance individuelle.** Le chantier de marche reste suspendu en l'absence de nouvelle hypothèse démontrable ; P1a **n'est pas** débloqué. Le robot physique n'est toujours pas disponible. Aucun nouvel essai moteur ou portage Rust n'est impliqué par l'adoption de ce plan.
