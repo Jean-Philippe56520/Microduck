@@ -150,3 +150,10 @@ Le prototype `microduck_companion` possède maintenant un contrat `PerceptionEve
 Le nouveau module `sim_ipc.py` prépare l'acquisition de `robot.health`, `robot.state` et `tof.frame` par sockets Unix. Les messages de santé et de télémétrie sont validés (délais, formats, horodatage local, cellules ToF et statuts). Une sonde `sim_probe.py` affiche les résultats sans commande moteur et n'attribue jamais la propriété `floor_clear` aux distances ToF.
 
 Les tests ont été exécutés avec des sockets Unix de démonstration, **pas avec les démons officiels en fonctionnement**. Les 65 tests logiciels du dépôt n'établissent donc ni la compatibilité en situation MuJoCo, ni la détection d'obstacle sûre, ni une mesure sur matériel. Ces points restent expressément à vérifier avant toute commande via `robotd`.
+
+
+## Mise à jour — pont d'observation MuJoCo en lecture seule
+
+`sim_bridge.py` et `sim_observer.py` sont ajoutés après `sim_ipc.py` pour convertir les mesures des démons simulés en un `PerceptionSnapshot` conservateur. Ils vérifient la fraîcheur, les erreurs de lecture, la chute et la cadence mais ne prétendent pas mesurer la sécurité du sol. La décision `halt` est conservée sans `safe_area` et `floor_clear` validés ; une batterie faible confirmée peut donner une intention `rest`, sans mouvement commandé.
+
+**Validation :** 81 tests Python avec objets et sockets fictifs. Aucun vrai `duck-sim`, service embarqué ni matériel Microduck n'a été lancé ici. Le script de démarrage prévu (`scripts/sim-smoke.sh`) ne peut pas exécuter MuJoCo dans l'environnement actuel faute de Rust/Cargo et d'une distribution Python 3.12/sous-modules téléchargeables. La RAM, la température, la consommation et les latences restent inconnues sur robot.

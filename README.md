@@ -73,6 +73,25 @@ python -m microduck_companion.sim_probe --state-dir "$HOME/.cache/duck-sim"
 
 La commande affiche l'état et des échantillons de télémétrie, sans envoyer aucune intention motrice. Elle renvoie un code non nul si `robotd` est malade ou si le flux est inaccessible. Les tests actuels du client reposent sur **des faux services Unix** : ce client n'a **pas encore été testé contre un vrai `duck-sim`**. Il ne construit pas encore les événements `floor_clear` ou `safe_area` nécessaires pour autoriser une exploration.
 
+### J2b — Observation conservatrice, sans commande motrice
+
+Le module `microduck_companion/sim_bridge.py` transforme les lectures reçues de `robotd` et `tofd` en un `PerceptionSnapshot` versionné. Il vérifie la fraîcheur, la santé des démons, l'état de chute, la cadence de contrôle et, quand disponible, la cohérence des horloges. Il ne certifie **jamais** le sol ou la zone à partir du ToF, et ne fabrique ni `safe_area`, ni `floor_clear`, ni distance d'obstacle fiable. La décision normale est donc `halt` (ou `rest` lorsque la batterie basse est confirmée sur une télémétrie cohérente).
+
+Pour afficher cette décision quand un simulateur fonctionne déjà :
+
+```sh
+python -m microduck_companion.sim_observer --state-dir "$HOME/.cache/duck-sim"
+```
+
+Depuis un clone Git sur Linux/WSL2, le script suivant peut vérifier les prérequis puis **tenter** un démarrage isolé, sans caméra, avec arrêt en fin d'essai :
+
+```sh
+sh scripts/sim-smoke.sh check
+sh scripts/sim-smoke.sh run
+```
+
+Le mode `run` initialise les sous-modules épinglés et installe l'environnement RL Python 3.12 via `uv` (téléchargements nécessaires), puis utilise `duck-sim`, `sim_probe` et `sim_observer`. Le script constructeur peut placer **son robot virtuel** debout ; notre cerveau ne lui envoie aucune commande motrice. Le chemin de données est implémenté et testé avec de faux sockets, mais **MuJoCo n'a pas encore pu être exécuté ici**. Sur cet environnement de travail, `cargo` et Python 3.12 manquent, et les téléchargements GitHub directs sont indisponibles. Seuls les tests Python et la validation du script ont été effectués.
+
 ## Audit matériel et mémoire
 
 - [Audit de faisabilité du matériel, de la vision, de la RAM et du stockage](docs/hardware-feasibility-audit-2026-10-25.md)

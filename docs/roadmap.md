@@ -59,6 +59,18 @@ Travaux :
 
 **Portée exacte :** tests avec faux sockets uniquement ; aucune simulation physique lancée, aucun capteur physique mesuré, aucune commande motrice émise. L'environnement d'exécution disponible ne possède pas Rust/Cargo ni Python 3.12 et n'autorise pas les téléchargements directs de GitHub nécessaires au simulateur. Continuer à bloquer le mouvement tant que le sol et la zone ne sont pas justifiés.
 
+## Avancement J2b — pont télémétrie → cerveau (25 octobre 2026)
+
+- [x] `microduck_companion/sim_bridge.py` : acquisition des télémétries officielles en lecture seule, contrôle de fraîcheur, santé, cadence moteur, chute et cohérence temporelle des sources ; `PerceptionSnapshot` conservateur (aucun sol ou espace déclaré sûr par le ToF).
+- [x] `microduck_companion/sim_observer.py` : diagnostiquer une décision du cerveau sans envoyer de commande motrice.
+- [x] `scripts/sim-smoke.sh` : contrôle des prérequis, lancement prévu de `duck-sim` sans interface graphique ni caméra, probes, puis arrêt propre ; réservé au clone Linux/WSL2.
+- [x] **81 tests logiciels** exécutés en local : 65 tests existants + 16 tests de pont IPC, données absentes et réponses sûres, dont de faux sockets Unix.
+- [ ] Exécuter `scripts/sim-smoke.sh run` dans un environnement disposant de Rust/Cargo, Python 3.12, `uv`, des sous-modules et de l'accès aux politiques ONNX.
+- [ ] Vérifier `robot.health`, `tof.frame`, la cadence réelle de `robotd`, la vitesse MuJoCo et les décisions observées.
+- [ ] Certifier une zone simulée adaptée sans présumer que le ToF 8×8 voit les escaliers, puis seulement envisager l'adaptateur de commandes autorisées.
+
+**Statut : codé / testé sur fausses télémétries — non simulé en MuJoCo, non validé sur robot.** La vérification de prérequis du script a correctement échoué ici, car Rust/Cargo et le checkout complet ne sont pas accessibles. Il est interdit d'interpréter cet échec comme un essai MuJoCo réalisé.
+
 ## Phase 2 — Démarrer et observer le simulateur officiel (V1a ; prioritaire)
 
 Plan opérationnel avec critères de sortie et étapes de validation : [J1b → J2 — MuJoCo](mujoco-integration-plan.md).
@@ -160,7 +172,7 @@ Les documents et les tests doivent toujours distinguer un **test logiciel**, une
 
 **Jalon J4 :** porter et valider sur matériel réel dès qu'il sera disponible (phase 6).
 
-Le contrat de perception versionné et ses tests sont désormais codés. **Prochaine modification fonctionnelle :** démarrer le simulateur officiel et vérifier notre sonde JSON-RPC déjà codée avec de vraies trames simulées. Suivre le [plan d'intégration MuJoCo J1b → J2](mujoco-integration-plan.md), qui distingue clairement lecture des capteurs, preuve du sol sûr, commandes autorisées et mémoire des conséquences. Pas de fonctionnalité vocale, de reconnaissance individuelle ni de portage Rust avant la première boucle complète en simulation.
+Le contrat de perception versionné et ses tests sont désormais codés. **Prochaine modification fonctionnelle :** exécuter le script de démarrage du simulateur officiel sur Linux/WSL2 et vérifier les sondes déjà codées (`sim_probe`, `sim_observer`) contre les vrais démons simulés ; ne pas passer au mouvement avant une preuve de sécurité du sol et de la zone. Suivre le [plan d'intégration MuJoCo J1b → J2](mujoco-integration-plan.md), qui distingue clairement lecture des capteurs, preuve du sol sûr, commandes autorisées et mémoire des conséquences. Pas de fonctionnalité vocale, de reconnaissance individuelle ni de portage Rust avant la première boucle complète en simulation.
 
 ## Références
 
