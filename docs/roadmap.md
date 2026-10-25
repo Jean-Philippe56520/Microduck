@@ -16,7 +16,8 @@ Le robot doit conserver les fonctions essentielles sans PC ni Internet. `robotd`
 - [x] Les hypothèses du LLM restent distinguées des étiquettes issues d'observations déclarées par les capteurs.
 - [x] Treize cas de test automatisés dans `tests/test_autonomy.py` ; les exécutions CI consultées avant ce plan étaient réussies.
 - [x] Audit documentaire du matériel et script `scripts/resource-audit.sh` préparés.
-- [ ] Connexion du compagnon à MuJoCo, aux vrais flux `robotd`, `tofd` ou `mediad`.
+- [x] Connexion **en lecture seule** du compagnon aux vrais démons `robotd` et `tofd` exécutés en simulation MuJoCo (essai CI 2026-10-25).
+- [ ] Boucle perception-décision-**action** autorisée en MuJoCo ; connexion de `mediad` et perception visuelle.
 - [ ] Inférence visuelle chien/chat/personne, reconnaissance individuelle, intégration Qwen.
 - [ ] Mesures et validation sur un Microduck physique.
 
@@ -29,7 +30,7 @@ Les scènes du prototype sont **fictives**. Aucun mouvement réel, capteur réel
 - [x] La mémoire SQLite conserve la provenance `mock` / `simulator` / `sensor` d'une étiquette, et les hypothèses LLM restent distinctes.
 - [x] 40 tests Python passés localement et sur GitHub Actions sur la branche de développement (13 tests historiques + 27 tests de perception).
 - [ ] Lier les événements aux démons du constructeur et **authentifier leur provenance** dans un adaptateur dédié ; le texte `source="sensor"` n'est pas une preuve matérielle.
-- [ ] Lancer `duck-sim` sur Linux/WSL2, relever sa santé et sa vitesse, puis connecter les observations MuJoCo.
+- [x] Lancer `duck-sim` sur Linux CI, relever sa santé et sa vitesse, puis connecter les observations MuJoCo en lecture seule ([exécution réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40145369078)).
 - [ ] Évaluer les garde-fous avec les capteurs, les pilotes et le matériel physique.
 
 **Frontière de confiance :** la méthode historique `choose(Scene(...))` reste un chemin de démonstration synthétique ; toute intégration devra passer par des mesures réellement produites et vérifiées par un adaptateur. Ce module ne contrôle aucun moteur et `robotd` conserve seul l'autorité de sécurité.
@@ -57,7 +58,7 @@ Travaux :
 - [ ] Convertir les lectures vérifiées en `PerceptionSnapshot` avec gestion d'incertitude ; les données ToF ne prouvent pas `floor_clear`.
 - [ ] Développer et tester ensuite les intentions autorisées via `robotd`.
 
-**Portée exacte :** tests avec faux sockets uniquement ; aucune simulation physique lancée, aucun capteur physique mesuré, aucune commande motrice émise. L'environnement d'exécution disponible ne possède pas Rust/Cargo ni Python 3.12 et n'autorise pas les téléchargements directs de GitHub nécessaires au simulateur. Continuer à bloquer le mouvement tant que le sol et la zone ne sont pas justifiés.
+**Historique J2a :** les premiers tests utilisaient uniquement de faux sockets. **Mise à jour :** l'exécution CI du 25 octobre a depuis confirmé `robot.health`, `robot.state` et `tof.frame` sur les démons officiels sous MuJoCo. Toujours aucune mesure sur robot physique ni commande motrice issue du compagnon.
 
 ## Avancement J2b — pont télémétrie → cerveau (25 octobre 2026)
 
@@ -65,11 +66,29 @@ Travaux :
 - [x] `microduck_companion/sim_observer.py` : diagnostiquer une décision du cerveau sans envoyer de commande motrice.
 - [x] `scripts/sim-smoke.sh` : contrôle des prérequis, lancement prévu de `duck-sim` sans interface graphique ni caméra, probes, puis arrêt propre ; réservé au clone Linux/WSL2.
 - [x] **81 tests logiciels** exécutés en local : 65 tests existants + 16 tests de pont IPC, données absentes et réponses sûres, dont de faux sockets Unix.
-- [ ] Exécuter `scripts/sim-smoke.sh run` dans un environnement disposant de Rust/Cargo, Python 3.12, `uv`, des sous-modules et de l'accès aux politiques ONNX.
-- [ ] Vérifier `robot.health`, `tof.frame`, la cadence réelle de `robotd`, la vitesse MuJoCo et les décisions observées.
+- [x] Exécuter `scripts/sim-smoke.sh run` dans un environnement Linux GitHub Actions avec Rust/Cargo, Python 3.12, `uv`, sous-modules épinglés et politiques ONNX officielles.
+- [x] Vérifier `robot.health`, `tof.frame`, la cadence effective de `robotd`, la vitesse MuJoCo et les décisions observées sur l'exécuteur CI.
 - [ ] Certifier une zone simulée adaptée sans présumer que le ToF 8×8 voit les escaliers, puis seulement envisager l'adaptateur de commandes autorisées.
 
-**Statut : codé / testé sur fausses télémétries — non simulé en MuJoCo, non validé sur robot.** La vérification de prérequis du script a correctement échoué ici, car Rust/Cargo et le checkout complet ne sont pas accessibles. Il est interdit d'interpréter cet échec comme un essai MuJoCo réalisé.
+**Statut actualisé : codé / tests logiciels verts / observé en MuJoCo officiel (lecture seule) / non validé sur robot.** L'environnement local n'avait pas Rust/Cargo, mais l'exécuteur Linux distant a fourni les prérequis et terminé l'essai avec succès ; le sol reste non certifié.
+
+## Première validation MuJoCo officielle — 25 octobre 2026
+
+Le jalon de **lecture seule** est désormais **simulé et testé** sur Ubuntu 24.04 via [GitHub Actions #40145369078](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40145369078), utilisant les sous-modules épinglés et les politiques ONNX officielles :
+
+| Contrôle | Observation réelle pendant cette exécution |
+| --- | --- |
+| Lancement et arrêt `duck-sim` | Réussis ; un Microduck, sans caméra, mode headless |
+| `robotd` | `healthy`, ~50 Hz (exemple de santé à 50,1 / 50,0 Hz), 0 échéance manquée dans l'échantillon |
+| Temps réel MuJoCo | `duck-sim realtime` : **1,00×** |
+| `tof.stream` | Source `sim`, trames 150 et 151, **64 cellules** chacune |
+| `sim_probe` | Lecture `robot.health`, `robot.state`, `tof.frame` validée ; aucune commande motrice |
+| `sim_observer` | `environment=simulator`, `intention=halt`, `errors=[]`, `floor_certified=false` |
+| Tests Python | **81/81 réussis** |
+
+L'observation de batterie (~50 % dans le flux) et les données ToF sont **simulées**. La santé `robotd` et la cadence concernent uniquement l'exécuteur Linux de ce test. Ni l'évitement des escaliers, ni une exploration de maison, ni les consommations, températures et latences du robot physique ne sont validés.
+
+**Prochain verrou à traiter :** vraie preuve de `safe_area` / `floor_clear` provenant d'un scénario de test MuJoCo borné, puis autorisation conditionnelle de courtes intentions via `robotd`, avec arrêt sûr.
 
 ## Phase 2 — Démarrer et observer le simulateur officiel (V1a ; prioritaire)
 
@@ -83,7 +102,7 @@ Travaux :
 3. Confirmer le démarrage de `robotd` et `tofd`, `duck-sim status`, `duck-sim ctl health`, `duck-sim realtime` et l'arrêt propre.
 4. Documenter les commandes, versions, téléchargements initiaux des politiques ONNX, erreurs de dépendances et mesures de référence. N'activer la caméra simulée qu'après cette validation.
 
-Exemple de commandes depuis la racine du projet (à exécuter sur un environnement Linux équipé ; **non exécutées à ce stade**) :
+Exemple de commandes depuis la racine du projet (procédure officielle ; le script `scripts/sim-smoke.sh` a été **effectivement exécuté sur CI** avec ces opérations de démarrage, santé, temps réel et arrêt) :
 
 ```sh
 git submodule update --init --recursive
@@ -172,7 +191,7 @@ Les documents et les tests doivent toujours distinguer un **test logiciel**, une
 
 **Jalon J4 :** porter et valider sur matériel réel dès qu'il sera disponible (phase 6).
 
-Le contrat de perception versionné et ses tests sont désormais codés. **Prochaine modification fonctionnelle :** exécuter le script de démarrage du simulateur officiel sur Linux/WSL2 et vérifier les sondes déjà codées (`sim_probe`, `sim_observer`) contre les vrais démons simulés ; ne pas passer au mouvement avant une preuve de sécurité du sol et de la zone. Suivre le [plan d'intégration MuJoCo J1b → J2](mujoco-integration-plan.md), qui distingue clairement lecture des capteurs, preuve du sol sûr, commandes autorisées et mémoire des conséquences. Pas de fonctionnalité vocale, de reconnaissance individuelle ni de portage Rust avant la première boucle complète en simulation.
+Le contrat de perception versionné et ses tests sont désormais codés. **Prochaine modification fonctionnelle :** fournir une **preuve de zone et de sol sûrs côté simulateur**, puis concevoir un filtre d'intentions bornées vers `robotd` ; maintenir l'arrêt par défaut tant que cette preuve est absente. Suivre le [plan d'intégration MuJoCo J1b → J2](mujoco-integration-plan.md), qui distingue clairement lecture des capteurs, preuve du sol sûr, commandes autorisées et mémoire des conséquences. Pas de fonctionnalité vocale, de reconnaissance individuelle ni de portage Rust avant la première boucle complète en simulation.
 
 ## Références
 
