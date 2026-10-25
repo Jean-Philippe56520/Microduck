@@ -21,7 +21,8 @@ from .sim_flat_zone import (
     GroundTruthError, FlatGroundTruth, flat_zone_snapshot,
     read_verified_flat_ground,
 )
-from .sim_ipc import TelemetryError, read_health
+from .sim_ipc import ReadOnlyUnixRpc, TelemetryError, read_health
+from .sim_policy_trace import PolicySample, parse_policy_sample, summarize_policy_samples
 from .sim_motion import _healthy, _safe_ground, _send_stop, SimMotionError
 
 WALK_SPEED_MPS = 0.12  # Above OEM default standing threshold 0.05 m/s.
@@ -50,6 +51,7 @@ class WalkTrialResult:
     next_intention: str
     trials_in_memory: int
     memory_source: str
+    policy_diagnostics: dict
 
 
 def _read_ground(state: Path, rl_root: Path, port: int) -> FlatGroundTruth:
@@ -117,6 +119,7 @@ def run_walk_trial(
 
         sock_path = str(state / "duck-a.sock")
         count = 0
+        policy_samples: list[PolicySample] = []
         attempted = False
         stopped = False
         primary: BaseException | None = None
@@ -125,38 +128,52 @@ def run_walk_trial(
         started = time.monotonic()
 
         try:
-            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
-                sock.settimeout(.45)
-                sock.connect(sock_path)
-                try:
-                    for i in range(WALK_TICKS):
-                        if time.monotonic() - started > MAX_COMMAND_WINDOW_S:
-                            raise SimMotionError("walk trial time budget exceeded")
-                        pose = _read_ground(state, rl, port)
-                        if (not _safe_ground(pose)
-                                or (i > 0 and pose.sim_time_s <= last_sim_time)):
-                            raise SimMotionError(
-                                "MuJoCo pose unsafe or simulation clock stalled"
-                            )
-                        last_sim_time = pose.sim_time_s
-                        fresh_health = read_health(sock_path, timeout_s=.35)
-                        if not _healthy(fresh_health):
-                            raise SimMotionError("robotd health degraded")
-                        attempted = True
-                        _send_forward(sock)
-                        count += 1
-                        time.sleep(WALK_PERIOD_S)
-                except (OSError, GroundTruthError, TelemetryError, SimMotionError) as exc:
-                    primary = exc
-                finally:
-                    if attempted:
-                        try:
-                            _send_stop(sock)
-                            stopped = True
-                        except (OSError, SimMotionError) as exc:
-                            stop_failure = exc
-        except OSError as exc:
-            raise SimMotionError("simulated robotd socket could not be opened") from exc
+            # Subscribe separately to the official stream that tells us
+            # which policy ran and which velocity robotd actually applied.
+            # Missing/invalid feedback stops the experiment; it never
+            # grants permission independently of ground truth.
+            with ReadOnlyUnixRpc(sock_path, timeout_s=.45) as stream:
+                stream.request("robot.subscribe", hz=10)
+                with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+                    sock.settimeout(.45)
+                    sock.connect(sock_path)
+                    try:
+                        for i in range(WALK_TICKS):
+                            tick_started = time.monotonic()
+                            if tick_started - started > MAX_COMMAND_WINDOW_S:
+                                raise SimMotionError("walk trial time budget exceeded")
+                            pose = _read_ground(state, rl, port)
+                            if (not _safe_ground(pose)
+                                    or (i > 0 and pose.sim_time_s <= last_sim_time)):
+                                raise SimMotionError(
+                                    "MuJoCo pose unsafe or simulation clock stalled"
+                                )
+                            last_sim_time = pose.sim_time_s
+                            fresh_health = read_health(sock_path, timeout_s=.35)
+                            if not _healthy(fresh_health):
+                                raise SimMotionError("robotd health degraded")
+                            attempted = True
+                            _send_forward(sock)
+                            count += 1
+                            # robot.state is a read-only notification; the
+                            # sampled policy can be "stand", "walk" or "held".
+                            policy_samples.append(parse_policy_sample(
+                                stream.next_notification()
+                            ))
+                            remaining = WALK_PERIOD_S - (time.monotonic() - tick_started)
+                            if remaining > 0:
+                                time.sleep(remaining)
+                    except (OSError, GroundTruthError, TelemetryError, SimMotionError) as exc:
+                        primary = exc
+                    finally:
+                        if attempted:
+                            try:
+                                _send_stop(sock)
+                                stopped = True
+                            except (OSError, SimMotionError) as exc:
+                                stop_failure = exc
+        except (OSError, TelemetryError) as exc:
+            raise SimMotionError("simulated robotd state stream unavailable") from exc
 
         if stop_failure is not None:
             raise SimMotionError(
@@ -212,6 +229,7 @@ def run_walk_trial(
             next_intention=next_plan.intention,
             trials_in_memory=outcome.observed_trials,
             memory_source=outcome.source,
+            policy_diagnostics=summarize_policy_samples(policy_samples),
         )
     finally:
         memory.close()
