@@ -1,6 +1,6 @@
 # F1-A — Contrat minimal de perception passive et provenance (25 octobre 2026)
 
-**État : codé et testé logiciellement sur données exclusivement fictives ; pas de capteur `mediad` raccordé, pas de modèle ML, aucune commande motrice ni validation physique.** Cette PR est le **premier lot de F1**, qui ne sera achevée qu'après F1-B, F1-C et F1-D. [Plan directeur](plan-action.md).
+**État : codé et testé logiciellement sur [PR #24](https://github.com/Jean-Philippe56520/Microduck/pull/24), avec [295 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40232960339) (269 anciens et 26 nouveaux), sur données exclusivement fictives ; pas de capteur `mediad` raccordé, pas de modèle ML, aucune commande motrice ni validation physique.** Cette PR est le **premier lot de F1**, qui ne sera achevée qu'après F1-B, F1-C et F1-D. [Plan directeur](plan-action.md).
 
 ## 1. Sources du constructeur effectivement inspectées
 
