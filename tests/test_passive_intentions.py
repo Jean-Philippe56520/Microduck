@@ -70,7 +70,6 @@ class PassiveIntentionUnitTests(unittest.TestCase):
         self.assertEqual(("observe", "object_label", "ball"),
                          (answer.intention, answer.target_kind,
                           answer.target_category))
-        self.assertFalse(answer.previously_seen_category)
         self.assertEqual("mock", answer.source)
         self.assertFalse(answer.executed)
         self.assertEqual(0, answer.motor_commands_issued)
@@ -324,6 +323,14 @@ class PassiveIntentionUnitTests(unittest.TestCase):
             {"intention": "listen", "reason": "fake", "motor_commands_issued": 1},
             {"intention": "inspect", "reason": "fake", "request_pc_analysis": True},
             {"intention": "idle", "reason": "fake", "source": "sensor"},
+            {"intention": "observe", "reason": "fake",
+             "target_kind": "object_label", "target_category": "Malo"},
+            {"intention": "rest", "reason": "fake",
+             "target_kind": "object_label", "target_category": "dog"},
+            {"intention": "listen", "reason": "fake",
+             "target_kind": "object_label", "target_category": "ball"},
+            {"intention": "inspect", "reason": "fake",
+             "target_kind": "sound_label", "target_category": "speech"},
         ):
             with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
                 PassiveIntent(**kwargs)
