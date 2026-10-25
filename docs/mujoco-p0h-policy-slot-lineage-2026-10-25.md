@@ -1,6 +1,6 @@
 # P0h — Provenance et sélection des politiques ONNX (25 octobre 2026)
 
-**État : codé ; 243 tests Python sur données fictives réussis sur la branche. Vérification du bundle réellement installé par les démons MuJoCo officiels en cours dans la CI.**
+**État : codé et vérifié sur le simulateur constructeur épinglé.** [243 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40219234669) et [CI MuJoCo officielle réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40219277997). Aucun nouvel essai moteur depuis P0h.
 
 PR : https://github.com/Jean-Philippe56520/Microduck/pull/20
 
@@ -51,7 +51,24 @@ Ce sont des **déclarations de traçabilité dans les sources officielles**, pas
 ## Vérifications
 
 - [x] 243 tests Python sur branche (234 précédents et 9 nouveaux), y compris refus de sources/configurations modifiées, incohérences manifestes, présence des trois fichiers, sorties non finies, contrôle de priorité et absence de preuve de démarche.
-- [ ] Test sur les services MuJoCo constructeur épinglés et ONNX installés, **sans émettre de commande `robot.move`**, archivé sous `policy-lineage.json`.
+- [x] [MuJoCo constructeur et ONNX installés](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40219277997) réussis, **sans commande `robot.move` ni modification constructeur** ; archive `mujoco-headless-diagnostics`, fichier `policy-lineage.json`.
+
+## Mesures réellement obtenues en MuJoCo
+
+L'audit a lu les modèles du même bundle local `pollen-robotics/microduck-policies` `v8`, dont le manifeste comprend **10 entrées**. Les trois modèles sont **non récurrents**, avec entrée `obs [1,61]` et sortie `actions [1,14]` en float32.
+
+| Fichier ONNX | Taille (octets) | SHA-256 |
+|---|---:|---|
+| `velstand.onnx` | 793 705 | `2fc7f8ee6acd7d0d3f66a99927b5d5a56589aeed02ec714de329b252d5ccf492` |
+| `alpha_walking.onnx` | 793 705 | `e36332d383997d51401897734cd3e79cf5038406feddb18b4d57ecfb141daa6c` |
+| `alpha_stand.onnx` | 793 705 | `1569268713e40deea795dd2922dba50d3621e15a872855408b6b1b125b1c094b` |
+
+Pour les entrées synthétiques sans historique, distances euclidiennes (L2) entre les **14 sorties brutes** :
+
+- **0,2295563983** : `velstand` contre `alpha_stand` à `vx=0` ;
+- **0,1524270678** : `velstand` contre `alpha_walking` à `vx=0,12`.
+
+Ces écarts ne sont **ni des erreurs de marche, ni des écarts de consignes articulaires dans `robotd`**, puisque les filtres, l'historique, les observations réelles et les évolutions temporelles ne sont pas mesurés. Il n'existe toujours **aucune preuve causale** associant cette divergence à la translation insuffisante. Le rapport JSON complet, les logs de `robotd` et la vérification d'arrêt des services sont disponibles dans l'[archive Actions #40219277997](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40219277997).
 
 ## Décision à l'issue de P0h
 
