@@ -39,3 +39,9 @@ jobs:
       - name: F3-E public-photo review ledger (no human votes)
         run: |
           python -m microduck_companion.f3e_demo
+      - name: F4-A two independent mock-only SQLite memory processes
+        run: |
+          # Same DB between processes, F1-C/F2-C labels and P2a feedback only.
+          # Never opens a camera, talks to a PC, or calls robotd.
+          python -m microduck_companion.f4a_memory_demo --database "$RUNNER_TEMP/f4a-knowledge.sqlite3" --session first
+          python -m microduck_companion.f4a_memory_demo --database "$RUNNER_TEMP/f4a-knowledge.sqlite3" --session second
