@@ -113,6 +113,7 @@ def _check_jpeg_bytes(response: object) -> bytes:
     parsed = urlparse(url)
     if (parsed.scheme != "https"
             or parsed.hostname not in ("upload.wikimedia.org",
+                                       "thumb.wikimedia.org",
                                        "commons.wikimedia.org")):
         raise PhotoBaselineError(f"unexpected image redirect host: {parsed.scheme}://{parsed.hostname}")
     ctype = response.headers.get("Content-Type", "").split(";")[0].strip()
