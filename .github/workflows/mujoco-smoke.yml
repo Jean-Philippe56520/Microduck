@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - ci/mujoco-headless-smoke-20261025
+      - feat/sim-flat-zone-20261025
     paths:
       - ".github/workflows/mujoco-smoke.yml"
       - "scripts/sim-smoke.sh"
