@@ -15,7 +15,8 @@ from dataclasses import dataclass
 import sqlite3
 
 from .autonomy import Motivations
-from .passive_intentions import PassiveIntent, _valid_motivations, _valid_scalar
+from .passive_intentions import (PassiveIntent, propose_passive_intention,
+                                 _valid_motivations, _valid_scalar)
 from .passive_memory import PassiveObservationJournal
 from .passive_observations import summarize_passive
 from .passive_sources import PassiveRead
@@ -118,19 +119,17 @@ class PassiveRhythm:
                     - 0.36 * motives.caution - 0.12 * fatigue)
         raise ValueError("unsupported active attention")
 
-    def tick(self, reading: PassiveRead, *, baseline: PassiveIntent,
+    def tick(self, reading: PassiveRead, *,
              journal: PassiveObservationJournal, motivations: Motivations,
              now_monotonic_s: float, now_wall_epoch_s: float) -> PassiveIntent:
         """One strictly passive, mock-only cognitive cycle.
 
-        F2-A first verifies provenance, TTL and the existing brain/journal
-        relationship. Invalid F2-A responses cannot be promoted by scoring.
-        The underlying snapshot is NEVER interpreted when F2-A failed.
+        F2-A validation is called *inside* this module. The caller cannot
+        forge a validated baseline to promote untrusted or stale snapshots.
+        The snapshot is NEVER interpreted when F2-A returns an invalid state.
         """
         if not isinstance(reading, PassiveRead):
             raise TypeError("expected F1-B PassiveRead")
-        if not isinstance(baseline, PassiveIntent):
-            raise TypeError("F2-A validated proposal required")
         if not isinstance(journal, PassiveObservationJournal):
             raise TypeError("expected F1-C passive journal")
         if not isinstance(motivations, Motivations):
@@ -154,14 +153,16 @@ class PassiveRhythm:
                                 motivations=motivations, update_energy=False)
         self._last_tick_s = now
 
+        baseline = propose_passive_intention(
+            reading, journal=journal, motivations=motivations,
+            now_monotonic_s=now, now_wall_epoch_s=now_wall_epoch_s,
+        )
         if (not _valid_motivations(motivations)
                 or (baseline.intention == "idle"
                     and baseline.reason not in _VALID_BASELINE_IDLE)):
-            reason = ("invalid_motivations" if not _valid_motivations(motivations)
-                      else baseline.reason)
-            return self._record(self._idle(reason), motivations=motivations,
-                                update_energy=False)
-        # F2-A validates both sequence type/bounds and mock-only channel.
+            return self._record(self._idle(baseline.reason),
+                                motivations=motivations, update_energy=False)
+        # F2-A has already validated sequence type/bounds and mock channel.
         if (reading.status != "ok" or reading.channel != "mock_fixture_unix"
                 or type(reading.sequence) is not int
                 or not 0 <= reading.sequence < 2**63):
