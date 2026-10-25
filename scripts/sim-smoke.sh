@@ -125,6 +125,21 @@ started=1
 "$SIM" realtime
 python3 -m microduck_companion.sim_probe --state-dir "$DUCK_SIM_STATE"
 python3 -m microduck_companion.sim_observer --state-dir "$DUCK_SIM_STATE"
+# P2b: two separate read-only sessions on a single persistent SQLite database.
+# Only the P2b simulation branch opts in. No robot.move / robot.stop is issued.
+if [ "${DUCK_SIM_PASSIVE_CYCLES:-NO}" = YES ]; then
+    rm -f "$DUCK_SIM_STATE/p2b-passive.sqlite3"
+    python3 -m microduck_companion.sim_passive_cycles \
+        --state-dir "$DUCK_SIM_STATE" \
+        --database "$DUCK_SIM_STATE/p2b-passive.sqlite3" \
+        --session p2b-session-a --cycles 3 --interval 0.6 \
+        --output "$DUCK_SIM_STATE/p2b-passive-session-a.json"
+    python3 -m microduck_companion.sim_passive_cycles \
+        --state-dir "$DUCK_SIM_STATE" \
+        --database "$DUCK_SIM_STATE/p2b-passive.sqlite3" \
+        --session p2b-session-b --cycles 3 --interval 0.6 \
+        --output "$DUCK_SIM_STATE/p2b-passive-session-b.json"
+fi
 python3 -m microduck_companion.sim_zone_probe --state-dir "$DUCK_SIM_STATE" \
     --rl-root "$DUCK_SIM_RL" --port "$DUCK_SIM_PORT"
 # P0a: passive read-only OEM body joints and robotd policy; NO motor commands.
