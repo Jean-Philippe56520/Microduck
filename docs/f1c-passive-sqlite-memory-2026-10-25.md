@@ -1,6 +1,6 @@
 # F1-C — Mémoire persistante des observations passives
 
-**Date : 25 octobre 2026. État : logiciel développé sur branche F1-C ; tests avec catégories entièrement fictives.** La phase F1 reste **incomplète** tant que F1-D (démonstration de bout en bout) n'est pas effectuée. Aucun accès au vrai Microduck, aucune caméra, aucun micro, aucune commande moteur et aucun modèle de reconnaissance n'entrent dans F1-C.
+**Date : 25 octobre 2026. État : logiciel fusionné dans `main` via [PR #26](https://github.com/Jean-Philippe56520/Microduck/pull/26) ; [339 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40234908502), dont 24 nouveaux, avec catégories entièrement fictives.** La phase F1 reste **incomplète** tant que F1-D (démonstration de bout en bout) n'est pas effectuée. Aucun accès au vrai Microduck, aucune caméra, aucun micro, aucune commande moteur et aucun modèle de reconnaissance n'entrent dans F1-C.
 
 **Références :** [plan directeur](plan-action.md), [F1-A — contrat de catégories](f1a-passive-observation-contract-2026-10-25.md), [F1-B — source fictive bornée](f1b-passive-source-2026-10-25.md).
 
@@ -44,7 +44,7 @@ FixtureUnixReader (F1-B : mock obligatoire)
 - purge à 14 jours, borne de 512 lignes et consultation de 100 entrées maximum ;
 - **deux processus Python indépendants** rouvrant la même SQLite, avec **réinitialisation simulée du compteur monotone** et nouveau `session_id`. Le nombre de catégories vues passe de **1 à 2** sans interprétation d'identité.
 
-Ce test de reprise est une validation **logicielle de persistance**, non une simulation de caméra ou de robot physique. La CI GitHub Actions est la source de vérité pour le décompte final des tests.
+Ce test de reprise est une validation **logicielle de persistance**, non une simulation de caméra ou de robot physique. [CI de branche finale : 339 tests réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40234908502) ; la CI sur `main` après fusion reste le contrôle final du dépôt.
 
 ## 4. Suite
 
