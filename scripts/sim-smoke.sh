@@ -278,11 +278,12 @@ if [ "${DUCK_SIM_POLICY_PAIR:-NO}" = YES ]; then
     "$SIM" realtime
 
     # Only the official robotctl API changes policy slots, not the motors or
-    # safety configuration. Both commands must be accepted and reflected in
+    # safety configuration. duck-sim clones its robotd.toml TEMPLATE into
+    # the active robotd-duck-a.toml used by the daemon (see OEM --params). Both commands must be accepted and reflected in
     # the live robotd policy report before P0i permits any movement.
-    "$SIM" ctl policy --file "$DUCK_SIM_STATE/robotd.toml" \
+    "$SIM" ctl policy --file "$DUCK_SIM_STATE/robotd-duck-a.toml" \
         load walk "$DUCK_SIM_STATE/policies/current/velstand.onnx"
-    "$SIM" ctl policy --file "$DUCK_SIM_STATE/robotd.toml" \
+    "$SIM" ctl policy --file "$DUCK_SIM_STATE/robotd-duck-a.toml" \
         load stand none
     sleep 3
     "$SIM" ctl health
