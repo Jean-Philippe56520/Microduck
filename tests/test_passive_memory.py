@@ -250,6 +250,21 @@ class JournalTests(unittest.TestCase):
             "object_label", "toy",
             now_wall_epoch_s=WALL+MAX_STORED_OBSERVATIONS+6))
 
+    def test_capacity_does_not_report_old_rollback_event_as_retained(self):
+        # A small wall-clock rollback is possible: the older incoming row
+        # may be pruned by the 512-entry cap immediately after insert.
+        for i in range(MAX_STORED_OBSERVATIONS):
+            self.assertEqual(1, self.append(
+                read(event(category="ball"), seq=i), wall=WALL+59))
+        self.assertEqual(0, self.append(
+            read(event(category="toy"), seq=MAX_STORED_OBSERVATIONS),
+            wall=WALL+1))
+        self.assertEqual(MAX_STORED_OBSERVATIONS, len(
+            self.memory.conn.execute(
+                "SELECT id FROM passive_observation_log").fetchall()))
+        self.assertEqual(0, self.journal.category_count(
+            "object_label", "toy", now_wall_epoch_s=WALL+59))
+
     def test_objects_and_rewards_unchanged(self):
         self.memory.observe("fictional-1", "unknown", "mock")
         before = self.memory.get("fictional-1")
