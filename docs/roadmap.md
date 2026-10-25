@@ -4,12 +4,21 @@ Mise à jour : 2026-10-25. **Les priorités opérationnelles et critères de pas
 
 **État courant :** P2b [fusionné dans `main` (PR #19)](https://github.com/Jean-Philippe56520/Microduck/pull/19), avec **[234 tests Python réussis sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216649169)** et [six cycles cognitifs passifs testés sous MuJoCo officiel](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216199277) (3 puis 6 lignes persistées en SQLite, six `halt`, zéro moteur). P2a avait démontré huit cycles fictifs persistés. P0g : modèles compilés 76/82/141 géométries, 2/10/69 éligibles aux masques du sol ; la cause de non-marche demeure inconnue. Dernier essai moteur P0e 2,295 mm ; P1a bloqué, aucun robot physique testé.
 
+## P0h — Sélection et filiation des politiques ONNX (PR #20)
+
+- [x] **Contrat source :** `robotd` utilise normalement `velstand.onnx` sans slot debout, mais `duck-sim` force la paire `alpha_walking.onnx` / `alpha_stand.onnx` (seuil `0,05`). Provenance W&B déclarée dans les sources RL épinglées, sans preuve cryptographique d'identité des poids.
+- [x] Nouveau diagnostic en lecture seule `sim_policy_lineage.py` et **[243 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40219234669)** : vérifications de sources, TOML, manifeste, `.source`, formes ONNX et refus conservateurs.
+- [ ] [CI MuJoCo officielle P0h](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40219277997) : contrôle de présence/empreintes des trois modèles et comparaison de sorties CPU synthétiques ; **zéro nouvelle commande motrice**.
+- [ ] Le rôle de cette divergence dans l'absence de translation n'est **pas prouvé**. P1a bloqué, pas de test matériel.
+
+[Rapport P0h](mujoco-p0h-policy-slot-lineage-2026-10-25.md).
+
 ## P2b — Cycles cognitifs passifs reliés aux démons simulés (PR #19)
 
 - [x] Exécuteur `sim_passive_cycles.py` : télémétries datées `robotd`/`tofd` via RPC limités en lecture, choix `AutonomyBrain`, journal SQLite de qualité/intention et reprise entre sessions, **sans API moteur et sans récompense**.
 - [x] **234 tests Python réussis** sur branche : [CI P2b](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216199119). Dix tests nouveaux, y compris sockets Unix fictives, reprise SQLite, horodatages, répétitions, pertes de capteurs et refus sûrs.
 - [x] [CI MuJoCo constructeur](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40216199277) réussie : **3/3 + 3/3 cycles cohérents**, même SQLite réouverte, **3 puis 6 enregistrements**, séquences ToF progressives, `halt` six fois (sol non certifié), zéro moteur, récompense ou conséquence. JSON archivés.
-- [ ] Aucun résultat moteur, visuel ou physique validé. Suite indépendante : P0h et, ultérieurement, perceptions visuelles/sonores non motrices.
+- [ ] Aucun résultat moteur, visuel ou physique validé. P0h est engagé séparément pour vérifier les politiques ONNX ; les perceptions visuelles et sonores ne sont pas encore développées.
 
 [Rapport P2b](p2b-passive-mujoco-cycles-2026-10-25.md).
 
