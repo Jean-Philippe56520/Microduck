@@ -40,7 +40,7 @@ Le **[plan d'action consolidé](docs/plan-action.md)** est désormais la référ
 
 **Cognition sans mouvement (P2a) :** [217 tests Python](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40207932413) et **deux sessions fictives successives** sur une même SQLite. Journal de 8 cycles, préférence fictive persistée, tout mouvement non exécuté. Cela ne résout pas le blocage locomoteur P1a.
 
-### P0j — Relecture hors ligne des forces d'appui P0e (PR en cours)
+### P0j — Relecture hors ligne des forces d'appui P0e (PR #22)
 
 Sans nouveau mouvement, le module `sim_p0j_load_transfer.py` vérifie les SHA-256 exacts des anciens diagnostics du solveur MuJoCo P0e et calcule le transfert de charge gauche/droite. La [CI P0j](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40229765655) a réussi : **269 tests Python**, replay du traceur original à 50 Hz, **127/127 relevés de marche avec deux pieds en charge**, 0 relevé sur un seul pied, part de charge gauche passant de **52,03 % au repos** à **44,54 % en marche**. Le changement de charge n'est ni un changement d'appui unipodal, ni une preuve de traction ou de marche. [Rapport détaillé](docs/mujoco-p0j-load-transfer-2026-10-25.md) ; **cause inconnue et P1a bloqué**.
 
