@@ -1,0 +1,80 @@
+# P0j NEVER runs simulator, robotd or motors. Replays immutable P0e CI bytes.
+# Archived source is retention-limited; unit tests remain standalone.
+name: P0j offline archived solver audit
+
+on:
+  push:
+    branches:
+      - feat/p0j-offline-load-transfer-20261025
+    paths:
+      - ".github/workflows/p0j-offline.yml"
+      - "microduck_companion/sim_p0j_load_transfer.py"
+      - "tests/test_sim_p0j_load_transfer.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: p0j-replay-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Run unit tests without a simulator
+        run: |
+          python3 -m unittest discover -s tests -v
+          python3 -m compileall -q microduck_companion tests
+
+      - name: Download original P0e solver archive (read-only, same repository)
+        uses: actions/download-artifact@v4
+        with:
+          name: mujoco-headless-diagnostics
+          run-id: 40193139617
+          repository: Jean-Philippe56520/Microduck
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/p0j-original
+
+      - name: Replay ONLY the three exact P0e source files
+        run: |
+          set -euo pipefail
+          root="${{ runner.temp }}/p0j-original/tmp/duck-sim-companion"
+          python3 -m microduck_companion.sim_p0j_load_transfer \
+            --solver-tap "$root/solver-tap.jsonl" \
+            --solver-analysis "$root/solver-analysis.json" \
+            --walk-comparison "$root/walk-comparison.json" \
+            --output "${{ runner.temp }}/p0j-load-transfer.json"
+          python3 - <<'PY'
+          import json, math, os
+          from pathlib import Path
+          report = json.loads(Path(os.environ['RUNNER_TEMP'], 'p0j-load-transfer.json').read_text())
+          stand, walk = (report['phases'][name] for name in ('stand', 'walk'))
+          assert stand['frames'] == 79 and walk['frames'] == 127
+          assert stand['contact_load_0_1n']['both'] == 79
+          assert walk['contact_load_0_1n']['both'] == 127
+          assert report['observed_unilateral_load_0_1n_during_walk'] == 0
+          assert math.isclose(stand['left_share_mean'], .5202729310079943, abs_tol=1e-12)
+          assert math.isclose(walk['left_share_mean'], .44542460666727546, abs_tol=1e-12)
+          assert report['no_new_motor_commands'] is True
+          assert report['source_stop_confirmed'] is True
+          assert report['gait_validated'] is False and report['root_cause_proven'] is False
+          print('P0j archived solver replay passed; no motor commands.')
+          PY
+
+      - name: Archive the concise offline report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p0j-load-transfer-summary
+          if-no-files-found: warn
+          retention-days: 7
+          path: ${{ runner.temp }}/p0j-load-transfer.json
