@@ -1,6 +1,6 @@
 # F2-A — Intentions cognitives passives, sans exécution ni moteur
 
-**Date : 25 octobre 2026. État : développé et testé logiciellement sur données entièrement fictives.** F2-A ajoute un choix d'attention en lecture seule, **pas** un nouveau contrôleur, une commande moteur ni une véritable perception de caméra/microphone. Les motivations représentent des variables simulées ; la sécurité, la puissance de calcul et la batterie réelles du robot n'ont pas été mesurées.
+**Date : 25 octobre 2026. État : fusionné dans `main` via [PR #28](https://github.com/Jean-Philippe56520/Microduck/pull/28) ; [378 tests Python réussis sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40237211717), dont 27 nouveaux, sur données entièrement fictives.** F2-A ajoute un choix d'attention en lecture seule, **pas** un nouveau contrôleur, une commande moteur ni une véritable perception de caméra/microphone. Les motivations représentent des variables simulées ; la sécurité, la puissance de calcul et la batterie réelles du robot n'ont pas été mesurées.
 
 **Sources :** [plan directeur](plan-action.md), [pipeline F1-D](f1d-integrated-passive-demo-2026-10-25.md), modules `autonomy.py`, `passive_intentions.py`, `passive_memory.py`.
 
@@ -41,7 +41,7 @@ Le résultat immuable `PassiveIntent` refuse les noms d'intentions motrices (par
 
 ## 3. Vérifications accessibles
 
-- [x] **27 nouveaux tests F2-A**, [suite complète : 378 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40236949732) avant mise à jour documentaire.
+- [x] **27 nouveaux tests F2-A**, [suite complète : 378 tests Python réussis sur `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40237211717).
 - [x] Premiers événements fictifs `ball` ⇒ proposition `observe`, seconde occurrence ⇒ `idle` ; `unknown` ou conflit ⇒ `inspect` ; événement `knock` ⇒ `listen` ; énergie motivationnelle fictive basse ⇒ `rest` ; absence de source ⇒ `idle`.
 - [x] **Vrais sockets Unix entre processus de test** et `FixtureUnixReader` de F1-B, journal SQLite de F1-C, cerveau `AutonomyBrain`. À chaque cycle, le chemin indépendant de sécurité continue à proposer `halt` faute de garanties de zone/sol.
 - [x] **Un autre processus Python** relit la même SQLite et reconnaît uniquement la familiarité de `ball` comme catégorie, sans réutiliser l'horloge monotone ni identifier une balle précise.
@@ -52,7 +52,7 @@ Pour lancer localement les tests sur Linux ou environnement compatible : `python
 
 ## 4. Décision de sortie et prochaine PR
 
-**F2-A sera terminé au niveau logiciel dès fusion de la PR et CI verte sur `main`.** Ce jalon n'est ni un animal explorateur autonome réel ni un mouvement ou une interaction physique observée.
+**F2-A est terminé au niveau logiciel après fusion de la PR #28 et CI verte sur `main`.** Ce jalon n'est ni un animal explorateur autonome réel ni un mouvement ou une interaction physique observée.
 
 **Prochain lot F2-B, et lui seul :** arbitrage des cinq motivations, cooldown, repos et diversification **mesurée** des intentions successives sur scénarios reproductibles ; toujours sans moteur, caméra réelle ni dialogue permanent. F2-C pourra ensuite traiter les conséquences et préférences en distinguant leur provenance ; F2-D les durées, pannes et budgets CPU.
 
