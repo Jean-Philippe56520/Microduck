@@ -2,6 +2,8 @@
 
 Date : 2026-10-25. Audit documentaire et revue de code, **sans accès au robot physique**. Les valeurs de RAM et stockage libres ne sont **pas mesurées**. Aucune capture d'image privée ou donnée biométrique ne doit être placée dans ce dépôt.
 
+**Mise à jour de cohérence :** le [plan d'action consolidé](plan-action.md) fixe les priorités et les critères de passage. Quatre essais MuJoCo J2e, documentés ci-dessous, ont validé la chaîne de commande et de mémoire **mais pas la locomotion** (au mieux **2,574 mm** de mouvement du tronc). **P0a : diagnostiquer contacts et articulations en lecture seule.** Les anciennes décisions de faisabilité ci-dessous sont conservées comme historique, pas comme une seconde liste de tâches à exécuter.
+
 ## Verdict
 
 Le Microduck permet raisonnablement de viser : mémoire persistante locale, moteur d'autonomie, exploration prudente, observation visuelle événementielle, identification de catégories d'animaux et interaction sociale élémentaire. Il reste à développer et à valider : détection personnalisée d'animaux, identification non biométrique des personnes familières, reconnaissance vocale, exploration sûre en environnement non contrôlé, et intégration du cerveau autonome à robotd. Qwen multimodal se placera initialement sur un PC local.
@@ -122,9 +124,9 @@ dmesg | grep -i rknpu | tail -n 20
 
 Relever aussi la température du SoC, la fréquence CPU, le nombre de ticks moteurs manqués, les performances NPU, les latences d'images, l'autonomie sur batterie, les erreurs de capteurs et la qualité de reconnaissance en éclairage varié. Faire trois mesures : repos ; vision activée ; vision + déplacement. À confronter à la révision matérielle exacte.
 
-## Décisions et prochain travail
+## Décisions issues de l'audit (historique, non priorités actuelles)
 
-1. Concevoir un adaptateur `PerceptionEvent` entre observations simulées, `mediad` et le cerveau de Microduck Companion.
+1. L'adaptateur `PerceptionEvent` est **réalisé pour les démons simulés `robotd` et `tofd`** ; sa liaison à `mediad` et à la perception réelle reste à développer.
 2. Simuler une détection multi-classe (animal/personne/objet) et tester la mémoire, les faux positifs et la perte de capteur.
 3. Préparer une architecture de reconnaissance d'animaux personnalisée sur PC, entraînable avec données locales ; la conversion RKNN sera validée sur la carte réelle.
 4. Associer les interactions humaines à une identité volontaire, sans collecte biométrique par défaut.
@@ -149,7 +151,7 @@ Le prototype `microduck_companion` possède maintenant un contrat `PerceptionEve
 
 Le nouveau module `sim_ipc.py` prépare l'acquisition de `robot.health`, `robot.state` et `tof.frame` par sockets Unix. Les messages de santé et de télémétrie sont validés (délais, formats, horodatage local, cellules ToF et statuts). Une sonde `sim_probe.py` affiche les résultats sans commande moteur et n'attribue jamais la propriété `floor_clear` aux distances ToF.
 
-Lors du développement initial J2a, les tests avaient été exécutés avec des sockets Unix de démonstration, **avant le premier essai des démons officiels en simulation**. Les 65 tests logiciels du dépôt n'établissent donc ni la compatibilité en situation MuJoCo, ni la détection d'obstacle sûre, ni une mesure sur matériel. Ces points restent expressément à vérifier avant toute commande via `robotd`.
+**Historique J2a :** les premiers 65 tests utilisaient des sockets Unix de démonstration, avant le lancement du simulateur officiel. **Depuis J2d/J2e, les commandes bornées et l'arrêt ont bien été testés via `robotd` dans MuJoCo**, mais ce résultat n'établit ni un évitement fiable d'obstacles ni une validation sur matériel physique.
 
 
 ## Mise à jour — pont d'observation MuJoCo en lecture seule
@@ -201,13 +203,13 @@ La nouvelle tentative demande `vx=0,12 m/s` en simulation bornée, après mesure
 
 ## Résultats réels du jalon J2e — 25 octobre 2026
 
-Trois exécutions du **simulateur MuJoCo officiel** à 0,12 m/s, avec zone plane épinglée, contrôle de santé et commande `robot.stop` confirmée, ont montré des variations de position inférieures au seuil de 1 cm :
+**Quatre exécutions** du **simulateur MuJoCo officiel** à 0,12 m/s, avec scène plane épinglée, contrôle de santé et commande `robot.stop` confirmée, ont montré des variations de position inférieures au seuil expérimental de 1 cm :
 
 - [Essai A](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40175133570) : 12 commandes, translation **1,242 mm**, dérive initiale **0,105 mm**.
 - [Essai B](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40175696383) : 12 commandes, translation **0,820 mm**, dérive initiale **0,037 mm**, `policy=walk` sur **11/12** échantillons, vitesse appliquée maximale **0,12 m/s**, aucune limitation signalée.
 - [Essai C](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176018018) : 24 commandes, translation **1,399 mm**, dérive initiale **0,273 mm**, `policy=walk` sur **23/24** échantillons, vitesse appliquée maximale **0,12 m/s** ; `deadman` rapporté dans un échantillon.
 - [Essai D](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176410817) : 24 commandes, translation **2,574 mm**, dérive initiale **0,192 mm**, `walk` sur **23/24** échantillons, vitesse appliquée maximale **0,12 m/s**, arrêt confirmé et statut `WALK_TRANSLATION_ACCEPTANCE=NOT_MET` dans un workflow techniquement réussi (142 tests Python).
 
-Dans chacun des quatre essais, la mémoire SQLite a mémorisé une **absence de progression** comme fait simulé vérifié (`no_progress_observed`), puis modifié faiblement la préférence `explore` de **0 à −0,075**. Les bases de CI sont éphémères ; la persistance d'un lancement à un autre est vérifiée par tests Python, pas par le partage d'une base entre ces trois exécutions.
+Dans chacun des quatre essais, la mémoire SQLite a mémorisé une **absence de progression** comme fait simulé vérifié (`no_progress_observed`), puis modifié faiblement la préférence `explore` de **0 à −0,075**. Les bases de CI sont éphémères ; la persistance d'un lancement à un autre est vérifiée par tests Python, **pas** par le partage d'une base entre ces **quatre** exécutions.
 
-**Verdict :** le chemin d'intention, l'arrêt, les mesures et la mémoire simulée fonctionnent. **La locomotion n'est pas validée**, malgré le choix de la politique `walk` et la vitesse appliquée. Les origines possibles (contacts, adhérence, dynamique du modèle, politique ONNX) restent des hypothèses non vérifiées. Ne pas assimiler ces chiffres à un déplacement en conditions réelles ni modifier les limites OEM sans une analyse ciblée. Pas d'autonomie matérielle mesurée.
+**Verdict après quatre essais :** le chemin d'intention, l'arrêt, les mesures et la mémoire simulée fonctionnent. **La locomotion n'est pas validée**, malgré `walk` et la vitesse appliquée. Les origines possibles (contacts, adhérence, dynamique du modèle, politique ONNX) restent des **hypothèses**, à investiguer en **P0a** sans nouvelle commande motrice. Ne pas assimiler ces millimètres à une marche réelle, ne pas modifier les limites OEM sans analyse ciblée et ne jamais transposer une preuve de scène MuJoCo en preuve de sécurité physique. Pas d'autonomie matérielle mesurée.

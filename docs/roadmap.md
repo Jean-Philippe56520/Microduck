@@ -1,6 +1,8 @@
 # Feuille de route — Microduck Companion
 
-Mise à jour : 2026-10-25. Document de planification : une case cochée indique du code ou des fichiers déjà présents, pas nécessairement une validation sur robot.
+Mise à jour : 2026-10-25. **Les priorités opérationnelles et critères de passage sont désormais définis dans le [plan d'action consolidé](plan-action.md).** Ce document garde l'historique technique et décrit les six phases. Une case cochée indique le niveau de preuve précisé à sa ligne (code, tests logiciels ou MuJoCo), **jamais** une validation sur robot physique sans mention expresse.
+
+**État courant :** 142 tests Python validés sur [GitHub Actions de `main`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176905506). Quatre essais MuJoCo J2e ont confirmé commande, arrêt et mémoire, **mais pas la marche** : 0,820–2,574 mm au lieu du critère initial de 10 mm. **Priorité P0a : contacts des pieds, articulations et dynamique du modèle, d'abord en lecture seule**. [Dernier essai](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176410817).
 
 ## Vision et périmètre
 
@@ -8,7 +10,7 @@ Créer un Microduck discret, curieux, explorateur et social : percevoir, retrouv
 
 Le robot doit conserver les fonctions essentielles sans PC ni Internet. `robotd` reste seul maître des moteurs et de la sécurité. Le modèle Qwen, facultatif, propose des hypothèses ; il ne commande jamais les moteurs et ne certifie jamais une observation. Priorité au Microduck, sans travail pour d'autres matériels à ce stade.
 
-## État vérifié au départ
+## État du socle et écarts restants
 
 - [x] Dépôt de développement, tests Python et GitHub Actions présents.
 - [x] Sources officielles `upstream/microduck` et `upstream/microduck_rl` liées par sous-modules Git sur des révisions précises.
@@ -17,7 +19,8 @@ Le robot doit conserver les fonctions essentielles sans PC ni Internet. `robotd`
 - [x] Treize cas de test automatisés dans `tests/test_autonomy.py` ; les exécutions CI consultées avant ce plan étaient réussies.
 - [x] Audit documentaire du matériel et script `scripts/resource-audit.sh` préparés.
 - [x] Connexion **en lecture seule** du compagnon aux vrais démons `robotd` et `tofd` exécutés en simulation MuJoCo (essai CI 2026-10-25).
-- [ ] Boucle perception-décision-**action** autorisée en MuJoCo ; connexion de `mediad` et perception visuelle.
+- [x] Chaîne **bornée** perception → décision → action via `robotd` → résultat → mémoire démontrée dans MuJoCo (un essai volontaire, locomotion non validée).
+- [ ] Boucle autonome **multi-cycles** et perception visuelle depuis `mediad` ; connexion des véritables pilotes et capteurs physiques non réalisée.
 - [ ] Inférence visuelle chien/chat/personne, reconnaissance individuelle, intégration Qwen.
 - [ ] Mesures et validation sur un Microduck physique.
 
@@ -29,7 +32,8 @@ Les scènes du prototype sont **fictives**. Aucun mouvement réel, capteur réel
 - [x] Le moteur accepte `choose_from_snapshot` ; les données de sécurité manquantes, périmées, contradictoires, de faible confiance ou attribuées à une source non autorisée conduisent à `halt` (avec exception du repos sur batterie basse vérifiée).
 - [x] La mémoire SQLite conserve la provenance `mock` / `simulator` / `sensor` d'une étiquette, et les hypothèses LLM restent distinctes.
 - [x] 40 tests Python passés localement et sur GitHub Actions sur la branche de développement (13 tests historiques + 27 tests de perception).
-- [ ] Lier les événements aux démons du constructeur et **authentifier leur provenance** dans un adaptateur dédié ; le texte `source="sensor"` n'est pas une preuve matérielle.
+- [x] Associer la provenance aux sockets de `robotd`/`tofd` et à la scène épinglée **dans MuJoCo**, avec validation du processus du simulateur.
+- [ ] Établir l'authenticité de mesures de **capteurs physiques** via les vrais pilotes ; le seul texte `source="sensor"` n'est pas une preuve matérielle.
 - [x] Lancer `duck-sim` sur Linux CI, relever sa santé et sa vitesse, puis connecter les observations MuJoCo en lecture seule ([exécution réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40145369078)).
 - [ ] Évaluer les garde-fous avec les capteurs, les pilotes et le matériel physique.
 
@@ -53,10 +57,10 @@ Travaux :
 - [x] `microduck_companion/sim_ipc.py` : client Unix JSON-RPC 2.0 NDJSON avec liste blanche stricte (`robot.health`, `robot.subscribe`, `tof.stream`), délais, validation des réponses et trames ToF 8×8 brutes.
 - [x] `microduck_companion/sim_probe.py` : outil de diagnostic ciblant les sockets locaux créés par `duck-sim` ; aucune commande moteur autorisée.
 - [x] 25 nouveaux tests sur sockets Unix fictifs (22 IPC + 3 sonde), soit **65 tests logiciels** dans le projet. Validation CI à contrôler lors de la fusion.
-- [ ] Démarrage réel de MuJoCo et du `duck-sim` officiel sur Linux/WSL2 (Rust/Cargo, Python 3.12 et téléchargement de dépendances nécessaires).
-- [ ] Vérifier les trames avec les vrais démons simulés, mesurer l'état du contrôleur et le facteur temps réel.
-- [ ] Convertir les lectures vérifiées en `PerceptionSnapshot` avec gestion d'incertitude ; les données ToF ne prouvent pas `floor_clear`.
-- [ ] Développer et tester ensuite les intentions autorisées via `robotd`.
+- [x] Démarrage du vrai `duck-sim` officiel sur **Ubuntu CI** avec Rust/Cargo, Python 3.12 et les politiques ONNX épinglées ; reproductibilité sur poste Linux/WSL2 personnel non encore vérifiée.
+- [x] Lire les trames des vrais démons simulés, mesurer l'état du contrôleur (~50 Hz), le ToF 8×8 et le facteur temps réel (1,00×) sur Ubuntu CI.
+- [x] Convertir les lectures vérifiées en `PerceptionSnapshot` avec gestion d'incertitude ; la **scène plane épinglée** peut produire une attestation limitée à la simulation, jamais le ToF seul.
+- [x] Tester **une intention bornée** `robot.move` puis `robot.stop` via `robotd`, sur MuJoCo seulement ; l'adaptateur pour les intentions générales et le robot physique reste à développer.
 
 **Historique J2a :** les premiers tests utilisaient uniquement de faux sockets. **Mise à jour :** l'exécution CI du 25 octobre a depuis confirmé `robot.health`, `robot.state` et `tof.frame` sur les démons officiels sous MuJoCo. Toujours aucune mesure sur robot physique ni commande motrice issue du compagnon.
 
@@ -68,9 +72,9 @@ Travaux :
 - [x] **81 tests logiciels** exécutés en local : 65 tests existants + 16 tests de pont IPC, données absentes et réponses sûres, dont de faux sockets Unix.
 - [x] Exécuter `scripts/sim-smoke.sh run` dans un environnement Linux GitHub Actions avec Rust/Cargo, Python 3.12, `uv`, sous-modules épinglés et politiques ONNX officielles.
 - [x] Vérifier `robot.health`, `tof.frame`, la cadence effective de `robotd`, la vitesse MuJoCo et les décisions observées sur l'exécuteur CI.
-- [ ] Certifier une zone simulée adaptée sans présumer que le ToF 8×8 voit les escaliers, puis seulement envisager l'adaptateur de commandes autorisées.
+- [x] Vérifier une petite zone plane **uniquement en MuJoCo** par provenance du modèle et vérité terrain ; ne jamais inférer la sécurité des escaliers à partir du ToF 8×8.
 
-**Statut actualisé : codé / tests logiciels verts / observé en MuJoCo officiel (lecture seule) / non validé sur robot.** L'environnement local n'avait pas Rust/Cargo, mais l'exécuteur Linux distant a fourni les prérequis et terminé l'essai avec succès ; le sol reste non certifié.
+**Statut du jalon J2b :** lecture seule validée sur MuJoCo ; aucune validation sur robot. Les étapes ultérieures J2c/J2d ont ensuite attesté la **scène plane virtuelle** et la commande bornée. Le ToF 8×8 ne certifie toujours pas la sécurité du sol réel.
 
 ## Première validation MuJoCo officielle — 25 octobre 2026
 
@@ -90,7 +94,7 @@ L'observation de batterie (~50 % dans le flux) et les données ToF sont **simul�
 
 **Prochain verrou à traiter :** vraie preuve de `safe_area` / `floor_clear` provenant d'un scénario de test MuJoCo borné, puis autorisation conditionnelle de courtes intentions via `robotd`, avec arrêt sûr.
 
-## Phase 2 — Démarrer et observer le simulateur officiel (V1a ; prioritaire)
+## Phase 2 — Démarrer et observer le simulateur officiel (V1a ; vérifiée sur Ubuntu CI)
 
 Plan opérationnel avec critères de sortie et étapes de validation : [J1b → J2 — MuJoCo](mujoco-integration-plan.md).
 
@@ -125,10 +129,10 @@ upstream/microduck/scripts/duck-sim down
 - [x] `sim_zone_probe.py` : déduit `safe_area`, `floor_clear` et une distance à la **limite virtuelle** de la zone ; n'utilise jamais le ToF 8×8 pour inventer un sol sûr, et n'envoie aucun mouvement.
 - [x] 22 nouveaux tests logiciels vérifiant limites, pose, trames invalides, sources périmées, scène non épinglée et processus inconnu ; 103 tests Python réussis sur GitHub Actions.
 - [x] Sonde vérifiée en **véritable MuJoCo** : [CI #40173323079](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40173323079), scène épinglée validée, réserve 0,7134 m, robot debout (tronc z=0,1155 m), décision `explore` sans commande motrice.
-- [ ] Autoriser seulement ensuite une intention courte en simulation, limitée en vitesse/durée et protégée par arrêt/deadman de `robotd`.
-- [ ] Aucun portage des preuves MuJoCo vers un Microduck physique : il faudra des sources de sécurité adaptées au matériel réel.
+- [x] Autoriser **une intention courte et bornée** en simulation (J2d/J2e), avec vérification de zone, arrêt explicite et deadman constructeur préservé.
+**Contrainte non négociable :** aucune preuve de sécurité MuJoCo n'est transposable à un Microduck physique ; des capteurs réels et des essais supervisés restent nécessaires.
 
-**Statut : contrôles de zone codés, 103 tests logiciels verts et preuve sur MuJoCo officiel validée en lecture seule.** Déplacements encore interdits jusqu'à l'ajout d'un adaptateur motrice spécialement borné ; aucune transposition sur robot réel.
+**Statut J2c (historique) :** contrôles de zone codés et validés dans MuJoCo, initialement en lecture seule. La première commande bornée a **ensuite** été validée en J2d. Aucune transposition sur robot réel.
 
 ## J2d — Une seule intention robot.move bornée (25 octobre 2026)
 
@@ -141,14 +145,14 @@ upstream/microduck/scripts/duck-sim down
 
 **Statut : code + tests vérifiés ; chemin de commande et arrêt testés en vrai MuJoCo.** Une intention `explore` a déclenché un essai très bref sans preuve de locomotion effective. Aucun moteur réel ni pilote constructeur modifié.
 
-## J2e — Translation mesurable et mémoire des conséquences (en cours, 25 octobre 2026)
+## J2e — Essais de translation et mémoire des conséquences (mesurés ; locomotion non validée, 25 octobre 2026)
 
 - [x] Revue du constructeur : le seuil par défaut de la politique station debout / marche est `0,05 m/s` ; précédente commande `vx=0,05 m/s` au seuil, seulement 0,185 mm de variation de position du tronc.
 - [x] `sim_walk_trial.py` : essai unique `vx=0,12 m/s`, **24 notifications** espacées de 0,1 s au maximum, observation de la dérive au repos, contrôles des zones et santé avant chaque commande, `robot.stop` confirmé.
 - [x] `episodic_memory.py` : persistance en SQLite des essais simulés ; résultats fiables distingués des hypothèses, préférences qui évoluent doucement et décisions suivantes adaptées. Aucun effet sur les intentions du vrai robot.
 - [x] Tests unitaires avec faux sockets et mémoire persistante, y compris reprise, refus pour zone/connexion, apprentissage négatif et absence d'effet des résultats incertains.
-- [x] Essais sur le **vrai MuJoCo** : [12 commandes, 1,242 mm](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40175133570), [12 commandes avec politique, 0,820 mm](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40175696383), [24 commandes avec politique, 1,399 mm](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176018018). `robot.stop` confirmé ; résultat **`no_progress_observed`**, préférence `explore` 0 → −0,075 pour chaque base éphémère de CI.
-- [ ] Déterminer **pourquoi** la politique OEM `walk` est exécutée à la vitesse prévue mais le tronc ne progresse que de 1 à 1,4 mm ; examiner contacts au sol, actions de la politique et vitesse soutenue sans changer sa sécurité. Aucune validation physique possible pour l'instant.
+- [x] **Quatre essais MuJoCo vérifiés** : [A : 12 commandes, 1,242 mm](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40175133570), [B : 12 commandes, 0,820 mm](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40175696383), [C : 24 commandes, 1,399 mm](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176018018), [D : 24 commandes, 2,574 mm](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176410817). `robot.stop` confirmé ; résultat **`no_progress_observed`**, préférence `explore` 0 → −0,075 **pour chaque base CI éphémère**.
+- [ ] **Priorité P0a :** expliquer pourquoi `walk` est exécutée à la vitesse prévue, mais le tronc n'a progressé que de **0,820 à 2,574 mm** ; examiner en **lecture seule** contacts des pieds, commandes d'articulations, pose et dynamique sans changer la sécurité OEM.
 
 **Portée et verdict :** 142 tests Python dont le renforcement de l'accusé `robot.stop`, et boucle mesure → mémoire réellement exécutée sous MuJoCo. **Locomotion non validée** malgré `policy=walk` 23 fois sur 24 et `max_applied_vx≈0,12 m/s`. Le résultat d'acceptation de la translation reste `NOT_MET` (confirmé sur la [CI finale #40176410817](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40176410817) : 24 commandes, **2,574 mm** de translation, dérive 0,192 mm, `robot.stop` confirmé ; le workflow technique est **réussi** sans déclarer de marche). Un seul essai par lancement sur la branche expérimentale ; la CI principale et le robot réel ne reçoivent aucune commande.
 
@@ -214,17 +218,18 @@ Travaux :
 
 Les documents et les tests doivent toujours distinguer un **test logiciel**, une **simulation** et un **essai sur robot physique**. Ne jamais publier de secret, image, voix, souvenir ou identité personnelle.
 
-## Premier jalon exécutable et ordre de travail
+## Ordre de travail actualisé — voir le plan canonique
 
-**Jalon J1 :** stabiliser les contrats de perception et les gardes de sécurité (phase 1), puis démontrer le démarrage sain d'un seul Microduck virtuel par `duck-sim` (phase 2).
+**Source de vérité de l'exécution :** [plan d'action consolidé](plan-action.md), avec priorités P0–P8, dépendances, critères de passage et trois prochaines PR.
 
-**Jalon J2 :** connecter un événement fictif contrôlé et l'état simulé à la boucle de décisions, exécuter une intention admissible par `robotd` et enregistrer l'effet en mémoire (phase 3).
+- **J1 — cerveau/perception contractuelle :** prototype codé et testé ; la reconnaissance visuelle et les capteurs réels restent à faire.
+- **J2a–J2c — services officiels, zone plane :** vérifiés dans MuJoCo ; pas sur matériel.
+- **J2d–J2e — commande bornée, arrêt, résultat, mémoire SQLite :** exécutés en simulation ; **aucune progression locomotrice démontrée**.
+- **Prochain changement P0a :** instrumentation en lecture seule de la cinématique et des contacts MuJoCo, pour expliquer les quelques millimètres mesurés.
+- **Ensuite :** P0b (diagnostic comparatif), P1a (translation de 10 mm mesurée sur trois essais), P2 (autonomie multi-cycles avec mémoire durable) ; perception non motrice en parallèle si P0 persiste.
+- **Plus tard :** vision/social, Qwen PC facultatif, optimisation Rust/ressources, robot physique, puis automatisations optionnelles.
 
-**Jalon J3 :** remplacer les événements fictifs par une perception mesurée, puis ajouter l'analyse Qwen facultative (phases 4 et 5).
-
-**Jalon J4 :** porter et valider sur matériel réel dès qu'il sera disponible (phase 6).
-
-Le contrat de perception versionné et ses tests sont désormais codés. **Prochaine modification fonctionnelle :** diagnostiquer la quasi-absence de translation malgré la sélection vérifiée de `walk` et instrumenter les contacts / commandes de la politique dans MuJoCo. La chaîne de mesure et la mémoire SQLite sont désormais exécutées et enregistrent correctement les essais infructueux. Suivre le [plan d'intégration MuJoCo J1b → J2](mujoco-integration-plan.md), qui distingue clairement lecture des capteurs, preuve du sol sûr, commandes autorisées et mémoire des conséquences. Pas de fonctionnalité vocale, de reconnaissance individuelle ni de portage Rust avant la première boucle complète en simulation.
+Les essais réussis en simulation ne valident **ni** la navigation domestique **ni** le stockage, la chaleur, la RAM et la batterie du Microduck réel.
 
 ## Références
 
