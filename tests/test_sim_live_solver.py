@@ -38,12 +38,14 @@ class FakeModel:
             ("joint", "trunk_base_freejoint"): 0,
         }
         self.jnt_qposadr = [0]
+        self.jnt_dofadr = [0]
         self.actuator_trnid = []
         for i, name in enumerate(JOINT_NAMES):
             joint_id = i + 1
             self.names[("joint", name)] = joint_id
             self.names[("actuator", name)] = i
             self.jnt_qposadr.append(7 + i)
+            self.jnt_dofadr.append(6 + i)
             self.actuator_trnid.append([joint_id, 0])
 
 
