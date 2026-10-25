@@ -5,6 +5,7 @@ from .perception import PerceptionEvent, PerceptionSnapshot
 from .passive_observations import PassiveObservation, summarize_passive
 from .passive_memory import PassiveMemoryEntry, PassiveObservationJournal
 from .passive_intentions import PassiveIntent, propose_passive_intention
+from .passive_learning import PassiveConsequence, PassiveLearning
 
 __all__ = [
     "AutonomyBrain", "Motivations", "Plan", "Scene", "ExperienceMemory",
@@ -12,4 +13,5 @@ __all__ = [
     "PassiveObservation", "summarize_passive",
     "PassiveMemoryEntry", "PassiveObservationJournal",
     "PassiveIntent", "propose_passive_intention",
+    "PassiveConsequence", "PassiveLearning",
 ]
