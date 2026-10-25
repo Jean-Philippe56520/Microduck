@@ -17,3 +17,9 @@ jobs:
         run: |
           python -m microduck_companion.mock_cycle_demo --database "$RUNNER_TEMP/p2a-memory.sqlite3" --session session-a
           python -m microduck_companion.mock_cycle_demo --database "$RUNNER_TEMP/p2a-memory.sqlite3" --session session-b
+      - name: F1-D integrated passive Unix fixture across two fresh processes
+        run: |
+          # Both calls use a real local Unix fixture socket, but no robotd,
+          # mediad, MuJoCo, media recording, or motor actions.
+          python -m microduck_companion.passive_demo --database "$RUNNER_TEMP/f1d-memory.sqlite3" --session first
+          python -m microduck_companion.passive_demo --database "$RUNNER_TEMP/f1d-memory.sqlite3" --session second
