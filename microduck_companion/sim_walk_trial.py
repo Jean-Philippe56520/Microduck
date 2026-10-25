@@ -11,6 +11,7 @@ from dataclasses import dataclass
 import json
 import math
 from pathlib import Path
+from typing import Callable
 import socket
 import time
 
@@ -74,6 +75,7 @@ def _distance(a: FlatGroundTruth, b: FlatGroundTruth) -> float:
 def run_walk_trial(
     state_dir: str | Path, rl_root: str | Path, memory_path: str | Path, *,
     port: int = 17801,
+    on_policy_sample: Callable[[PolicySample], None] | None = None,
 ) -> WalkTrialResult:
     """One fixed-velocity trial; no repetition, alternate scenes or hardware.
 
@@ -157,9 +159,13 @@ def run_walk_trial(
                             count += 1
                             # robot.state is a read-only notification; the
                             # sampled policy can be "stand", "walk" or "held".
-                            policy_samples.append(parse_policy_sample(
-                                stream.next_notification()
-                            ))
+                            policy_sample = parse_policy_sample(stream.next_notification())
+                            policy_samples.append(policy_sample)
+                            # Optional measurement is INSIDE the stop-protected
+                            # section. Missing/invalid read-only telemetry aborts
+                            # further commands and still confirms robot.stop.
+                            if on_policy_sample is not None:
+                                on_policy_sample(policy_sample)
                             remaining = WALK_PERIOD_S - (time.monotonic() - tick_started)
                             if remaining > 0:
                                 time.sleep(remaining)

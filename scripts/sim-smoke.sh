@@ -116,6 +116,24 @@ if [ "${DUCK_SIM_SHORT_MOVE:-NO}" = YES ]; then
         --state-dir "$DUCK_SIM_STATE" --rl-root "$DUCK_SIM_RL" \
         --port "$DUCK_SIM_PORT" --enable-once
 fi
+# P0b: opt-in single existing J2e walking trial, with read-only joint trace.
+# Never run this branch-only experiment on main or the physical robot.
+if [ "${DUCK_SIM_WALK_COMPARE:-NO}" = YES ]; then
+    if MICRODUCK_SIM_WALK_COMPARE=YES python3 -m microduck_companion.sim_walk_compare \
+        --state-dir "$DUCK_SIM_STATE" --rl-root "$DUCK_SIM_RL" \
+        --memory "$DUCK_SIM_STATE/companion-p0b.sqlite" \
+        --port "$DUCK_SIM_PORT" --enable-once \
+        --output "$DUCK_SIM_STATE/walk-comparison.json"; then
+        printf 'P0B_TRANSLATION=OBSERVED_ONCE (not a validated gait)\n'
+    else
+        status=$?
+        if [ "$status" -eq 3 ]; then
+            printf 'P0B_TRANSLATION=NOT_MET (negative progress confirmed; stop acknowledged)\n'
+        else
+            exit "$status"
+        fi
+    fi
+fi
 # Opt-in J2e: one fixed-speed simulated gait trial with observed SQLite outcome.
 # Never run this on a physical robot; safety checks require pinned MuJoCo.
 if [ "${DUCK_SIM_WALK_TRIAL:-NO}" = YES ]; then
