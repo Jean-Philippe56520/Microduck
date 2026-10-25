@@ -38,11 +38,12 @@ def health(*, healthy=True, battery=50, hz=50):
 
 
 class FakeMotorDaemon:
-    def __init__(self, root, *, acknowledge=True):
+    def __init__(self, root, *, acknowledge=True, refuse_stop=False):
         self.path = Path(root) / "duck-a.sock"
         self.received = []
         self.error = None
         self.acknowledge = acknowledge
+        self.refuse_stop = refuse_stop
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.sock.settimeout(2.)
         self.sock.bind(str(self.path))
@@ -59,7 +60,7 @@ class FakeMotorDaemon:
                             if frame["method"] == "robot.stop":
                                 response = (
                                     {"jsonrpc": "2.0", "id": 1,
-                                     "result": {"accepted": True}}
+                                     "result": {"accepted": not self.refuse_stop}}
                                     if self.acknowledge
                                     else {"jsonrpc": "2.0", "id": 999,
                                           "result": {"accepted": True}}
@@ -171,6 +172,12 @@ class SimMotionTests(unittest.TestCase):
 
     def test_bad_stop_acknowledgment_fails(self):
         fake = self.server(acknowledge=False)
+        with self.assertRaisesRegex(SimMotionError, "stop could not be confirmed"):
+            self.run_mock()
+        self.assertEqual("robot.stop", fake.received[-1]["method"])
+
+    def test_robot_stop_refusal_does_not_count_as_confirmed(self):
+        fake = self.server(refuse_stop=True)
         with self.assertRaisesRegex(SimMotionError, "stop could not be confirmed"):
             self.run_mock()
         self.assertEqual("robot.stop", fake.received[-1]["method"])
