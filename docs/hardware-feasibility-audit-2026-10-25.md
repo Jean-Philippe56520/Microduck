@@ -190,3 +190,10 @@ Ces contrôles sont codés et leur comportement est testé sur données fictives
 `sim_motion.py` et `sim_motion_demo.py` préparent une première impulsion volontaire sur le Microduck virtuel, à vitesse avant fixe de 0,05 m/s pendant environ 0,4 s. Chaque impulsion passe uniquement par `robotd` et dépend de la géométrie MuJoCo épinglée, de la pose et des mesures de santé confirmées. `robot.stop` est requis ; le deadman de la politique constructeur n'est ni désactivé ni remplacé.
 
 **Vérification à ce stade :** 115 tests Python, dont 12 tests de mouvements fictifs sur sockets Unix, **et essai réel en MuJoCo validé** ([CI #40173809463](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40173809463)). 4 notifications `robot.move`, réponse à `robot.stop` vérifiée ; différence de position simulée de **0,185 mm**, insuffisante pour prouver une marche. L'essai ne mesure pas l'arrêt physique ni la gestion d'obstacles. Les conditions expérimentales de sol/position n'existent pas sur le RK3566 physique ; aucune validation des escaliers, RAM, énergie ou température n'est possible par ce test.
+
+
+## J2e — Démarche : seuil du constructeur et protocole de mesure simulé
+
+La sélection entre les politiques ONNX de station debout et de marche dépend de la norme de vitesse de commande. Dans la révision officielle épinglée, la valeur par défaut de séparation est **0,05 m/s** (source : `duck-control/src/policy.rs`). Le premier test de commande à exactement ce seuil a observé seulement 0,185 mm de variation du tronc ; l'hypothèse « politique de station debout » est à confronter aux mesures réelles de la seconde expérience.
+
+La nouvelle tentative demande `vx=0,12 m/s` en simulation bornée, après mesure de dérive. La base SQLite conserve uniquement des conséquences explicitement observées dans le simulateur vérifié ; les résultats incertains n'affectent pas les préférences. Une translation éventuelle ne démontre pas les contacts des pieds, la stabilité d'une démarche ou l'absence de glissade. Aucune commande physique, aucune mesure de l'énergie, de la température, du CPU ou de la RAM réelle n'est produite par cet essai.
