@@ -92,6 +92,9 @@ class PassiveCycleMetrics:
     max_elapsed_ms: float | None
     mean_process_cpu_ms: float | None
     observed_peak_rss_kib: int | None
+    cooldown_blocks: int
+    consecutive_active_repeats: int
+    simulated_motivation_energy: float
 
 
 def _p_nearest(samples: tuple[float, ...], percent: float) -> float | None:
@@ -206,13 +209,14 @@ class PassiveCycleSupervisor:
                 status="storage_unavailable",
                 intention=self._idle("storage_unavailable"),
                 start_ns=start_ns, start_cpu_ns=start_cpu_ns)
+        source_started_ns = self._perf()
         try:
             reading = self.reader.read()
         except Exception:
             return self._report(
                 status="source_exception", intention=self._idle("source_failed"),
                 start_ns=start_ns, start_cpu_ns=start_cpu_ns)
-        source_ms = max(0.0, (self._perf() - start_ns) / 1e6)
+        source_ms = max(0.0, (self._perf() - source_started_ns) / 1e6)
         if source_ms > self.limits.max_read_ms:
             return self._report(
                 status="late_source", intention=self._idle("read_budget_exceeded"),
@@ -284,6 +288,7 @@ class PassiveCycleSupervisor:
     def metrics(self) -> PassiveCycleMetrics:
         elapsed = tuple(e for e, _ in self._samples)
         cpu = tuple(c for _, c in self._samples)
+        rhythm = self.brain.passive_rhythm_metrics()
         return PassiveCycleMetrics(
             cycles_attempted=self._attempted,
             source_events_accepted=self._accepted_events,
@@ -297,4 +302,7 @@ class PassiveCycleSupervisor:
             max_elapsed_ms=max(elapsed) if elapsed else None,
             mean_process_cpu_ms=sum(cpu) / len(cpu) if cpu else None,
             observed_peak_rss_kib=_peak_rss_kib(),
+            cooldown_blocks=rhythm.cooldown_blocks,
+            consecutive_active_repeats=rhythm.consecutive_active_repeats,
+            simulated_motivation_energy=rhythm.simulated_motivation_energy,
         )
