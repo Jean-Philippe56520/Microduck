@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
-import sqlite3
 
 from .episodic_memory import ExperienceMemory
 from .passive_memory import PassiveObservationJournal, _check_wall
@@ -196,7 +195,7 @@ class PassiveLearning:
         """Withdraw one faulty fixture annotation; never invent a new label."""
         if type(observation_id) is not int or observation_id <= 0:
             raise ValueError("observation_id must be a positive integer")
-        if reason not in _CORRECTION_REASONS or type(reason) is not str:
+        if type(reason) is not str or reason not in _CORRECTION_REASONS:
             raise ValueError("correction requires a bounded reason")
         with self._memory.conn:
             changed = self._memory.conn.execute("""
