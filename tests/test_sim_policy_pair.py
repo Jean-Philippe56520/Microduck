@@ -89,7 +89,14 @@ class ActivePolicyTests(unittest.TestCase):
         }))
         for n in MODEL_NAMES.values():
             (release / n).write_bytes(b"dummy-onnx" * 200)
-        self.config = self.state / "robotd.toml"
+        self.config = self.state / "robotd-duck-a.toml"
+        # The OEM launcher writes a generic template and then a per-duck
+        # --params file. A live policy load changes the per-duck file only.
+        (self.state / "robotd.toml").write_text(
+            '[policy]\nenabled = true\n'
+            + 'walk = "' + str(self.state / "policies/current/alpha_walking.onnx") + '"\n'
+            + 'stand = "' + str(self.state / "policies/current/alpha_stand.onnx") + '"\n'
+        )
         self.roles = {
             "alpha": {"walk": "alpha_walking.onnx",
                       "stand": "alpha_stand.onnx"},
