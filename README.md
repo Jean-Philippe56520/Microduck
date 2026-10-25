@@ -121,3 +121,20 @@ python -m microduck_companion.sim_zone_probe \
 ```
 
 Une pose incertaine, un processus inconnu, une source périmée ou une scène modifiée donnent `halt`. Le script `scripts/sim-smoke.sh` exécute désormais cette sonde après les vérifications initiales. **Ce jalon ne délivre aucune commande `robot.move`.** La [validation officielle MuJoCo #40173323079](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40173323079) a **réussi** : scène certifiée, zone sûre, tronc à (0,0257 ; 0,0069 ; 0,1155) m, réserve de 0,7134 m, décision du cerveau `explore` et aucune commande motrice. Les **103 tests Python** sont également réussis. Prochaine étape : une seule impulsion de mouvement, limitée en vitesse et en durée et envoyée uniquement à `robotd`.
+
+
+## J2d — Impulsion limitée via robotd (expérience MuJoCo)
+
+`microduck_companion/sim_motion.py` contient une **unique** démonstration de mouvement, non réutilisable sur robot physique. Après autorisation par le cerveau et preuve de la zone MuJoCo plane officielle, il adresse des notifications `robot.move` à `robotd` avec une vitesse avant **fixe de 0,05 m/s**, quatre impulsions séparées de 0,1 s ; ni rotation ni déplacement latéral. Le client revérifie la scène, la position, la réserve de zone, la batterie et la cadence `robotd` avant **chaque** notification. Toute perte de preuve arrête les nouvelles notifications, et un appel `robot.stop` est envoyé et vérifié. Le deadman constructeur (~500 ms) demeure actif en dernier recours.
+
+**Aucun mouvement n'est envoyé par défaut**, y compris dans les workflows manuels habituels. Pour un essai unique sur la machine Linux où le simulateur officiel est déjà en fonctionnement :
+
+```sh
+MICRODUCK_SIM_MOTION_TEST=YES python -m microduck_companion.sim_motion_demo \
+  --enable-once --state-dir "$HOME/.cache/duck-sim-companion" \
+  --rl-root "$PWD/upstream/microduck_rl" --port 17801
+```
+
+Le script `sim-smoke.sh` ne lance cette démonstration que si `DUCK_SIM_SHORT_MOVE=YES` est explicitement présent. Le workflow GitHub Actions ne définit cette variable que pour la branche expérimentale `feat/one-bounded-sim-intent-20261025` ; sur `main`, il reste en lecture seule.
+
+**Essai MuJoCo effectué et réussi :** [GitHub Actions #40173809463](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40173809463), 115 tests Python verts, `robotd` sain à ~50 Hz, 1,00× temps réel, **4 notifications `robot.move`**, `robot.stop` confirmé. Évolution observée du tronc : **0,0001848 m (0,185 mm)** en ~0,36 s de temps simulé. Cette très faible variation ne prouve **pas** une marche ; elle peut provenir de la stabilisation en posture. Aucune navigation autonome, aucun évitement d'objets mobiles et aucune validation physique.

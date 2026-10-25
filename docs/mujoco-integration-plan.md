@@ -140,6 +140,12 @@ Le centre de test est l'origine de la scène. Rayon maximal 0,90 m, marge d'enco
 
 **Acceptation D :** en simulation stable et zone certifiée, le compagnon peut demander au robot de regarder puis, si les conditions sont réunies, effectuer un mouvement limité et s'arrêter. Les refus de `robotd` sont respectés et consignés.
 
+## Premier essai J2d — ordre moteur strictement borné (statut en cours)
+
+La PR J2d introduit `sim_motion.py`, séparé de la perception et des contrôleurs OEM. Après validation explicite du cerveau `explore` et de la zone plane MuJoCo épinglée, un client envoie à `robotd` au plus **4 notifications `robot.move`** à 0,05 m/s vers l'avant, avec 0,1 s entre deux et une durée totale ~0,4 s. Les validations de scène/processus/pose et de santé moteur sont renouvelées avant chaque notification ; une réponse `robot.stop` sans erreur est obligatoire. En cas d'échec de liaison, aucun nouveau mouvement n'est émis ; l'expiration constructeur des intentions (~500 ms) reste une protection de dernier ressort.
+
+Le contrôle d'exécution exige deux autorisations explicites (paramètre CLI et variable d'environnement). Le workflow sur la branche principale ne les émet pas ; l'essai CI est limité à la branche expérimentale. **Validation CI [#40173809463](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40173809463) :** 115 tests Python, MuJoCo sain à 1,00×, 4 notifications `robot.move`, `robot.stop` confirmé, et variation positionnelle du tronc de **0,0001848 m** sur 0,36 s simulée. **La communication motrice et le stop sont validés en simulation, pas le déplacement effectif**, car cette variation de 0,185 mm peut provenir du maintien d'équilibre. L'essai ne mesure ni collisions en maison, ni comportement autour d'un animal.
+
 ## Lot E — Boucle d'autonomie observable et apprentissage
 
 **Livrable :** démonstration reproductible entièrement locale, sans Qwen.

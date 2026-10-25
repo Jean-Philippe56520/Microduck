@@ -103,4 +103,11 @@ python3 -m microduck_companion.sim_probe --state-dir "$DUCK_SIM_STATE"
 python3 -m microduck_companion.sim_observer --state-dir "$DUCK_SIM_STATE"
 python3 -m microduck_companion.sim_zone_probe --state-dir "$DUCK_SIM_STATE" \
     --rl-root "$DUCK_SIM_RL" --port "$DUCK_SIM_PORT"
+# This double-opt-in is valid ONLY for the verified flat-floor simulator.
+# On main/manual smoke runs it is disabled; no movement is emitted by default.
+if [ "${DUCK_SIM_SHORT_MOVE:-NO}" = YES ]; then
+    MICRODUCK_SIM_MOTION_TEST=YES python3 -m microduck_companion.sim_motion_demo \
+        --state-dir "$DUCK_SIM_STATE" --rl-root "$DUCK_SIM_RL" \
+        --port "$DUCK_SIM_PORT" --enable-once
+fi
 printf 'Smoke test completed; official simulator is being stopped.\n'
