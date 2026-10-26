@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**EX1 — journal de cycle d'intention fictif ([PR #70](https://github.com/Jean-Philippe56520/Microduck/pull/70), [CI 1 111 tests, 19 ignorés](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40410788233)) :** [contrat et limites](ex1-mock-experience-ledger-2026-10-26.md). Adaptateur F2 `PassiveIntent` → journal `proposed/mock_executed/refused/interrupted` dans la même `ExperienceMemory` SQLite, sans causalité ni récompense, sans commande ou conséquence réelle. EX2 reste prévu, Cat-A2b demeure prioritaire.
+
+
 **EX0 — nouvelle orientation cognitive documentée, aucun code livré :** [plan d'apprentissage par l'expérience](kwipi-experiential-learning-plan-2026-10-26.md). Un événement doit être distingué d'une intention et d'une action confirmée ; une conséquence observée n'est pas automatiquement causée par la dernière action. EX1 contrat d'épisodes, EX2 attribution prudente, EX3 préférences réversibles sur fixtures, puis Qwen/affordances, gestes OEM et validation réelle sous conditions. **Cat-A2b reste la prochaine preuve de perception attendue**, aucun apprentissage sensorimoteur ou langage réel validé.
 
 
