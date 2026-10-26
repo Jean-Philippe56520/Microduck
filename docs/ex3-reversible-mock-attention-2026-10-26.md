@@ -1,6 +1,6 @@
 # EX3 — Tendances d'attention réversibles sur expériences fictives
 
-**26 octobre 2026 — [PR #72](https://github.com/Jean-Philippe56520/Microduck/pull/72) : CI hôte [#40415274293](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40415274293) réussie (1 175 tests exécutés, 19 ignorés, zéro échec dont 36 tests EX3), sur fixtures uniquement.** Le robot physique reste absent, et aucune expérience EX1/EX2 n'est une exécution `robotd` authentifiée. Ce lot démontre seulement que **la mémoire peut modifier légèrement une future proposition cognitive F2**, sans transformer une corrélation en cause, ni une réaction sociale en récompense.
+**26 octobre 2026 — [PR #72](https://github.com/Jean-Philippe56520/Microduck/pull/72) : CI hôte [#40415345335](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40415345335) réussie (1 159 tests exécutés, 19 ignorés, zéro échec dont 20 tests EX3), sur fixtures uniquement.** Le robot physique reste absent, et aucune expérience EX1/EX2 n'est une exécution `robotd` authentifiée. Ce lot démontre seulement que **la mémoire peut modifier légèrement une future proposition cognitive F2**, sans transformer une corrélation en cause, ni une réaction sociale en récompense.
 
 ## Objectif et niveaux de preuve
 
