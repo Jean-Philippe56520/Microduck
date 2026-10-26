@@ -1,0 +1,50 @@
+name: M1-B2 host ONNX public-media comparison
+on:
+  pull_request:
+    paths:
+      - microduck_companion/m1b2_host_embeddings.py
+      - tests/test_m1b2_host_embeddings.py
+      - .github/workflows/m1b2-host-embeddings.yml
+      - docs/m1b2-host-embeddings-2026-10-26.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare-public-descriptors:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate offline M1-B2 contract
+        run: python -m unittest discover -s tests -p 'test_m1b2_host_embeddings.py' -v
+      - name: Install ONLY host-only decoders and ONNX CPU runtime
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0 numpy==1.26.4 onnxruntime==1.21.0 imageio-ffmpeg==0.6.0
+      - name: Fetch SHA-pinned research weights into ephemeral CI runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 120 \
+            --output "$RUNNER_TEMP/mobilenetv2-12.onnx" \
+            "https://huggingface.co/onnxmodelzoo/mobilenetv2-12/resolve/main/mobilenetv2-12.onnx"
+          echo "c0c3f76d93fa3fd6580652a45618618a220fced18babf65774ed169de0432ad5  $RUNNER_TEMP/mobilenetv2-12.onnx" | sha256sum --check
+          curl --fail --location --retry 2 --max-time 120 \
+            --output "$RUNNER_TEMP/yamnet.onnx" \
+            "https://huggingface.co/audiomagic/yamnet-onnx/resolve/f25b741c2f0bdc6d7e6db24b5fddda23347dbafd/yamnet.onnx"
+          echo "d3835ffbbd4a1bb3e777f0ca217b5007907f5171dd5d17c4236b95b2af8f908e  $RUNNER_TEMP/yamnet.onnx" | sha256sum --check
+      - name: Measure SAME-FILE transformations vs cross-file proxy on CC0 media
+        env:
+          OMP_NUM_THREADS: '1'
+          OPENBLAS_NUM_THREADS: '1'
+        run: |
+          # Public file content fetched in RAM; no media/weights committed.
+          # 12 real Commons photos: six validation + six test. 2 public
+          # environmental sound recordings: diagnostic only, NO audio test
+          # generalisation or physical instance identification claimed.
+          python -m microduck_companion.m1b2_host_embeddings --public-cc0 \
+            --image-model "$RUNNER_TEMP/mobilenetv2-12.onnx" \
+            --audio-model "$RUNNER_TEMP/yamnet.onnx"
