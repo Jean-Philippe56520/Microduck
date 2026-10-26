@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**EX3 — tendances d'attention fictives réversibles (branche en CI) :** [code, tests, limitations](ex3-reversible-mock-attention-2026-10-26.md). Un `SELECT` EX1/EX2 déduit un biais d'attention F2 borné, optionnel, annulable par correction ; sessions distinctes requises, aucune récompense/causalité/acte physique. `kwipi_journal --trend` permet de consulter les statistiques sans autre service. Cat-A2b et validation physique restent inchangées.
+
+
 **EX2 — Journal de Kwipi consultable à la demande ([PR #71](https://github.com/Jean-Philippe56520/Microduck/pull/71), [CI hôte 1 139 tests, 19 ignorés, zéro échec](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40413719554)) :** [contrat et tests](ex2-mock-effects-kwipi-journal-2026-10-26.md). Comparaison d'effets artificiels avant/après sur EX1 uniquement et interprétation conservatrice : changement observé en fixture ≠ preuve de cause. Lecteur JSONL/CSV ouvrant une SQLite existante en mode lecture seule ; aucun capteur, moteur, récompense ou télémétrie continue. Priorité Cat-A2b conservée, EX3 et robot physique non validés.
 
 
