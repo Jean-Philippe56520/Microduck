@@ -371,6 +371,43 @@ class GroupedMemoryTests(unittest.TestCase):
             finally:
                 seconddb.close()
 
+    def test_reopening_with_tighter_limits_trims_old_signatures_and_groups(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/"fixture-limits.sqlite3"
+            original=ExperienceMemory(path)
+            try:
+                m=MultiviewPatternMemory(original)
+                a=m.observe_image(square(),now_wall_epoch_s=START)
+                m.observe_image(
+                    square(top=16,left=16),now_wall_epoch_s=START+1,
+                    group_hint=a.group_id,synthetic_same_source_claim=True,
+                )
+                m.observe_image(random_tiles(3),now_wall_epoch_s=START+2)
+                m.observe_audio(tone(),now_wall_epoch_s=START+3)
+                self.assertEqual(3,m.stats()["groups"])
+                self.assertEqual(4,m.stats()["signatures"])
+            finally:
+                original.close()
+            reopened=ExperienceMemory(path)
+            try:
+                stricter=MultiviewPatternMemory(reopened,MultiviewLimits(
+                    max_groups=2,max_signatures=2,
+                    max_signatures_per_group=1,
+                    max_fingerprint_bytes=128,
+                ))
+                self.assertLessEqual(stricter.stats()["groups"],2)
+                self.assertLessEqual(stricter.stats()["signatures"],2)
+                self.assertLessEqual(
+                    stricter.stats()["fingerprint_bytes"],128,
+                )
+                self.assertEqual(0,reopened.conn.execute("""
+                    SELECT COUNT(*) FROM m1b_signatures s
+                    LEFT JOIN m1b_groups g ON g.id=s.group_id
+                    WHERE g.id IS NULL
+                """).fetchone()[0])
+            finally:
+                reopened.close()
+
     def test_all_safety_claims_remain_false_even_when_repeated(self):
         one=self.store.observe_image(square(),now_wall_epoch_s=START)
         for field,value in (
