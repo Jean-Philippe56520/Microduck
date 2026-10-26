@@ -1,6 +1,6 @@
 # M1-B — Mémoire de motifs multi-vues, capacité configurable et premier banc public CC0
 
-**26 octobre 2026 — [PR #50](https://github.com/Jean-Philippe56520/Microduck/pull/50), chantier expérimental logiciel.** Pas de Microduck physique, aucune prise de vue ni écoute réelle, aucune identification individuelle, aucun appel à Qwen. Le code M1-A reste la référence historique ; le nouveau stockage M1-B n'est pas automatiquement déployé ni branché aux services constructeur.
+**26 octobre 2026 — [PR #50](https://github.com/Jean-Philippe56520/Microduck/pull/50) fusionnée, chantier expérimental logiciel.** Pas de Microduck physique, aucune prise de vue ni écoute réelle, aucune identification individuelle, aucun appel à Qwen. Le code M1-A reste la référence historique ; le nouveau stockage M1-B n'est pas automatiquement déployé ni branché aux services constructeur.
 
 ## 1. Pourquoi sortir du plafond de 256 empreintes ?
 
@@ -71,7 +71,7 @@ Aucun service OEM, Qwen/Ollama réel, transmission d'image/voix privée, command
 
 ## 6. Suites et critères d'arrêt
 
-La dernière [CI Python M1-B](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40303522130) valide **925 tests Python** et **4 tests Rust**. Ces tests comprennent le cas d'une réouverture avec des plafonds abaissés ; ils ne prouvent aucune performance sur le RK3566.
+La [CI après fusion sur main](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40304109080) valide **925 tests Python** et **4 tests Rust**. Ces tests comprennent le cas d'une réouverture avec des plafonds abaissés ; ils ne prouvent aucune performance sur le RK3566.
 
 **M1-B prouve sur hôte uniquement :** corrigé 256 global de M1-A, groupes multi-empreintes de fixtures avec limites paramétrables et eviction, détection prudente des ambiguïtés, données publiques CC0 disponibles et erreurs mesurées, tests Python, deux processus et un stress de 512 cycles artificiels. **M1-B ne prouve pas :** identification d'objets réels dans de nouvelles vues, reconnaissance d'un animal ou son à travers le bruit, biométrie, fonctionnement embarqué ou absence de saturation du stockage système.
 
