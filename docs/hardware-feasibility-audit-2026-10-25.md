@@ -88,6 +88,12 @@ Le [contrat F6-A](f6a-embedded-readiness-2026-10-26.md), fusionné via [PR #45](
 
 Les sockets OEM `/run/robotd.sock`, `/run/mediad/media.sock` et `/run/tofd/tof.sock` sont inventoriés, **jamais contactés** par ce lot ; les moteurs, caméras, ToF, réseau et Qwen ne sont pas activés. Cette documentation ne mesure ni RAM/CPU libre, charge NPU, surface du stockage eMMC utilisable, thermie, batterie, cadence de la boucle motrice ou latence sur robot. L'audit `scripts/resource-audit.sh` reste nécessaire **sur unité physique** avant tout portage ou installation.
 
+## Addendum F6-B — 26 octobre 2026 (comparaison de calcul hôte, aucun portage)
+
+La [PR #46](https://github.com/Jean-Philippe56520/Microduck/pull/46) étudie la **seule expression numérique de score passif** `PassiveRhythm._score` en Rust standard (programme expérimental indépendant) et compare ses résultats au Python existant. [CI hôte Linux](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40256023791) : **841 tests Python**, **4 tests Rust** et **1 500 cas de parité exacte**. Sur un banc de **120 000 scores**, la boucle Python a pris **38,031 ms** puis **32,587 ms** ; l'expérience Rust **3,503 ms** puis **2,060 ms**. Les RSS **de processus hôte entiers** mesurés séparément étaient **17 068 Kio** en Python et **2 132 Kio** en Rust minimal.
+
+**Ces chiffres ne représentent pas deux cerveaux de même périmètre :** le programme Rust ne charge aucune base SQLite, perception, protections, interfacing OEM ou réseau, tandis que Python charge l'interpréteur et le module. On ne doit **pas** extrapoler l'écart de temps ou de mémoire à une marge RAM RK3566, à une durée de batterie, ni à la cadence de `robotd`. **Décision F6-B : aucun portage Rust intégré pour l'instant**, attendre l'audit matériel réel et un protocole complet à charge égale. [Rapport méthodologique F6-B](f6b-python-rust-score-study-2026-10-26.md).
+
 ## Verdict
 
 Le Microduck permet raisonnablement de viser : mémoire persistante locale, moteur d'autonomie, exploration prudente, observation visuelle événementielle, identification de catégories d'animaux et interaction sociale élémentaire. Il reste à développer et à valider : détection personnalisée d'animaux, identification non biométrique des personnes familières, reconnaissance vocale, exploration sûre en environnement non contrôlé, et intégration du cerveau autonome à robotd. Qwen multimodal se placera initialement sur un PC local.
