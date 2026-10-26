@@ -1,5 +1,7 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**Sous-lot experimental M1-B2 en branche, avant M1-C :** benchmark public CC0 hote et facultatif, sans appel PC/Qwen ni modification de la memoire persistante M1-B : signatures existantes vs sorties classe MobileNetV2 et embeddings audio YAMNet, seuil visuel sur validation seulement, essais de rotation/recadrage/bruit/volume/decalage, CPU/RSS et rejet de mauvaises correspondances. Deux sons et des fichiers photo distincts ne permettent aucune conclusion d'identite. [Protocole M1-B2](m1b2-host-embeddings-2026-10-26.md). Aucun modele retenu pour le RK3566 avant les mesures physiques.
+
 **Référence unique pour les prochains travaux · version du 26 octobre 2026 · dépôt `Jean-Philippe56520/Microduck` · branche de référence `main`.**
 
 **Décision : priorité à l'autonomie cognitive et aux perceptions *sans déplacement*.** Le diagnostic de locomotion P0a–P0j est conservé, mais les nouveaux essais moteurs sont **mis en attente**, pas déclarés résolus. Le précédent ordre P0 → P1 → P2 est archivé dans [l'ancien plan](plan-action-historique-2026-10-25.md). La [roadmap](roadmap.md) conserve les résultats historiques, le [plan MuJoCo](mujoco-integration-plan.md) décrit les procédures et l'[audit matériel](hardware-feasibility-audit-2026-10-25.md) répertorie les limites connues. **Ce fichier définit seul les phases et lots prioritaires.**
