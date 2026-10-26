@@ -11,7 +11,7 @@ import unittest
 from microduck_companion.autonomy import AutonomyBrain
 from microduck_companion.episodic_memory import ExperienceMemory
 from microduck_companion.oem_passive_fixture import (
-    LANES, OEMFixtureInspector,
+    LANES, OEMFixtureInspector, OEMFixtureMetadata,
 )
 from microduck_companion.passive_memory import PassiveObservationJournal
 from microduck_companion.sim_ipc import Notification
@@ -236,6 +236,36 @@ class R1OEMFixtureTests(unittest.TestCase):
             self.assert_untrusted(r, lane=lane)
         with self.assertRaises(ValueError):
             self.gate.unavailable("robot.move", now_monotonic_s=NOW)
+
+    def test_direct_report_cannot_forge_verified_sensor_identity_or_actions(self):
+        base = {
+            "lane": "webrtc_metadata_fixture",
+            "status": "metadata_unverified",
+            "received_monotonic_s": NOW,
+        }
+        bad_cases = (
+            {"source_authenticated": True},
+            {"motion_authorized": True},
+            {"motor_commands_issued": 1},
+            {"pc_requests_issued": 1},
+            {"raw_media_stored_bytes": 4},
+            {"category": "dog"},
+            {"status": "identified"},
+            {"lane": "robotd"},
+            {"timestamp_basis": "authenticated_sensor"},
+            {"metadata_bytes": 4097},
+            {"duck_box_count": 33},
+            {"sequence": True},
+            {"sample_age_s": float("nan")},
+            {"sample_age_s": 3.},
+            {"advertised_media_bytes": 2**30},
+            {"tof_zone_count": 64},
+        )
+        for change in bad_cases:
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                OEMFixtureMetadata(**(base | change))
+        allowed = OEMFixtureMetadata(**base)
+        self.assert_untrusted(allowed, lane="webrtc_metadata_fixture")
 
     def test_bad_local_monotonic_clock_never_yields_sensing(self):
         for bad in (-1., True, float("nan"), float("inf"), "now"):
