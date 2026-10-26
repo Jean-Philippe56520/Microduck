@@ -30,8 +30,7 @@ class ReuseFirstProtocolTests(unittest.TestCase):
                 self.assertIn(phrase.casefold(), protocol.casefold())
         self.assertIn("development-reuse-protocol.md", agent)
         self.assertIn("upstream/microduck", agent)
-        self.assertIn("autonomie", agent.casefold()) if False else self.assertIn(
-            "protocole", agent.casefold())
+        self.assertIn("protocole", agent.casefold())
 
     def test_pull_request_template_requires_a_reuse_justification(self):
         template = (ROOT / ".github/pull_request_template.md").read_text(
