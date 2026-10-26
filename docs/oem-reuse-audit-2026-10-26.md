@@ -1,5 +1,8 @@
 # Audit de réutilisation OEM — autonomie et mémoire Microduck Companion
 
+**Complément Cat-A2a (26/10/2026) :** [contrat d'évaluation de boîtes](cata2-coco-bbox-host-2026-10-26.md). Le snapshot OEM épinglé `942e58e3aa6dbb28e7037203fff11866122c7567` possède `duck-detect` (cible d'autres Microducks), `mediad` (caméra) et `robotd` (sécurité/moteurs) ; **aucune de ces fonctions n'est remplacée**. Réutilisation des poids Cat-A YOLOX-Nano SHA/Apache-2.0, extraction et seuil 0,25 ; création ciblée de l'appariement IoU/AP50 non présent dans le banc initial, **sans modèle nouveau, seconde caméra, base, moteur ou inférence embarquée**. Les photos COCO VAL sont réelles mais **hauteur caméra inconnue** ; aucun résultat sur vrai point de vue bas/robot. PR OEM ouvertes non fusionnées, projets tiers C3 en veille, sans import.
+
+
 **Complément P-C (26/10/2026) :** vérification au commit OEM épinglé `942e58e3aa6dbb28e7037203fff11866122c7567` : `pet-detect/src/worker.rs` partage l'unique micro `arecord` pour la caresse et la sentinelle `SoundEvent::Noise/Voice`; `robotd/src/main.rs` consomme `PettingEvent::Start` et joue `coo` sous protections, alors que les sons ambiants sont seulement journalisés. `robotd/src/idle_head.rs` fournit déjà les mouvements d'inactivité et `sounds/src/personality.rs` des traits de voix stables. **Réutiliser** ces propriétaires ; **adapter uniquement** une lecture fictive P-A/B/F4 après décision via `oem_expression_hints.py`; **ne créer** ni second micro, synthé, commande, robotd, table SQL ou moteur M9. [Détails et limites](kwipi-oem-expressions-pc-2026-10-26.md). Aucune réaction réelle validée.
 
 

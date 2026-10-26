@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**Addendum Cat-A2a (26/10/2026) :** [banc de localisation 24 photos COCO VAL](cata2-coco-bbox-host-2026-10-26.md). Sur runner Python/ONNX CPU seulement, évaluateur de boîtes YOLOX Nano existant et fichiers temporaires de poids/image (pas d'archive ni de robot). [Mesures hôte CI #40400991178](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40400991178) : médiane ONNX CPU **23,037 ms**, p95 **24,504 ms**, pic RSS du **processus entier 174 068 Kio**, 24 inférences sur JPEG COCO, durée **3,097 s** avec récupération des images (hors téléchargement initial des poids/annotations). **Ces mesures ne sont pas des mesures sur le RK3566**, et n'incluent pas l'acquisition caméra OEM. **Aucune caméra physique à ~25 cm, performance NPU, RAM libre, chaleur, Wi-Fi, autonomie, charge `mediad` ou sécurité `robotd` mesurée.** `scripts/resource-audit.sh` sur robot final et validation graduelle nécessaires ; pas de déploiement OEM ou SQLite.
+
+
 **Addendum P-C, expressions (26/10/2026) :** `oem_expression_hints.py` est une simple fonction de description, sans nouvelle acquisition, modèle IA, moteur ou audio **dans les fixtures**. Cela **ne mesure aucun coût sur RK3566** (RAM/RSS, charge audio `pet-detect`, CPU, batterie, chaleur, stockage et latence sont inconnus). Les réactions OEM à `petting_start` restent sous `robotd`, le portage P-C2 est différé. `scripts/resource-audit.sh` sur robot reste obligatoire.
 
 
