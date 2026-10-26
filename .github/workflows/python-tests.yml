@@ -87,3 +87,16 @@ jobs:
           # Uses fictional /proc/mountinfo strings: no disk, systemd, network,
           # daemon socket, camera, ToF, Ollama, motor or physical hardware.
           python -m microduck_companion.f6a_preflight_demo
+      - name: F6-B parity experiment Python vs isolated Rust scorer
+        run: |
+          # Uses ONLY GitHub runner toolchain, no extra crates, no Yocto,
+          # OEM services, sensors, external network, LLM or motor commands.
+          rustc --version
+          rustc --edition=2021 --test experiments/f6b/passive_score.rs -o "$RUNNER_TEMP/f6b-rust-tests"
+          "$RUNNER_TEMP/f6b-rust-tests"
+          rustc --edition=2021 -O experiments/f6b/passive_score.rs -o "$RUNNER_TEMP/f6b-score"
+          python -m microduck_companion.f6b_score_probe --rust-bin "$RUNNER_TEMP/f6b-score" --benchmark
+          # Independent host process RSS. Packaging differs: NOT a fair
+          # whole-brain, battery, ARM, or hardware-resource comparison.
+          /usr/bin/time -f "F6B python_host_elapsed_s=%e python_host_peak_rss_kib=%M" python -m microduck_companion.f6b_score_probe --python-only-bench
+          /usr/bin/time -f "F6B rust_host_elapsed_s=%e rust_host_peak_rss_kib=%M" "$RUNNER_TEMP/f6b-score" --bench
