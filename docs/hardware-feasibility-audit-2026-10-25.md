@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**Addendum Cat-A2b (26/10/2026) :** [contrat de captures basses locales](cata2b-private-low-camera-protocol-2026-10-26.md), aucun robot ni caméra monté/testé. Les hauteurs acceptées **100–300 mm sont des déclarations de centre optique** appuyées par un fichier de règle privé et son SHA (intégrité d'octets, **pas métrologie physique vérifiée**), et non la hauteur totale de Kwipi. Aucun corpus bas réellement fourni, aucune inférence sur robot, aucune mesure CPU/RSS/NPU/thermie/stockage/consommation en conditions embarquées. Si un futur rapport Cat-A2b comporte des temps/RSS, ils seront **strictement hôte PC**. La porte `scripts/resource-audit.sh` sur le RK3566 reste obligatoire avant tout portage ou activation de caméra/robotd.
+
+
 **Addendum Cat-A2a (26/10/2026) :** [banc de localisation 24 photos COCO VAL](cata2-coco-bbox-host-2026-10-26.md). Sur runner Python/ONNX CPU seulement, évaluateur de boîtes YOLOX Nano existant et fichiers temporaires de poids/image (pas d'archive ni de robot). [Mesures hôte CI #40400991178](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40400991178) : médiane ONNX CPU **23,037 ms**, p95 **24,504 ms**, pic RSS du **processus entier 174 068 Kio**, 24 inférences sur JPEG COCO, durée **3,097 s** avec récupération des images (hors téléchargement initial des poids/annotations). **Ces mesures ne sont pas des mesures sur le RK3566**, et n'incluent pas l'acquisition caméra OEM. **Aucune caméra physique à ~25 cm, performance NPU, RAM libre, chaleur, Wi-Fi, autonomie, charge `mediad` ou sécurité `robotd` mesurée.** `scripts/resource-audit.sh` sur robot final et validation graduelle nécessaires ; pas de déploiement OEM ou SQLite.
 
 
