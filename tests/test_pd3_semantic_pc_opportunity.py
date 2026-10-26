@@ -350,6 +350,41 @@ class PD3Tests(unittest.TestCase):
                 now_monotonic_s=now,pc_opt_in=True)
             self.assertEqual("expired_f5_request",denied.reason)
 
+    def test_malformed_snapshot_and_current_frame_expiry_fail_closed(self):
+        _,adv,p,d,ctx=self.prepared(optin=True)
+        malformed=PassiveRead("ok",None,2,"mock_fixture_unix")
+        for prev,curr,now in (
+            (malformed,reading(),NOW+.1),
+            (reading(seq=1,at=NOW-1),malformed,NOW+.1),
+            (reading(seq=1,at=NOW-1),reading(),NOW+1.2),
+            (reading(seq=1,at=NOW-1),reading(at=NOW+.4),NOW+.1),
+        ):
+            with self.subTest(now=now,previous=prev,current=curr):
+                r=assess_mock_pc_opportunity(
+                    adv,portrait=p,disposition=d,
+                    previous_read=prev,current_read=curr,
+                    situation=ctx,motivations=self.brain.motives,
+                    now_monotonic_s=now,pc_opt_in=True)
+                self.assertEqual("invalid_or_private_mock_samples",r.reason)
+                self.assertFalse(r.eligible_for_transport)
+                self.assertEqual(0,r.pc_requests_issued)
+
+    def test_failed_and_fake_pc_reading_statuses_cannot_upgrade_scene(self):
+        _,adv,p,d,ctx=self.prepared(optin=True)
+        for value in (
+            reading(status="unavailable"),
+            reading(channel="fake_hardware"),
+            reading(source="sensor"),
+        ):
+            with self.subTest(value=value):
+                r=assess_mock_pc_opportunity(
+                    adv,portrait=p,disposition=d,
+                    previous_read=reading(seq=1,at=NOW-1),
+                    current_read=value,situation=ctx,
+                    motivations=self.brain.motives,
+                    now_monotonic_s=NOW+.1,pc_opt_in=True)
+                self.assertEqual("invalid_or_private_mock_samples",r.reason)
+
     def test_request_contents_must_match_current_fixture(self):
         out,adv,p,d,ctx=self.prepared()
         self.assertTrue(out.interesting)
