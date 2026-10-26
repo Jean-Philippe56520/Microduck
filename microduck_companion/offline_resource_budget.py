@@ -131,10 +131,10 @@ class OfflineResourceGate:
         if invalid:
             return invalid
         now = float(now_monotonic_s)
-        if self._pending_at is not None:
-            return self._refuse("budget_cycle_inflight")
         if self._latch is not None:
             return self._refuse(self._latch)
+        if self._pending_at is not None:
+            return self._refuse("budget_cycle_inflight")
         self._prune(now)
         if now < self._cooldown_until:
             return self._refuse("budget_cooldown")
@@ -173,6 +173,7 @@ class OfflineResourceGate:
         self._pending_at = None
         self._reports += 1
         if self._clock(now_monotonic_s):
+            self._latch = "budget_clock_unavailable"
             return
         now = float(now_monotonic_s)
         cpu = report.process_cpu_ms
