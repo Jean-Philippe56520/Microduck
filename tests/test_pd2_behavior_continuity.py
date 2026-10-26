@@ -81,10 +81,12 @@ class PD2ContinuityTests(unittest.TestCase):
              else source_cue(cue, at-.1, conditions=condition))
         if memory:
             return self.brain.describe_behavior_continuity(
-                p, situation=s, now_monotonic_s=at, hint=hint)
+                p, situation=s, now_monotonic_s=at, hint=hint,
+                hint_evaluated_monotonic_s=NOW if hint is not None else None)
         return MockBehaviorContinuity().describe(
             p, motivations=self.brain.motives,
-            situation=s, now_monotonic_s=at, hint=hint)
+            situation=s, now_monotonic_s=at, hint=hint,
+            hint_evaluated_monotonic_s=NOW if hint is not None else None)
 
     def hint(self, portrait, name="petting_start", *, condition=None):
         return self.brain.describe_oem_expression(
@@ -341,6 +343,48 @@ class PD2ContinuityTests(unittest.TestCase):
         other=self.portrait("Nap")
         with self.assertRaises(ValueError):
             self.describe(portrait=other,hint=self.hint(base))
+
+    def test_listening_only_cannot_suggest_wander_turn_or_groundpick(self):
+        listening=self.brain.describe_behavior(
+            PassiveIntent("listen","fictional_sound_category",
+                          "sound_label","bark"),
+            journal=self.journal,now_wall_epoch_s=WALL)
+        self.assertEqual(("LookAround","attentive"),
+                         (listening.state,listening.affect))
+        for signal in ("new_space","viewpoint_ambiguity","floor_object"):
+            with self.subTest(signal=signal):
+                out=self.describe(portrait=listening,cue=signal)
+                self.assertEqual(("LookAround","ineligible_mock_context"),
+                                 (out.state,out.reason))
+
+    def test_pc_hint_fails_closed_when_missing_future_or_stale(self):
+        base=self.portrait("Chill")
+        hint=self.hint(base,"petting_start")
+        continuity=MockBehaviorContinuity()
+        for stamp,now in (
+            (None,NOW),(NOW,NOW+MAX_FIXTURE_CUE_AGE_S+.01),
+            (NOW,NOW-.01),
+        ):
+            with self.subTest(stamp=stamp,now=now):
+                if stamp is None:
+                    with self.assertRaises(ValueError):
+                        continuity.describe(base,
+                            motivations=self.brain.motives,
+                            situation=MockBehaviorSituation(),
+                            now_monotonic_s=now,hint=hint)
+                else:
+                    new=MockBehaviorContinuity().describe(base,
+                        motivations=self.brain.motives,
+                        situation=MockBehaviorSituation(),
+                        now_monotonic_s=now,hint=hint,
+                        hint_evaluated_monotonic_s=stamp)
+                    self.assertEqual(("Chill","stale_or_future_mock_cue"),
+                                     (new.state,new.reason))
+                    self.assertEqual(0,new.speaker_commands_issued)
+        with self.assertRaises(ValueError):
+            continuity.describe(base,motivations=self.brain.motives,
+                situation=MockBehaviorSituation(),
+                now_monotonic_s=NOW,hint_evaluated_monotonic_s=NOW)
 
     def test_history_discourages_inspection_and_retraction_restores_candidate(self):
         runner=MockCycleRunner(self.mem,session="pd2-synthetic")
