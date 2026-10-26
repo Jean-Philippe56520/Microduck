@@ -296,5 +296,53 @@ class PersonalityContinuityTests(unittest.TestCase):
             replace(p, motor_commands_issued=1)
 
 
+    def test_reading_history_creates_no_new_schema_or_write(self):
+        tables_before = tuple(row[0] for row in self.memory.conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"))
+        before = self.memory.conn.total_changes
+        self.portrait()
+        self.assertEqual(before, self.memory.conn.total_changes)
+        tables_after = tuple(row[0] for row in self.memory.conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"))
+        self.assertEqual(tables_before, tables_after)
+
+    def test_corrupted_original_evidence_does_not_create_a_habit(self):
+        self.record(target="toy-one")
+        self.record(t=105., target="toy-two")
+        with self.memory.conn:
+            self.memory.conn.execute(
+                "UPDATE mock_cognitive_cycles SET reward=0.3 "
+                "WHERE session=? AND sequence=1", (self.runner.session,))
+        p = self.portrait()
+        self.assertEqual("neutral", p.inspection_habit)
+        self.assertEqual(1, p.mock_positive_outcomes)
+        self.assertAlmostEqual(.04, p.outcome_bias)
+
+    def test_blocked_motion_is_not_a_personality_result(self):
+        cycle = self.runner.step(mock_snapshot(100.), now=100.1)
+        self.assertEqual("blocked_motion", cycle.disposition)
+        self.assertFalse(self.behavioral.record(
+            runner=self.runner, sequence=cycle.sequence,
+            now_wall_epoch_s=WALL))
+        self.assertEqual(("neutral", 0.0),
+                         (self.portrait().inspection_habit,
+                          self.portrait().outcome_bias))
+
+    def test_missing_behavior_table_fails_closed_without_energy_gain(self):
+        self.memory.conn.execute("DROP TABLE f4a_mock_behavior_outcomes")
+        energy = self.brain.motives.energy
+        result = self.brain.propose_balanced_passive(
+            unknown_fixture(), journal=self.journal,
+            now_monotonic_s=200.1, now_wall_epoch_s=WALL,
+            behavioral=self.behavioral)
+        self.assertEqual(("idle", "behavioral_history_unavailable"),
+                         (result.intention, result.reason))
+        self.assertEqual(energy, self.brain.motives.energy)
+        p = self.portrait()
+        self.assertEqual(("Chill", "quiet", "unavailable"),
+                         (p.state, p.affect, p.inspection_habit))
+        self.assertFalse(p.physical_execution_authorized)
+
+
 if __name__ == "__main__":
     unittest.main()
