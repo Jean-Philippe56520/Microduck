@@ -1,5 +1,7 @@
 # Microduck Companion
 
+**M1-B2 — PILOTE EN BRANCHE (non fusionne, non deploye) :** banc facultatif sur 12 photos et 2 sons publics declares CC0 pour comparer les signatures M1-B a une distribution de classes MobileNetV2 ONNX et aux embeddings YAMNet ONNX sur CPU hote. Contrats de tests hors ligne et protocole en [rapport M1-B2](docs/m1b2-host-embeddings-2026-10-26.md). Pas de preuve multi-angle du meme objet, pas de reconnaissance de source audio, pas d'interface constructeur ni de validation RK3566. Chiffres experimentaux uniquement apres CI reussie.
+
 Projet de robot autonome, curieux, explorateur et social.
 
 **Objectif :** développer un cerveau comportemental qui observe, conserve une mémoire locale, apprend des conséquences de ses actions et interroge facultativement un modèle Qwen sur un PC du réseau local. Le dialogue est secondaire.
