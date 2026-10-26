@@ -10,6 +10,28 @@ Option préférable en présence de conditions d'usage plus larges : des vues pr
 
 La partie sonore utilise des **prises WAV indépendantes** de la même source de bruit sous contrôle local, et des sources différentes pour les négatifs. Les identités, sessions et droits sont **déclarés par le manifeste**, non authentifiés par un certificat physique. Aucun nouveau corpus audio public satisfaisant l'indépendance et les droits n'a été exécuté ici : **aucun résultat audio réel n'est annoncé**.
 
+## 1 bis. Sous-ensemble public ABO en CI (véritables images multi-vues)
+
+Le dataset [Amazon Berkeley Objects](https://amazon-berkeley-objects.s3.amazonaws.com/index.html) fournit des **séquences de produits réellement photographiés** en rotation. Son éditeur affiche la licence **CC BY 4.0** (anciennement CC BY-NC, mise à jour 2023), et demande de citer **Amazon.com** ainsi que **Guillaumin et al.**. Des catalogues secondaires reproduisent encore l'ancienne licence : **l'attribution et la licence officielle actuelle font foi pour ce banc**, sans garantir les droits d'éventuelles images externes hors dataset.
+
+La fonction optionnelle `run_public_abo` réutilise le scoreur et les extraits M1-A/B2, et introduit uniquement un lecteur borné du fichier CSV compressé **officiel** `spins/metadata/spins.csv.gz` et des JPEG sur `amazon-berkeley-objects.s3.us-east-1.amazonaws.com`. L'URL est constante, les redirections vers d'autres hôtes sont refusées, chaque image possède un SHA-256 calculé en mémoire et aucune image n'est déposée comme artefact GitHub. Le manifeste public a **12 séquences d'objets**, choisies selon les **12 premières séquences complètes** dans le CSV, avec 6 vues distinctes par séquence (72 images réelles). L'empreinte combinée des contenus et l'empreinte de la sélection sont fournies dans le résultat pour vérifier la reproductibilité ; aucune liste de noms de produits n'est nécessaire à la comparaison.
+
+- En validation : **5 séquences inscrites** + **1 séquence inconnue**.
+- En test final : **4 séquences inscrites** + **2 séquences inconnues**.
+- Références angulaires 0 et 36 ; requêtes 9, 18, 45 et 54. Cela mesure **un rappel inter-vues de la même séquence**, pas une capacité à identifier un produit à partir de **sessions indépendantes**, ni à distinguer avec certitude deux exemplaires physiques du même produit.
+- Le seuil est calculé seulement avec les négatifs validation, en refusant les scores égaux à la plus forte similarité négative. Il peut donner zéro rappel pour certains modèles. Le test conserve ce seuil sans l'ajuster.
+- Modèles : baseline 64 octets vs distribution de 1 000 classes ImageNet MobileNetV2, poids **SHA-256 contrôlé**. Les sorties de classification ImageNet ne constituent **pas** un embedding d'instance. Aucune des représentations n'est sélectionnée pour le robot par ce banc.
+
+Commandes (recherche autorisée sur images publiques, accès réseau **opt-in**) :
+
+```bash
+python -m microduck_companion.r2b_independent_capture_eval \
+  --locally-approved-research --public-abo-ccby \
+  --image-model /chemin/prive/mobilenetv2-12.onnx
+```
+
+Le workflow [`r2b-abo-multiview.yml`](../.github/workflows/r2b-abo-multiview.yml) exécute ce banc sur runner temporaire pour les PR pertinentes, et est déclenchable manuellement. Les mesures publiques ne doivent être mentionnées **qu'après réussite d'une exécution identifiée** et ne valent pas validation physique Microduck. Aucun accès via le robot et aucun transfert vers un LLM.
+
 ## 2. Réutilisation et périmètre exact
 
 | Besoin | Réutilisation | Ce qui est nouveau |
