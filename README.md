@@ -1,6 +1,6 @@
 # Microduck Companion
 
-**M1-B2 — PILOTE EN BRANCHE (non fusionne, non deploye) :** banc facultatif sur 12 photos et 2 sons publics declares CC0 pour comparer les signatures M1-B a une distribution de classes MobileNetV2 ONNX et aux embeddings YAMNet ONNX sur CPU hote. Contrats de tests hors ligne et protocole en [rapport M1-B2](docs/m1b2-host-embeddings-2026-10-26.md). Pas de preuve multi-angle du meme objet, pas de reconnaissance de source audio, pas d'interface constructeur ni de validation RK3566. Chiffres experimentaux uniquement apres CI reussie.
+**M1-B2 — pilote CPU hôte réussi en CI, sans déploiement :** 934 tests Python réussis sur la branche et [banc comparatif CC0 ONNX](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40309136430) exécuté. Sur six photos de TEST, MobileNetV2 retrouve 6/6 rotations et recadrages dérivés du même fichier (contre 0/6 M1-B), mais rapproche aussi 1/15 paires de fichiers différents ; YAMNet retrouve 2/2 décalages mais 0/2 sons avec bruit numérique. **Aucune identification de même objet sur de vrais angles naturels, ni reconnaissance audio robuste démontrée.** [Rapport M1-B2](docs/m1b2-host-embeddings-2026-10-26.md). Aucun poids, média, PC connecté au robot, ni intégration SQLite/OEM.
 
 Projet de robot autonome, curieux, explorateur et social.
 

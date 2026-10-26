@@ -41,10 +41,53 @@ python -m microduck_companion.m1b2_host_embeddings \
   --audio-model /chemin/prive/yamnet.onnx
 ```
 
+
+## Résultats mesurés sur CI hôte (pilotage expérimental, pas validité robot)
+
+[GitHub Actions M1-B2 #40309136430 — dernier code testé](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40309136430) : pipeline ONNX public **réussi** sur le commit `70ed3ad`; [CI Python générale #40309129962](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40309129962) : **934 tests Python réussis** (ainsi que les étapes générales, dont Rust). La PR peut évoluer après ces exécutions ; vérifier le SHA des checks avant toute fusion.
+
+### Reconnaissance de transformations du *même fichier* (six photos TEST)
+
+| Épreuve | M1-B 64 octets | MobileNetV2 distribution 1 000 classes |
+| --- | ---: | ---: |
+| +10 % luminosité | 6/6 | 6/6 |
+| Rotation 12° | 0/6 | 6/6 |
+| Crop ~9 % bord | 0/6 | 6/6 |
+| Rapprochements inter-fichiers potentiellement indus (15 paires) | 0/15 | **1/15** |
+
+Le seuil cosinus appris, gelé depuis les *seuls* 15 couples inter-fichiers de validation, vaut **0,107929** ; il ne mesure pas une probabilité d'identité. Le cas de rapprochement inter-fichiers sur TEST montre un risque de fusion non justifiée ; aucun couple n'est étiqueté « même objet physique » ou « individus physiques différents ». Le succès après transformation du *même JPEG* n'est pas une preuve d'invariance au point de vue naturel.
+
+### Reconnaissance de transformations du *même enregistrement* (deux sons)
+
+| Épreuve | M1-B 16 octets | YAMNet 1024 × float32 |
+| --- | ---: | ---: |
+| Volume ×0,8 | 2/2 | 2/2 |
+| Décalage temporel 16 ms | 1/2 | 2/2 |
+| Bruit numérique ~26 dB de rapport signal/bruit | **2/2** | 0/2 |
+| Rapprochements entre les deux fichiers | 0/1 | 0/1 |
+
+Seuil audio YAMNet **0,95 heuristique**, **non calibré**. Deux sons et une seule paire négative ne permettent aucun taux de fausse identification réaliste. Le modèle audio appris est **moins robuste au bruit de ce petit banc**, donc ne remplace pas M1-B dans cette configuration.
+
+### Consommation hôte (une exécution ; mesures du runner et non du robot)
+
+| Mesure | Valeur |
+| --- | ---: |
+| Poids MobileNetV2 | 13 964 571 octets |
+| Poids YAMNet | 16 093 355 octets |
+| Inférence image ONNX CPU, médiane / p95 | 6,86 / 7,29 ms (48 appels) |
+| Inférence son ONNX CPU, médiane / p95 | 3,60 / 3,99 ms (8 appels) |
+| Pic RSS du processus complet | 145 180 Kio |
+| Temps CPU utilisateur après chargement des modèles | 1,226 s |
+| Temps CPU système après chargement des modèles | 0,041 s |
+
+Ces durées d'inférence excluent prétraitements, téléchargements et collecte ; le RSS inclut Python, ONNX et les deux modèles ensemble. Impossible d'en déduire le coût isolé d'un modèle, la marge RAM sur RK3566, la consommation électrique ou la thermie. Les valeurs varient d'un runner à un autre.
+
+**Décision provisoire :** poursuivre vers un vrai corpus multi-vues et davantage de sons indépendants, avec un meilleur embedding visuel *d'instance* et un seuil audio calibré ; **aucun modèle sélectionné pour le robot et aucune modification de SQLite M1-B ou de la politique PC**.
+
 ## Interprétation et décision
 
 L'expérience ne couvre **pas** les prises de vue naturelles multi-angles du même objet, l'identification de Nessquick/Kitty, une vraie maison bruyante, les paroles, ni le rejet d'un inconnu réellement vu par caméra. Le protocole doit être **élargi à des séquences multi-vues consenties et tracées par source**, avec négatifs crédibles (objets proches, autres chats et chiens, sons voisins), seuil gelé sur validation, puis test indépendant, avant de retenir un modèle.
 
 Si le modèle appris fusionne trop de fichiers distincts, si le rappel après transformation est bas ou si sa ressource hôte est disproportionnée, **ne pas l'intégrer** ; conserver M1-B expérimental. Aucun code ne branche Qwen, `mediad`, `robotd`, SQLite réelle ni motricité. Le robot demeure hors ligne et sûr indépendamment de ce banc.
 
-**État :** code et tests hors ligne proposés sur branche, expérience publique et résultats CI à renseigner seulement après exécution vérifiée. **Pas de conclusion de précision en milieu domestique.**
+**État :** tests hors ligne et étude sur médias publics exécutés en CI hôte avec résultats consignés ci-dessus ; pas de conclusion de précision en milieu domestique, ni de validation RK3566. Le sous-lot reste expérimental, sans intégration au robot.

@@ -1,6 +1,6 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
-**Note M1-B2 (pilote sur hote, 26 octobre 2026) :** les poids MobileNetV2/YAMNet et leurs vecteurs d'environ 4 Kio ne representent pas le pic RAM reel d'inference, les pages SQLite ni le stockage libre de Microduck. Les durees CPU/RSS mesurees sur runner ne sont pas celles du RK3566. La nouvelle comparaison CC0 est facultative et sans capteurs ou moteur : [rapport de protocole](m1b2-host-embeddings-2026-10-26.md). Le choix embarque reste conditionne a l'audit physique idle/vision et aux delais robotd, non mesures.
+**Audit M1-B2 sur runner Linux (non transférable au RK3566) :** la [CI ONNX publique](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40309136430) a observé 145 180 Kio de **pic RSS du processus entier**, environ 14 Mo + 16,1 Mo de poids et des médianes d'inférence 6,86 ms image / 3,60 ms son (prétraitement et collecte exclus). Les vecteurs float32 de 4 000/4 096 octets ne sont PAS la RAM du modèle ni l'espace SQLite effectivement consommé. Sur Microduck, RAM libre, charge CPU, chauffe, disque réellement disponible et échéances moteurs restent inconnus. Aucun déploiement ou appel OEM/Qwen n'est issu de ce lot. [Rapport M1-B2](m1b2-host-embeddings-2026-10-26.md).
 
 Date : 2026-10-25. Audit documentaire et revue de code, **sans accès au robot physique**. Les valeurs de RAM et stockage libres ne sont **pas mesurées**. Aucune capture d'image privée ou donnée biométrique ne doit être placée dans ce dépôt.
 
