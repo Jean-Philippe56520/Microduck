@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**EX2 — première lecture à la demande des expériences (lot logiciel sur fixtures, PR et CI à vérifier) :** [journal et contrat de provenance](ex2-mock-effects-kwipi-journal-2026-10-26.md). Réutilise EX1 dans **la même SQLite** pour conserver une comparaison synthétique avant/après, refuser les actes non exécutés, contradictions et indices périmés, puis rapporter `temporal_only`/`confounded`/`indeterminate` sans causalité automatique ni récompense. Lecteur sur PC strictement **en lecture seule**, filtres bornés et exports volontaires JSONL/CSV ; pas de monitoring OEM parallèle, aucun journal média, aucun second écrivain P2a/F4-A. EX3 (apprentissage effectif) reste prévu ; Cat-A2b demeure prioritaire, sans validation physique.
+
+
 **EX1 — premier lot cognitif du plan EX0 ([PR #70](https://github.com/Jean-Philippe56520/Microduck/pull/70), [CI hôte 1 111 tests, 19 ignorés, zéro échec](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40410788233)) :** [audit, contrat et tests EX1](ex1-mock-experience-ledger-2026-10-26.md). Nouveau journal **strictement de fixtures F2** dans la même SQLite `ExperienceMemory` : proposition, résolution `mock_executed`/`refused`/`interrupted`, replays idempotents, corrections et quotas. `mock_executed` ne prouve jamais une action réelle ; aucune conséquence, cause, récompense ou préférence n'est créée, aucun P2a/F4-A double écrit, aucune commande OEM. **La priorité de perception Cat-A2b demeure inchangée** ; EX2–EX7 restent prévus et le robot physique reste absent.
 
 
