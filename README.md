@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**P-B — continuité de personnalité (fixtures, sans robot) :** [audit et contrat](docs/kwipi-personality-continuity-pb-2026-10-26.md). `AutonomyBrain.describe_behavior(..., behavioral=...)` relit les **résultats fictifs explicitement corroborés** de `BehavioralMemory` F4-A pour exposer un petit penchant durable envers l'inspection, corrigeable et expirant sous 14 jours. F2-B peut facultativement utiliser ce **biais borné ±0,12 uniquement pour sa proposition immobile `inspect`**. Aucun résultat non exécuté n'est appris, aucun second SQLite/scheduler, capteur, moteur ou LLM. Les 16 états OEM restent catalogués, quatre seulement décrits ; **Cat-A2 garde la priorité**. CI et vérifications en cours sur la PR du lot.
+
+
 **Personnalité/16 états OEM — P-A expérimental, non moteur :** [contrat et matrice de réutilisation](docs/kwipi-behavior-personality-16states-2026-10-26.md). Le [catalogue des 16 états historiques](microduck_companion/behavior_personality.py) et `AutonomyBrain.describe_behavior` fournissent une **description en lecture seule** des intentions F2/F4 existantes, des cinq motivations et des occurrences de **catégories** dans l'unique SQLite `ExperienceMemory`. **Quatre** états (Chill, LookAround, Nap, BallPlay) sont décrits sur fixtures seulement, **douze** sont différés ; aucune animation, mémoire supplémentaire, reconnaissance d'identité, émotion ressentie ou commande robot. Aucun portage matériel. La PR du lot fournit les tests, sans remplacer l'OEM M9 ni changer la priorité Cat-A2.
 
 
