@@ -1,6 +1,6 @@
 # F6-D — Préparer l'audit de ressources du Microduck physique sans mouvement
 
-**26 octobre 2026 — [PR #48](https://github.com/Jean-Philippe56520/Microduck/pull/48) ; état : protocole et protections logiciels, sans robot physique.** Ce lot améliore l'outil de collecte en lecture seule `scripts/resource-audit.sh` et ajoute une politique documentaire testable ; **aucune donnée réelle RK3566, NPU, batterie, caméra ou moteur n'a été obtenue**.
+**26 octobre 2026 — [PR #48](https://github.com/Jean-Philippe56520/Microduck/pull/48) fusionnée après revue et tests, protocole et protections logiciels, sans robot physique.** Ce lot améliore l'outil de collecte en lecture seule `scripts/resource-audit.sh` et ajoute une politique documentaire testable ; **aucune donnée réelle RK3566, NPU, batterie, caméra ou moteur n'a été obtenue**.
 
 ## 1. Décisions de sécurité : ne pas confondre « testable » et « validé »
 
