@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from .passive_rhythm import PassiveRhythmMetrics
     from .passive_learning import PassiveLearning
     from .behavioral_memory import BehavioralMemory
+    from .experience_expectations import MockAttentionTrends
 
 
 @dataclass(frozen=True)
@@ -94,7 +95,8 @@ class AutonomyBrain:
                                  now_monotonic_s: float,
                                  now_wall_epoch_s: float,
                                  learning: PassiveLearning | None = None,
-                                 behavioral: BehavioralMemory | None = None) -> PassiveIntent:
+                                 behavioral: BehavioralMemory | None = None,
+                                 expectations: MockAttentionTrends | None = None) -> PassiveIntent:
         """F2-B/F2-C: pace non-motor proposals; optional mock-only bias.
 
         Reuses F2-A provenance checking and the same ExperienceMemory journal.
@@ -105,6 +107,7 @@ class AutonomyBrain:
         from .passive_memory import PassiveObservationJournal
         from .passive_learning import PassiveLearning
         from .behavioral_memory import BehavioralMemory
+        from .experience_expectations import MockAttentionTrends
 
         if not isinstance(journal, PassiveObservationJournal):
             raise TypeError("a passive journal is required")
@@ -120,13 +123,18 @@ class AutonomyBrain:
                 raise TypeError("F4-A behavioral memory must be BehavioralMemory")
             if behavioral._memory is not self.memory:
                 raise ValueError("F4-A must share the same ExperienceMemory")
+        if expectations is not None:
+            if not isinstance(expectations, MockAttentionTrends):
+                raise TypeError("EX3 hints require existing MockAttentionTrends")
+            if expectations._memory is not self.memory:
+                raise ValueError("EX3 must share the brain ExperienceMemory")
         if self._passive_rhythm is None:
             self._passive_rhythm = PassiveRhythm()
         return self._passive_rhythm.tick(
             reading, journal=journal, motivations=self.motives,
             now_monotonic_s=now_monotonic_s,
             now_wall_epoch_s=now_wall_epoch_s, learning=learning,
-            behavioral=behavioral,
+            behavioral=behavioral, expectations=expectations,
         )
 
     def passive_rhythm_metrics(self) -> PassiveRhythmMetrics:
