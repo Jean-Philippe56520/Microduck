@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**PD1 — catalogue non exécutable des seize comportements OEM (27/10/2026 ; [PR #74](https://github.com/Jean-Philippe56520/Microduck/pull/74), [CI hôte 1 176 tests, 19 ignorés, zéro échec](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40418679064)) :** [audit source, interface et tests](pd1-oem-expression-capabilities-2026-10-27.md). Dans P-A, `BehaviorExpressionCapability` inventorie 4 indices **partiels** déjà présents dans les sources constructeur (Chill/LookAround/Nap/Petted), douze états sans indice partiel confirmé, et **zéro compétence complète à 16 états dispatchable**. Liaison descriptive optionnelle P-C, aucune création d'ordonnanceur, geste, son, mémoire ou consultation Qwen. La preuve est un test logiciel sur fixtures, pas un essai robot. PD2 cohérence puis PD3 besoin d'information non moteur ; Cat-A2b prioritaire.
+
+
 **PD0 — 16 états historiques et consultation Qwen parcimonieuse (27/10/2026 ; documentation seule) :** [plan par état et jalons PD1–PD7](pd0-behavior-states-selective-qwen-2026-10-27.md). Objectif : humeur descriptive cohérente + sélection F2 déjà existante → expression OEM uniquement si supportée ; candidats Qwen fondés sur l'inconnu/contradiction réelle, jamais sur le seul nom de l'état. Réutiliser F5-C quotas, F5-B repli, EX1/2/3 mémoire corrigible ; aucun accès multimodal ni état moteur nouveau. PD1/PD2/PD3 testables sur fixtures seulement ; PD4–PD7 conditionnés par perception et matériel. Cat-A2b reste prioritaire.
 
 

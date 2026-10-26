@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**PD1 — audit non exécutable des 16 états OEM (27/10/2026 ; [PR #74](https://github.com/Jean-Philippe56520/Microduck/pull/74), [CI hôte 1 176 tests, 19 ignorés, zéro échec](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40418679064)) :** [catalogue et 17 tests](pd1-oem-expression-capabilities-2026-10-27.md). PD1 réutilise la vue P-A et les indices P-C sans créer de seconde machine d'états : 16 noms catalogués, 4 **expressions partielles** dans les sources OEM épinglées (`IdleHead` regards/bâillement, `robotd` `coo` conditionnel) ; **aucune** commande historique d'état à seize branches ni exécution physique certifiée. Contrats typés imposant absence de moteur, son, Qwen et double écriture. Test sur fixtures/CI à vérifier ; la perception réelle Cat-A2b conserve la prochaine preuve à obtenir et PD2/PD3 ne sont pas lancés.
+
+
 **PD0 — planification du comportement expressif et des demandes Qwen (27/10/2026, non codé) :** [matrice exhaustive des 16 états OEM, politique de sollicitation et lots PD1–PD7](pd0-behavior-states-selective-qwen-2026-10-27.md). Réutiliser `AutonomyBrain` F2, les portraits P-A/P-B, les indices P-C, la SQLite unique et F5-A/B/C/D sans second arbitre ni démon. Quatre noms historiques sont descriptifs fictifs ; les autres ne sont **pas** des compétences portées. Les états de curiosité/exploration/jeu peuvent **pondérer** une demande Qwen *seulement si une incertitude sémantique observée subsiste* ; repos, caresse, jeu familier et sursaut n'envoient rien. F5 actuel sans images impose `unknown`, extension multimodale privée séparée et non livrée. Aucun geste, PC réel ou ressources robot validés ; **Cat-A2b demeure la priorité opérationnelle**.
 
 

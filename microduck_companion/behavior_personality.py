@@ -107,6 +107,119 @@ def behavior_catalog() -> tuple[tuple[str, str], ...]:
                  for name in HISTORICAL_OEM_STATES)
 
 
+# PD1: static evidence from the OEM pinned at 942e58e3. These are existing
+# *partial* background effects, NOT exposed 16-state commands. In particular,
+# the idle head never aims at a detected object, a yawn is not Nap, and a coo
+# from robotd's petting handler is not an independently dispatched Petted.
+_PINNED_OEM_EXPRESSION_EVIDENCE = {
+    "Chill": ("background_idle_glance", "robotd/src/idle_head.rs"),
+    "LookAround": ("background_idle_glance", "robotd/src/idle_head.rs"),
+    "Nap": ("background_idle_yawn", "robotd/src/idle_head.rs"),
+    "Petted": ("conditional_oem_petting_coo", "robotd/src/main.rs"),
+}
+_PD1_SOURCE = "pinned_oem_942e58e3_static_review"
+_PD1_SOURCES = frozenset({
+    "historical_catalog", "mock_behavior_portrait", "mock_oem_expression_hint",
+})
+
+
+@dataclass(frozen=True)
+class BehaviorExpressionCapability:
+    """Read-only PD1 capability evidence; never a dispatch request or receipt.
+
+    'background_*' and 'conditional_*' are verified in OEM *source* only.
+    Physical execution and the named historical 16-state skill are unverified.
+    """
+
+    state: str
+    companion_status: str
+    oem_expression_evidence: str
+    oem_evidence_path: str | None
+    selected_from: str = "historical_catalog"
+    source: str = _PD1_SOURCE
+    named_state_command_available: bool = False
+    expression_executed: bool = False
+    hardware_verified: bool = False
+    physical_execution_authorized: bool = False
+    motor_commands_issued: int = 0
+    speaker_commands_issued: int = 0
+    pc_requests_issued: int = 0
+    memories_written: int = 0
+
+    def __post_init__(self) -> None:
+        expected = _PINNED_OEM_EXPRESSION_EVIDENCE.get(self.state, ("none", None))
+        status = ("mock_description_only" if self.state in DESCRIPTIVE_ONLY
+                  else "requires_oem_m9_or_sensor_review")
+        if (self.state not in HISTORICAL_OEM_STATES
+                or self.companion_status != status
+                or (self.oem_expression_evidence, self.oem_evidence_path) != expected
+                or self.selected_from not in _PD1_SOURCES
+                or self.source != _PD1_SOURCE
+                or any(type(getattr(self, name)) is not bool
+                       or getattr(self, name) for name in (
+                           "named_state_command_available", "expression_executed",
+                           "hardware_verified", "physical_execution_authorized"))
+                or any(type(getattr(self, name)) is not int
+                       or getattr(self, name) != 0 for name in (
+                           "motor_commands_issued", "speaker_commands_issued",
+                           "pc_requests_issued", "memories_written"))):
+            raise ValueError("PD1 inventory cannot forge a verified command or action")
+
+
+def expression_capability_for(
+    state: str, *, selected_from: str = "historical_catalog",
+) -> BehaviorExpressionCapability:
+    """Inspect a historical state, never enable or select a robotd action."""
+    if type(state) is not str or state not in HISTORICAL_OEM_STATES:
+        raise ValueError("unknown historical OEM behavior")
+    if type(selected_from) is not str or selected_from not in _PD1_SOURCES:
+        raise ValueError("unsupported evidence provenance")
+    evidence, path = _PINNED_OEM_EXPRESSION_EVIDENCE.get(state, ("none", None))
+    return BehaviorExpressionCapability(
+        state=state,
+        companion_status=("mock_description_only" if state in DESCRIPTIVE_ONLY
+                          else "requires_oem_m9_or_sensor_review"),
+        oem_expression_evidence=evidence,
+        oem_evidence_path=path,
+        selected_from=selected_from,
+    )
+
+
+def expression_capability_catalog() -> tuple[BehaviorExpressionCapability, ...]:
+    """Inventory EXACTLY P-A's existing sixteen names, without another FSM."""
+    return tuple(expression_capability_for(name) for name in HISTORICAL_OEM_STATES)
+
+
+def inspect_expression_capability(
+    portrait: BehaviorPortrait, *, hint: "MockExpressionHint | None" = None,
+) -> BehaviorExpressionCapability:
+    """Interpret a P-A/P-B portrait and optional existing P-C mock hint.
+
+    P-C's OEM-owned Petting label references the *upstream handler*, not a
+    measured coo. An ambient-noise Startle hypothesis is NOT an OEM skill.
+    Silent/notice-only cues preserve P-A's selection. No new state arbitration.
+    """
+    from .oem_expression_hints import MockExpressionHint
+
+    if not isinstance(portrait, BehaviorPortrait):
+        raise TypeError("existing P-A/P-B BehaviorPortrait required")
+    if hint is None:
+        return expression_capability_for(
+            portrait.state, selected_from="mock_behavior_portrait",
+        )
+    if not isinstance(hint, MockExpressionHint):
+        raise TypeError("existing P-C MockExpressionHint required")
+    if (hint.base_state != portrait.state
+            or hint.base_affect != portrait.affect
+            or hint.inspection_habit != portrait.inspection_habit):
+        raise ValueError("P-C cue must belong to the given P-A portrait")
+    state = (hint.historical_candidate if hint.status in {"oem_owned", "hypothesis"}
+             else portrait.state)
+    return expression_capability_for(
+        state, selected_from="mock_oem_expression_hint",
+    )
+
+
 def _interpret(selected: PassiveIntent | MockSocialPlan) -> tuple[str, str, str, str | None, str | None, str]:
     """Interpret an already selected proposal. Never select an action."""
     if isinstance(selected, PassiveIntent):

@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**Addendum PD1 — 27/10/2026 :** [inventaire purement logiciel des 16 noms OEM](pd1-oem-expression-capabilities-2026-10-27.md). Les quatre correspondances `IdleHead`/petting dans le code épinglé ne sont **ni des commandes utilisables par Companion, ni une mesure sur l'appareil réel**. L'interface PD1 demeure sans RPC, capture, son, SQLite supplémentaire ou moteur ; ses coûts et l'éventuelle consommation RAM/CPU/thermique sur RK3566 **n'ont pas été mesurés**, et 1 Go de RAM / 32 Go nominaux ne sont pas une marge garantie. Maintenir `scripts/resource-audit.sh` avant toute nouvelle animation ou processus.
+
+
 **Addendum PD0 — 27/10/2026, documentaire :** [16 comportements historiques, besoin sémantique et Qwen PC](pd0-behavior-states-selective-qwen-2026-10-27.md). Aucun état supplémentaire ne tourne sur RK3566 ; pas de budget d'humeur, d'animation, de transmission d'image, de consommation Ollama ou de mémoire persistante mesuré. F5 actuel est un contrat de catégories fictives sans médias ; plus tard, tout traitement multimodal est déporté vers PC facultatif et borné, sans bloquer `robotd` 50 Hz. Avant portage : audit `scripts/resource-audit.sh`, vérification du stockage réellement monté, RAM libre, CPU/thermie, propriétés des animations OEM et sûreté. Les 32 Go nominaux ne sont pas un espace libre garanti.
 
 
