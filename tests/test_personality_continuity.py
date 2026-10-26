@@ -12,7 +12,9 @@ import unittest
 
 from microduck_companion.autonomy import AutonomyBrain, Motivations
 from microduck_companion.behavior_personality import MIN_HABIT_EVIDENCE
-from microduck_companion.behavioral_memory import BehavioralMemory, RETENTION_S
+from microduck_companion.behavioral_memory import (
+    BehavioralMemory, BehavioralSummary, RETENTION_S, valid_mock_summary,
+)
 from microduck_companion.episodic_memory import ExperienceMemory
 from microduck_companion.mock_cycle_demo import mock_snapshot
 from microduck_companion.mock_cycles import MockConsequence, MockCycleRunner
@@ -342,6 +344,37 @@ class PersonalityContinuityTests(unittest.TestCase):
         self.assertEqual(("Chill", "quiet", "unavailable"),
                          (p.state, p.affect, p.inspection_habit))
         self.assertFalse(p.physical_execution_authorized)
+
+
+    def test_malformed_outcome_aggregate_never_changes_decision_or_portrait(self):
+        invalid = (
+            BehavioralSummary(-1, 0, .04),
+            BehavioralSummary(0, 0, float("nan")),
+            BehavioralSummary(257, 0, .12),
+            BehavioralSummary(0, 0, 0., verified_on_robot=True),
+            BehavioralSummary(0, 0, 0., motor_commands_issued=1),
+        )
+        for forged in invalid:
+            with self.subTest(forged=forged):
+                self.assertFalse(valid_mock_summary(forged))
+                self.behavioral.summary = lambda **kw: forged
+                brain = AutonomyBrain(self.memory)
+                initial_energy = brain.motives.energy
+                selected = brain.propose_balanced_passive(
+                    unknown_fixture(), journal=self.journal,
+                    now_monotonic_s=200.1, now_wall_epoch_s=WALL,
+                    behavioral=self.behavioral)
+                self.assertEqual(("idle", "invalid_mock_outcome_summary"),
+                                 (selected.intention, selected.reason))
+                self.assertEqual(initial_energy, brain.motives.energy)
+                portrait = brain.describe_behavior(
+                    inspect_proposal(), journal=self.journal,
+                    now_wall_epoch_s=WALL, behavioral=self.behavioral)
+                self.assertEqual(("Chill", "quiet", "unavailable"),
+                                 (portrait.state, portrait.affect,
+                                  portrait.inspection_habit))
+                self.assertEqual(0, portrait.motor_commands_issued)
+                self.assertFalse(portrait.identity_verified)
 
 
 if __name__ == "__main__":
