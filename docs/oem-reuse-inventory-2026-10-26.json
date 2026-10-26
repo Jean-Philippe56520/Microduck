@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-10-26",
+  "repositories": {
+    "oem": "pollen-robotics/microduck",
+    "oem_gitlink_sha": "942e58e3aa6dbb28e7037203fff11866122c7567",
+    "training": "pollen-robotics/microduck_rl",
+    "training_gitlink_sha": "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3",
+    "companion": "Jean-Philippe56520/Microduck"
+  },
+  "evidence_level": "static_source_review_only",
+  "physical_robot_tested": false,
+  "motor_authority": "robotd_only",
+  "companion_motor_authorized": false,
+  "companion_oem_sensor_connected": false,
+  "companion_embedded_brain_enabled": false,
+  "capabilities": [
+    {
+      "id": "motor_control_and_safety",
+      "owner": "robotd",
+      "state": "oem_coded",
+      "source_repo": "oem",
+      "source_path": "robotd/src/control.rs",
+      "decision": "reuse_no_duplicate",
+      "boundary": "No Companion motor control, direct bus or second 50 Hz loop"
+    },
+    {
+      "id": "motion_intents_and_skills",
+      "owner": "robotd",
+      "state": "oem_coded",
+      "source_repo": "oem",
+      "source_path": "robotd/src/intents.rs",
+      "decision": "reuse_no_duplicate",
+      "boundary": "Only future OEM-filtered intents; no action in audit"
+    },
+    {
+      "id": "idle_head_animation",
+      "owner": "robotd",
+      "state": "oem_coded",
+      "source_repo": "oem",
+      "source_path": "robotd/src/idle_head.rs",
+      "decision": "reuse_no_duplicate",
+      "boundary": "Animation is not target-specific recognition or M9"
+    },
+    {
+      "id": "raw_camera_frame",
+      "owner": "mediad",
+      "state": "oem_coded",
+      "source_repo": "oem",
+      "source_path": "mediad/src/frame.rs",
+      "decision": "reuse_read_only_later",
+      "boundary": "No live frame connection, streaming recording or unreviewed content persistence"
+    },
+    {
+      "id": "duck_only_visual_detector",
+      "owner": "mediad",
+      "state": "oem_coded",
+      "source_repo": "oem",
+      "source_path": "mediad/src/detect.rs",
+      "decision": "reuse_infrastructure_only",
+      "boundary": "Only other Microducks; not cat/dog/person/object recognition"
+    },
+    {
+      "id": "head_depth_sensor",
+      "owner": "tofd",
+      "state": "oem_coded",
+      "source_repo": "oem",
+      "source_path": "tof/src/main.rs",
+      "decision": "reuse_read_only_later",
+      "boundary": "8x8 frontal depth is not household-navigation clearance"
+    },
+    {
+      "id": "ambient_sound_sentry",
+      "owner": "pet-detect",
+      "state": "oem_coded",
+      "source_repo": "oem",
+      "source_path": "pet-detect/src/worker.rs",
+      "decision": "reuse_signals_not_capture",
+      "boundary": "Noise/voice event coarse, not transcription or speaker identification"
+    },
+    {
+      "id": "petting_sound_detector",
+      "owner": "pet-detect",
+      "state": "oem_coded",
+      "source_repo": "oem",
+      "source_path": "pet-detect/README.md",
+      "decision": "reuse_no_duplicate",
+      "boundary": "Petting sound, not cat/dog identification"
+    },
+    {
+      "id": "other_ducks_chorale",
+      "owner": "robotd",
+      "state": "oem_coded",
+      "source_repo": "oem",
+      "source_path": "robotd/src/chorale.rs",
+      "decision": "reuse_no_duplicate",
+      "boundary": "Do not duplicate BLE presence/chorale mechanics"
+    },
+    {
+      "id": "hardware_vetbook",
+      "owner": "robotd",
+      "state": "oem_coded",
+      "source_repo": "oem",
+      "source_path": "robotd/src/vetbook.rs",
+      "decision": "reuse_not_object_memory",
+      "boundary": "Hardware and event counters are not semantic/episodic object recognition"
+    },
+    {
+      "id": "historical_16_state_autonomy",
+      "owner": "oem_roadmap",
+      "state": "oem_documented_not_ported",
+      "source_repo": "oem",
+      "source_path": "docs/ideas/autonomous_behavior.md",
+      "decision": "track_without_copy",
+      "boundary": "Described historic prototype; autonomous.rs absent from pinned daemon"
+    },
+    {
+      "id": "planned_m9_brain",
+      "owner": "oem_roadmap",
+      "state": "oem_documented_not_ported",
+      "source_repo": "oem",
+      "source_path": "docs/project/roadmap.md",
+      "decision": "monitor_upstream",
+      "boundary": "No active M9 API to integrate; avoid second embedded arbiter"
+    },
+    {
+      "id": "passive_motivations_and_rhythm",
+      "owner": "companion",
+      "state": "companion_host_fixture_only",
+      "source_repo": "companion",
+      "source_path": "microduck_companion/passive_rhythm.py",
+      "decision": "retain_as_testbed",
+      "boundary": "Only passive suggestions; no OEM physical actuation"
+    },
+    {
+      "id": "episodic_memory",
+      "owner": "companion",
+      "state": "companion_host_fixture_only",
+      "source_repo": "companion",
+      "source_path": "microduck_companion/episodic_memory.py",
+      "decision": "retain_additive",
+      "boundary": "No deployment or guaranteed persistent partition on robot"
+    },
+    {
+      "id": "multiview_patterns",
+      "owner": "companion",
+      "state": "companion_host_fixture_only",
+      "source_repo": "companion",
+      "source_path": "microduck_companion/multiview_pattern_memory.py",
+      "decision": "retain_additive",
+      "boundary": "No natural-instance identity or real camera on robot"
+    },
+    {
+      "id": "optional_pc_policy",
+      "owner": "companion",
+      "state": "companion_host_fixture_only",
+      "source_repo": "companion",
+      "source_path": "microduck_companion/selective_pc_policy.py",
+      "decision": "retain_optional",
+      "boundary": "No real Qwen validated; no motor command and local fallback"
+    }
+  ]
+}
