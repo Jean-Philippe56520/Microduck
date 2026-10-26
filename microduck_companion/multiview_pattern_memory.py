@@ -86,17 +86,28 @@ class MultiviewPatternMemory:
 
     Explicit group hints are accepted ONLY with synthetic_same_source_claim
     from a fixture. This deliberately does NOT certify physical identity.
+    Optional r2a_single_writer refuses legacy M1-A data before R2-A writes;
+    older callers remain supported, so this is NOT a global database lock.
     """
 
     def __init__(self, memory: ExperienceMemory,
-                 limits: MultiviewLimits | None = None) -> None:
+                 limits: MultiviewLimits | None = None, *,
+                 r2a_single_writer: bool = False) -> None:
         if not isinstance(memory, ExperienceMemory):
             raise TypeError("existing ExperienceMemory required")
         if limits is not None and not isinstance(limits, MultiviewLimits):
             raise TypeError("M1-B limits required")
+        if type(r2a_single_writer) is not bool:
+            raise TypeError("R2-A selection must be an explicit boolean")
         self.memory = memory
         self.limits = limits if limits is not None else MultiviewLimits()
+        self.r2a_single_writer = r2a_single_writer
         with memory.conn:
+            if r2a_single_writer:
+                # One SQLite writer lock protects this preflight and schema
+                # initialization. It does NOT globally disable old callers.
+                memory.conn.execute("BEGIN IMMEDIATE")
+                self._r2a_preflight()
             memory.conn.execute("""
                 CREATE TABLE IF NOT EXISTS m1b_groups(
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -135,9 +146,65 @@ class MultiviewPatternMemory:
                 CREATE INDEX IF NOT EXISTS m1b_group_recent
                 ON m1b_groups(last_seen_epoch_s,id)
             """)
-            # A stricter policy on SQLite reopen must not leave more
-            # signatures in memory than the newly selected fixture limit.
-            self._trim_existing_limits()
+            # Historical studies keep their original reopen-and-trim
+            # behavior. The explicit R2-A path must NEVER silently evict
+            # stored exemplars when opened with a different study budget.
+            if not self.r2a_single_writer:
+                self._trim_existing_limits()
+
+    def _r2a_preflight(self) -> None:
+        """Fail closed on mixed writers or limits before mutating R2-A rows.
+
+        Caller holds BEGIN IMMEDIATE, including during __init__. A separate
+        legacy process can still write M1-A later; our next transaction
+        refuses it. This is an R2-A entry-point guard, NOT a global SQLite
+        enforcement mechanism or database migration.
+        """
+        if not self.r2a_single_writer:
+            return
+        c = self.memory.conn
+        tables = {
+            row[0] for row in c.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name IN ('m1a_compact_patterns','m1b_groups','m1b_signatures')"
+            )
+        }
+        if "m1a_compact_patterns" in tables and c.execute(
+            "SELECT 1 FROM m1a_compact_patterns LIMIT 1"
+        ).fetchone() is not None:
+            raise ValueError(
+                "R2-A refuses nonempty M1-A legacy fingerprints; "
+                "make a separate study DB or plan an explicit migration"
+            )
+        present = {"m1b_groups", "m1b_signatures"} & tables
+        if present and present != {"m1b_groups", "m1b_signatures"}:
+            raise ValueError("R2-A refuses partial M1-B schema")
+        if not present:
+            return
+        groups = c.execute("SELECT COUNT(*) FROM m1b_groups").fetchone()[0]
+        n, size = c.execute(
+            "SELECT COUNT(*),COALESCE(SUM(length(fingerprint)),0) "
+            "FROM m1b_signatures"
+        ).fetchone()
+        largest = c.execute(
+            "SELECT COALESCE(MAX(total),0) FROM "
+            "(SELECT COUNT(*) AS total FROM m1b_signatures GROUP BY group_id)"
+        ).fetchone()[0]
+        unmatched = c.execute("""
+            SELECT 1 FROM m1b_signatures s
+            LEFT JOIN m1b_groups g ON g.id=s.group_id
+            WHERE g.id IS NULL OR g.modality != s.modality LIMIT 1
+        """).fetchone()
+        if unmatched:
+            raise ValueError("R2-A refuses inconsistent M1-B group references")
+        if (groups > self.limits.max_groups
+                or n > self.limits.max_signatures
+                or size > self.limits.max_fingerprint_bytes
+                or largest > self.limits.max_signatures_per_group):
+            raise ValueError(
+                "R2-A refuses limits that would evict existing exemplars "
+                "during reopening; use a separate study DB"
+            )
 
     def stats(self) -> dict[str, int]:
         c = self.memory.conn
@@ -235,8 +302,12 @@ class MultiviewPatternMemory:
         self._trim_existing_limits()
 
     def prune(self, *, now_wall_epoch_s: float) -> None:
+        now = _time(now_wall_epoch_s)
         with self.memory.conn:
-            self._prune(_time(now_wall_epoch_s))
+            if self.r2a_single_writer:
+                self.memory.conn.execute("BEGIN IMMEDIATE")
+                self._r2a_preflight()
+            self._prune(now)
 
     def _make_room(self, feature_size: int, *, protected_group: int | None,
                    creating_group: bool) -> None:
@@ -350,6 +421,7 @@ class MultiviewPatternMemory:
         # pattern decision/eviction is serialized across SQLite processes.
         with c:
             c.execute("BEGIN IMMEDIATE")
+            self._r2a_preflight()
             newest = c.execute(
                 "SELECT MAX(last_seen_epoch_s) FROM m1b_groups"
             ).fetchone()[0]
