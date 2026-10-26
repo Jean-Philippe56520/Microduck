@@ -13,7 +13,7 @@ separate audited hardware, private key protection and consent workflows.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import hashlib
 import hmac
 import math
@@ -91,7 +91,7 @@ class MockOptInContext:
 class MockTokenPresentation:
     """Synthetic token gesture, not authenticated NFC/BLE/microphone input."""
 
-    token: bytes
+    token: bytes = field(repr=False)
     sequence: int
     observed_epoch_s: float
     source: str = SOURCE
@@ -118,6 +118,17 @@ class MockAssociation:
     physical_actions_authorized: bool = False
     motor_commands_issued: int = 0
     speaker_commands_issued: int = 0
+
+    def __post_init__(self) -> None:
+        _ref(self.association_ref)
+        if self.kind not in KINDS or type(self.kind) is not str:
+            raise ValueError("only a controlled generic mock class")
+        _check_wall(self.expires_epoch_s)
+        if (self.source != SOURCE or self.real_identity_verified
+                or self.real_guardian_verified or self.camera_or_voice_used
+                or self.physical_actions_authorized
+                or self.motor_commands_issued or self.speaker_commands_issued):
+            raise ValueError("fixture association cannot be physical identity")
 
 
 @dataclass(frozen=True)
