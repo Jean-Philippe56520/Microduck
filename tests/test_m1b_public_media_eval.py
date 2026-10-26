@@ -6,6 +6,7 @@ import unittest
 from microduck_companion.m1b_public_media_eval import (
     PHOTO_NAMES,PUBLIC_SOUNDS,commons_audio_url,
     decoded_loudest_pcm,load_cc0_ogg,main,
+    shifted_audio_variant,_similar_appearance,
 )
 from microduck_companion.visual_photo_catalog import PHOTO_CATALOG
 
@@ -75,6 +76,24 @@ class CuratedPublicStudyTests(unittest.TestCase):
         for sample in (b"",b"RIFF"+b"\x00"*60,b"OggS"+b"A"*200001):
             with self.subTest(size=len(sample)),self.assertRaises(ValueError):
                 decoded_loudest_pcm(sample)
+
+    def test_synthetic_time_shift_never_creates_audio_or_external_io(self):
+        import struct
+        samples=tuple((i*47)%32768 for i in range(1024))
+        raw=struct.pack("<1024h",*samples)
+        shifted=shifted_audio_variant(raw)
+        self.assertEqual(2048,len(shifted))
+        ints=struct.unpack("<1024h",shifted)
+        self.assertEqual((0,)*128,ints[:128])
+        self.assertEqual(samples[:896],ints[128:])
+        with self.assertRaises(ValueError):
+            shifted_audio_variant(b"bad")
+
+    def test_image_signature_comparison_requires_identical_lengths(self):
+        self.assertTrue(_similar_appearance(bytes([0]*64),bytes([0]*64),.94))
+        self.assertFalse(_similar_appearance(bytes([0]*64),bytes([255]*64),.94))
+        with self.assertRaises(ValueError):
+            _similar_appearance(bytes([0]*16),bytes([0]*64),.94)
 
 
 if __name__=="__main__":
