@@ -296,12 +296,29 @@ class SelectivePCBridge:
         if answer is None:
             return None
         self._pending = None
-        if (not isinstance(answer,OptionalPCAdvisory)
-                or answer.request != cycle.request
-                or answer.local_intent != cycle.local_intent
+        if (not isinstance(answer, OptionalPCAdvisory)
+                or answer.request is not cycle.request
+                or answer.local_intent is not cycle.local_intent
                 or answer.status not in _RESULTS):
+            # Worker/plugin bugs and replayed objects are untrusted; never
+            # accept an outcome attached to an equal-but-cloned request.
             answer = finish_optional_pc_cycle(
-                cycle,None,received_monotonic_s=0.,
+                cycle, b"{}", received_monotonic_s=0.,
+            )
+        elif answer.status == "hypotheses_unverified" and (
+                len(answer.hypotheses) > 1
+                or any(
+                    h.category != "unknown" or h.claimed_confidence != 0
+                    or h.received_monotonic_s < cycle.request.created_monotonic_s
+                    or h.received_monotonic_s >= cycle.request.expires_monotonic_s
+                    or h.expires_monotonic_s > cycle.request.expires_monotonic_s
+                    for h in answer.hypotheses
+                )):
+            # F5-B only sends synthetic category metadata, never actual
+            # pixels. A forged "dog", safety claim or fake receipt time
+            # cannot cross the F5-C boundary, regardless of claimed source.
+            answer = finish_optional_pc_cycle(
+                cycle, b"{}", received_monotonic_s=0.,
             )
         if not self.policy.complete(cycle.request.request_id,
                                     status=answer.status,

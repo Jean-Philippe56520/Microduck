@@ -164,9 +164,10 @@ def _schema() -> dict:
 class OllamaLocalClient:
     """Opt-in HTTP adapter. One synchronous request; NEVER in the motor loop.
 
-    Use OptionalOllamaWorker for nonblocking integration. Even with socket
-    timeout a slow-drip HTTP peer might outlive the logical deadline, so the
-    worker's poll refuses late results and bounds concurrent work to ONE.
+    Use OptionalOllamaWorker for nonblocking integration. The response
+    BODY has an absolute deadline and a strict Content-Length. Status/header
+    parsing remains a socket operation: malicious slow headers still require
+    isolation in the nonblocking worker, not the robot control thread.
     """
 
     def __init__(self, endpoint: OllamaEndpoint | None = None, *,
@@ -210,15 +211,17 @@ class OllamaLocalClient:
               timeout_s: float = 2.0) -> OllamaTransportResult:
         """Network call on caller's thread; never a motor-loop callback.
 
-        Timeouts are per socket operation. The caller/worker also enforces
-        the independent F5-A monotonic deadline. No proxy, redirect, cookie,
-        secrets, prompt log or outbound API beyond literal IP /api/chat.
+        The body has an absolute monotonic deadline (but no real-time
+        guarantee for a malicious header drip). The worker independently
+        enforces the F5-A two-second deadline. No proxy, redirect, cookie,
+        secrets or outbound API beyond literal IP /api/chat.
         """
         if not _positive_timeout(timeout_s):
             raise ValueError("invalid socket timeout")
         body = self._request_body(request)
         started = time.monotonic()
         conn: http.client.HTTPConnection | None = None
+        reply: http.client.HTTPResponse | None = None
         status, wire = "unavailable", None
         metrics: dict[str, int | None] = {}
         try:
@@ -237,20 +240,44 @@ class OllamaLocalClient:
                     "application/json"):
                 status = "protocol_rejected"
             else:
+                # F5-D: a socket timeout alone is reset by every received
+                # byte. A malicious local peer can otherwise drip bytes
+                # indefinitely. Require a bounded non-stream body and enforce
+                # the SAME absolute deadline before each read1() call.
+                if reply.getheader("Transfer-Encoding") is not None:
+                    raise ValueError("chunked Ollama envelope not supported")
+                if reply.getheader("Content-Encoding", "identity").lower() not in (
+                        "", "identity"):
+                    raise ValueError("compressed Ollama envelope not supported")
                 content_length = reply.getheader("Content-Length")
-                if content_length is not None and (
-                        not content_length.isascii()
-                        or not content_length.isdecimal()
-                        or int(content_length) > MAX_ENVELOPE_BYTES):
-                    raise ValueError("oversize Ollama envelope")
-                if conn.sock is not None:
-                    remaining = timeout_s - (time.monotonic() - started)
-                    if remaining <= 0:
-                        raise TimeoutError("expired socket budget")
-                    conn.sock.settimeout(remaining)
-                envelope_bytes = reply.read(MAX_ENVELOPE_BYTES + 1)
-                if len(envelope_bytes) > MAX_ENVELOPE_BYTES:
-                    raise ValueError("oversize Ollama response")
+                if (content_length is None or not content_length.isascii()
+                        or not content_length.isdecimal()):
+                    raise ValueError("missing or ambiguous Ollama body size")
+                expected_size = int(content_length)
+                if not 0 < expected_size <= MAX_ENVELOPE_BYTES:
+                    raise ValueError("Ollama envelope exceeds strict budget")
+                pieces: list[bytes] = []
+                received = 0
+                while received < expected_size:
+                    time_left = started + timeout_s - time.monotonic()
+                    if time_left <= 0:
+                        raise TimeoutError("overall HTTP response deadline")
+                    # http.client may detach conn.sock for Connection: close;
+                    # the response file still owns the SAME connected socket.
+                    raw = getattr(getattr(reply, "fp", None), "raw", None)
+                    sock = conn.sock if conn.sock is not None else getattr(
+                        raw, "_sock", None)
+                    if sock is None:
+                        raise ValueError("cannot enforce the socket deadline")
+                    sock.settimeout(time_left)
+                    chunk = reply.read1(min(4096, expected_size - received))
+                    if not chunk:
+                        raise ValueError("truncated Ollama envelope")
+                    received += len(chunk)
+                    pieces.append(chunk)
+                if time.monotonic() >= started + timeout_s:
+                    raise TimeoutError("overall HTTP response deadline")
+                envelope_bytes = b"".join(pieces)
                 data = _strict_json(envelope_bytes)
                 if (type(data) is not dict
                         or data.get("model") != self.model
@@ -283,6 +310,8 @@ class OllamaLocalClient:
         except (ValueError, TypeError, UnicodeError, RecursionError, OverflowError):
             status, wire = "protocol_rejected", None
         finally:
+            if reply is not None:
+                reply.close()
             if conn is not None:
                 conn.close()
         return OllamaTransportResult(
@@ -352,10 +381,16 @@ class OptionalOllamaWorker:
                 < cycle.request.expires_monotonic_s):
             return False
         budget = cycle.request.expires_monotonic_s - now
+        try:
+            future = self._pool.submit(
+                self.client.query, cycle.request, timeout_s=min(budget, 2.0),
+            )
+        except RuntimeError:
+            # Executor shutdown must not poison the worker with a false
+            # pending cycle. F5-C records unavailable and stays local.
+            return False
         self._cycle = cycle
-        self._future = self._pool.submit(
-            self.client.query, cycle.request, timeout_s=min(budget, 2.0),
-        )
+        self._future = future
         return True
 
     def poll(self) -> OptionalPCAdvisory | None:

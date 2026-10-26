@@ -78,3 +78,7 @@ jobs:
           # No external network, real Ollama/Qwen, sensor, motor or speaker.
           python -m microduck_companion.f5c_policy_demo --database "$RUNNER_TEMP/f5c-pc-quota.sqlite3" --session first
           python -m microduck_companion.f5c_policy_demo --database "$RUNNER_TEMP/f5c-pc-quota.sqlite3" --session second
+      - name: F5-D offline adversarial Qwen response contract
+        run: |
+          # Forged JSON only: no real Ollama, no external network or motors.
+          python -m microduck_companion.f5d_adversarial_demo
