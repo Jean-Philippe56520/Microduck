@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**PD2 — cohérence des 16 comportements historiques, sans exécution (27/10/2026 ; PR/CI à vérifier) :** [module, scénarios et preuves](pd2-coherent-mock-behavior-continuity-2026-10-27.md). Réutilise le même `AutonomyBrain` F2 et ses cinq motivations, le portrait P-A/P-B, les indices P-C/PD1 et la même mémoire F4-A. **Dix contextes synthétiques** peuvent proposer des étiquettes `Wander/TurnInPlace/Zoomies/Stretch/Ruffle/Preen/Sneeze/Dance/GroundPick/Held`, plus quatre portraits P-A et deux indices P-C ; **zéro action OEM ou consultation Qwen**. Inertie 2 s et cooldown 8 s *fictifs*, STOP/repos prioritaires, rétractation de souvenirs ; pas de persistance des variables d'humeur PD2 après reboot, ni de seconde SQLite. **Cat-A2b demeure la prochaine priorité de perception** et PD3 reste à développer.
+
+
 **PD1 — audit non exécutable des 16 états OEM (27/10/2026 ; [PR #74](https://github.com/Jean-Philippe56520/Microduck/pull/74), [CI hôte 1 176 tests, 19 ignorés, zéro échec](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40418679064)) :** [catalogue et 17 tests](pd1-oem-expression-capabilities-2026-10-27.md). PD1 réutilise la vue P-A et les indices P-C sans créer de seconde machine d'états : 16 noms catalogués, 4 **expressions partielles** dans les sources OEM épinglées (`IdleHead` regards/bâillement, `robotd` `coo` conditionnel) ; **aucune** commande historique d'état à seize branches ni exécution physique certifiée. Contrats typés imposant absence de moteur, son, Qwen et double écriture. Test sur fixtures/CI à vérifier ; la perception réelle Cat-A2b conserve la prochaine preuve à obtenir et PD2/PD3 ne sont pas lancés.
 
 
