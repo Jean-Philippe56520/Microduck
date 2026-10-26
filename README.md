@@ -4,6 +4,8 @@
 
 Projet de robot autonome, curieux, explorateur et social.
 
+**Audit de réutilisation OEM — 26 octobre 2026 :** la [revue du cerveau officiel et des fonctions existantes](docs/oem-reuse-audit-2026-10-26.md) distingue les fonctions réellement codées (moteurs/sécurité `robotd`, animation `IdleHead`, capture `mediad`, ToF et signaux sonores) du **futur cerveau autonome M9, non encore porté**. `AutonomyBrain` reste un **banc cognitif sans moteurs** et ne doit pas doubler l'arbitrage OEM ; l'apport Companion à conserver est la mémoire locale, les reconnaissances mesurées et les hypothèses PC facultatives. [Inventaire vérifiable](docs/oem-reuse-inventory-2026-10-26.json) et tests hors ligne, aucun capteur physique branché.
+
 **Objectif :** développer un cerveau comportemental qui observe, conserve une mémoire locale, apprend des conséquences de ses actions et interroge facultativement un modèle Qwen sur un PC du réseau local. Le dialogue est secondaire.
 
 ## Les deux sources officielles
