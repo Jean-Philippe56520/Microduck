@@ -166,7 +166,8 @@ class AutonomyBrain:
         )
 
     def describe_behavior_continuity(self, portrait, *, situation,
-                                     now_monotonic_s: float, hint=None):
+                                     now_monotonic_s: float, hint=None,
+                                     hint_evaluated_monotonic_s=None):
         """PD2: describe fictional OEM state continuity AFTER the F2 decision.
 
         Existing brain owns one tiny process-local continuity object. P-A/B
@@ -180,6 +181,7 @@ class AutonomyBrain:
         return self._behavior_continuity.describe(
             portrait, motivations=self.motives,
             situation=situation, now_monotonic_s=now_monotonic_s, hint=hint,
+            hint_evaluated_monotonic_s=hint_evaluated_monotonic_s,
         )
 
     def describe_oem_expression(self, portrait, *, cue, context, conditions,
