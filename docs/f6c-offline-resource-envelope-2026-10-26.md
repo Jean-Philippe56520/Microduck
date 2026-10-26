@@ -1,6 +1,6 @@
 # F6-C — Budgets d'événements et ressources du cerveau autonome sans PC
 
-**26 octobre 2026 — [PR #47](https://github.com/Jean-Philippe56520/Microduck/pull/47), code Python expérimental sur données fictives.** Cette phase conserve `PassiveCycleSupervisor` F2-D, `AutonomyBrain`, les motivations et la même `ExperienceMemory`. Aucun robot, service constructeur, capteur ni modèle PC n'est activé.
+**26 octobre 2026 — [PR #47](https://github.com/Jean-Philippe56520/Microduck/pull/47) fusionnée après revue et CI, code Python expérimental sur données fictives.** Cette phase conserve `PassiveCycleSupervisor` F2-D, `AutonomyBrain`, les motivations et la même `ExperienceMemory`. Aucun robot, service constructeur, capteur ni modèle PC n'est activé.
 
 ## 1. Objectif et séparation des responsabilités
 
