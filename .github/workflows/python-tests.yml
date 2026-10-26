@@ -105,3 +105,13 @@ jobs:
           # Full mock F1-B Unix read -> F2 brain -> SQLite F1-C/F2-C,
           # with F6-C pre-read/pre-memory quotas. NO OEM/PC/robot hardware.
           python -m microduck_companion.f6c_offline_budget_demo
+      - name: F6-D read-only audit plan and denied-movement shell guard
+        run: |
+          # The CI host is NOT a Microduck. No hardware survey or telemetry.
+          sh -n scripts/resource-audit.sh
+          sh scripts/resource-audit.sh --plan
+          python -m microduck_companion.f6d_audit_plan_demo
+          if sh scripts/resource-audit.sh --phase movement --operator-confirmed; then
+            echo "F6-D motion must be rejected" >&2
+            exit 1
+          fi

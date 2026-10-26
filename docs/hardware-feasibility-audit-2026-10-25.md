@@ -102,6 +102,14 @@ La [CI Python F6-C](https://github.com/Jean-Philippe56520/Microduck/actions/runs
 
 `scripts/resource-audit.sh` reste à exécuter **sur une unité réelle**, dans l'ordre repos → vision → mouvement sécurisé seulement après validation locomotrice. Aucun seuil thermique ou énergétique réel n'est validé.
 
+## Addendum F6-D — 26 octobre 2026 (protocole en lecture seule, aucune mesure RK3566)
+
+Le [protocole F6-D](f6d-hardware-audit-protocol-2026-10-26.md), fusionné via [PR #48](https://github.com/Jean-Philippe56520/Microduck/pull/48), transforme `scripts/resource-audit.sh` en outil **à phases explicites**. `--plan` ne lit **aucun** capteur ni fichier système. Un relevé stationnaire **réel** exige un accès développeur autorisé sur une machine ARM64 déclarant RK3566, avec confirmation opérateur ; une deuxième mesure stationnaire en vision exige la revue manuelle du repos et une vision OEM démarrée **en dehors du script**. La phase mouvement est **définitivement refusée par F6-D**, la locomotion P0/P1 restant non résolue.
+
+Les nouvelles sorties différencient `df` du **montage exact** `/var/lib/robot` et rapportent RAM disponible, RSS/CPU des seuls processus utiles, état OEM, fréquence et température **si l'unité les expose**. **Ni `robotd` à 50 Hz, ni les deadlines manquées, ni la latence capteur, ni la batterie ne sont instrumentés par cet outil** ; l'absence de mesure bloque une validation physique, même si le script lui-même renvoie normalement des données. Les conditions d'interruption sont documentées sans inventer de seuil de température ou de RAM libre.
+
+La [CI hôte F6-D](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40289135442) a réussi **878 tests Python** plus la vérification syntaxique POSIX, les refus de commande et le scénario de checklist fictive. **Zéro collecte sur le Microduck réel**, zéro installation, aucune autorisation de marche, aucune nouvelle mesure de RAM/RSS/thermie matérielles.
+
 ## Verdict
 
 Le Microduck permet raisonnablement de viser : mémoire persistante locale, moteur d'autonomie, exploration prudente, observation visuelle événementielle, identification de catégories d'animaux et interaction sociale élémentaire. Il reste à développer et à valider : détection personnalisée d'animaux, identification non biométrique des personnes familières, reconnaissance vocale, exploration sûre en environnement non contrôlé, et intégration du cerveau autonome à robotd. Qwen multimodal se placera initialement sur un PC local.
