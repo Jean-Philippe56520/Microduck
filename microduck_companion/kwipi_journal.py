@@ -1,4 +1,4 @@
-"""Kwipi's on-demand, read-only PC viewer for EX1/EX2 MOCK evidence.
+"""Kwipi's on-demand, read-only PC viewer for EX1/EX2/EX3 MOCK evidence.
 
 Reads an existing SQLite snapshot (or a stable database available locally).
 Does not open ExperienceMemory, create tables, start daemons, contact a robot,
@@ -7,6 +7,7 @@ poll continuously, or join independent P2a/F4-A evidence into fake causality.
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict
 import csv
 import io
 import json
@@ -17,6 +18,7 @@ import sys
 import time
 
 from .experience_ledger import RETENTION_S
+from .experience_expectations import compute_mock_attention_trend
 from .passive_observations import OBJECT_CATEGORIES
 from .perception import _SOUND_CATEGORIES
 
@@ -165,6 +167,61 @@ def read_journal(
         conn.close()
 
 
+def read_attention_trend(
+    path: str | Path, *, intention: str, category: str,
+    now_wall_epoch_s: float,
+) -> dict:
+    """Read one EX3 mock tendency from an existing EX1+EX2 SQLite only.
+
+    This voluntary operation is read-only, not ongoing telemetry. A
+    fictional temporal correlation is never an authenticated cause or reward.
+    """
+    now = _time(now_wall_epoch_s)
+    p = Path(path)
+    if not p.is_file():
+        raise FileNotFoundError("SQLite file not found")
+    conn = sqlite3.connect(p.resolve().as_uri() + "?mode=ro", uri=True)
+    try:
+        conn.execute("PRAGMA query_only=ON")
+        tables = {
+            row[0] for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name IN ('ex1_mock_experiences','ex2_mock_effects')"
+            )
+        }
+        if not {"ex1_mock_experiences", "ex2_mock_effects"} <= tables:
+            raise ValueError("EX1 and EX2 fixture tables are required")
+        return asdict(compute_mock_attention_trend(
+            conn, intention=intention, category=category,
+            now_wall_epoch_s=now,
+        ))
+    finally:
+        conn.close()
+
+
+TREND_FIELDS = (
+    "intention", "category", "independent_sessions", "changed", "unchanged",
+    "attention_bias", "status", "source", "causality_established",
+    "verified_on_robot", "motor_commands_issued",
+)
+
+
+def render_attention_trend(row: dict, *, format: str = "jsonl") -> str:
+    """Explicitly label derived mock hints as fictional in JSONL/CSV."""
+    if format not in ("jsonl", "csv"):
+        raise ValueError("unsupported output format")
+    selected = {field: row[field] for field in TREND_FIELDS}
+    if format == "jsonl":
+        return json.dumps(
+            selected, ensure_ascii=True, separators=(",", ":"),
+        ) + "\n"
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=TREND_FIELDS, lineterminator="\n")
+    writer.writeheader()
+    writer.writerow(selected)
+    return output.getvalue()
+
+
 def render_journal(rows: tuple[dict, ...], *, format: str = "jsonl") -> str:
     """Return limited, fixed-schema JSONL or CSV; never enrich with PII."""
     if format not in ("jsonl", "csv"):
@@ -186,7 +243,7 @@ def render_journal(rows: tuple[dict, ...], *, format: str = "jsonl") -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Journal de Kwipi : lecture locale EX1/EX2 fictive uniquement"
+        description="Journal de Kwipi : lecture locale EX1/EX2 et tendances EX3 fictives uniquement"
     )
     parser.add_argument("database", help="SQLite existante, locale, en lecture seule")
     parser.add_argument("--at", type=float, default=None,
@@ -196,15 +253,26 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--status", choices=sorted(STATUSES))
     parser.add_argument("--format", choices=("jsonl", "csv"), default="jsonl")
     parser.add_argument("--include-withdrawn", action="store_true")
+    parser.add_argument("--trend", choices=("observe", "listen"),
+                        help="résumé EX3 fictif (nécessite --category)")
     args = parser.parse_args(argv)
     try:
-        rows = read_journal(
-            args.database,
-            now_wall_epoch_s=time.time() if args.at is None else args.at,
-            limit=args.limit, category=args.category,
-            status=args.status, include_withdrawn=args.include_withdrawn,
-        )
-        output = render_journal(rows, format=args.format)
+        now = time.time() if args.at is None else args.at
+        if args.trend is not None:
+            if args.category is None:
+                raise ValueError("--trend requires --category")
+            row = read_attention_trend(
+                args.database, intention=args.trend,
+                category=args.category, now_wall_epoch_s=now,
+            )
+            output = render_attention_trend(row, format=args.format)
+        else:
+            rows = read_journal(
+                args.database, now_wall_epoch_s=now,
+                limit=args.limit, category=args.category,
+                status=args.status, include_withdrawn=args.include_withdrawn,
+            )
+            output = render_journal(rows, format=args.format)
     except (ValueError, FileNotFoundError, sqlite3.Error, OSError) as exc:
         print("Journal non disponible : " + str(exc), file=sys.stderr)
         return 2
