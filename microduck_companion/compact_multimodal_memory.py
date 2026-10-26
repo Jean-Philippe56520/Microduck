@@ -52,18 +52,26 @@ _GOERTZEL_COEFFS = tuple(
 )
 
 
+def _bounded_real(value: object, *, upper: float, name: str) -> float:
+    if type(value) not in (int, float):
+        raise ValueError(name + " must be a finite bounded number")
+    try:
+        if not math.isfinite(value) or not 0 <= value <= upper:
+            raise ValueError(name + " out of range")
+        return float(value)
+    except OverflowError as exc:
+        # An attacker-controlled Python integer may have thousands of bits.
+        # Reject rather than crash the passive cognition loop.
+        raise ValueError(name + " is unrepresentable") from exc
+
+
 def _time(value: object) -> float:
-    if (type(value) not in (int, float) or not math.isfinite(value)
-            or not 0 <= value <= MAX_WALL_EPOCH_S):
-        raise ValueError("wall clock must be finite, positive and bounded")
-    return float(value)
+    return _bounded_real(value, upper=MAX_WALL_EPOCH_S,
+                         name="fixture wall clock")
 
 
 def _interest(value: object) -> float:
-    if (type(value) not in (int, float) or not math.isfinite(value)
-            or not 0 <= value <= 1):
-        raise ValueError("interest must be in [0, 1]")
-    return float(value)
+    return _bounded_real(value, upper=1., name="fixture interest")
 
 
 def image_fingerprint(gray8: bytes) -> bytes:
@@ -234,7 +242,7 @@ class CompactPatternMemory:
         self, gray8: bytes, *, now_wall_epoch_s: float,
         category: str = "unknown", pc_opt_in: bool = False, interest: float = 0.,
     ) -> CompactEncounter:
-        if category not in OBJECT_CATEGORIES:
+        if type(category) is not str or category not in OBJECT_CATEGORIES:
             raise ValueError("unsupported generic visual fixture category")
         if category == "person":
             raise ValueError("no person appearance fingerprints in M1-A")
@@ -247,7 +255,7 @@ class CompactPatternMemory:
         self, pcm16le: bytes, *, now_wall_epoch_s: float,
         category: str = "unknown", pc_opt_in: bool = False, interest: float = 0.,
     ) -> CompactEncounter:
-        if category not in SOUND_CATEGORIES:
+        if type(category) is not str or category not in SOUND_CATEGORIES:
             raise ValueError("unsupported generic audio fixture category")
         if category == "speech":
             raise ValueError("no voice or speech fingerprints in M1-A")
