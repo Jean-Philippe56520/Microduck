@@ -115,3 +115,9 @@ jobs:
             echo "F6-D motion must be rejected" >&2
             exit 1
           fi
+      - name: M1-A compact image/audio patterns across two independent mock processes
+        run: |
+          # Synthetic grayscale and PCM tone only. No camera, microphone,
+          # person, animal, real Ollama, paid API, OEM socket or motors.
+          python -m microduck_companion.m1a_multimodal_demo --database "$RUNNER_TEMP/m1a-mock-patterns.sqlite3" --session first
+          python -m microduck_companion.m1a_multimodal_demo --database "$RUNNER_TEMP/m1a-mock-patterns.sqlite3" --session second
