@@ -48,6 +48,22 @@ class ReuseFirstProtocolTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, template)
 
+    def test_r1_canonical_report_and_links_exist(self):
+        canonical = ROOT / "docs/r1-oem-passive-fixture-2026-10-26.md"
+        self.assertTrue(canonical.is_file())
+        report = canonical.read_text(encoding="utf-8")
+        self.assertIn("parse_oem_shape_notification", report)
+        self.assertIn("parse_depth", report)
+        self.assertIn("to_passive_read()", report)
+        self.assertIn("R2", report)
+        for path in ("README.md", "docs/roadmap.md",
+                     "docs/plan-action.md",
+                     "docs/hardware-feasibility-audit-2026-10-25.md"):
+            with self.subTest(path=path):
+                content = (ROOT / path).read_text(encoding="utf-8")
+                self.assertIn("r1-oem-passive-fixture-2026-10-26.md",
+                              content)
+
     def test_r1_reuses_existing_validators_instead_of_redoing_parsers(self):
         parsed = ast.parse((ROOT / "microduck_companion/oem_passive_fixture.py")
                            .read_text(encoding="utf-8"))
