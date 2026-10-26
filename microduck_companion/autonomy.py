@@ -65,6 +65,9 @@ class AutonomyBrain:
         # F2-B state is process-local, lazy and strictly cognitive. It never
         # replaces the existing robot safety path or SQLite memory.
         self._passive_rhythm = None
+        # PD2 only remembers post-decision MOCK descriptive inertia locally.
+        # It is not a second brain, a daemon, or durable mood history.
+        self._behavior_continuity = None
 
     def propose_passive(self, reading: PassiveRead, *,
                         journal: PassiveObservationJournal,
@@ -160,6 +163,23 @@ class AutonomyBrain:
             selected, brain=self, journal=journal,
             now_wall_epoch_s=now_wall_epoch_s, learning=learning,
             behavioral=behavioral,
+        )
+
+    def describe_behavior_continuity(self, portrait, *, situation,
+                                     now_monotonic_s: float, hint=None):
+        """PD2: describe fictional OEM state continuity AFTER the F2 decision.
+
+        Existing brain owns one tiny process-local continuity object. P-A/B
+        portrait and P-C cue are reused. No second action scheduler, SQLite
+        writing, robotd call, camera/speaker or Qwen.
+        """
+        from .behavior_continuity import MockBehaviorContinuity
+
+        if self._behavior_continuity is None:
+            self._behavior_continuity = MockBehaviorContinuity()
+        return self._behavior_continuity.describe(
+            portrait, motivations=self.motives,
+            situation=situation, now_monotonic_s=now_monotonic_s, hint=hint,
         )
 
     def describe_oem_expression(self, portrait, *, cue, context, conditions,
