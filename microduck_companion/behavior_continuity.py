@@ -243,17 +243,18 @@ class MockBehaviorContinuity:
             self._state = None
             self._since = None
             return self._apply("Chill", base, "clock_reset", now)
+        # A stop, fall or busy flag must win even on a duplicate timestamp.
+        # These are mock claims, NOT a replacement for real robotd safety.
+        if (situation.conditions.stop_requested or situation.conditions.fallen
+                or situation.conditions.busy):
+            self._reentry_until.clear()
+            return self._apply("Chill", base, "safety_or_stop", now)
         if self._last_now is not None and now == self._last_now:
             return self._result(
                 self._state if self._state is not None else "Chill",
                 self._last_base if self._last_base is not None else base,
                 "duplicate_cycle",
             )
-
-        if (situation.conditions.stop_requested or situation.conditions.fallen
-                or situation.conditions.busy):
-            self._reentry_until.clear()
-            return self._apply("Chill", base, "safety_or_stop", now)
 
         # Rest is already decided by F2. A PD2 expression cannot replace it
         # with a playful state, petting or a motor-like historical label.
@@ -287,7 +288,8 @@ class MockBehaviorContinuity:
         # already chosen F2/F4 base, not across a rest or attention switch.
         same_base = self._last_base == base
         if (self._state is not None and state != self._state and same_base
-                and not urgent_hint and reason != "stale_or_future_mock_cue"
+                and not urgent_hint and reason in {
+                    "base_portrait", "contextual_mock_candidate"}
                 and self._since is not None
                 and now - self._since < MIN_MOCK_EXPRESSION_DWELL_S):
             state = self._state
