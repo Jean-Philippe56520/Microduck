@@ -423,6 +423,32 @@ class OptInIdentityTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             MockResolution("mock_token_association_only")
 
+    def test_public_token_never_appears_in_presentation_repr(self):
+        private=MockTokenPresentation(TOKEN,1,WALL)
+        self.assertNotIn(repr(TOKEN),repr(private))
+        self.assertNotIn(TOKEN.hex(),repr(private))
+        self.assertIn("MockTokenPresentation",repr(private))
+
+    def test_association_dataclass_rejects_forged_verified_identity(self):
+        good=self.enroll()
+        for kw in (
+            {"real_identity_verified":True},
+            {"real_guardian_verified":True},
+            {"camera_or_voice_used":True},
+            {"physical_actions_authorized":True},
+            {"motor_commands_issued":1},
+            {"speaker_commands_issued":1},
+            {"source":"robot"},
+            {"kind":"named-person"},
+            {"association_ref":"some-name"},
+        ):
+            with self.subTest(kw=kw),self.assertRaises(ValueError):
+                fields=dict(association_ref=good.association_ref,
+                            kind=good.kind,
+                            expires_epoch_s=good.expires_epoch_s)
+                fields.update(kw)
+                MockAssociation(**fields)
+
     def test_closed_database_fails_closed(self):
         self.mem.close()
         self.assertEqual("history_unavailable",
