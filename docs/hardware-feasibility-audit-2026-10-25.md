@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**Addendum R2-B — 26 octobre 2026 :** [étude réelle sur 72 vues ABO](r2b-independent-capture-evaluation-2026-10-26.md), [runner CI #40322898625](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40322898625). MobileNetV2 ONNX CPU : médiane **8,95 ms**, p95 **9,40 ms** sur 72 inférences (hors prétraitement et téléchargement) ; pic RSS **114 764 Kio pour le processus entier**, 22,372 s mur incluant le réseau. **Ces mesures hôte ne renseignent pas la RAM libre, la chauffe, la consommation, les délais robotd ni la faisabilité RK3566.** Les médias restent en mémoire temporaire et non dans SQLite ; COIL à usage non commercial non exécuté, audio indépendant non évalué, aucune transmission personnelle ni commande constructeur.
+
+
 **Addendum R2-A — 26 octobre 2026 :** [sélection d'une seule mémoire R2 sur fixtures](r2a-single-memory-selection-2026-10-26.md). Le protocole réutilise M1-B/`ExperienceMemory` avec un garde-fou optionnel contre la double persistance M1-A dans le chemin R2, sans migration ni suppression de données. Les signatures de 64/16 octets, le plafond de blobs et `PRAGMA page_count` **ne prouvent pas** la marge de stockage disponible du RK3566 (index, WAL, pages libres, système, RSS, caches). Une ancienne application peut toujours écrire séparément : l'opération R2 suivante refusera alors le mélange. Aucune mesure réelle RAM/CPU/thermie ni déploiement physique nouveau.
 
 

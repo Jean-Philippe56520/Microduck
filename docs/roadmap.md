@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**R2-B — comparaison sur images multi-angles réelles (test hôte, non robot) :** [rapport](r2b-independent-capture-evaluation-2026-10-26.md) et [CI #40322898625](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40322898625). Sources ABO CC BY 4.0 : **72 clichés de 12 séquences** ; test sur quatre séquences inscrites et deux inconnues : **15/16** vues reconnues avec les 1 000 scores de classe MobileNetV2 contre **10/16** M1-B, et **8/8** inconnues rejetées par les deux, sans changement de seuil après validation. Étude trop petite et trop contrôlée pour établir une capacité réelle du robot ; images corrélées dans la même séance, aucune source audio physiquement réenregistrée évaluée. Aucun modèle ni mécanisme d'identification d'instance retenu pour RK3566. Réutilisation M1-A/M1-B2 ; **pas d'écriture dans SQLite R2-A**.
+
+
 **R2-A — décision de mémoire expérimentale :** [rapport de sélection](r2a-single-memory-selection-2026-10-26.md). M1-B est le **seul écrivain utilisé par le chemin R2-A** via une option strictement facultative, avec tests de non-écriture M1-A, réouverture sans éviction, détection des anciennes lignes et nouvelle validation avant chaque opération. M1-A reste la référence pure et historique. La sélection n'est pas une migration des anciennes lignes, un verrou global interprocessus ou une validation embarquée ; R2-B doit d'abord mesurer une vraie reconnaissance multi-vues/son indépendant et les confusions.
 
 
