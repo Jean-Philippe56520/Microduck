@@ -8,6 +8,7 @@ from __future__ import annotations
 import csv
 import gzip
 import io
+import importlib.util
 import hashlib
 import json
 import math
@@ -24,7 +25,7 @@ from microduck_companion.r2b_independent_capture_eval import (
     _abo_https_bytes, _abo_spin_sample,
     _audio_manifest, _capture_manifest, _coil_name, _image_samples,
     _predict, _read_wav_take, evaluate_captures, main, run_audio_manifest,
-    run_coil20,
+    run_coil20, run_image_manifest,
 )
 
 WAV_HZ = 16000
@@ -286,6 +287,43 @@ class R2BCaptureProtocolTests(unittest.TestCase):
                 _abo_https_bytes(
                     f"https://{ABO_HOST}/spins/original/a.jpg",
                     limit=1000)
+
+    @unittest.skipUnless(importlib.util.find_spec("PIL") is not None,
+                         "Pillow available only in optional real-media runner")
+    def test_local_png_manifest_pipeline_with_generated_images_only(self):
+        """Pillow path is tested on synthetic arrays, never a recognition claim."""
+        from PIL import Image
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            manifest = fixture_manifest("png")
+            for item in manifest["recordings"]:
+                source = item["source_id"]
+                seed = sum(ord(x) for x in source)
+                rng = random.Random(seed)
+                values = [rng.randrange(20, 220) for _ in range(64)]
+                if item["role"] == "query":
+                    values[0] = min(255, values[0] + 3)
+                pixels = bytes(values)
+                image = Image.frombytes("L", (8, 8), pixels).resize(
+                    (128, 128), Image.Resampling.NEAREST)
+                image.save(root / item["file"], format="PNG")
+                item["sha256"] = hashlib.sha256(
+                    (root / item["file"]).read_bytes()).hexdigest()
+            path = root / "manifest.json"
+            path.write_bytes(as_json(manifest))
+            result = run_image_manifest(path, root)
+            self.assertEqual(10, result["manifest_entries"])
+            self.assertIn("legacy", result["candidates"])
+            self.assertEqual(2, result["candidates"]["legacy"]["test"][
+                "known_queries"])
+            self.assertEqual(1, result["candidates"]["legacy"]["test"][
+                "unknown_queries"])
+            self.assertEqual(0, result["motor_commands"])
+            self.assertFalse(result["hardware_validated"])
+            self.assertFalse(result["raw_media_committed_or_saved_to_sqlite"])
+            path.write_text("{}", encoding="utf-8")
+            with self.assertRaises(R2BEvidenceError):
+                run_image_manifest(path, root)
 
     def test_command_line_requires_opt_in_and_all_parameters(self):
         for argv in (
