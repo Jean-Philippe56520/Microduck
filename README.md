@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**Cat-A2a — localisation de catégories sur vraies photos COCO :** [protocole, droits, limites](docs/cata2-coco-bbox-host-2026-10-26.md). Prolongement de Cat-A sans nouveau modèle : YOLOX Nano et seuil 0,25 réutilisés, **vraies boîtes COCO 2017** sur 24 photos de validation à licences déclarées CC BY, mêmes cinq classes `person/cat/dog/chair/sports_ball`, mesures IoU/erreurs/FP/AP50 partielles et ressources **hôte uniquement**. **Ce n'est pas un test de prise de vue basse : hauteur des caméras inconnue ; zéro prise à 25 cm vérifiée.** Nouveau lot Cat-A2b nécessaire avec captures basses autorisées et boîtes indépendantes, aucun portage RKNN, moteur, identité ou SQLite. [CI de benchmark](.github/workflows/cat-a2-coco-bbox.yml) ; résultats réels à citer après exécution.
+
+
 **P-C — expressions contextuelles OEM (propositions fictives seulement) :** [audit et contrat](docs/kwipi-oem-expressions-pc-2026-10-26.md). `AutonomyBrain.describe_oem_expression` réutilise le portrait P-A/P-B, `MockSocialContext`, la réaction **`coo` aux caresses déjà gérée par `robotd`** et les noms d'événements audio OEM `Noise/Voice` **seulement sur fixtures**. `Petted` et `Startle` sont des **candidats historiques descriptifs, non des états exécutés** ; une voix détectée n'est ni parole comprise ni « Hé Kwipi ! ». Aucun second micro/haut-parleur, animation, commande, SQLite ou nouvelle motivation ; la priorité **Cat-A2** reste inchangée. Tests physiques et portage non réalisés.
 
 
