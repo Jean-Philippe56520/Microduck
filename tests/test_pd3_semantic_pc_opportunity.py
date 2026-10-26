@@ -245,6 +245,40 @@ class PD3Tests(unittest.TestCase):
                 out,_,_,_,_=self.prepared(previous=old)
                 self.assertEqual("invalid_or_private_mock_samples",out.reason)
 
+    def test_forged_state_and_stale_scene_cue_cannot_become_reason(self):
+        out,adv,p,d,ctx=self.prepared(optin=True)
+        self.assertTrue(out.interesting)
+        # A name such as 'Wander' is never sufficient by itself.
+        fake=replace(d,state="Wander",reason="contextual_mock_candidate",
+                     oem_expression_evidence="none",
+                     companion_status="requires_oem_m9_or_sensor_review")
+        denied=assess_mock_pc_opportunity(
+            adv,portrait=p,disposition=fake,
+            previous_read=reading(at=NOW-1,seq=1),
+            current_read=reading(),situation=ctx,
+            motivations=self.brain.motives,
+            now_monotonic_s=NOW+.1,pc_opt_in=True)
+        self.assertEqual("no_semantic_behavior",denied.reason)
+        fresh_ctx=MockBehaviorSituation("new_space",NOW)
+        fake_valid=assess_mock_pc_opportunity(
+            adv,portrait=p,disposition=fake,
+            previous_read=reading(at=NOW-1,seq=1),
+            current_read=reading(),situation=fresh_ctx,
+            motivations=self.brain.motives,
+            now_monotonic_s=NOW+.1,pc_opt_in=True)
+        # Even a fabricated matching label only marks a fictional interest;
+        # it grants no PC transport or real-world affordance.
+        self.assertTrue(fake_valid.interesting)
+        self.assertFalse(fake_valid.eligible_for_transport)
+        stale_ctx=MockBehaviorSituation("new_space",NOW-2)
+        stale=assess_mock_pc_opportunity(
+            adv,portrait=p,disposition=fake,
+            previous_read=reading(at=NOW-1,seq=1),
+            current_read=reading(),situation=stale_ctx,
+            motivations=self.brain.motives,
+            now_monotonic_s=NOW+.1,pc_opt_in=True)
+        self.assertEqual("invalid_or_private_mock_samples",stale.reason)
+
     def test_invalid_privacy_and_safety_context_preempt(self):
         candidates=(
             MockBehaviorSituation(
