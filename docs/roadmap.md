@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**PD0 — 16 états historiques et consultation Qwen parcimonieuse (27/10/2026 ; documentation seule) :** [plan par état et jalons PD1–PD7](pd0-behavior-states-selective-qwen-2026-10-27.md). Objectif : humeur descriptive cohérente + sélection F2 déjà existante → expression OEM uniquement si supportée ; candidats Qwen fondés sur l'inconnu/contradiction réelle, jamais sur le seul nom de l'état. Réutiliser F5-C quotas, F5-B repli, EX1/2/3 mémoire corrigible ; aucun accès multimodal ni état moteur nouveau. PD1/PD2/PD3 testables sur fixtures seulement ; PD4–PD7 conditionnés par perception et matériel. Cat-A2b reste prioritaire.
+
+
 **EX3 — tendances d'attention fictives réversibles ([PR #72](https://github.com/Jean-Philippe56520/Microduck/pull/72), [CI hôte 1 159 tests, 19 ignorés](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40415345335)) :** [code, tests, limitations](ex3-reversible-mock-attention-2026-10-26.md). Un `SELECT` EX1/EX2 déduit un biais d'attention F2 borné, optionnel, annulable par correction ; sessions distinctes requises, aucune récompense/causalité/acte physique. `kwipi_journal --trend` permet de consulter les statistiques sans autre service. Cat-A2b et validation physique restent inchangées.
 
 
