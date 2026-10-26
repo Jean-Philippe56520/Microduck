@@ -99,7 +99,8 @@ def decoded_loudest_pcm(raw: bytes) -> bytes:
         raise ValueError("expected bounded OGG bytes")
     decoder=_host_ffmpeg()
     result=subprocess.run([
-        decoder,"-hide_banner","-loglevel","error",
+        decoder,"-nostdin","-hide_banner","-loglevel","error",
+        "-protocol_whitelist","file,pipe",
         "-i","pipe:0","-t","5","-ac","1","-ar","8000",
         "-f","s16le","pipe:1",
     ],input=raw,capture_output=True,timeout=15,check=False)
