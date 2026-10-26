@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from microduck_companion.m1b2_host_embeddings import (
     YAMNET_SHA256, YAMNET_URL, _audio_variants, _latency, _pairs,
-    check_audio_model, conservative_threshold, main, similarity,
+    check_audio_model, conservative_threshold, imagenet_distribution, main, similarity,
 )
 
 
@@ -87,6 +87,23 @@ class M1B2OfflineTests(unittest.TestCase):
         self.assertEqual(round(raw[123] * .8), result["gain_80pct"][123])
         with self.assertRaises(ValueError):
             _audio_variants(tuple([0] * 1024))
+
+    def test_imagenet_probabilities_not_softmaxed_twice(self):
+        probs = [0.] * 1000
+        probs[281] = .9
+        probs[151] = .1
+        retained = imagenet_distribution(tuple(probs))
+        self.assertAlmostEqual(.9, retained[281])
+        self.assertAlmostEqual(.1, retained[151])
+        logits = [-20.] * 1000
+        logits[281] = 20.
+        normalized = imagenet_distribution(tuple(logits))
+        self.assertGreater(normalized[281], .99)
+        self.assertAlmostEqual(1., sum(normalized))
+        for invalid in ((1.,) * 999, (float("nan"),) * 1000,
+                        (True,) * 1000):
+            with self.subTest(size=len(invalid)), self.assertRaises(ValueError):
+                imagenet_distribution(invalid)
 
     def test_latency_report_counts_real_samples_only(self):
         self.assertEqual(4, _latency([4., 3., 1., 2.])["calls"])
