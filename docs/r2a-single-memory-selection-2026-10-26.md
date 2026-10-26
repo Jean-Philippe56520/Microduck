@@ -51,7 +51,7 @@ Contrat attendu :
 - Aucune requête Qwen, aucune commande moteur ni aucun accès à `mediad`, `tofd` ou `robotd`.
 - La taille de signatures stockées ne représente ni la taille physique de SQLite ni le RSS sur RK3566.
 
-**Preuve attendue :** GitHub Actions `Python companion tests` sur SHA de PR ; résultat à remplir uniquement après la CI. Ces tests ne certifient ni la reconnaissance d'objets physiques, ni le fonctionnement de M1-B sur une image naturelle multi-angle.
+**Preuve réellement observée sur la PR #55 :** [GitHub Actions #40319206601](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40319206601), **970 tests Python réussis**, dont 9 nouveaux tests ciblés R2-A, sur le commit `76859b80aa36e3582870158d9a76977dde233ce0`. Ces tests valident les contrats logiciels et les anciennes suites M1-A/B ; ils ne certifient ni une identité physique, ni la reconnaissance d'angles naturels, ni l'usage sur RK3566. La CI d'un éventuel commit documentaire ultérieur doit être revérifiée.
 
 ## Critère de sortie R2-A et passage à R2-B
 
