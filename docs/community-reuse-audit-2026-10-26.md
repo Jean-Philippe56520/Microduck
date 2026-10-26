@@ -2,6 +2,8 @@
 
 **26 octobre 2026 — audit statique et comparatif, sans intégration de code tiers.**
 
+**Addendum C3 (même date) :** la [matrice comparée **par chantier** et le registre de références](community-reference-registry-2026-10-26.md) ajoutent les PR sur le dépôt OEM [#414 (maploc v2/mapd)](https://github.com/pollen-robotics/microduck/pull/414) et [#381 (proposition d'autonomie)](https://github.com/pollen-robotics/microduck/pull/381), ainsi que Quacksat, Quack-control, Microduck Lab et Microduck Studio. **C3 remplace toute conclusion implicite selon laquelle QuackNav devrait précéder la vérification d'une solution de cartographie constructeur.** Les PR sont ouvertes et ne constituent pas des fonctions officielles fusionnées.
+
 ## 1. Objet, sources et niveau de preuve
 
 **Demande couverte :** (C1) inspecter plusieurs projets publics pertinents et leur **code**, au-delà des seules annonces ; (C2) comparer leurs responsabilités au code déjà présent dans [notre dépôt privé](https://github.com/Jean-Philippe56520/Microduck), afin de signaler les réutilisations et les doublons possibles **avant** tout nouveau développement.
