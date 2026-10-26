@@ -146,7 +146,8 @@ class MockBehaviorContinuity:
         if state in {"Wander", "TurnInPlace", "GroundPick"}:
             if portrait.inspection_habit == "inspection_reserved":
                 return False, "history_discourages_inspection"
-            if base != "LookAround" or portrait.reason != "passive_attention":
+            if (base != "LookAround" or portrait.reason != "passive_attention"
+                    or portrait.affect != "curious"):
                 return False, "ineligible_mock_context"
             if state == "Wander":
                 allowed = (motives.curiosity >= .65 and motives.energy >= .5
@@ -219,6 +220,7 @@ class MockBehaviorContinuity:
         self, portrait: BehaviorPortrait, *, motivations: Motivations,
         situation: MockBehaviorSituation, now_monotonic_s: float,
         hint: MockExpressionHint | None = None,
+        hint_evaluated_monotonic_s: float | None = None,
     ) -> MockBehaviorDisposition:
         """Describe a previously chosen F2/F4 proposal with bounded inertia.
 
@@ -233,6 +235,14 @@ class MockBehaviorContinuity:
             raise TypeError("PD2 needs a typed fictional context")
         if not _finite_epoch(now_monotonic_s):
             raise ValueError("PD2 needs a finite nonnegative monotonic clock")
+        # The P-C hint itself stores no timestamp. Force the caller to
+        # provide its fixture evaluation time; an old startle/petting event
+        # must not stay 'current' across later F2 cycles.
+        if hint is None:
+            if hint_evaluated_monotonic_s is not None:
+                raise ValueError("orphaned P-C fixture timestamp")
+        elif not _finite_epoch(hint_evaluated_monotonic_s):
+            raise ValueError("P-C hint requires an explicit fixture timestamp")
         # Also reject a hint forged for an unrelated or modified portrait.
         cap = inspect_expression_capability(portrait, hint=hint)
         now = float(now_monotonic_s)
@@ -260,6 +270,13 @@ class MockBehaviorContinuity:
         # with a playful state, petting or a motor-like historical label.
         if base == "Nap":
             return self._apply("Nap", base, "rest_preempts_expression", now)
+
+        if hint is not None:
+            hint_age = now - float(hint_evaluated_monotonic_s)
+            if hint_age < 0 or hint_age > MAX_FIXTURE_CUE_AGE_S:
+                return self._apply(
+                    base, base, "stale_or_future_mock_cue", now,
+                )
 
         state = cap.state if hint is not None and hint.status in {
             "oem_owned", "hypothesis"} else base
