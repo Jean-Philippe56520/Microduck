@@ -8,6 +8,7 @@ on:
       - 'microduck_companion/r2b1_toyadmos_local.py'
       - 'microduck_companion/r2b_independent_capture_eval.py'
       - 'tests/test_r2b1_zenodo_ranges.py'
+      - 'docs/r2b1-real-audio-results-2026-10-26.md'
       - '.github/workflows/r2b1-range-probe.yml'
   workflow_dispatch:
 permissions:
