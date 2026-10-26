@@ -19,7 +19,7 @@ from .autonomy import Motivations
 from .behavior_continuity import (
     MockBehaviorDisposition, MockBehaviorSituation,
 )
-from .behavior_personality import BehaviorPortrait
+from .behavior_personality import BehaviorPortrait, HISTORICAL_OEM_STATES
 from .passive_intentions import _valid_motivations
 from .passive_observations import (
     OBJECT_CATEGORIES, summarize_passive,
@@ -75,11 +75,7 @@ class MockPCOpportunity:
 
     def __post_init__(self) -> None:
         if (type(self.interesting) is not bool
-                or self.behavior_state not in {
-                    "Chill", "LookAround", "Wander", "TurnInPlace",
-                    "Zoomies", "Startle", "Stretch", "Ruffle",
-                    "Preen", "Sneeze", "Dance", "GroundPick",
-                    "Nap", "BallPlay", "Petted", "Held"}
+                or self.behavior_state not in HISTORICAL_OEM_STATES
                 or type(self.local_intention) is not str
                 or self.local_intention not in {
                     "inspect", "observe", "listen", "idle", "rest"}
@@ -224,6 +220,9 @@ def assess_mock_pc_opportunity(
     now = float(now_monotonic_s)
     if not req.created_monotonic_s <= now < req.expires_monotonic_s:
         return denied("expired_f5_request")
+    if (not isinstance(previous_read.snapshot, PerceptionSnapshot)
+            or not isinstance(current_read.snapshot, PerceptionSnapshot)):
+        return denied("invalid_or_private_mock_samples")
     prev = previous_read.snapshot
     curr = current_read.snapshot
     if (previous_read.status != "ok" or current_read.status != "ok"
