@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**Cat-A2a (lot de localisation, sans hypothèse d'angle bas) :** [méthode et matrice](cata2-coco-bbox-host-2026-10-26.md), [évaluateur de boîtes](../microduck_companion/cata2_bbox_eval.py), [tests](../tests/test_cata2_bbox_eval.py), [CI COCO](../.github/workflows/cat-a2-coco-bbox.yml). Réutilise Cat-A YOLOX Nano ONNX/CPU et ses poids vérifiés ; 24 photos réelles COCO2017 VAL à licence déclarée CC BY, IoU50/matching/AP50 partiel, aucun affinage sur test, pas de poids/media dans GitHub. **Non réalisé :** captures véritablement basses/caméra à hauteur de Kwipi (~25 cm à confirmer), vues répétées indépendantes, classes `shoe/hand/foot`, portage RKNN/robot, capteurs/autorité motrice. La CI hôte ne peut pas lever ces portes. **Cat-A2b** = images basse hauteur horodatées + boîtes et droits vérifiés ; Cat-B suit seulement après résultat concluant.
+
+
 **P-C — rattachement descriptif des réactions OEM à la personnalité :** [contrat et audit](kwipi-oem-expressions-pc-2026-10-26.md), [adaptateur P-C](../microduck_companion/oem_expression_hints.py). `PettingEvent::Start` → candidat historique `Petted` **déjà pris en charge par `robotd`**, `SoundEvent::Noise` → hypothèse `Startle` **non vérifiée**, `SoundEvent::Voice` → voix remarquée, **aucune transcription ni activation**. Les portraits P-A/P-B sont réutilisés, sans modifier leurs quatre états descriptifs, leur mémoire ni le rythme F2/F4. Tout est `mock`, aucune sortie physique ni consommation RK3566 mesurée. **P-C2 et réactions sur robot non codées ; Cat-A2 reste prioritaire.**
 
 
