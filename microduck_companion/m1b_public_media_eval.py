@@ -147,6 +147,42 @@ def audio_gain_variant(pcm: bytes, multiplier: float = .8) -> bytes:
     return struct.pack("<"+str(len(data))+"h",*data)
 
 
+def rotated_photo_variant(pixels: bytes) -> bytes:
+    """Geometric stress test of the SAME CC0 photo, not a second camera angle."""
+    if type(pixels) is not bytes or len(pixels)!=1024:
+        raise ValueError("grayscale 32x32 photo required")
+    from PIL import Image
+    return Image.frombytes("L",(32,32),pixels).rotate(
+        12,resample=Image.Resampling.BILINEAR,fillcolor=128,
+    ).tobytes()
+
+
+def cropped_photo_variant(pixels: bytes) -> bytes:
+    """Remove 3-pixel border; rescale back to 32x32."""
+    if type(pixels) is not bytes or len(pixels)!=1024:
+        raise ValueError("grayscale 32x32 photo required")
+    from PIL import Image
+    image=Image.frombytes("L",(32,32),pixels)
+    return image.crop((3,3,29,29)).resize(
+        (32,32),resample=Image.Resampling.BILINEAR,
+    ).tobytes()
+
+
+def shifted_audio_variant(pcm: bytes) -> bytes:
+    """Shift a 1024-sample clip by 128 samples (16 ms) with zero padding."""
+    if type(pcm) is not bytes or len(pcm)!=2048:
+        raise ValueError("short 8kHz mono clip required")
+    samples=struct.unpack("<1024h",pcm)
+    return struct.pack("<1024h",*([0]*128+list(samples[:896])))
+
+
+def _similar_appearance(a: bytes, b: bytes, threshold: float) -> bool:
+    if len(a)!=len(b) or not a:
+        raise ValueError("incompatible fingerprints")
+    similarity=1.-sum(abs(x-y) for x,y in zip(a,b))/(255*len(a))
+    return similarity>=threshold
+
+
 def run_public_spot_check() -> dict:
     """Real samples only if all curated sources can be independently fetched.
 
@@ -166,6 +202,8 @@ def run_public_spot_check() -> dict:
     try:
         mem=MultiviewPatternMemory(db)
         image_repeats=0
+        image_rotation_repeats=0
+        image_crop_repeats=0
         image_false_merges=0
         for i,(filename,pixels) in enumerate(images):
             src=next(p for p in PHOTO_CATALOG if p.filename==filename)
@@ -185,7 +223,20 @@ def run_public_spot_check() -> dict:
             if candidate.status=="similar_group_unverified" and (
                     candidate.group_id==start.group_id):
                 image_repeats+=1
+            # Pre-frozen M1-A threshold, no tuning on public files. These
+            # geometric changes are SAME-FILE derivatives, not natural views.
+            from .compact_multimodal_memory import MATCH_IMAGE
+            base=image_fingerprint(pixels)
+            image_rotation_repeats+=int(_similar_appearance(
+                base,image_fingerprint(rotated_photo_variant(pixels)),
+                MATCH_IMAGE,
+            ))
+            image_crop_repeats+=int(_similar_appearance(
+                base,image_fingerprint(cropped_photo_variant(pixels)),
+                MATCH_IMAGE,
+            ))
         sound_repeats=0
+        sound_shift_repeats=0
         sound_false_merges=0
         for i,(name,label,pcm) in enumerate(sounds):
             start=mem.observe_audio(
@@ -201,6 +252,12 @@ def run_public_spot_check() -> dict:
             if duplicate.status=="similar_group_unverified" and (
                     duplicate.group_id==start.group_id):
                 sound_repeats+=1
+            from .compact_multimodal_memory import MATCH_AUDIO
+            sound_shift_repeats+=int(_similar_appearance(
+                audio_fingerprint(pcm),
+                audio_fingerprint(shifted_audio_variant(pcm)),
+                MATCH_AUDIO,
+            ))
         stats=mem.stats()
         return {
             "kind":"independent_public_CC0_samples_host_spot_check",
@@ -208,8 +265,11 @@ def run_public_spot_check() -> dict:
             "audio_sources":len(sounds),
             "image_same_file_brightness_pairs_recalled":image_repeats,
             "image_pairs_tested":len(images),
+            "image_same_file_rotation_12deg_pairs_recalled":image_rotation_repeats,
+            "image_same_file_crop_3px_pairs_recalled":image_crop_repeats,
             "audio_same_recording_gain_pairs_recalled":sound_repeats,
             "audio_pairs_tested":len(sounds),
+            "audio_same_recording_shift_16ms_pairs_recalled":sound_shift_repeats,
             "image_cross_file_auto_merges_proxy":image_false_merges,
             "audio_cross_recording_auto_merges_proxy":sound_false_merges,
             "fingerprint_fields_bytes":stats["fingerprint_bytes"],
