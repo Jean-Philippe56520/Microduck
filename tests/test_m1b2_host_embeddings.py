@@ -76,7 +76,12 @@ class M1B2OfflineTests(unittest.TestCase):
     def test_audio_gain_and_shift_keep_one_second_and_no_io(self):
         raw = tuple((i % 101) * 100 for i in range(16000))
         result = _audio_variants(raw)
-        self.assertEqual(set(result), {"original", "gain_80pct", "shift_16ms"})
+        self.assertEqual(set(result),
+                         {"original", "gain_80pct", "shift_16ms",
+                          "synthetic_noise_26dB"})
+        self.assertEqual(result["synthetic_noise_26dB"],
+                         _audio_variants(raw)["synthetic_noise_26dB"])
+        self.assertNotEqual(raw, result["synthetic_noise_26dB"])
         self.assertEqual((0,) * 256, result["shift_16ms"][:256])
         self.assertEqual(raw[:-256], result["shift_16ms"][256:])
         self.assertEqual(round(raw[123] * .8), result["gain_80pct"][123])
