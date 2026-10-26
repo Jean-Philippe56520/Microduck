@@ -162,7 +162,7 @@ Exemple : **porte ouverte → alerte e-mail** sur événement fiable et configur
 
 | Ordre | PR de travail | Périmètre contrôlé | Preuve et limites |
 | --- | --- | --- | --- |
-| **1 (PR #44 en revue)** | **F5-D — Résilience adversariale du PC** | Rejets de faux ordres/identités, délai total corps HTTP, requête authentifiée localement dans la jonction F5-C et repli après worker fermé | [808 tests Python sur fixtures et serveur hostile loopback](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40253675766) ; pas de vraie authentification réseau ni Qwen |
+| **1 (PR #44 en revue)** | **F5-D — Résilience adversariale du PC** | Rejets de faux ordres/identités, délai total corps HTTP, correspondance de l'objet requête original dans la jonction F5-C et repli après worker fermé | [808 tests Python sur fixtures et serveur hostile loopback](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40253675766) ; pas de vraie authentification réseau ni Qwen |
 | **2 (après F5-D)** | **F6-A — Inventaire des interfaces embarquées OEM** | Services essentiels hors PC, formats JSON-RPC, stockage/arrêt, contraintes mémoire *non estimées* | Pas de déploiement ni déplacement ; validation sur robot physique ultérieure |
 | **3 (essai PC distinct, avant validation F5)** | **Validation Ollama / Qwen 4B puis 9B sur PC réel** | Compatibilité HTTP, qualité sur entrées autorisées, latence, RAM/RSS, CPU/GPU/NPU et puissance mesurés | Préparer exécution volontaire sur PC, sans revendiquer une accélération ni un résultat antérieur |
 
