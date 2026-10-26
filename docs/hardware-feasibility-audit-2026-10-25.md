@@ -60,6 +60,12 @@ Le [contrat F5-A](f5a-pc-hypotheses-2026-10-26.md), fusionné via [PR #41](https
 
 F5-A ne charge aucun modèle sur le RK3566, ne valide aucun accès caméra/audio/NPU et ne modifie ni `robotd`, ni `mediad`, ni `tofd`. **Aucune nouvelle valeur** de RSS, RAM libre, CPU, température, cadence de commande, capacité de stockage ou autonomie n'est établie pour le Microduck physique. L'exécution de `scripts/resource-audit.sh` sur le matériel reste nécessaire. L'authentification du futur serveur et les délais de réseau effectifs appartiennent à F5-B/C.
 
+## Addendum F5-B — 26 octobre 2026
+
+Le [rapport F5-B](f5b-ollama-local-transport-2026-10-26.md) décrit un client HTTP local Python et un worker sans interaction motrice. Les tests utilisent un serveur HTTP simulé sur 127.0.0.1. Aucun véritable modèle Ollama ou Qwen 4B/9B n'a été exécuté et aucune mesure PC réelle n'est disponible. Le comparateur PC est en mode sans réseau par défaut.
+
+Les limites configurées de taille de réponse et de délai sont des règles logicielles, pas des mesures de RAM, de latence Ollama, de GPU/NPU ou d'énergie. Les ressources du robot RK3566 et sa température restent inconnues. L'audit physique `scripts/resource-audit.sh` doit encore être effectué sur matériel réel. Le dépôt ne contient aucun modèle ni donnée privée.
+
 ## Verdict
 
 Le Microduck permet raisonnablement de viser : mémoire persistante locale, moteur d'autonomie, exploration prudente, observation visuelle événementielle, identification de catégories d'animaux et interaction sociale élémentaire. Il reste à développer et à valider : détection personnalisée d'animaux, identification non biométrique des personnes familières, reconnaissance vocale, exploration sûre en environnement non contrôlé, et intégration du cerveau autonome à robotd. Qwen multimodal se placera initialement sur un PC local.
