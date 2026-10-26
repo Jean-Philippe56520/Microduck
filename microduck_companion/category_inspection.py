@@ -38,6 +38,13 @@ _POSSIBLE = {
     "seat": ("chair",),
     "round_edge": ("ball",),
     "round_outline": ("ball",),
+    # These are optional *next-frame* mock cues; they do not establish that
+    # a detector can actually locate a head, full person or object boundary.
+    "head_outline": ("cat", "dog", "person"),
+    "body_outline": ("person",),
+    "shoe_outline": ("shoe",),
+    "chair_back": ("chair",),
+    "whole_object": ("ball",),
 }
 # Semantic directions only. Actual camera geometry, head orientation and
 # actuation are out of scope and must belong to validated OEM/robotd APIs.
@@ -104,8 +111,11 @@ class CategoryInspectionHint:
             raise ValueError("inspection hint cannot produce physical facts/actions")
         if self.status != "inspect_more" and self.look_for is not None:
             raise ValueError("only an inspection hint can name missing evidence")
-        if self.status == "inspect_more" and not self.look_for:
-            raise ValueError("inspection must identify evidence, not a movement")
+        if self.status == "inspect_more" and self.look_for not in set(_FOLLOW.values()):
+            raise ValueError("inspection can ask only for allowlisted evidence")
+        if (self.status == "pc_review_candidate"
+                and "person" in self.candidates_unverified):
+            raise ValueError("personal clues are not approved for PC review")
         if (type(self.candidates_unverified) is not tuple
                 or any(x not in {c for values in _POSSIBLE.values()
                                   for c in values}
