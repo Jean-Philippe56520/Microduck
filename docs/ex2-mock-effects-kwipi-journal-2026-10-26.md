@@ -1,6 +1,6 @@
 # EX2 — Effets fictifs, causalité incertaine et Journal de Kwipi à la demande
 
-**26 octobre 2026 — Branche d'implémentation EX2 (fixtures uniquement).** Ce lot réutilise [EX1](ex1-mock-experience-ledger-2026-10-26.md) et la **même** `ExperienceMemory.conn`. Il n'exécute aucun mouvement, ne capture aucune image ni voix, n'utilise ni Qwen ni un service OEM et ne valide rien sur le Microduck physique. La priorité [Cat-A2b](cata2b-private-low-camera-protocol-2026-10-26.md) demeure inchangée.
+**26 octobre 2026 — [PR #71](https://github.com/Jean-Philippe56520/Microduck/pull/71) et [CI hôte #40413719554](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40413719554) : 1 139 tests exécutés, 19 ignorés, zéro échec (dont 28 tests EX2), fixtures uniquement.** Ce lot réutilise [EX1](ex1-mock-experience-ledger-2026-10-26.md) et la **même** `ExperienceMemory.conn`. Il n'exécute aucun mouvement, ne capture aucune image ni voix, n'utilise ni Qwen ni un service OEM et ne valide rien sur le Microduck physique. La priorité [Cat-A2b](cata2b-private-low-camera-protocol-2026-10-26.md) demeure inchangée.
 
 ## 1. Objet exact : consulter les souvenirs, ne pas surveiller en permanence
 
