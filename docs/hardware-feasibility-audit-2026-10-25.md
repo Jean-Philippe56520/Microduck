@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**Addendum EX1 (26/10/2026 ; [PR #70](https://github.com/Jean-Philippe56520/Microduck/pull/70), [CI hôte 1 111 tests, 19 ignorés](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40410788233)) :** [journal d'intentions fictives](ex1-mock-experience-ledger-2026-10-26.md) sur la connexion `ExperienceMemory` existante. Les plafonds de test (256 lignes, 14 jours, 50 sorties, résolution fictive dans 30 s) ne sont **pas** un budget RK3566. La taille complète SQLite (index/WAL compris), la RAM/RSS disponible, la consommation CPU/thermie, la mémoire libre et la cadence de `robotd` n'ont pas été mesurées sur Kwipi. Zéro nouvelle commande moteur, reconnaissance réelle, conséquence/causalité vécue ou preuve matérielle ; audit `scripts/resource-audit.sh` obligatoire avant portage.
+
+
 **Addendum EX0 (26/10/2026) — [plan d'expériences de Kwipi](kwipi-experiential-learning-plan-2026-10-26.md) :** strictement documentaire. Les futures opérations action→effet, les primitives de contact, l'attribution causale et les retours sociaux n'ont **aucune mesure** sur RK3566 ni aucune validation mécanique. La taille de SQLite, sa rétention, les délais de perception/robotd, la force d'interaction, les ressources CPU/NPU, la thermique et l'autonomie ne peuvent être déduits des fixtures ou de Qwen. Conserver l'audit `scripts/resource-audit.sh` et la validation de la locomotion/du sol avant toute autonomie physique ; aucune action physique n'est autorisée par EX0.
 
 
