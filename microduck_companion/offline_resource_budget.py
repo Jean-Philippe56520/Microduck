@@ -21,7 +21,14 @@ if TYPE_CHECKING:
 
 
 def _finite_nonnegative(value: object) -> bool:
-    return type(value) in (int, float) and math.isfinite(value) and value >= 0
+    if type(value) not in (int, float):
+        return False
+    try:
+        return math.isfinite(value) and value >= 0
+    except OverflowError:
+        # A caller-supplied arbitrarily huge integer is not a safe clock
+        # or policy budget. Reject instead of raising in a cognition loop.
+        return False
 
 
 @dataclass(frozen=True)
