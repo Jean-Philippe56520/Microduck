@@ -66,7 +66,7 @@ class CocoBoxContracts(unittest.TestCase):
                           "sports_ball":37, "chair":62},COCO_IDS)
         self.assertEqual(64, len(ANNOTATIONS_SHA256))
         self.assertEqual(
-            "e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aefa635b8c810b6f",
+            "e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aeefa635b8c810b6f",
             ANNOTATIONS_SHA256)
         self.assertTrue(ANNOTATIONS_URL.endswith("instances_val2017.json"))
         self.assertTrue(IMAGE_HOST.startswith("https://images.cocodataset.org/val2017/"))
