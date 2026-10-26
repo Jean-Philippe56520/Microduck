@@ -57,3 +57,9 @@ jobs:
           # No speaker, camera, robotd or motor I/O; both processes share DB.
           python -m microduck_companion.f4c_social_demo --database "$RUNNER_TEMP/f4c-social.sqlite3" --session first
           python -m microduck_companion.f4c_social_demo --database "$RUNNER_TEMP/f4c-social.sqlite3" --session second
+      - name: F4-D voluntary mock token and revocation across two processes
+        run: |
+          # PUBLIC test-only key/token bytes, never use these on the robot.
+          # No real names, faces, voices, BLE/NFC tags, camera or actuators.
+          python -m microduck_companion.f4d_optin_demo --database "$RUNNER_TEMP/f4d-only-fictional-identities.sqlite3" --session first
+          python -m microduck_companion.f4d_optin_demo --database "$RUNNER_TEMP/f4d-only-fictional-identities.sqlite3" --session second
