@@ -82,3 +82,8 @@ jobs:
         run: |
           # Forged JSON only: no real Ollama, no external network or motors.
           python -m microduck_companion.f5d_adversarial_demo
+      - name: F6-A offline Yocto mount and OEM interface preflight
+        run: |
+          # Uses fictional /proc/mountinfo strings: no disk, systemd, network,
+          # daemon socket, camera, ToF, Ollama, motor or physical hardware.
+          python -m microduck_companion.f6a_preflight_demo
