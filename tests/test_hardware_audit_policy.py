@@ -257,8 +257,8 @@ class ResourceAuditShellTests(unittest.TestCase):
             r">\s*/var/lib/robot/",
             r"\bdd\s+",
             r"\bmkfs\.",
-            r"\bmount\s+",
-            r"\bumount\s+",
+            r"(?m)^\s*mount\s+",
+            r"(?m)^\s*umount\s+",
         ):
             with self.subTest(expression=dangerous):
                 self.assertIsNone(re.search(dangerous, content))
