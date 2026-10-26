@@ -328,7 +328,13 @@ class CompactPatternMemory:
                     modality, "similar_pattern_unverified", new_category,
                     target_id, current, best_similarity, len(feature), False,
                 )
-            if len(rows) >= MAX_PATTERNS:
+            # M1-A used to count only the current modality here. At 256
+            # images, inserting one audio signature therefore produced 257
+            # live rows. Count BOTH modalities in the SAME transaction.
+            total = conn.execute(
+                "SELECT COUNT(*) FROM m1a_compact_patterns"
+            ).fetchone()[0]
+            if total >= MAX_PATTERNS:
                 conn.execute("""
                     DELETE FROM m1a_compact_patterns WHERE id=(
                         SELECT id FROM m1a_compact_patterns
