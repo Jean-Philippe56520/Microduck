@@ -94,6 +94,14 @@ La [PR #46](https://github.com/Jean-Philippe56520/Microduck/pull/46) étudie la 
 
 **Ces chiffres ne représentent pas deux cerveaux de même périmètre :** le programme Rust ne charge aucune base SQLite, perception, protections, interfacing OEM ou réseau, tandis que Python charge l'interpréteur et le module. On ne doit **pas** extrapoler l'écart de temps ou de mémoire à une marge RAM RK3566, à une durée de batterie, ni à la cadence de `robotd`. **Décision F6-B : aucun portage Rust intégré pour l'instant**, attendre l'audit matériel réel et un protocole complet à charge égale. [Rapport méthodologique F6-B](f6b-python-rust-score-study-2026-10-26.md).
 
+## Addendum F6-C — 26 octobre 2026 (fenêtres de ressources du processus hôte)
+
+La [PR #47 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/47), [CI Python de 861 tests réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40257453473), ajoute un garde d'admission **facultatif et non préemptif** au superviseur de perceptions fictives F2-D. Il peut refuser des cycles avant la lecture d'un faux socket Unix et des événements avant cognition/SQLite, sans file d'attente ni action sur les moteurs. Ses seuils **0,5 s / 8 cycles / 32 événements sur 10 s**, et les éventuels plafonds CPU/RSS, **ne proviennent d'aucune mesure du RK3566**. La sécurité et les cadences de `robotd` restent exclusivement du ressort constructeur.
+
+La [CI Python F6-C](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40257113819) valide **861 tests** et un pipeline complet sur six sollicitations synthétiques (trois acceptées, trois refusées). Un seul essai sur hôte CI a fourni **p50 0,196 ms**, **p95 1,887 ms** (maximum des six), CPU moyen du **processus entier** **0,551 ms** par rapport, et pic historique RSS du processus **18 324 Kio**. Ces valeurs ne représentent ni RAM disponible sur Microduck, ni latence des capteurs, ni thermie, puissance, consommation de batterie ou charge simultanée des pilotes OEM. Le contrôle est coopératif, et **ne peut ni interrompre une requête Python bloquée ni annuler une écriture SQLite achevée**.
+
+`scripts/resource-audit.sh` reste à exécuter **sur une unité réelle**, dans l'ordre repos → vision → mouvement sécurisé seulement après validation locomotrice. Aucun seuil thermique ou énergétique réel n'est validé.
+
 ## Verdict
 
 Le Microduck permet raisonnablement de viser : mémoire persistante locale, moteur d'autonomie, exploration prudente, observation visuelle événementielle, identification de catégories d'animaux et interaction sociale élémentaire. Il reste à développer et à valider : détection personnalisée d'animaux, identification non biométrique des personnes familières, reconnaissance vocale, exploration sûre en environnement non contrôlé, et intégration du cerveau autonome à robotd. Qwen multimodal se placera initialement sur un PC local.

@@ -16,6 +16,7 @@ import time
 from typing import Callable
 
 from .autonomy import AutonomyBrain
+from .offline_resource_budget import OfflineResourceGate
 from .passive_intentions import PassiveIntent
 from .passive_learning import PassiveLearning
 from .passive_memory import PassiveObservationJournal
@@ -132,6 +133,7 @@ class PassiveCycleSupervisor:
         journal: PassiveObservationJournal,
         learning: PassiveLearning,
         limits: PassiveCycleLimits | None = None,
+        resource_gate: OfflineResourceGate | None = None,
         monotonic_s: Callable[[], float] = time.monotonic,
         wall_epoch_s: Callable[[], float] = time.time,
         perf_counter_ns: Callable[[], int] = time.perf_counter_ns,
@@ -149,6 +151,9 @@ class PassiveCycleSupervisor:
             raise ValueError("brain, journal and learning require one SQLite")
         if limits is not None and not isinstance(limits, PassiveCycleLimits):
             raise TypeError("invalid F2-D limits")
+        if resource_gate is not None and not isinstance(
+                resource_gate, OfflineResourceGate):
+            raise TypeError("F6-C requires a process-local OfflineResourceGate")
         if not all(callable(fn) for fn in
                    (monotonic_s, wall_epoch_s, perf_counter_ns, process_time_ns)):
             raise TypeError("clocks must be callable")
@@ -157,6 +162,8 @@ class PassiveCycleSupervisor:
         self.journal = journal
         self.learning = learning
         self.limits = limits or PassiveCycleLimits()
+        self._resource_gate = resource_gate
+        self._budget_cycle_active = False
         self._mono = monotonic_s
         self._wall = wall_epoch_s
         self._perf = perf_counter_ns
@@ -174,6 +181,7 @@ class PassiveCycleSupervisor:
         self, *, status: str, intention: PassiveIntent,
         start_ns: int, start_cpu_ns: int, source_ms: float = 0.0,
         source_events: int = 0, stored: int = 0, scored: int = 0,
+        account_gate: bool = True,
     ) -> PassiveCycleReport:
         elapsed_ms = max(0.0, (self._perf() - start_ns) / 1e6)
         cpu_ms = max(0.0, (self._cpu() - start_cpu_ns) / 1e6)
@@ -187,6 +195,17 @@ class PassiveCycleSupervisor:
         self._status[status] += 1
         self._intents[report.intention] += 1
         self._samples.append((elapsed_ms, cpu_ms))
+        if account_gate and self._resource_gate is not None and self._budget_cycle_active:
+            self._budget_cycle_active = False
+            # Clock failures latch the optional gate. No attempt to
+            # replay past observations or silently reset event quotas.
+            try:
+                end_mono = self._mono()
+            except Exception:
+                end_mono = -1.0
+            self._resource_gate.report(
+                report, now_monotonic_s=end_mono,
+            )
         return report
 
     @staticmethod
@@ -196,10 +215,29 @@ class PassiveCycleSupervisor:
     def run_once(self) -> PassiveCycleReport:
         """At most one fresh socket read and one bound cognitive proposal."""
         start_ns, start_cpu_ns = self._perf(), self._cpu()
+        if self._budget_cycle_active:
+            # F6-C is single-threaded and non-reentrant. A second entry
+            # never reads a source nor touches the local cognition.
+            return self._report(
+                status="budget_cycle_inflight",
+                intention=self._idle("budget_cycle_inflight"),
+                start_ns=start_ns, start_cpu_ns=start_cpu_ns,
+                account_gate=False)
         if self._attempted >= self.limits.max_cycles:
             return self._report(
                 status="quota_cycles", intention=self._idle("cycle_quota"),
                 start_ns=start_ns, start_cpu_ns=start_cpu_ns)
+        if self._resource_gate is not None:
+            try:
+                admission_mono = self._mono()
+            except Exception:
+                admission_mono = -1.0
+            denied = self._resource_gate.admit_cycle(admission_mono)
+            if denied is not None:
+                return self._report(
+                    status=denied, intention=self._idle(denied),
+                    start_ns=start_ns, start_cpu_ns=start_cpu_ns)
+            self._budget_cycle_active = True
         self._attempted += 1
         try:
             # Check the existing SQLite before any cognitive change or read.
@@ -236,6 +274,16 @@ class PassiveCycleSupervisor:
                 intention=self._idle("event_quota"),
                 start_ns=start_ns, start_cpu_ns=start_cpu_ns,
                 source_ms=source_ms)
+        # F6-C is optional. Strict event-window quota is checked BEFORE
+        # cognition and SQLite. A subsequently rejected frame may consume
+        # capacity conservatively, but no queue or stale replay is created.
+        if self._resource_gate is not None:
+            denied = self._resource_gate.admit_events(event_count)
+            if denied is not None:
+                return self._report(
+                    status=denied, intention=self._idle(denied),
+                    start_ns=start_ns, start_cpu_ns=start_cpu_ns,
+                    source_ms=source_ms)
         try:
             now_mono, now_wall = self._mono(), self._wall()
             proposed = self.brain.propose_balanced_passive(
