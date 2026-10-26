@@ -305,9 +305,18 @@ def advisory_from_transport(
         return finish_optional_pc_cycle(cycle, None, received_monotonic_s=now_monotonic_s)
     if transport.status == "protocol_rejected":
         return finish_optional_pc_cycle(cycle, b"{}", received_monotonic_s=now_monotonic_s)
-    return finish_optional_pc_cycle(
+    advice = finish_optional_pc_cycle(
         cycle, transport.wire, received_monotonic_s=now_monotonic_s,
     )
+    # F5-B has only category metadata: no visual or acoustic evidence.
+    # Do not pass unjustified dog/cat classifications or nonzero confidence.
+    if advice.status == "hypotheses_unverified" and any(
+            h.category != "unknown" or h.claimed_confidence != 0
+            for h in advice.hypotheses):
+        return finish_optional_pc_cycle(
+            cycle, b"{}", received_monotonic_s=now_monotonic_s,
+        )
+    return advice
 
 
 class OptionalOllamaWorker:
