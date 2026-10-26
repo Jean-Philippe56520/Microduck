@@ -80,6 +80,14 @@ Le délai monotone total sur le **corps** de la réponse Ollama est une proprié
 
 **Aucune nouvelle mesure physique** de RAM libre, RSS, CPU/NPU, latence de mouvement, eMMC réellement disponible, batterie ou température RK3566 n'est fournie par F5-D. Les résultats de tests logiciels GitHub Actions ne doivent pas être présentés comme une validation de sûreté sur le Microduck. `scripts/resource-audit.sh` et les essais supervisés restent à réaliser sur le robot physique après acquisition.
 
+## Addendum F6-A — 26 octobre 2026 (inventaire OEM et risque de stockage non persistant)
+
+Le [contrat F6-A](f6a-embedded-readiness-2026-10-26.md), fusionné via [PR #45](https://github.com/Jean-Philippe56520/Microduck/pull/45) après [830 tests Python et une démonstration fictive réussis en CI](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40254981871), consulte la révision **OEM épinglée** du dépôt (`942e58e3aa6dbb28e7037203fff11866122c7567`) et un **snapshot documentaire Yocto** (`91691234f3b518a94ee4391f8567c9486335f507`), sans installer de programme sur une carte.
+
+**Point de vigilance démontré par lecture du code Yocto :** le montage `/var/lib/robot` est **conditionnel** à la présence de `data`. Un dossier sur le système racine ne suffit pas : une SQLite ouverte sous ce chemin pourrait survivre moins longtemps que prévu et ne pas suivre les bascules A/B. F6-A refuse donc de **sélectionner une SQLite persistante** sur simple preuve textuelle. Les contrôles `mountinfo` et identités de cartes sont réalisés **sur fixtures**, pas sur du matériel réel.
+
+Les sockets OEM `/run/robotd.sock`, `/run/mediad/media.sock` et `/run/tofd/tof.sock` sont inventoriés, **jamais contactés** par ce lot ; les moteurs, caméras, ToF, réseau et Qwen ne sont pas activés. Cette documentation ne mesure ni RAM/CPU libre, charge NPU, surface du stockage eMMC utilisable, thermie, batterie, cadence de la boucle motrice ou latence sur robot. L'audit `scripts/resource-audit.sh` reste nécessaire **sur unité physique** avant tout portage ou installation.
+
 ## Verdict
 
 Le Microduck permet raisonnablement de viser : mémoire persistante locale, moteur d'autonomie, exploration prudente, observation visuelle événementielle, identification de catégories d'animaux et interaction sociale élémentaire. Il reste à développer et à valider : détection personnalisée d'animaux, identification non biométrique des personnes familières, reconnaissance vocale, exploration sûre en environnement non contrôlé, et intégration du cerveau autonome à robotd. Qwen multimodal se placera initialement sur un PC local.
