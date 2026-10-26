@@ -1,6 +1,6 @@
 # PD1 — Inventaire de disponibilité des seize états et expressions OEM
 
-**Date : 27 octobre 2026. Statut : candidat logiciel, uniquement en lecture/description sur fixtures, aucune exécution physique.** [PD0](pd0-behavior-states-selective-qwen-2026-10-27.md) est la cible. Le [plan directeur](plan-action.md) fait foi : Cat-A2b (captures authentiques à hauteur de Kwipi) reste le prochain jalon de perception. Le robot n'est pas disponible pour un test.
+**Date : 27 octobre 2026. Statut : implémentation logicielle sur fixtures ; [PR #74](https://github.com/Jean-Philippe56520/Microduck/pull/74), [CI hôte #40418679064](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40418679064) : 1 176 tests exécutés, 19 ignorés, zéro échec (dont 17 cas PD1), aucune exécution physique.** [PD0](pd0-behavior-states-selective-qwen-2026-10-27.md) est la cible. Le [plan directeur](plan-action.md) fait foi : Cat-A2b (captures authentiques à hauteur de Kwipi) reste le prochain jalon de perception. Le robot n'est pas disponible pour un test.
 
 ## 1. Périmètre effectivement développé
 
