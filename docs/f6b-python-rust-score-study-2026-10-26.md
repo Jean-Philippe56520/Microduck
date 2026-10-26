@@ -32,6 +32,19 @@ La CI Ubuntu compile le programme Rust de test puis le binaire **optimisé `rust
 
 **La comparaison mémoire brute n'est pas équitable :** le processus Python charge l'interpréteur et les modules de Companion, tandis que l'exécutable Rust ne contient que la fonction pure, sans SQLite, imports, framework ni moteurs. Ce n'est **ni un comparatif de cerveaux de même périmètre, ni une preuve de performance sur le robot**. Les effets des optimisations du compilateur, de la charge variable du runner, des démarrages de processus et de l'absence de perception dans le score empêchent d'utiliser les ratios comme décision de portage.
 
+### Résultats réellement obtenus en CI hôte (26 octobre 2026)
+
+La [CI expérimentale #40256023791](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40256023791) a réussi avec **841 tests Python**, **4 tests Rust**, **1 500 cas de parité** (**erreur absolue maximale 0,0**) et **120 000 appels par benchmark**. Environnement : runner Ubuntu GitHub Actions, `rustc 1.99.0` ; programme Rust optimisé (`-O`). Le checksum des deux langages est exactement `61592.00000002356` dans cet essai.
+
+| Mesure *sur le runner* | Python `PassiveRhythm._score` | Rust expérimental (`score`) |
+| --- | ---: | ---: |
+| Temps interne de boucle, appel combiné `--benchmark` (120 000 scores) | **38,031 ms** | **3,503 ms** |
+| Temps interne de boucle, processus indépendant (120 000 scores) | **32,587 ms** | **2,060 ms** |
+| RSS maximum **du processus indépendant complet**, Linux `/usr/bin/time` | **17 068 Kio** | **2 132 Kio** |
+| Latence globale de lancement indépendant, `/usr/bin/time` (précision 0,01 s seulement) | **0,10 s** | **0,00 s** |
+
+**Interprétation correcte :** Rust est plus rapide pour **cette seule fonction** dans ce banc et son exécutable minimal utilise moins de mémoire de processus. Le binaire Rust n'intègre **aucun module équivalent** à Python (SQLite, supervision, réseau facultatif, capteurs, exceptions), les entrées sont déjà validées et les fréquences du robot ne sont pas reproduites. Le rapport d'usage mémoire compare des **processus de périmètre différent**. Ces chiffres ne justifient **pas** un portage ni ne prédisent une économie d'énergie sur le RK3566. Les calculs ont été effectués sur hôte x86-64 de CI, sans Microduck.
+
 ### Vérification reproductible
 
 ```bash
