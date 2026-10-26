@@ -56,6 +56,7 @@ class LimitsTests(unittest.TestCase):
         samples = (
             {"window_s": True}, {"window_s": 0},
             {"window_s": math.nan}, {"window_s": math.inf},
+            {"window_s": 10 ** 10000},
             {"cooldown_s": -1}, {"cooldown_s": float("inf")},
             {"min_cycle_gap_s": -1}, {"min_cycle_gap_s": 11},
             {"max_window_cycles": 0}, {"max_window_cycles": True},
@@ -128,7 +129,8 @@ class LimitsTests(unittest.TestCase):
                          gate.admit_cycle(101.))
 
     def test_bad_clock_refuses_without_crashing(self):
-        for bad in (float("nan"), float("inf"), -1, True, None):
+        for bad in (float("nan"), float("inf"), -1, True, None,
+                    10 ** 10000):
             with self.subTest(bad=bad):
                 gate = OfflineResourceGate()
                 self.assertEqual("budget_invalid_clock",
