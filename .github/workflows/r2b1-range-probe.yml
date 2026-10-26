@@ -3,6 +3,13 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - 'microduck_companion/r2b1_zenodo_ranges.py'
+      - 'microduck_companion/r2b1_toyadmos_local.py'
+      - 'microduck_companion/r2b_independent_capture_eval.py'
+      - 'tests/test_r2b1_zenodo_ranges.py'
+      - '.github/workflows/r2b1-range-probe.yml'
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -14,7 +21,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Evaluate ten original real machine recordings with strict Zenodo byte ranges
+      - name: Evaluate 34 real recording clips from 6 machines using strict Zenodo ranges
         shell: bash
         run: |
           python -m microduck_companion.r2b1_zenodo_ranges \
