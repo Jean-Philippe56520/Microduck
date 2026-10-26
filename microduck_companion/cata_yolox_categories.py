@@ -188,8 +188,13 @@ def evaluate(*, model_path: Path, with_abo_chairs: bool = True) -> dict:
         split: {mode: [] for mode in MODES}
         for split in ("train", "validation", "test")}
     digests = []
+    cc0_digests = []
+    abo_digests = []
+    abo_spin_roster_digest = None
     def score_one(jpeg: bytes, truth: str, split: str) -> None:
-        digests.append(hashlib.sha256(jpeg).hexdigest())
+        digest = hashlib.sha256(jpeg).hexdigest()
+        digests.append(digest)
+        cc0_digests.append(digest)
         for mode in MODES:
             image = prepare_image(jpeg, mode=mode)
             t0 = time.perf_counter()
@@ -210,13 +215,17 @@ def evaluate(*, model_path: Path, with_abo_chairs: bool = True) -> dict:
             allowed_spin_ids=frozenset(catalogue), source_count=CHAIR_SPINS)
         if len(selected) != CHAIR_SPINS or len({catalogue[x] for x, _ in selected}) != CHAIR_SPINS:
             raise PhotoBaselineError("ABO chair catalogue item separation failed")
+        abo_spin_roster_digest = hashlib.sha256(
+            "|".join(spin for spin, _ in selected).encode()).hexdigest()
         chair_records: dict[str, list[tuple[str, str]]] = {m: [] for m in MODES}
         for _, views in selected:
             # One fixed angle per catalog item, *not* a multi-view claim.
             raw = _abo_https_bytes(
                 "https://" + ABO_HOST + "/spins/original/" + views[0],
                 limit=ABO_MAX_JPEG_BYTES)
-            digests.append(hashlib.sha256(raw).hexdigest())
+            digest = hashlib.sha256(raw).hexdigest()
+            digests.append(digest)
+            abo_digests.append(digest)
             for mode in MODES:
                 image = prepare_image(raw, mode=mode)
                 t0 = time.perf_counter()
@@ -259,6 +268,13 @@ def evaluate(*, model_path: Path, with_abo_chairs: bool = True) -> dict:
         "repeated_original_jpegs": len(digests) - len(set(digests)),
         "media_sha256_digest_of_digests": hashlib.sha256(
             "".join(sorted(digests)).encode()).hexdigest(),
+        "cc0_media_digest": hashlib.sha256(
+            "".join(cc0_digests).encode()).hexdigest(),
+        "abo_media_digest": hashlib.sha256(
+            "".join(abo_digests).encode()).hexdigest() if abo_digests else None,
+        "abo_spin_roster_digest": abo_spin_roster_digest,
+        "cc0_ordered_image_sha256": cc0_digests,
+        "abo_ordered_image_sha256": abo_digests,
         "host_onnx_ms_median": round(statistics.median(times), 3),
         "host_onnx_ms_max": round(max(times), 3),
         "host_cpu_user_s_includes_preprocess": round(after.ru_utime-before.ru_utime, 3),
