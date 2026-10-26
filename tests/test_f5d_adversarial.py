@@ -248,6 +248,22 @@ class HostileHTTPTests(unittest.TestCase):
             self.assertEqual(1, len(hits))
 
 
+class ShutdownAdversarialTests(unittest.TestCase):
+    def test_executor_shutdown_does_not_leave_pending_or_network_work(self):
+        worker = OptionalOllamaWorker(
+            OllamaLocalClient(), clock=lambda: MONO,
+        )
+        try:
+            worker._pool.shutdown(wait=False, cancel_futures=True)
+            item = make_cycle()
+            self.assertFalse(worker.submit(item))
+            self.assertIsNone(worker._cycle)
+            self.assertIsNone(worker._future)
+            self.assertIsNone(worker.poll())
+        finally:
+            worker.close()
+
+
 class _FakeWorker(OptionalOllamaWorker):
     """A deliberately compromised worker: no network; outputs forged advice."""
 
