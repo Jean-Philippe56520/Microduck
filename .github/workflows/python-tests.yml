@@ -45,3 +45,9 @@ jobs:
           # Never opens a camera, talks to a PC, or calls robotd.
           python -m microduck_companion.f4a_memory_demo --database "$RUNNER_TEMP/f4a-knowledge.sqlite3" --session first
           python -m microduck_companion.f4a_memory_demo --database "$RUNNER_TEMP/f4a-knowledge.sqlite3" --session second
+      - name: F4-B two independent mock-only spatial SQLite processes
+        run: |
+          # Toy marker in two artificial frames; no real map, robot pose,
+          # floor safety, socket, sensor, camera, or actuator is involved.
+          python -m microduck_companion.f4b_spatial_demo --database "$RUNNER_TEMP/f4b-fictive-spatial.sqlite3" --session first
+          python -m microduck_companion.f4b_spatial_demo --database "$RUNNER_TEMP/f4b-fictive-spatial.sqlite3" --session second
