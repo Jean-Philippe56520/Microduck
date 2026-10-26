@@ -80,12 +80,13 @@ def _coil_name(obj: int, pose: int) -> str:
 
 
 def _image_samples(archive: Path, *, expected_sha256: str, model=None):
-    from PIL import Image
     if type(expected_sha256) is not str or not HEX64.fullmatch(expected_sha256):
         raise R2BEvidenceError(
             "a reviewed external COIL20 SHA256 expectation is required")
     if _digest(archive, max_bytes=MAX_ARCHIVE_BYTES) != expected_sha256:
         raise R2BEvidenceError("COIL20 archive digest mismatch")
+    # Validate rights and archive integrity before requiring optional Pillow.
+    from PIL import Image
     np = None
     if model is not None:
         import numpy as np
