@@ -120,8 +120,6 @@ class RustParityTests(unittest.TestCase):
         valid="observe\tball\t0.75\t0.55\t0.6\t0.8\t0.35\n"
         self.assertEqual(2,self._tsv(valid*2049).returncode)
         self.assertEqual(2,self._tsv("X"*131073).returncode)
-        self.assertEqual(2,self._tsv(valid+"\udcff").returncode
-                         if False else 2)  # surrogate refused below
         result = subprocess.run(
             [str(self.binary),"--tsv"],
             input=(valid.encode("ascii") + b"\xff"),
