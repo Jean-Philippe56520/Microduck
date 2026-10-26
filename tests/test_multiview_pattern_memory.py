@@ -91,7 +91,7 @@ class PolicyValidation(unittest.TestCase):
             {"retention_s":-1},
         )
         for bad in cases:
-            with self.subTest(bad=str(bad)[:80]),self.assertRaises(ValueError):
+            with self.subTest(keys=tuple(bad)),self.assertRaises(ValueError):
                 MultiviewLimits(**bad)
         db=ExperienceMemory()
         self.addCleanup(db.close)
@@ -224,7 +224,7 @@ class GroupedMemoryTests(unittest.TestCase):
             {"interest":10**10000},
             {"now_wall_epoch_s":float("nan")},
         ):
-            with self.subTest(kwargs=str(kwargs)[:80]),self.assertRaises(ValueError):
+            with self.subTest(keys=tuple(kwargs)),self.assertRaises(ValueError):
                 self.store.observe_image(
                     square(),
                     **({"now_wall_epoch_s":START,**kwargs}),
