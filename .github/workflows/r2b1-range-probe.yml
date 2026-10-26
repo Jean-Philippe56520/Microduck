@@ -1,0 +1,42 @@
+name: R2-B+1 source byte-range probe (no audio extraction)
+on:
+  push:
+    branches:
+      - r2b1/real-sound-validation-2026-10-26
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Probe bounded public research archive ranges
+        shell: bash
+        run: |
+          python - <<'PY'
+          import urllib.request
+          import urllib.error
+          urls = [
+              "https://zenodo.org/records/3678171/files/dev_data_ToyCar.zip?download=1",
+              "https://zenodo.org/api/records/3678171/files/dev_data_ToyCar.zip/content",
+          ]
+          for url in urls:
+              try:
+                  req=urllib.request.Request(url,headers={"Range":"bytes=0-1023","User-Agent":"Microduck-Research-R2B1/0.1"})
+                  with urllib.request.urlopen(req,timeout=15) as r:
+                      code=r.status
+                      print("range_probe",r.url.split("?")[0],"status",code,
+                            "range",r.headers.get("Content-Range"),
+                            "length",r.headers.get("Content-Length"))
+                      if code == 206:
+                          data=r.read(1025)
+                          print("bounded_bytes",len(data))
+                          if len(data)!=1024:raise ValueError("unexpected truncated range")
+                          break
+                      print("Refused non-range response before reading body")
+              except Exception as e:
+                  print("range_error",type(e).__name__,str(e)[:160])
+          else:
+              raise SystemExit("No bounded source byte range available; no large download attempted.")
+          PY
