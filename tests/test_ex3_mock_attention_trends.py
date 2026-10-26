@@ -93,22 +93,22 @@ class EX3MockAttentionTests(unittest.TestCase):
     def test_empty_and_one_session_cannot_change_attention(self):
         first = self.summary()
         self.assertEqual((0, 0.0, "insufficient_mock_sessions"),
-                         (first.independent_sessions, first.attention_bias,
+                         (first.distinct_mock_sessions, first.attention_bias,
                           first.status))
         self.fixture(1)
         hint = self.summary()
         self.assertEqual((1, 1, 0, 0.0),
-                         (hint.independent_sessions, hint.changed,
+                         (hint.distinct_mock_sessions, hint.changed,
                           hint.unchanged, hint.attention_bias))
         self.assertFalse(hint.causality_established)
         self.assertFalse(hint.verified_on_robot)
         self.assertEqual(0, hint.motor_commands_issued)
 
-    def test_repeated_independent_sessions_add_only_tiny_mock_bias(self):
+    def test_repeated_distinct_mock_sessions_add_only_tiny_mock_bias(self):
         for s in range(1, MIN_DISTINCT_SESSIONS + 1):
             self.fixture(s)
         hint = self.summary()
-        self.assertEqual(3, hint.independent_sessions)
+        self.assertEqual(3, hint.distinct_mock_sessions)
         self.assertEqual(3, hint.changed)
         self.assertEqual(.03, hint.attention_bias)
         self.assertLessEqual(abs(hint.attention_bias), MAX_ATTENTION_BIAS)
@@ -121,7 +121,7 @@ class EX3MockAttentionTests(unittest.TestCase):
         for seq in range(1, 9):
             self.fixture(1, seq=seq, start=WALL+10+seq*.1)
         hint = self.summary()
-        self.assertEqual((1, 0.0), (hint.independent_sessions, hint.attention_bias))
+        self.assertEqual((1, 0.0), (hint.distinct_mock_sessions, hint.attention_bias))
 
     def test_contradictions_can_cancel_tendency(self):
         for n in range(1, 4):
@@ -140,11 +140,11 @@ class EX3MockAttentionTests(unittest.TestCase):
             session=sessions[0][0], sequence=1,
             reason="source_retracted"))
         self.assertEqual(0., self.summary().attention_bias)
-        self.assertEqual(2, self.summary().independent_sessions)
+        self.assertEqual(2, self.summary().distinct_mock_sessions)
         self.assertTrue(self.ex1.retract(
             session=sessions[1][0], sequence=1,
             reason="fixture_annotation_error"))
-        self.assertEqual(1, self.summary().independent_sessions)
+        self.assertEqual(1, self.summary().distinct_mock_sessions)
 
     def test_parent_retraction_also_removes_trend(self):
         for n in (1, 2, 3):
@@ -160,7 +160,7 @@ class EX3MockAttentionTests(unittest.TestCase):
             self.fixture(n, category="person", kind="social",
                          before="no_signal", after="friendly_signal")
         hint = self.summary(category="person")
-        self.assertEqual(0, hint.independent_sessions)
+        self.assertEqual(0, hint.distinct_mock_sessions)
         self.assertEqual(0., hint.attention_bias)
         self.assertEqual(0, self.memory.experience_count())
 
@@ -169,7 +169,7 @@ class EX3MockAttentionTests(unittest.TestCase):
         self.fixture(2, confidence=.7)
         self.fixture(3, same_scene=False)
         hint = self.summary()
-        self.assertEqual((0, 0.), (hint.independent_sessions,
+        self.assertEqual((0, 0.), (hint.distinct_mock_sessions,
                                    hint.attention_bias))
 
     def test_categories_and_sound_are_separate(self):
@@ -218,7 +218,7 @@ class EX3MockAttentionTests(unittest.TestCase):
             self.fixture(n)
         self.assertEqual(.03, self.summary().attention_bias)
         hint = self.summary(now=WALL+RETENTION_S+1000)
-        self.assertEqual((0, 0.), (hint.independent_sessions,
+        self.assertEqual((0, 0.), (hint.distinct_mock_sessions,
                                    hint.attention_bias))
 
     def test_repeated_events_saturate_small_scoring_envelope(self):
@@ -336,7 +336,7 @@ class EX3MockAttentionTests(unittest.TestCase):
         self.assertIn("mock_fixture_only", output)
         jsonl = render_attention_trend(hint)
         self.assertEqual(.03, json.loads(jsonl)["attention_bias"])
-        self.assertEqual(3, hint["independent_sessions"])
+        self.assertEqual(3, hint["distinct_mock_sessions"])
         result = subprocess.run([
             sys.executable,"-m","microduck_companion.kwipi_journal",
             str(self.path),"--trend","observe","--category","ball",
