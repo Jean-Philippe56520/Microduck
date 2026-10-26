@@ -272,7 +272,8 @@ class OllamaHTTPTests(unittest.TestCase):
                     done=advisory_from_transport(
                         cycle, response, now_monotonic_s=100.1)
                     self.assertEqual(cycle.local_intent, done.local_intent)
-                    if b'"category":"dog"' not in reply:
+                    if json.loads(reply).get("hypotheses", [{}])[0].get(
+                            "category") != "dog":
                         self.assertEqual("response_rejected", done.status)
                     else:
                         # F5-A permits an unverified generic hypothesis; it
