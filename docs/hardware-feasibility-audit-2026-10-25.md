@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**Addendum EX0 (26/10/2026) — [plan d'expériences de Kwipi](kwipi-experiential-learning-plan-2026-10-26.md) :** strictement documentaire. Les futures opérations action→effet, les primitives de contact, l'attribution causale et les retours sociaux n'ont **aucune mesure** sur RK3566 ni aucune validation mécanique. La taille de SQLite, sa rétention, les délais de perception/robotd, la force d'interaction, les ressources CPU/NPU, la thermique et l'autonomie ne peuvent être déduits des fixtures ou de Qwen. Conserver l'audit `scripts/resource-audit.sh` et la validation de la locomotion/du sol avant toute autonomie physique ; aucune action physique n'est autorisée par EX0.
+
+
 **Addendum Cat-A2b (26/10/2026) :** [contrat de captures basses locales](cata2b-private-low-camera-protocol-2026-10-26.md), aucun robot ni caméra monté/testé. Les hauteurs acceptées **100–300 mm sont des déclarations de centre optique** appuyées par un fichier de règle privé et son SHA (intégrité d'octets, **pas métrologie physique vérifiée**), et non la hauteur totale de Kwipi. Aucun corpus bas réellement fourni, aucune inférence sur robot, aucune mesure CPU/RSS/NPU/thermie/stockage/consommation en conditions embarquées. Si un futur rapport Cat-A2b comporte des temps/RSS, ils seront **strictement hôte PC**. La porte `scripts/resource-audit.sh` sur le RK3566 reste obligatoire avant tout portage ou activation de caméra/robotd.
 
 

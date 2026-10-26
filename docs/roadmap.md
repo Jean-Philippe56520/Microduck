@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**EX0 — nouvelle orientation cognitive documentée, aucun code livré :** [plan d'apprentissage par l'expérience](kwipi-experiential-learning-plan-2026-10-26.md). Un événement doit être distingué d'une intention et d'une action confirmée ; une conséquence observée n'est pas automatiquement causée par la dernière action. EX1 contrat d'épisodes, EX2 attribution prudente, EX3 préférences réversibles sur fixtures, puis Qwen/affordances, gestes OEM et validation réelle sous conditions. **Cat-A2b reste la prochaine preuve de perception attendue**, aucun apprentissage sensorimoteur ou langage réel validé.
+
+
 **Cat-A2b — vérification des captures vraiment basses, sans corpus personnel dans Git :** [protocole/limites](cata2b-private-low-camera-protocol-2026-10-26.md), [validateur local/évaluateur](../microduck_companion/cata2b_private_low.py), [tests sur JPEG fabriqués](../tests/test_cata2b_private_low.py). Le contrôleur vérifie les hauteurs du **centre optique déclarées** (100–300 mm, preuve photographique privée avec SHA contrôlé mais **pas de hauteur indépendamment certifiée**), droits/consentement, boîtes `full/partial`, vrais négatifs, séparations séance/site/scène, empreintes de JPEG et modèle YOLOX Cat-A2a identique sans réglage sur TEST. **Pas de prise basse réelle mesurée ni de taux de reconnaissance dans ce lot, pas de matériel ni RKNN.** Étape suivante : obtenir un corpus réel fiable et indépendamment annoté avant décision de modèle ; ne pas supprimer la catégorie `unknown`.
 
 

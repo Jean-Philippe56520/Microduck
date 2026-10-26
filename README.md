@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**EX0 — plan d'apprentissage par l'expérience (26/10/2026 ; documentation uniquement) :** [plan détaillé](docs/kwipi-experiential-learning-plan-2026-10-26.md). Kwipi doit pouvoir observer une nouveauté, rappeler ses souvenirs, proposer une expérience, constater les effets d'une **action réellement exécutée**, attribuer prudemment les conséquences et adapter lentement ses choix. Réutiliser F2/F4/ExperienceMemory et F5 pour Qwen facultatif, sans nouveau cerveau, seconde SQLite ni pilote moteur. **Aucun apprentissage physique, langage humain compris ou geste autonome livré** ; la priorité reste **Cat-A2b (vraies prises basses)** avant intégration. Première PR cognitive future : EX1, contrat d'épisode sur fixtures, après arbitrage des priorités.
+
+
 **Cat-A2b — protocole local privé de vrais angles bas (sans photos réelles disponibles dans ce lot) :** [audit et méthode de capture](docs/cata2b-private-low-camera-protocol-2026-10-26.md), [validateur/évaluateur](microduck_companion/cata2b_private_low.py), [tests fictifs](tests/test_cata2b_private_low.py). Réutilise le modèle et l'IoU50/AP50 de Cat-A2a ; vérifie sur PC des **images JPEG privées**, une mesure déclarée de la **hauteur du centre optique (100–300 mm)** avec preuve photographique privée hachée, un marquage d'objets visibles/partiels/inconnus, le consentement déclaré et des splits indépendants par séance, site et scène. **Aucun véritable jeu d'images basses ni performance de reconnaissance mesurée dans cette PR** ; aucune vérité matérielle déduite de la déclaration ou du SHA d'une règle, aucune photo/identité/poids stockés dans Git, aucun moteur/SQLite/LLM. Cat-A2b exige ensuite des données indépendantes réelles, puis audit matériel pour tout portage.
 
 
