@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**Cat-A, essai de catégories effectué sur PC (26/10/2026) :** [rapport](cata-category-detection-pilot-2026-10-26.md), [PR #63](https://github.com/Jean-Philippe56520/Microduck/pull/63). Détecteur YOLOX-Nano Apache-2.0 416 px, seuil 0,25 prédéfini. Cat/dog/unknown CC0 : **4/6 images TEST entières correctes** contre **3/6 recadrages inférieurs** ; 12 chaises ABO : **8/12 entières**, **0/12 recadrées**. Vision basse simulée par coupe d'image, **pas** capteur physique à 25 cm. **État RETESTER** : données réelles de proximité, personne et balle annotées, classes chaussures/parties non couvertes, localisation et vrais rejets à vérifier. Cat-B/C/D ne sont pas lancés ; l'identité d'instance reste suspendue.
+
+
 **Nom officiel : Kwipi.** Détecteur hors ligne « Hé Kwipi ! » à concevoir et mesurer ultérieurement, sans toucher aux moteurs ni détourner Cat-A.
 
 **Nouvel ordre de priorités validé (R2-C, 26/10/2026) :** [clôture de l'identification précise et plan catégorie-first](r2c-category-first-active-perception-2026-10-26.md). **Réalisé :** bilan R2-C sans recalibrage des scores, prototype de suggestions de recherche de parties d'objet uniquement sur fixtures, réutilisant F2. **À ouvrir ensuite par chantier indépendant :** Cat-A classifieur/détecteur de catégories sur PC et données caméra basse ; Cat-B épreuve de continuité visuelle par observations supplémentaires ; Cat-C mémoire catégorie/expérience **dans la même SQLite** ; Cat-D revue PC/Qwen facultative sans certifier les hypothèses ; simulation OEM puis mesures matérielles. **Identification individuelle/instance et ancien R2-D suspendus**, modèles M1-B/MobileNetV2 non déployés ; aucun mouvement, robot, capteur ou Qwen réel validé.
