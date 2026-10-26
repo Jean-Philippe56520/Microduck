@@ -1,0 +1,69 @@
+name: Cat-A2a COCO bbox localization on public photos (host only)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "microduck_companion/cata2_bbox_eval.py"
+      - "microduck_companion/cata_yolox_categories.py"
+      - "tests/test_cata2_bbox_eval.py"
+      - ".github/workflows/cat-a2-coco-bbox.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  coco-bbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install existing Cat-A CPU tools (no new runtime model)
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0 numpy==1.26.4 onnxruntime==1.21.0
+      - name: Validate bounded boxes, license filters, COCO IDs, NMS
+        run: python -m unittest discover -s tests -p 'test_cata2_bbox_eval.py' -v
+      - name: Download and pin public COCO VAL annotations and existing Apache YOLOX ONNX
+        shell: bash
+        run: |
+          set -euo pipefail
+          # COCO annotation set (COCO Consortium, CC BY 4.0); individual
+          # image license fields are checked before downloading any JPG.
+          curl --fail --location --retry 2 --max-time 120 \
+            --output "$RUNNER_TEMP/instances_val2017.json" \
+            "https://huggingface.co/datasets/LibreYOLO/coco2017/resolve/main/instances_val2017.json"
+          echo "e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aeefa635b8c810b6f  $RUNNER_TEMP/instances_val2017.json" | sha256sum --check
+          # Exact same approved weights as Cat-A (Megvii Apache-2.0).
+          curl --fail --location --retry 2 --max-time 120 \
+            --output "$RUNNER_TEMP/yolox_nano.onnx" \
+            "https://huggingface.co/skillsafe-ai/yolox-nano/resolve/8e308810ede488f742901a4ac597dc7796798e46/yolox_nano.onnx"
+          echo "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d  $RUNNER_TEMP/yolox_nano.onnx" | sha256sum --check
+      - name: Evaluate real COCO2017 VAL boxes on 24 fixed, CC BY declared photos
+        shell: bash
+        env:
+          OMP_NUM_THREADS: "1"
+          OPENBLAS_NUM_THREADS: "1"
+        run: |
+          set -euo pipefail
+          # 20 targeted images (4 each: person/cat/dog/chair/sports_ball)
+          # + 4 without target instances. Other target classes may co-occur.
+          # Never archives JPEG bytes. No labels tuned on test.
+          # No viewpoint/camera height metadata: NOT a 25 cm robot test.
+          python -m microduck_companion.cata2_bbox_eval \
+            --approved-public-media \
+            --model-path "$RUNNER_TEMP/yolox_nano.onnx" \
+            --annotations-path "$RUNNER_TEMP/instances_val2017.json" \
+            > "$RUNNER_TEMP/cata2_result.json"
+          python - "$RUNNER_TEMP/cata2_result.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1], encoding="utf-8") as f:
+              r = json.load(f)
+          assert r["real_robot_or_rknn_validated"] is False
+          assert r["verified_25cm_camera_images"] == 0
+          assert r["full_coco_val_map"] is None
+          assert r["motor_commands"] == 0 and r["sqlite_writes"] == 0
+          assert r["localization"]["images"] == 24
+          print(json.dumps(r,sort_keys=True))
+          PY
