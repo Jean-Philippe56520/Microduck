@@ -217,7 +217,7 @@ class PD1CapabilityTests(unittest.TestCase):
             inspect_expression_capability(other, hint=hint)
 
     def test_unexpected_types_and_unknown_state_are_rejected(self):
-        for name in ("Unknown", "Kwirou", "kick", "Pet", "", None, 1, True):
+        for name in ("Unknown", "InventedMood", "kick", "Pet", "", None, 1, True):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 expression_capability_for(name)
         with self.assertRaises(TypeError):
