@@ -200,7 +200,7 @@ def read_attention_trend(
 
 
 TREND_FIELDS = (
-    "intention", "category", "independent_sessions", "changed", "unchanged",
+    "intention", "category", "distinct_mock_sessions", "changed", "unchanged",
     "attention_bias", "status", "source", "causality_established",
     "verified_on_robot", "motor_commands_issued",
 )
