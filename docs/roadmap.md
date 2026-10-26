@@ -1,5 +1,7 @@
 # Feuille de route — Microduck Companion
 
+**Plan des prochains jalons au 26/10/2026 (prévu, non réalisé) :** [R2-B+1 audio réel → R2-B+2 visuel élargi → R2-C décision prudente → R2-D démonstration mémoire mono-écrivain](r2-follow-up-execution-plan-2026-10-26.md). La seule source des priorités reste [plan-action.md](plan-action.md). Chaque étape impose « réutiliser avant de créer », séparation stricte validation/test, gestion de `unknown`, aucune nouvelle autorité moteur ni activation automatique Qwen. R3/R4/R5 restent conditionnels.
+
 **R2-B — comparaison sur images multi-angles réelles (test hôte, non robot) :** [rapport](r2b-independent-capture-evaluation-2026-10-26.md) et [CI #40322898625](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40322898625). Sources ABO CC BY 4.0 : **72 clichés de 12 séquences** ; test sur quatre séquences inscrites et deux inconnues : **15/16** vues reconnues avec les 1 000 scores de classe MobileNetV2 contre **10/16** M1-B, et **8/8** inconnues rejetées par les deux, sans changement de seuil après validation. Étude trop petite et trop contrôlée pour établir une capacité réelle du robot ; images corrélées dans la même séance, aucune source audio physiquement réenregistrée évaluée. Aucun modèle ni mécanisme d'identification d'instance retenu pour RK3566. Réutilisation M1-A/M1-B2 ; **pas d'écriture dans SQLite R2-A**.
 
 

@@ -1,5 +1,7 @@
 # Microduck Companion
 
+**Prochaines étapes (plan seulement) :** [plan d'exécution après R2-B](docs/r2-follow-up-execution-plan-2026-10-26.md). D'abord **des sons réellement réenregistrés**, puis **davantage d'objets visuellement ressemblants**, ensuite analyse des confusions et démonstration de la **mémoire unique M1-B sur PC**. Chaque lot réutilise l'existant et se clôt sur des tests et un bilan avant le suivant. Aucun modèle ni comportement robot supplémentaire n'est livré par cette planification.
+
 **R2-B — premier benchmark sur vraies vues multi-angles effectué :** [rapport et mesures ABO](docs/r2b-independent-capture-evaluation-2026-10-26.md), [CI réelle #40322898625](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40322898625). Sur 72 photographies originales de **12 séquences** de produits (ABO CC BY 4.0), avec seuil appris exclusivement sur validation, le test de **4 séquences connues** (16 vues) donne **10/16** reconnaissances M1-B (64 octets) contre **15/16** MobileNetV2 (scores ImageNet, **pas embedding d'instance**) ; **8/8 vues de séquences non inscrites rejetées** dans les deux cas. Cohortes **très réduites**, vues corrélées d'une même session tournante, sans preuve d'identité physique entre séquences ni résultats acoustiques indépendants. Le bench réutilise M1-A/M1-B2, ne crée aucune nouvelle mémoire, et ne branche ni robot, Qwen, moteurs ni capteurs. RAM/CPU publiés **hôte uniquement**.
 
 
