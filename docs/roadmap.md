@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P-C — rattachement descriptif des réactions OEM à la personnalité :** [contrat et audit](kwipi-oem-expressions-pc-2026-10-26.md), [adaptateur P-C](../microduck_companion/oem_expression_hints.py). `PettingEvent::Start` → candidat historique `Petted` **déjà pris en charge par `robotd`**, `SoundEvent::Noise` → hypothèse `Startle` **non vérifiée**, `SoundEvent::Voice` → voix remarquée, **aucune transcription ni activation**. Les portraits P-A/P-B sont réutilisés, sans modifier leurs quatre états descriptifs, leur mémoire ni le rythme F2/F4. Tout est `mock`, aucune sortie physique ni consommation RK3566 mesurée. **P-C2 et réactions sur robot non codées ; Cat-A2 reste prioritaire.**
+
+
 **P-B — habitudes et personnalité cohérente, étape expérimentale :** [contrat mémoire/émotion simulée](kwipi-personality-continuity-pb-2026-10-26.md), [test de continuité](../tests/test_personality_continuity.py). À la vue P-A ajoutent lecture seule de `BehavioralMemory` (résultats fictifs vérifiés), persistance après redémarrage via la même SQLite, correction/expiration, seuil de deux retours pour exposer une tendance, et biais F2 `inspect` limité et **opt-in**. Aucune mémoire du caractère distincte, aucun moteur ni émotion vécue, aucune preuve d'apprentissage physique ; la priorité Cat-A2 reste inchangée. **Vérification logicielle P-B réussie : 1 056 tests Python exécutés, 4 ignorés, zéro échec** ([CI GitHub Actions #40394372640](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40394372640)) ; aucune validation sur robot. Étape suivante P-C : sources réelles et garde-fous avant expressions OEM, puis P-D/M9 si fonctions livrées.
 
 
