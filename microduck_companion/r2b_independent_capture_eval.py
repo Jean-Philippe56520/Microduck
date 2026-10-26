@@ -11,7 +11,9 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
-from io import BytesIO
+import csv
+import gzip
+from io import BytesIO, TextIOWrapper
 import hashlib
 import json
 import math
@@ -31,6 +33,16 @@ from .m1b2_host_embeddings import (
 from .visual_dataset import _parse_json
 from .visual_photo_mobilenet_demo import check_model_file
 from .m1b2_host_embeddings import check_audio_model
+
+ABO_CC_BY_SOURCE = "https://amazon-berkeley-objects.s3.amazonaws.com/index.html"
+ABO_METADATA = ("https://amazon-berkeley-objects.s3.us-east-1."
+                "amazonaws.com/spins/metadata/spins.csv.gz")
+ABO_HOST = "amazon-berkeley-objects.s3.us-east-1.amazonaws.com"
+ABO_SOURCE_COUNT = 12
+ABO_POSES = (0, 9, 18, 36, 45, 54)
+ABO_REFS = (0, 36)
+ABO_QUERIES = (9, 18, 45, 54)
+ABO_MAX_JPEG_BYTES = 3_000_000
 
 COIL20_SOURCE = ("https://www.cs.columbia.edu/CAVE/databases/"
                  "SLAM_coil-20_coil-100/coil-20/coil-20-proc.zip")
@@ -514,6 +526,193 @@ def run_image_manifest(manifest: Path, media_root: Path, model_file: Path | None
     }
 
 
+def _abo_https_bytes(url: str, *, limit: int) -> bytes:
+    """Only the official public ABO S3 bucket. No user-defined URLs."""
+    from urllib.parse import urlparse
+    from urllib.request import Request, urlopen
+    if (type(url) is not str or not url.startswith(
+            "https://" + ABO_HOST + "/")
+            or urlparse(url).hostname != ABO_HOST
+            or not 1 <= limit <= ABO_MAX_JPEG_BYTES):
+        raise R2BEvidenceError("unsupported external ABO URL or byte budget")
+    with urlopen(Request(url, headers={
+        "User-Agent": "MicroduckCompanion-R2B-CCBY-research/1",
+    }), timeout=25) as response:
+        target = urlparse(response.geturl())
+        if target.scheme != "https" or target.hostname != ABO_HOST:
+            raise R2BEvidenceError("untrusted remote media redirect")
+        data = response.read(limit + 1)
+    if not 100 <= len(data) <= limit:
+        raise R2BEvidenceError("invalid or oversized ABO media")
+    return data
+
+
+def _abo_spin_sample():
+    """Select first 12 COMPLETE distinct spin sequences deterministically.
+
+    The metadata belongs to the official CC BY 4.0 ABO dataset. Spin IDs
+    signify *sequences*; two distinct spin IDs are NOT independently proven
+    distinct physical objects. We intentionally do not read names/listings.
+    """
+    from urllib.request import Request, urlopen
+    from urllib.parse import urlparse
+    allowed = re.compile(r"[0-9a-f]{8}\Z", re.ASCII)
+    groups: dict[str, dict[int, str]] = {}
+    order: list[str] = []
+    with urlopen(Request(ABO_METADATA, headers={
+        "User-Agent": "MicroduckCompanion-R2B-CCBY-research/1",
+    }), timeout=30) as response:
+        target = urlparse(response.geturl())
+        if target.scheme != "https" or target.hostname != ABO_HOST:
+            raise R2BEvidenceError("ABO metadata redirected outside provider")
+        with gzip.GzipFile(fileobj=response) as compressed:
+            with TextIOWrapper(compressed, encoding="utf-8", newline="") as data:
+                reader = csv.DictReader(data)
+                if reader.fieldnames != [
+                    "spin_id", "azimuth", "image_id", "height",
+                    "width", "path",
+                ]:
+                    raise R2BEvidenceError("ABO metadata column schema changed")
+                for index, row in enumerate(reader):
+                    if index > 650_000:
+                        raise R2BEvidenceError("ABO metadata row budget exceeded")
+                    spin = row.get("spin_id")
+                    if type(spin) is not str or not allowed.fullmatch(spin):
+                        raise R2BEvidenceError("invalid official ABO spin ID")
+                    if spin not in groups:
+                        if len(groups) >= 48:
+                            continue
+                        groups[spin] = {}
+                        order.append(spin)
+                    try:
+                        angle = int(row["azimuth"])
+                    except (TypeError, ValueError) as exc:
+                        raise R2BEvidenceError("invalid ABO azimuth") from exc
+                    if angle not in ABO_POSES:
+                        continue
+                    expected = (f"{spin[:2]}/{spin}/"
+                                f"{spin}_{angle:02d}.jpg")
+                    if row["path"] != expected or angle in groups[spin]:
+                        raise R2BEvidenceError("ABO metadata path collision")
+                    groups[spin][angle] = expected
+                    if sum(len(v) == len(ABO_POSES) for v in groups.values()) >= (
+                        ABO_SOURCE_COUNT
+                    ):
+                        break
+    selected = [spin for spin in order
+                if len(groups[spin]) == len(ABO_POSES)][:ABO_SOURCE_COUNT]
+    if len(selected) != ABO_SOURCE_COUNT:
+        raise R2BEvidenceError("not enough complete original ABO spin sequences")
+    return tuple((spin, groups[spin]) for spin in selected)
+
+
+def run_public_abo(*, model_file: Path | None = None):
+    """Opt-in public CC BY 4.0 photograph study. No media persistence.
+
+    Only 12 physical-product turntable sequences; same-session frames,
+    no independent filming session and no household recognition claimed.
+    """
+    from PIL import Image
+    model = None
+    np = None
+    if model_file is not None:
+        check_model_file(model_file)
+        import numpy as np
+        import onnxruntime as ort
+        options = ort.SessionOptions()
+        options.intra_op_num_threads = 1
+        options.inter_op_num_threads = 1
+        model = ort.InferenceSession(
+            str(model_file), sess_options=options,
+            providers=["CPUExecutionProvider"])
+    before = resource.getrusage(resource.RUSAGE_SELF)
+    started = time.perf_counter()
+    selected = _abo_spin_sample()
+    all_hashes: set[str] = set()
+    sample_hashes = []
+    vectors = {}
+    times: list[float] = []
+    for spin, paths in selected:
+        for angle in ABO_POSES:
+            url = ("https://" + ABO_HOST + "/spins/original/"
+                   + paths[angle])
+            jpg = _abo_https_bytes(url, limit=ABO_MAX_JPEG_BYTES)
+            if not (jpg.startswith(b"\xff\xd8") and jpg.endswith(b"\xff\xd9")):
+                raise R2BEvidenceError("invalid ABO JPEG payload")
+            digest = hashlib.sha256(jpg).hexdigest()
+            if digest in all_hashes:
+                raise R2BEvidenceError("exact duplicate independent ABO views")
+            all_hashes.add(digest)
+            sample_hashes.append(digest)
+            with Image.open(BytesIO(jpg)) as source:
+                if (source.format != "JPEG" or source.width > 4096
+                        or source.height > 4096
+                        or min(source.size) < 32):
+                    raise R2BEvidenceError("invalid ABO JPEG geometry")
+                image = source.convert("RGB").resize(
+                    (224, 224), Image.Resampling.BILINEAR)
+            record = {"legacy": image_fingerprint(_image_baseline(image))}
+            if model is not None:
+                record["learned"] = _image_learned(model, image, np, times)
+            vectors[(spin, angle)] = record
+    val = tuple(spin for spin, _ in selected[:5])
+    val_unknown = tuple(spin for spin, _ in selected[5:6])
+    test_known = tuple(spin for spin, _ in selected[6:10])
+    test_unknown = tuple(spin for spin, _ in selected[10:12])
+
+    def cohort(enrolled, unseen=()):
+        refs = {sid: tuple(vectors[(sid, a)] for a in ABO_REFS)
+                for sid in enrolled}
+        query = tuple((sid, angle, vectors[(sid, angle)])
+                      for sid in (*enrolled, *unseen)
+                      for angle in ABO_QUERIES)
+        return refs, query
+
+    val_ref, val_q = cohort(val, val_unknown)
+    test_ref, test_q = cohort(test_known, test_unknown)
+    results = {}
+    for kind in ("legacy", "learned") if model is not None else ("legacy",):
+        threshold = conservative_threshold(
+            _negative_scores(val_ref, val_q, kind=kind))
+        results[kind] = {
+            "threshold_frozen_on_validation_only": threshold,
+            "validation": _metrics(
+                val_ref, val_q, kind=kind, cutoff=threshold),
+            "test": _metrics(
+                test_ref, test_q, kind=kind, cutoff=threshold),
+        }
+    after = resource.getrusage(resource.RUSAGE_SELF)
+    return {
+        "scenario": "ABO_CC_BY_4_public_turntable_same_session_views",
+        "license_source": ABO_CC_BY_SOURCE,
+        "citation": ("Amazon.com, Guillaumin et al.; "
+                     "ABO dataset; CC BY 4.0"),
+        "source_sequences": len(selected),
+        "unique_real_jpeg_frames": len(sample_hashes),
+        "reference_pose_indices": list(ABO_REFS),
+        "query_pose_indices": list(ABO_QUERIES),
+        "selected_spin_id_digest_not_source_identity": hashlib.sha256(
+            "|".join(s for s, _ in selected).encode()).hexdigest(),
+        "selected_media_sha256_combined": hashlib.sha256(
+            "".join(sample_hashes).encode()).hexdigest(),
+        "distinct_physical_objects_verified_separately": False,
+        "independent_capture_sessions": False,
+        "same_turntable_sequence_frames": True,
+        "trained_on_study_media": False,
+        "image_model_onnx": model is not None,
+        "host_image_onnx_inference": _latency(times) if times else None,
+        "host_cpu_user_s": round(after.ru_utime-before.ru_utime, 3),
+        "host_cpu_system_s": round(after.ru_stime-before.ru_stime, 3),
+        "host_peak_rss_kib_whole_process": after.ru_maxrss,
+        "host_wall_s_includes_network": round(time.perf_counter()-started, 3),
+        "raw_media_saved_or_committed": False,
+        "sqlite_written": False,
+        "motor_commands": 0, "pc_requests": 0,
+        "hardware_validated": False,
+        "candidates": results,
+    }
+
+
 def run_coil20(
     archive: Path, *, expected_sha256: str, model_file: Path | None = None,
     approved_noncommercial_research: bool = False,
@@ -555,6 +754,7 @@ def run_coil20(
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--public-abo-ccby", action="store_true")
     parser.add_argument("--coil20-zip", type=Path)
     parser.add_argument("--coil20-reviewed-sha256")
     parser.add_argument("--noncommercial-coil20-permission-reviewed",
@@ -570,19 +770,25 @@ def main(argv=None):
     if not args.locally_approved_research:
         parser.error("explicit research/rights approval required")
     if (args.coil20_zip is None and args.audio_manifest is None
-            and args.image_manifest is None
+            and args.image_manifest is None and not args.public_abo_ccby
             or (args.audio_manifest is None) != (args.audio_root is None)
             or (args.image_manifest is None) != (args.image_root is None)
             or args.coil20_zip is not None and args.image_manifest is not None
+            or args.public_abo_ccby and (
+                args.image_manifest is not None or args.coil20_zip is not None)
             or (args.coil20_zip is None) != (
                 args.coil20_reviewed_sha256 is None)
             or (args.coil20_zip is None and
                 args.noncommercial_coil20_permission_reviewed)
             or args.image_model and (
-                args.coil20_zip is None and args.image_manifest is None)
+                args.coil20_zip is None and args.image_manifest is None
+                and not args.public_abo_ccby)
             or args.audio_model and args.audio_manifest is None):
         parser.error("choose zip and/or audio manifest+root; models optional")
     report = {}
+    if args.public_abo_ccby:
+        report["images_abo_public"] = run_public_abo(
+            model_file=args.image_model)
     if args.coil20_zip is not None:
         report["images"] = run_coil20(
             args.coil20_zip,
