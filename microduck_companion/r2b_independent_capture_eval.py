@@ -34,9 +34,10 @@ from .m1b2_host_embeddings import check_audio_model
 
 COIL20_SOURCE = ("https://www.cs.columbia.edu/CAVE/databases/"
                  "SLAM_coil-20_coil-100/coil-20/coil-20-proc.zip")
-# Confirm against OFFICIAL archive bytes before enabling visual evaluation.
-# Never accept a hash derived from the same unchecked download as a pin.
-COIL20_SHA256 = "PENDING_OFFICIAL_SHA256_PIN"
+# Columbia's official page does not publish a verified archive SHA-256.
+# Require an externally reviewed, explicitly supplied expectation. A digest
+# supplied by the user is tamper detection, NOT license/provenance validation.
+COIL20_LICENSE_SCOPE = "noncommercial_research_only"
 MAX_ARCHIVE_BYTES = 16 * 1024 * 1024
 MAX_PNG_BYTES = 90_000
 REFERENCE_POSES = (0, 36)
@@ -78,10 +79,9 @@ def _coil_name(obj: int, pose: int) -> str:
 
 def _image_samples(archive: Path, *, expected_sha256: str, model=None):
     from PIL import Image
-    if (type(expected_sha256) is not str
-            or not HEX64.fullmatch(expected_sha256)
-            or expected_sha256 != COIL20_SHA256):
-        raise R2BEvidenceError("official COIL20 SHA256 pin required")
+    if type(expected_sha256) is not str or not HEX64.fullmatch(expected_sha256):
+        raise R2BEvidenceError(
+            "a reviewed external COIL20 SHA256 expectation is required")
     if _digest(archive, max_bytes=MAX_ARCHIVE_BYTES) != expected_sha256:
         raise R2BEvidenceError("COIL20 archive digest mismatch")
     np = None
@@ -219,7 +219,8 @@ def evaluate_captures(samples: dict, *, kinds=("legacy",)) -> dict:
 
     No 'best of test' selection and no identity label model training.
     """
-    if (type(samples) is not dict
+    if (type(samples) is not dict or type(kinds) is not tuple
+            or len(set(kinds)) != len(kinds)
             or any(type(k) is not str or k not in ("legacy", "learned")
                    for k in kinds)
             or not kinds):
@@ -240,15 +241,16 @@ def evaluate_captures(samples: dict, *, kinds=("legacy",)) -> dict:
         results[kind] = {
             "threshold_frozen_on_validation_only": threshold,
             "validation_negative_pairs": len(negative),
-            "validation": _metrics(val_ref, val_queries,
-                                   kind=kind, cutoff=threshold)
-            # Validation unknowns: objects reserved outside val enrollment.
-            if False else {
+            "validation": {
+                # COIL-20 validation enrolls all 10 validation sources.
+                # No validation UNKNOWN here: never claim an unknown rate.
                 "known_queries": len(val_queries),
                 "known_correct": sum(
                     _predict(val_ref, sample, kind=kind,
                              threshold=threshold)[0] == obj
                     for obj, _, sample in val_queries),
+                "unknown_queries": 0,
+                "unknown_recall": None,
             },
             "test": _metrics(test_ref, test_queries,
                              kind=kind, cutoff=threshold),
@@ -274,8 +276,10 @@ def _audio_manifest(raw: bytes):
     if type(raw) is not bytes or len(raw) > MAX_MANIFEST_BYTES:
         raise R2BEvidenceError("bounded JSON manifest required")
     data = _parse_json(raw)
-    if set(data) != {"schema_version", "rights_basis", "source_evidence",
-                     "recordings"} or data["schema_version"] != 1:
+    if (set(data) != {"schema_version", "rights_basis", "source_evidence",
+                      "recordings"}
+            or type(data["schema_version"]) is not int
+            or data["schema_version"] != 1):
         raise R2BEvidenceError("manifest schema not recognized")
     if (data["rights_basis"] not in
             ("locally_reviewed_license", "documented_consent")
@@ -357,7 +361,7 @@ def _read_wav_take(media_root: Path, filename: str, sha: str):
 
 def run_audio_manifest(manifest: Path, media_root: Path, audio_model=None):
     if (not isinstance(manifest, Path) or not manifest.is_file()
-            or manifest.stat().st_size > MAX_MANIFEST_BYTES):
+            or not 1 <= manifest.stat().st_size <= MAX_MANIFEST_BYTES):
         raise R2BEvidenceError("manifest file required")
     items = _audio_manifest(manifest.read_bytes())
     np = None
@@ -365,6 +369,8 @@ def run_audio_manifest(manifest: Path, media_root: Path, audio_model=None):
         import numpy as np
     descriptors = {}
     timings: list[float] = []
+    before = resource.getrusage(resource.RUSAGE_SELF)
+    started = time.perf_counter()
     for item in items:
         samples = _read_wav_take(
             media_root, item["file"], item["sha256"])
@@ -402,19 +408,31 @@ def run_audio_manifest(manifest: Path, media_root: Path, audio_model=None):
             "test": _metrics(test_r, test_q + unk_q,
                              kind=kind, cutoff=threshold),
         }
+    after = resource.getrusage(resource.RUSAGE_SELF)
     return {
         "scenario": "local_independent_audio_manifest_self_attested",
         "rights_and_source_independence": "declared_not_authenticated",
         "manifest_entries": len(items),
         "audio_model_onnx": audio_model is not None,
         "audio_inference_host": _latency(timings) if timings else None,
+        "host_cpu_user_s": round(after.ru_utime-before.ru_utime, 3),
+        "host_cpu_system_s": round(after.ru_stime-before.ru_stime, 3),
+        "host_peak_rss_kib_whole_process": after.ru_maxrss,
+        "host_wall_s_excludes_media_collection": round(
+            time.perf_counter()-started, 3),
         "raw_audio_committed_or_saved_to_sqlite": False,
         "motor_commands": 0, "pc_requests": 0,
         "hardware_validated": False, "candidates": result,
     }
 
 
-def run_coil20(archive: Path, *, model_file: Path | None = None):
+def run_coil20(
+    archive: Path, *, expected_sha256: str, model_file: Path | None = None,
+    approved_noncommercial_research: bool = False,
+):
+    if approved_noncommercial_research is not True:
+        raise R2BEvidenceError(
+            "COIL20 requires reviewed noncommercial research authorization")
     timings = []
     model = None
     if model_file is not None:
@@ -429,12 +447,12 @@ def run_coil20(archive: Path, *, model_file: Path | None = None):
     before = resource.getrusage(resource.RUSAGE_SELF)
     started = time.perf_counter()
     samples, timings = _image_samples(
-        archive, expected_sha256=COIL20_SHA256, model=model)
+        archive, expected_sha256=expected_sha256, model=model)
     result = evaluate_captures(
         samples, kinds=("legacy", "learned") if model else ("legacy",))
     after = resource.getrusage(resource.RUSAGE_SELF)
     result.update({
-        "archive_sha256": COIL20_SHA256,
+        "archive_sha256_operator_supplied": expected_sha256,
         "unique_independent_png_captures": len(samples),
         "image_model_onnx": model is not None,
         "host_image_onnx_inference": _latency(timings) if timings else None,
@@ -450,6 +468,9 @@ def run_coil20(archive: Path, *, model_file: Path | None = None):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--coil20-zip", type=Path)
+    parser.add_argument("--coil20-reviewed-sha256")
+    parser.add_argument("--noncommercial-coil20-permission-reviewed",
+                        action="store_true")
     parser.add_argument("--image-model", type=Path)
     parser.add_argument("--audio-manifest", type=Path)
     parser.add_argument("--audio-root", type=Path)
@@ -460,13 +481,21 @@ def main(argv=None):
         parser.error("explicit research/rights approval required")
     if (args.coil20_zip is None and args.audio_manifest is None
             or (args.audio_manifest is None) != (args.audio_root is None)
+            or (args.coil20_zip is None) != (
+                args.coil20_reviewed_sha256 is None)
+            or (args.coil20_zip is None and
+                args.noncommercial_coil20_permission_reviewed)
             or args.image_model and args.coil20_zip is None
             or args.audio_model and args.audio_manifest is None):
         parser.error("choose zip and/or audio manifest+root; models optional")
     report = {}
     if args.coil20_zip is not None:
         report["images"] = run_coil20(
-            args.coil20_zip, model_file=args.image_model)
+            args.coil20_zip,
+            expected_sha256=args.coil20_reviewed_sha256,
+            approved_noncommercial_research=(
+                args.noncommercial_coil20_permission_reviewed),
+            model_file=args.image_model)
     if args.audio_manifest is not None:
         session = None
         if args.audio_model is not None:
