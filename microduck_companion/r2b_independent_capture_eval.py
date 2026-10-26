@@ -42,7 +42,8 @@ MAX_ARCHIVE_BYTES = 16 * 1024 * 1024
 MAX_PNG_BYTES = 90_000
 REFERENCE_POSES = (0, 36)
 QUERY_POSES = (9, 18, 27, 45, 54, 63)
-VAL_IDS = tuple(range(1, 11))
+VAL_IDS = tuple(range(1, 9))
+VAL_UNKNOWN_IDS = tuple(range(9, 11))
 TEST_KNOWN_IDS = tuple(range(11, 17))
 TEST_UNKNOWN_IDS = tuple(range(17, 21))
 ALL_POSES = REFERENCE_POSES + QUERY_POSES
@@ -228,7 +229,7 @@ def evaluate_captures(samples: dict, *, kinds=("legacy",)) -> dict:
     required = {(obj, pose) for obj in range(1, 21) for pose in ALL_POSES}
     if set(samples) != required:
         raise R2BEvidenceError("exact COIL20 roster required; no partial scores")
-    val_ref, val_queries = _ref_query(samples, VAL_IDS)
+    val_ref, val_queries = _ref_query(samples, VAL_IDS, VAL_UNKNOWN_IDS)
     test_ref, test_queries = _ref_query(
         samples, TEST_KNOWN_IDS, TEST_UNKNOWN_IDS)
     results = {}
@@ -241,23 +242,15 @@ def evaluate_captures(samples: dict, *, kinds=("legacy",)) -> dict:
         results[kind] = {
             "threshold_frozen_on_validation_only": threshold,
             "validation_negative_pairs": len(negative),
-            "validation": {
-                # COIL-20 validation enrolls all 10 validation sources.
-                # No validation UNKNOWN here: never claim an unknown rate.
-                "known_queries": len(val_queries),
-                "known_correct": sum(
-                    _predict(val_ref, sample, kind=kind,
-                             threshold=threshold)[0] == obj
-                    for obj, _, sample in val_queries),
-                "unknown_queries": 0,
-                "unknown_recall": None,
-            },
+            "validation": _metrics(
+                val_ref, val_queries, kind=kind, cutoff=threshold),
             "test": _metrics(test_ref, test_queries,
                              kind=kind, cutoff=threshold),
         }
     return {
         "method": "COIL20_independent_turntable_frames_open_set",
-        "val_sources": len(VAL_IDS),
+        "val_enrolled_sources": len(VAL_IDS),
+        "val_unknown_sources": len(VAL_UNKNOWN_IDS),
         "test_enrolled_sources": len(TEST_KNOWN_IDS),
         "test_unseen_sources": len(TEST_UNKNOWN_IDS),
         "reference_pose_indices": list(REFERENCE_POSES),
@@ -361,6 +354,7 @@ def _read_wav_take(media_root: Path, filename: str, sha: str):
 
 def run_audio_manifest(manifest: Path, media_root: Path, audio_model=None):
     if (not isinstance(manifest, Path) or not manifest.is_file()
+            or manifest.is_symlink()
             or not 1 <= manifest.stat().st_size <= MAX_MANIFEST_BYTES):
         raise R2BEvidenceError("manifest file required")
     items = _audio_manifest(manifest.read_bytes())
