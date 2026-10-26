@@ -1,0 +1,53 @@
+name: R2-B+2 ABO product-category metadata preflight
+on:
+  pull_request:
+    paths:
+      - .github/workflows/r2b2-abo-confusable.yml
+      - microduck_companion/r2b2_abo_confusables.py
+      - tests/test_r2b2_abo_confusables.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  abo-categories:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Inspect official catalogue metadata only, no pictures
+        shell: bash
+        run: |
+          python - <<'PY'
+          import urllib.request, gzip, io, json, collections
+          base="https://amazon-berkeley-objects.s3.us-east-1.amazonaws.com/listings/metadata/listings_{}.json.gz"
+          counts=collections.Counter()
+          examples=collections.defaultdict(list)
+          for i in range(2):
+              url=base.format(i)
+              req=urllib.request.Request(url,headers={"User-Agent":"Microduck-R2B2-catalog-audit/1"})
+              with urllib.request.urlopen(req,timeout=30) as response:
+                  if response.geturl()!=url:raise RuntimeError("redirect")
+                  packed=response.read(10_000_001)
+              if len(packed)>10_000_000:raise RuntimeError("metadata too large")
+              lines=0; with_spins=0
+              with gzip.GzipFile(fileobj=io.BytesIO(packed)) as f:
+                  for line in f:
+                      lines+=1
+                      if lines>15000:raise RuntimeError("too many listing lines")
+                      item=json.loads(line)
+                      spin=item.get("spin_id")
+                      if not isinstance(spin,str) or len(spin)!=8:continue
+                      with_spins+=1
+                      raw=item.get("product_type")
+                      if isinstance(raw,list):
+                          raw=raw[0].get("value") if raw and isinstance(raw[0],dict) else None
+                      if not isinstance(raw,str):continue
+                      counts[raw]+=1
+                      if len(examples[raw])<3:examples[raw].append(spin)
+              print("shard",i,"raw_bytes",len(packed),"lines",lines,"spins",with_spins)
+          print("top_types",json.dumps(counts.most_common(30)))
+          print("examples",json.dumps({k:examples[k] for k,_ in counts.most_common(6)}))
+          PY
