@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**EX2 — Journal de Kwipi consultable à la demande (fixtures, PR en cours) :** [contrat et tests](ex2-mock-effects-kwipi-journal-2026-10-26.md). Comparaison d'effets artificiels avant/après sur EX1 uniquement et interprétation conservatrice : changement observé en fixture ≠ preuve de cause. Lecteur JSONL/CSV ouvrant une SQLite existante en mode lecture seule ; aucun capteur, moteur, récompense ou télémétrie continue. Priorité Cat-A2b conservée, EX3 et robot physique non validés.
+
+
 **EX1 — journal de cycle d'intention fictif ([PR #70](https://github.com/Jean-Philippe56520/Microduck/pull/70), [CI 1 111 tests, 19 ignorés](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40410788233)) :** [contrat et limites](ex1-mock-experience-ledger-2026-10-26.md). Adaptateur F2 `PassiveIntent` → journal `proposed/mock_executed/refused/interrupted` dans la même `ExperienceMemory` SQLite, sans causalité ni récompense, sans commande ou conséquence réelle. EX2 reste prévu, Cat-A2b demeure prioritaire.
 
 
