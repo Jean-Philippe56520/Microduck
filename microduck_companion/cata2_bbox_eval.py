@@ -57,7 +57,7 @@ MAX_PRE_NMS = 160
 NMS_IOU = 0.50
 MATCH_IOU = 0.50
 MAX_DIMENSION = 4096
-IMAGE_HOST = "https://images.cocodataset.org/val2017/"
+IMAGE_HOST = "https://s3.amazonaws.com/images.cocodataset.org/val2017/"
 
 
 @dataclass(frozen=True)
