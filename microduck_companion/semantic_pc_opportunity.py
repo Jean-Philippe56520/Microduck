@@ -195,6 +195,21 @@ def assess_mock_pc_opportunity(
             or state not in _CANDIDATE_STATES
             or situation.cue not in _ALLOWED_CONTEXTS):
         return denied("no_semantic_behavior")
+    # A supplied PD2 label is not sufficient: it must be consistent with
+    # the exact synthetic context and fresh at this evaluation time.
+    expected_cues = {
+        "LookAround": ("none", "base_portrait"),
+        "Wander": ("new_space", "contextual_mock_candidate"),
+        "TurnInPlace": ("viewpoint_ambiguity", "contextual_mock_candidate"),
+        "GroundPick": ("floor_object", "contextual_mock_candidate"),
+    }
+    expected_cue, expected_reason = expected_cues[state]
+    if situation.cue != expected_cue or disposition.reason != expected_reason:
+        return denied("no_semantic_behavior")
+    if situation.cue != "none":
+        cue_age = now_monotonic_s - float(situation.observed_monotonic_s)
+        if cue_age < 0 or cue_age > MAX_MOCK_FRAME_AGE_S:
+            return denied("invalid_or_private_mock_samples")
     if (portrait.inspection_habit in {
             "inspection_reserved", "unavailable"}
             or motivations.curiosity < .55 or motivations.energy < .35
