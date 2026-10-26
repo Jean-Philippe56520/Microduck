@@ -69,7 +69,7 @@ class CocoBoxContracts(unittest.TestCase):
             "e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aeefa635b8c810b6f",
             ANNOTATIONS_SHA256)
         self.assertTrue(ANNOTATIONS_URL.endswith("instances_val2017.json"))
-        self.assertTrue(IMAGE_HOST.startswith("https://images.cocodataset.org/val2017/"))
+        self.assertTrue(IMAGE_HOST.startswith("https://s3.amazonaws.com/images.cocodataset.org/val2017/"))
         self.assertEqual(.5,MATCH_IOU)
         self.assertEqual(.5,NMS_IOU)
         self.assertIn("kwipi",SEED)
