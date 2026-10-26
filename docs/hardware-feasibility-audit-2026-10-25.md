@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**Addendum PD3 — 27/10/2026, sans benchmark embarqué :** [opportunités Qwen fictives et refus transport](pd3-semantic-pc-opportunity-2026-10-27.md). La fonction de triage est pure, éphémère et n'interroge aucun service sur RK3566, ne transmet aucune image/voix et ne conserve aucune mémoire supplémentaire. Les seuils de deux échantillons, 0,5–30 s de séparation et 1 s de fraîcheur restent **de laboratoire** ; ni RSS, ni temps CPU, ni chaleur ni batterie sur 1 Go RAM/32 Go ne sont mesurés. Le PC Qwen est facultatif ; déploiement uniquement après Cat-A2b, protocole d'accès privé, vérification `scripts/resource-audit.sh` et sécurité `robotd` 50 Hz.
+
+
 **Addendum PD2 — 27/10/2026, aucune preuve sur RK3566 :** [contrat de continuité purement fictif](pd2-coherent-mock-behavior-continuity-2026-10-27.md). Une petite structure Python process-local décrit la continuité de 16 noms historiques depuis F2/P-A/PD1 sans moteur, capteur, Qwen ni table SQLite supplémentaires. Les valeurs 2 s/8 s sont des temporisations de fixtures, **pas des mesures** de capacité 1 Go RAM/32 Go, consommation batterie ou délai robotd 50 Hz. L'inertie d'humeur n'est pas persistée ; les anciens souvenirs F4-A restent dans la SQLite existante si celle-ci est sur disque. Audit `scripts/resource-audit.sh` sur l'appareil avant portage.
 
 
