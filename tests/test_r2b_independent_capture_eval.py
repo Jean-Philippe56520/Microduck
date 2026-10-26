@@ -41,8 +41,8 @@ def fixture_manifest(ext="wav"):
             name = f"{source[2:]}-{idx}.{ext}"
             items.append({
                 "file": name, "source_id": source,
-                "session_id": f"t-{source[2:]}-{idx}",
-                "take_id": f"t-{source[2:]}-{idx}",
+                "session_id": f"t-{source[2:]}session{idx}",
+                "take_id": f"t-{source[2:]}take{idx}",
                 "split": split, "role": role,
                 "sha256": hashlib.sha256(name.encode()).hexdigest(),
             })
@@ -239,8 +239,7 @@ class R2BCaptureProtocolTests(unittest.TestCase):
         for argv in (
             [],
             ["--audio-manifest", "/bad.json"],
-            ["--locally-approved-research", "--coil20-zip", "/bad.zip",
-             "--coil20-reviewed-sha256", "a"*64],
+            ["--locally-approved-research", "--coil20-zip", "/bad.zip"],
             ["--locally-approved-research", "--image-model", "/bad.onnx"],
             ["--locally-approved-research", "--image-manifest", "/bad.json"],
         ):
