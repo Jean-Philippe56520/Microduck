@@ -301,6 +301,21 @@ class SpatialMemoryTests(unittest.TestCase):
         with self.assertRaises(sqlite3.Error):
             self.add()
 
+    def test_spatial_recall_cannot_override_brain_safety_halt(self):
+        from microduck_companion.autonomy import AutonomyBrain
+        from microduck_companion.perception import PerceptionSnapshot
+        self.add(sample(landmark="door",confidence=1.))
+        spatial=self.recall(landmark="door")
+        self.assertEqual("bounded_historical_mock_only",spatial.status)
+        # Even a synthetic high-confidence point cannot replace currently
+        # missing safe floor, ToF, battery, and supervised-zone evidence.
+        plan=AutonomyBrain(self.mem).choose_from_snapshot(
+            PerceptionSnapshot("mock",(),100.),now=100.1)
+        self.assertEqual("halt",plan.intention)
+        self.assertFalse(spatial.navigation_authorized)
+        self.assertFalse(spatial.floor_clearance_verified)
+        self.assertEqual(0,spatial.motor_commands_issued)
+
     def test_repeating_sample_does_not_verify_physical_floor(self):
         self.add(sample(landmark="door"))
         r=self.recall(landmark="door")
