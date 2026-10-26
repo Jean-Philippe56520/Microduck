@@ -258,10 +258,22 @@ class SqlitePatternTests(unittest.TestCase):
                             sound_tone(),now_wall_epoch_s=T0,
                             category=category,
                         )
-        for bad in (float("nan"),float("inf"),-1,True):
+        for invalid_category in ([], {}, None, True, 1):
+            with self.subTest(category=type(invalid_category).__name__):
+                with self.assertRaises(ValueError):
+                    self.memory.observe_image(
+                        image_square(),now_wall_epoch_s=T0,
+                        category=invalid_category,
+                    )
+                with self.assertRaises(ValueError):
+                    self.memory.observe_audio(
+                        sound_tone(),now_wall_epoch_s=T0,
+                        category=invalid_category,
+                    )
+        for bad in (float("nan"),float("inf"),-1,True,10 ** 10000):
             with self.subTest(bad=bad),self.assertRaises(ValueError):
                 self.memory.observe_image(image_square(),now_wall_epoch_s=bad)
-        for bad in (float("nan"),float("inf"),-1,True,1.01):
+        for bad in (float("nan"),float("inf"),-1,True,1.01,10 ** 10000):
             with self.subTest(interest=bad),self.assertRaises(ValueError):
                 self.memory.observe_image(
                     image_square(),now_wall_epoch_s=T0,interest=bad,
