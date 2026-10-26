@@ -100,3 +100,8 @@ jobs:
           # whole-brain, battery, ARM, or hardware-resource comparison.
           /usr/bin/time -f "F6B python_host_elapsed_s=%e python_host_peak_rss_kib=%M" python -m microduck_companion.f6b_score_probe --python-only-bench
           /usr/bin/time -f "F6B rust_host_elapsed_s=%e rust_host_peak_rss_kib=%M" "$RUNNER_TEMP/f6b-score" --bench
+      - name: F6-C offline cycle and event budgets with host resource evidence
+        run: |
+          # Full mock F1-B Unix read -> F2 brain -> SQLite F1-C/F2-C,
+          # with F6-C pre-read/pre-memory quotas. NO OEM/PC/robot hardware.
+          python -m microduck_companion.f6c_offline_budget_demo
