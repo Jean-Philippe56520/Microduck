@@ -1,6 +1,6 @@
 # EX1 — Journal des intentions et résolutions fictives de Kwipi
 
-**26 octobre 2026. Statut : code candidat et tests sur fixtures ; aucune action physique et aucun résultat de conséquence/causalité.** Cette phase commence l'[architecture d'apprentissage par l'expérience](kwipi-experiential-learning-plan-2026-10-26.md) sans prétendre que Kwipi a accompli une action réelle. La priorité Cat-A2b, ses vrais angles bas indépendants et les contraintes robotd sont inchangés.
+**26 octobre 2026. Statut : code sur branche [PR #70](https://github.com/Jean-Philippe56520/Microduck/pull/70), [CI hôte réussie #40410788233](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40410788233) : 1 111 tests exécutés, 19 ignorés, zéro échec (dont 12 scénarios EX1) ; aucune action physique et aucun résultat de conséquence/causalité.** Cette phase commence l'[architecture d'apprentissage par l'expérience](kwipi-experiential-learning-plan-2026-10-26.md) sans prétendre que Kwipi a accompli une action réelle. La priorité Cat-A2b, ses vrais angles bas indépendants et les contraintes robotd sont inchangés.
 
 ## Objet
 
