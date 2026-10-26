@@ -5,6 +5,9 @@ NOT independent physical captures; these tests are not recognition results.
 """
 from __future__ import annotations
 
+import csv
+import gzip
+import io
 import hashlib
 import json
 import math
@@ -17,7 +20,8 @@ import wave
 from unittest.mock import patch
 
 from microduck_companion.r2b_independent_capture_eval import (
-    ALL_POSES, COIL20_SOURCE, R2BEvidenceError,
+    ALL_POSES, COIL20_SOURCE, ABO_HOST, R2BEvidenceError,
+    _abo_https_bytes, _abo_spin_sample,
     _audio_manifest, _capture_manifest, _coil_name, _image_samples,
     _predict, _read_wav_take, evaluate_captures, main, run_audio_manifest,
     run_coil20,
@@ -234,6 +238,54 @@ class R2BCaptureProtocolTests(unittest.TestCase):
                 path.write_bytes(as_json(broken))
                 with self.assertRaises(R2BEvidenceError):
                     run_audio_manifest(path, root)
+
+    def test_abo_public_spin_metadata_is_bounded_and_has_exact_provider(self):
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(["spin_id", "azimuth", "image_id",
+                         "height", "width", "path"])
+        for index in range(1, 13):
+            spin = f"{index:08x}"
+            for angle in (0, 9, 18, 36, 45, 54):
+                writer.writerow([
+                    spin, angle, "public-image", 224, 224,
+                    f"{spin[:2]}/{spin}/{spin}_{angle:02d}.jpg",
+                ])
+        data = gzip.compress(buf.getvalue().encode())
+
+        class Response(io.BytesIO):
+            def geturl(self):
+                return f"https://{ABO_HOST}/spins/metadata/spins.csv.gz"
+
+        with patch("urllib.request.urlopen", return_value=Response(data)):
+            selected = _abo_spin_sample()
+        self.assertEqual(12, len(selected))
+        self.assertEqual(
+            {0, 9, 18, 36, 45, 54}, set(selected[0][1]))
+        self.assertEqual(
+            "00000001", selected[0][0])
+        # Distinct source IDs in the catalog are not verified distinct
+        # physical retail objects. Tests must not claim that.
+
+    def test_abo_public_fetch_rejects_unsafe_domains_and_redirects(self):
+        for url in (
+            "http://" + ABO_HOST + "/spins/a.jpg",
+            "https://evil.example/spins/a.jpg",
+            "https://" + ABO_HOST + ".evil.example/a.jpg",
+        ):
+            with self.subTest(url=url), self.assertRaises(R2BEvidenceError):
+                _abo_https_bytes(url, limit=1_000_000)
+
+        class BadRedirect(io.BytesIO):
+            def geturl(self):
+                return "https://other.example/private-image.jpg"
+
+        with patch("urllib.request.urlopen", return_value=BadRedirect(
+                b"\xff\xd8" + b"a"*120 + b"\xff\xd9")):
+            with self.assertRaisesRegex(R2BEvidenceError, "redirect"):
+                _abo_https_bytes(
+                    f"https://{ABO_HOST}/spins/original/a.jpg",
+                    limit=1000)
 
     def test_command_line_requires_opt_in_and_all_parameters(self):
         for argv in (
