@@ -135,6 +135,9 @@ class MultiviewPatternMemory:
                 CREATE INDEX IF NOT EXISTS m1b_group_recent
                 ON m1b_groups(last_seen_epoch_s,id)
             """)
+            # A stricter policy on SQLite reopen must not leave more
+            # signatures in memory than the newly selected fixture limit.
+            self._trim_existing_limits()
 
     def stats(self) -> dict[str, int]:
         c = self.memory.conn
@@ -178,6 +181,49 @@ class MultiviewPatternMemory:
             if still is None:
                 c.execute("DELETE FROM m1b_groups WHERE id=?", (gid,))
 
+    def _trim_existing_limits(self) -> None:
+        """Bound persisted mock groups even after a configuration change."""
+        c = self.memory.conn
+        groups = c.execute(
+            "SELECT id FROM m1b_groups ORDER BY id"
+        ).fetchall()
+        for item in groups:
+            gid = item["id"]
+            members = c.execute("""
+                SELECT id FROM m1b_signatures WHERE group_id=?
+                ORDER BY sightings ASC,last_seen_epoch_s ASC,id ASC
+            """,(gid,)).fetchall()
+            for doomed in members[:-self.limits.max_signatures_per_group]:
+                self._drop_exemplar(doomed["id"],preserve_group=gid)
+            if c.execute(
+                "SELECT 1 FROM m1b_signatures WHERE group_id=? LIMIT 1",
+                (gid,),
+            ).fetchone() is None:
+                self._delete_group(gid)
+        while c.execute("SELECT COUNT(*) FROM m1b_groups").fetchone()[0] > (
+            self.limits.max_groups
+        ):
+            oldest = c.execute("""
+                SELECT id FROM m1b_groups
+                ORDER BY last_seen_epoch_s ASC,id ASC LIMIT 1
+            """).fetchone()
+            self._delete_group(oldest["id"])
+        while True:
+            n, size = c.execute("""
+                SELECT COUNT(*),COALESCE(SUM(length(fingerprint)),0)
+                FROM m1b_signatures
+            """).fetchone()
+            if (n <= self.limits.max_signatures
+                    and size <= self.limits.max_fingerprint_bytes):
+                break
+            old = c.execute("""
+                SELECT id FROM m1b_signatures
+                ORDER BY last_seen_epoch_s ASC,sightings ASC,id ASC LIMIT 1
+            """).fetchone()
+            if old is None:
+                break
+            self._drop_exemplar(old["id"],preserve_group=None)
+
     def _prune(self, now: float) -> None:
         c = self.memory.conn
         ids = c.execute(
@@ -186,6 +232,7 @@ class MultiviewPatternMemory:
         ).fetchall()
         for item in ids:
             self._delete_group(item["id"])
+        self._trim_existing_limits()
 
     def prune(self, *, now_wall_epoch_s: float) -> None:
         with self.memory.conn:
