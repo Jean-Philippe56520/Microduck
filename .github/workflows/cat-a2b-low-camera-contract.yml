@@ -1,0 +1,33 @@
+name: Cat-A2b private low-camera manifest contracts (fixtures only)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "microduck_companion/cata2b_private_low.py"
+      - "tests/test_cata2b_private_low.py"
+      - ".github/workflows/cat-a2b-low-camera-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Pillow only to validate throwaway JPEG fixtures
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Verify strict low-camera manifest, privacy, hashes and non-motor gates
+        run: python -m unittest discover -s tests -p 'test_cata2b_private_low.py' -v
+      - name: Parse module and show inert CLI help
+        run: |
+          python -m compileall -q microduck_companion/cata2b_private_low.py
+          python -m microduck_companion.cata2b_private_low --help
+      # No external photos/model, real video, operator metadata, private
+      # measurement evidence, Wi-Fi, robot service or hardware in CI.
+      # A success validates the *protocol*, not classification accuracy.
