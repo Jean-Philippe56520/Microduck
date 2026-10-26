@@ -272,15 +272,22 @@ class OllamaHTTPTests(unittest.TestCase):
                     done=advisory_from_transport(
                         cycle, response, now_monotonic_s=100.1)
                     self.assertEqual(cycle.local_intent, done.local_intent)
-                    if json.loads(reply).get("hypotheses", [{}])[0].get(
-                            "category") != "dog":
-                        self.assertEqual("response_rejected", done.status)
-                    else:
-                        # F5-A permits an unverified generic hypothesis; it
-                        # is NEVER a verified dog or physical identification.
-                        self.assertEqual("hypotheses_unverified", done.status)
-                        self.assertFalse(done.hypotheses[0].verified)
+                    # With no image or object features, dog/cat guesses
+                    # cannot be carried into cognitive advice in F5-B.
+                    self.assertEqual("response_rejected", done.status)
+                    self.assertEqual((), done.hypotheses)
                     self.assertEqual(0, done.motor_commands_issued)
+
+    def test_unknown_with_fabricated_confidence_is_rejected(self):
+        cycle = make_cycle()
+        trans = OllamaTransportResult(
+            "ok", "qwen3.5:4b", .05,
+            wire=f5a_reply(cycle.request.request_id,
+                          category="unknown", confidence=.95),
+        )
+        done = advisory_from_transport(cycle, trans, now_monotonic_s=100.1)
+        self.assertEqual("response_rejected", done.status)
+        self.assertEqual(cycle.local_intent, done.local_intent)
 
     def test_timeout_of_stalled_local_http_server_returns_unavailable(self):
         def responder(data):
