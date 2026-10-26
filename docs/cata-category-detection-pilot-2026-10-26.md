@@ -50,6 +50,8 @@ Ce comportement **n'est pas une validation de sécurité ou de fiabilité** : le
 
 **Coûts hôte Linux GitHub Actions (32 JPEG originaux, 64 inférences avec recadrages) :** inférence ONNX CPU **médiane 10,700 ms** ; CPU utilisateur processus entier **2,703 s** ; RSS processus entier **138 324 Kio** (env. 135 Mio) ; durée murale **10,689 s avec téléchargements**. Aucun chiffre ne décrit RAM libre, cadence caméra/moteur, consommation électrique, température ou performance NPU de Kwipi.
 
+**Reproduction indépendante dans la CI de cette PR :** [second run Cat-A #40388051088](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40388051088) réussi, **mêmes 32 JPEG originaux (0 doublon exact), même SHA-256 de l'ensemble :** `1b529f4d6687a4d21d6378177f00bd4504cdbaef8a8e4dcb2f3cd2a5ca18b8e8` (SHA-256 de la concaténation des SHA individuels triés). **Mêmes résultats** en CC0 test (**4/6**, **3/6**) et chaises (**8/12**, **0/12**), même seuil et même SHA poids. Les coûts hôte ont varié (médiane ONNX **22,289 ms**, RSS processus **137 108 Kio**, durée murale **17,294 s**) : ce ne sont pas des statistiques du robot. La séparation par photographe réduit le recouvrement interne, mais **ne prouve pas** l'absence de ces photographies dans les données de préentraînement COCO ni une généralisation hors de ces sources.
+
 **Statut des preuves :** code testé sur CI et **images réelles publiques**, avec **recadrages artificiels** ; pas de prises authentiquement basses, de suivi, de continuité d'objet, de personnes/balles étiquetées en holdout, de vraies parties du corps, de médialogic OEM, de SQLite mémoire ou de robot physique testé.
 
 ## 4. Décisions et prochaine porte Cat-A
