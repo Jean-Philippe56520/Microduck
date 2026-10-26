@@ -84,6 +84,33 @@ class CategoryInspectionFixtureTests(unittest.TestCase):
         self.assertFalse(linked.verified_category)
         self.assertEqual("head_outline", linked.look_for)
 
+    def test_followup_chain_stays_mock_and_never_identifies_person(self):
+        # Hand -> forearm -> body region, under the already selected F2 inspect.
+        first = suggest(part("hand"))
+        self.assertEqual("forearm", first.look_for)
+        second = suggest(
+            part("hand"), part("forearm"),
+            followups_used=1, visual_continuity_supported=True)
+        self.assertEqual("inspect_more", second.status)
+        self.assertEqual("body_outline", second.look_for)
+        self.assertEqual(("person",), second.candidates_unverified)
+        third = suggest(
+            part("hand"), part("forearm"), part("body_outline"),
+            followups_used=2, optional_pc_consent=True,
+            visual_continuity_supported=True)
+        self.assertEqual("keep_unknown", third.status)
+        self.assertFalse(third.verified_category)
+        self.assertEqual(0, third.pc_requests_issued)
+        self.assertEqual(0, third.motor_commands_issued)
+
+    def test_arbitrary_look_for_and_person_pc_hint_are_forbidden(self):
+        with self.assertRaises(ValueError):
+            CategoryInspectionHint(
+                "inspect_more", ("ball",), "turn-head-right", "not_allowed")
+        with self.assertRaises(ValueError):
+            CategoryInspectionHint(
+                "pc_review_candidate", ("person",), None, "not_allowed")
+
     def test_contradictory_connected_parts_never_form_new_identity(self):
         linked = suggest(
             part("hand"), part("furniture_leg"),
