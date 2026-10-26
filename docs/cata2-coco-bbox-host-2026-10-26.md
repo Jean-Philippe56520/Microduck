@@ -2,6 +2,25 @@
 
 **26 octobre 2026 — première tranche du chantier Cat-A2**, suite à [Cat-A](cata-category-detection-pilot-2026-10-26.md), sans portage sur Kwipi. **La hauteur physique de caméra des photos COCO est inconnue** : ce banc n'évalue PAS le scénario d'une caméra à ~25 cm. Cat-A2b (véritables vues basses vérifiables) reste une porte distincte.
 
+## Résultats réels du premier lot (CI hôte du 26/10/2026)
+
+[GitHub Actions #40400991178 — Cat-A2a sur le SHA de modèle et d'annotations contrôlés](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40400991178) : **24 vrais JPEG COCO VAL** à licence *déclarée* CC BY 2.0, **49 instances de cinq classes annotées**, **40 propositions**. À **IoU≥0,50**, **31 vrais positifs**, **9 faux positifs** et **18 faux négatifs** ; **précision 0,775**, **rappel 0,632653**, **AP50 moyenne macro 0,485555** (moyenne sur les cinq classes présentes, AP interpolée à 101 points sur cette petite cohorte seulement).
+
+| Catégorie | Instances annotées | Vrais positifs (IoU50) | Faux négatifs | Faux positifs | AP50 101 points |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| humain (`person`) | 29 | 23 | 6 | 3 | 0,787510 |
+| chat | 4 | 4 | 0 | 0 | 1,000000 |
+| chien | 5 | 2 | 3 | 0 | 0,405941 |
+| chaise | 7 | 1 | 6 | 4 | 0,148515 |
+| balle (`sports_ball`) | 4 | 1 | 3 | 2 | 0,085809 |
+| **Total** | **49** | **31** | **18** | **9** | **0,485555 macro** |
+
+Sur **4 images sans aucune des cinq classes cibles**, le système ne produit **aucune fausse détection**. Cet échantillon est trop faible pour conclure que le rejet des inconnus est robuste. Les images sont sélectionnées par ID et SHA avant toute inférence ; certains clichés positifs contiennent simultanément plusieurs catégories.
+
+**Ressources CPU du runner GitHub uniquement :** inférence ONNX médiane **23,037 ms**, p95 **24,504 ms** sur 24 inférences ; pic RSS du **processus Python entier** **174 068 Kio** (~170 Mio), durée totale **3,097 s** avec chargement local et téléchargement de JPEG (hors téléchargement initial des poids et annotations). **Aucune conversion en FPS robot, consommation NPU, énergie, RAM libre ou thermie.** Le précédent résultat Cat-A est mesuré sur d'autres photos et un autre protocole : ces valeurs ne sont pas une amélioration mesurée.
+
+**Décision : RETESTER, pas de déploiement.** Les balles et les chaises sont mal localisées sur ce faible échantillon. Les chats 4/4 sont un résultat de **quatre images**, pas une garantie. **Zéro photographie avec hauteur de caméra certifiée ~25 cm : Cat-A2b reste non réalisé.**
+
 ## 1. Comparaison obligatoire « réutiliser / adapter / créer »
 
 | Composant / source | Observé à la révision vérifiée | Décision |
