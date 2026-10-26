@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass
+import math
 import sqlite3
 
 from .autonomy import Motivations
@@ -20,6 +21,7 @@ from .passive_intentions import (PassiveIntent, propose_passive_intention,
 from .passive_memory import PassiveObservationJournal
 from .passive_learning import PassiveLearning
 from .behavioral_memory import BehavioralMemory, valid_mock_summary
+from .experience_expectations import MockAttentionTrends, MAX_ATTENTION_BIAS
 from .passive_observations import summarize_passive
 from .passive_sources import PassiveRead
 
@@ -125,7 +127,8 @@ class PassiveRhythm:
              journal: PassiveObservationJournal, motivations: Motivations,
              now_monotonic_s: float, now_wall_epoch_s: float,
              learning: PassiveLearning | None = None,
-             behavioral: BehavioralMemory | None = None) -> PassiveIntent:
+             behavioral: BehavioralMemory | None = None,
+             expectations: MockAttentionTrends | None = None) -> PassiveIntent:
         """One strictly passive, mock-only cognitive cycle.
 
         F2-A validation is called *inside* this module. The caller cannot
@@ -148,6 +151,11 @@ class PassiveRhythm:
                 raise TypeError("existing F4-A BehavioralMemory required")
             if behavioral._memory is not journal._memory:
                 raise ValueError("F4-A memory must share F1/F2 SQLite")
+        if expectations is not None:
+            if not isinstance(expectations, MockAttentionTrends):
+                raise TypeError("EX3 must use the existing mock trend reader")
+            if expectations._memory is not journal._memory:
+                raise ValueError("EX3 and F2 must share one ExperienceMemory")
         if not _valid_scalar(now_monotonic_s) or not _valid_scalar(now_wall_epoch_s):
             raise ValueError("clocks must be finite and nonnegative")
         now = float(now_monotonic_s)
@@ -202,6 +210,28 @@ class PassiveRhythm:
         # F2-A returned a valid baseline (possibly idle for an already-known
         # category): therefore provenance + fresh timestamps have passed.
         observations = summarize_passive(reading.snapshot, now=now)
+        # EX3 is an OPTIONAL read-only hint, never a second action loop.
+        # Read only after F2-A authenticated this synthetic passive frame.
+        trend_biases: dict[tuple[str, str], float] = {}
+        if expectations is not None:
+            try:
+                for obs in observations:
+                    if not obs.usable_category or obs.category == "unknown":
+                        continue
+                    verb = ("observe" if obs.kind == "object_label"
+                            else "listen")
+                    key = (verb, obs.category)
+                    if key not in trend_biases:
+                        bias = expectations.bias_for(
+                            intention=verb, category=obs.category,
+                            now_wall_epoch_s=now_wall_epoch_s)
+                        if (type(bias) is not float or not math.isfinite(bias)
+                                or not -MAX_ATTENTION_BIAS <= bias <= MAX_ATTENTION_BIAS):
+                            raise ValueError("invalid EX3 trend hint")
+                        trend_biases[key] = bias
+            except (sqlite3.Error, ValueError, OverflowError):
+                return self._record(self._idle("ex3_history_unavailable"),
+                                    motivations=motivations, update_energy=False)
         idle_score = (0.24 + 0.35 * motivations.caution
                       + 0.25 * (1.0 - motivations.energy))
         best_score, best_proposal = idle_score, self._idle(
@@ -225,6 +255,12 @@ class PassiveRhythm:
                         candidates.append(("observe", "object_label",
                                            obs.category,
                                            "novel_mock_category"))
+                    elif trend_biases.get(("observe", obs.category), 0.0) > 0:
+                        # Only a positive, repeated MOCK trend can re-propose
+                        # familiar passive attention; cooldown still applies.
+                        candidates.append(("observe", "object_label",
+                                           obs.category,
+                                           "repeated_temporal_mock_attention"))
             elif obs.kind == "sound_label" and obs.status in {
                 "identified", "unknown", "conflict",
             }:
@@ -264,6 +300,7 @@ class PassiveRhythm:
                 self._cooldown_blocks += 1
                 continue
             score = self._score(intention, category, motivations)
+            score += trend_biases.get((intention, category), 0.0)
             if intention == "inspect":
                 score += outcome_bias  # <= +/-0.12, mock-only; no motor effect
             # Explicitly opt-in: F2-B callers keep their original fixed scores.
