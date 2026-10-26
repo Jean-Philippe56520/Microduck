@@ -1,6 +1,6 @@
 # Microduck Companion
 
-**C1–C2 — revue communautaire (audit et comparaison, sans intégration) :** [six projets publics examinés et matrice anti-doublons](docs/community-reuse-audit-2026-10-26.md). QuackNav et microduck-brain offrent des pistes pour la navigation/sécurité **en simulation**, mais aucun composant externe n'est retenu ni validé sur robot. Notre priorité R2-B+1 et la séparation `robotd`/Companion restent inchangées.
+**C1–C3 — références comparées chantier par chantier (sans intégration) :** [audit de six projets publics](docs/community-reuse-audit-2026-10-26.md) et [registre de sélection actuel](docs/community-reference-registry-2026-10-26.md), étendu aux projets de voix, simulation et interface. Pour la cartographie, vérifier **d'abord la PR OEM #414 maploc v2/mapd** (ouverte, non livrée), puis QuackNav et microduck-brain ; pour l'autonomie, surveiller **la PR OEM #381** (proposition de design, non portée). Les références ne sont **pas des dépendances validées**. Aucun code extérieur n'est intégré ; R2-B+1 et l'autorité motrice de `robotd` restent inchangés.
 
 **Prochaines étapes (plan seulement) :** [plan d'exécution après R2-B](docs/r2-follow-up-execution-plan-2026-10-26.md). D'abord **des sons réellement réenregistrés**, puis **davantage d'objets visuellement ressemblants**, ensuite analyse des confusions et démonstration de la **mémoire unique M1-B sur PC**. Chaque lot réutilise l'existant et se clôt sur des tests et un bilan avant le suivant. Aucun modèle ni comportement robot supplémentaire n'est livré par cette planification.
 
