@@ -14,7 +14,7 @@
 | P-C `MockExpressionHint`, `MockOemConditions`, PD1 `expression_capability_for` | **Réutiliser** : `Petted` est une indication de `coo` déjà possédé par OEM, `Startle` une hypothèse sans animation ; aucun nouveau son. Chaque sortie PD2 répète le statut non exécutable PD1. |
 | EX1/EX2/EX3 et F5-Qwen | Aucun second apprentissage causal, aucun flux d'événements, consultation PC ni transmission multimodale. Les expériences EX2 restent **temporelles et fictives** ; elles ne prouvent pas l'exécution d'un état historique. |
 
-**Nouveau code justifié :** `microduck_companion/behavior_continuity.py` est un petit post-traitement descriptif, possédé paresseusement par **le même `AutonomyBrain`** via `describe_behavior_continuity()`. Il évite de modifier le sélecteur F2, garde la source `mock` et utilise PD1 comme source unique des capacités. Pas de deuxième machine de contrôle : `MockBehaviorContinuity` ne réveille jamais un processus, ne décide pas un mouvement et ne possède aucune API d'action.
+**Nouveau code justifié :** `microduck_companion/behavior_continuity.py` est un petit post-traitement descriptif, possédé paresseusement par **le même `AutonomyBrain`** via `describe_behavior_continuity()`. Lorsqu'un indice P-C est fourni, l'API demande également `hint_evaluated_monotonic_s`, horodatage fictif de son analyse, pour éviter de rejouer une caresse ou un sursaut vieux de plusieurs cycles. Il évite de modifier le sélecteur F2, garde la source `mock` et utilise PD1 comme source unique des capacités. Pas de deuxième machine de contrôle : `MockBehaviorContinuity` ne réveille jamais un processus, ne décide pas un mouvement et ne possède aucune API d'action.
 
 ## 2. Correspondance des 16 états et origine des candidatures
 
@@ -46,8 +46,9 @@
 - **Cooldown de 8 secondes fictives** après avoir quitté un état historique non descriptif ;
 - **Préemption immédiate** si `MockOemConditions` indique `stop_requested`, `fallen` ou `busy`, même à horodatage dupliqué ;
 - **Repos P-A `Nap` prioritaire** sur les candidats de jeu ou d'animation ;
-- **Aucune promotion d'indices périmés/futurs** : chaque contexte hors `none` a une fenêtre de 1,5 seconde fictive ;
+- **Aucune promotion d'indices périmés/futurs** : chaque contexte hors `none` a une fenêtre de 1,5 seconde fictive ; un indice P-C doit aussi recevoir l'heure explicite de son évaluation et sera refusé s'il a vieilli ou vient du futur ;
 - Horloge monotone reculant ou contexte devenu incompatible : retour prudent, sans maintenir artificiellement le candidat ;
+- Une écoute (`LookAround/attentive`) ne peut jamais proposer `Wander`, `TurnInPlace` ou `GroundPick` par une étiquette de scène fictive ; l'attention à l'objet (`LookAround/curious`) reste requise ;
 - Réutilisation de `BehaviorPortrait.inspection_habit` : un historique fictif F4-A défavorable inhibe certains candidats ; une correction F4-A peut restaurer leur candidature sans recalcul de poids séparé.
 
 Ces délais et seuils de motivation sont **des valeurs expérimentales de test, pas des mesures de sûreté ou d'humeur sur le RK3566**. Une simulation de catégorie inconnue ne devient jamais une identité. Les événements contradictoires doivent mener à l'abstention.
