@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**R2-B — évaluation de captures distinctes (protocole, pas résultat réel confirmé) :** [étude R2-B](r2b-independent-capture-evaluation-2026-10-26.md), utilisant M1-A/M1-B2 comme extracteurs et mesureurs **sans nouvelle base SQLite**. Le code distingue sources inscrites, inconnues, prises de référence et test, verrouille les seuils sur validation, signale les fausses fusions, mesure CPU/RSS hôte. COIL-20 est réservé à une étude non commerciale approuvée, archives avec empreinte attendue ; le chemin alternatif PNG/WAV n'accepte que manifestes locaux et droits revus. Aucune capture naturelle ni son réel d'une même source n'a été exécuté/validé dans ce lot : **R2-C reste bloqué jusqu'aux mesures fiables sur médias indépendants**, sans confusion possible avec les fixtures CI.
+
+
 **R2-A — sélection de la voie mémoire avant R2-B :** [contrat et tests](r2a-single-memory-selection-2026-10-26.md). La même connexion `ExperienceMemory` et les mêmes extracteurs M1-A alimentent **uniquement M1-B** (`m1b_groups`/`m1b_signatures`) en mode opt-in `r2a_single_writer=True`. Refus des lignes legacy non migrées, schémas incomplets et limites qui effaceraient des exemplaires à la réouverture, contrôle sous transaction avant observations/prune. **Pas une interdiction globale des écritures M1-A hors de cette API.** L'ancien banc reste inchangé par défaut ; aucune table ni donnée supprimée, aucune migration, aucun portage. **Étape suivante distincte R2-B : corpus de vues et sons enregistrés indépendamment, validation des faux rapprochements avant tout nouveau modèle.**
 
 
