@@ -1,6 +1,6 @@
 # F6-A — Préparation embarquée hors réseau, contrats OEM et persistance conditionnelle
 
-**26 octobre 2026 — [PR #45](https://github.com/Jean-Philippe56520/Microduck/pull/45), niveau : inventaire documentaire et fonctions Python pures testées sur fixtures.** Le robot physique n’est pas disponible. Aucune unité systemd Companion n’est installée, aucun pilote constructeur n’est modifié, et aucune connexion à un socket OEM n’est effectuée par F6-A.
+**26 octobre 2026 — [PR #45](https://github.com/Jean-Philippe56520/Microduck/pull/45) fusionnée, niveau : inventaire documentaire et fonctions Python pures testées sur fixtures.** Le robot physique n’est pas disponible. Aucune unité systemd Companion n’est installée, aucun pilote constructeur n’est modifié, et aucune connexion à un socket OEM n’est effectuée par F6-A.
 
 ## 1. Sources de vérité inspectées
 
@@ -56,7 +56,7 @@ Avant l’éventuel déploiement F6-B/F6-C/F7, un service Companion **distinct**
 
 `tests/test_embedded_readiness.py` vérifie sur fixtures : inventaire des trois services OEM et interdiction d’autorité moteur, familles de cartes compatibles/incompatibles, montage `ext4` attendu, montage absent, option lecture seule **superbloc ou montage**, erreur de chemin PARTLABEL, répertoires ressemblants, doublons, dépassement de taille, sortie JSON sans secrets, et impossibilité de promouvoir des revendications vers une installation, une perception réelle ou une navigation autorisée.
 
-`python -m microduck_companion.f6a_preflight_demo` vérifie trois scénarios fictifs : absence de montage, présence du seul système de fichiers racine et faux montage `data` crédible. Le troisième ne conduit **pas** à une écriture durable ; la SQLite sélectionnée reste `:memory:`. La CI exécute la suite de tests et cette démonstration, **sans même lire le vrai `/proc/mountinfo` du runner**.
+`python -m microduck_companion.f6a_preflight_demo` vérifie trois scénarios fictifs : absence de montage, présence du seul système de fichiers racine et faux montage `data` crédible. Le troisième ne conduit **pas** à une écriture durable ; la SQLite sélectionnée reste `:memory:`. La [CI de F6-A](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40254981871) a réussi : **830 tests Python**, compilation et démonstration de faux montage réussis, **sans même lire le vrai `/proc/mountinfo` du runner**.
 
 **Validation limitée :** aucune compilation Rust Yocto, aucune installation systemd, aucun socket constructeur contacté, aucun débit ni profil mémoire RK3566 mesuré. Aucun accès à une unité physique Microduck. Le script `scripts/resource-audit.sh` devra être exécuté sur robot réel au repos, puis en vision et seulement après sécurisation de la locomotion en mouvement. La branche F6-A n’augmente pas les capacités physiques.
 

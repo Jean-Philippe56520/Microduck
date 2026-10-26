@@ -82,7 +82,7 @@ Le délai monotone total sur le **corps** de la réponse Ollama est une proprié
 
 ## Addendum F6-A — 26 octobre 2026 (inventaire OEM et risque de stockage non persistant)
 
-Le [contrat F6-A](f6a-embedded-readiness-2026-10-26.md), en [PR #45](https://github.com/Jean-Philippe56520/Microduck/pull/45), consulte la révision **OEM épinglée** du dépôt (`942e58e3aa6dbb28e7037203fff11866122c7567`) et un **snapshot documentaire Yocto** (`91691234f3b518a94ee4391f8567c9486335f507`), sans installer de programme sur une carte.
+Le [contrat F6-A](f6a-embedded-readiness-2026-10-26.md), fusionné via [PR #45](https://github.com/Jean-Philippe56520/Microduck/pull/45) après [830 tests Python et une démonstration fictive réussis en CI](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40254981871), consulte la révision **OEM épinglée** du dépôt (`942e58e3aa6dbb28e7037203fff11866122c7567`) et un **snapshot documentaire Yocto** (`91691234f3b518a94ee4391f8567c9486335f507`), sans installer de programme sur une carte.
 
 **Point de vigilance démontré par lecture du code Yocto :** le montage `/var/lib/robot` est **conditionnel** à la présence de `data`. Un dossier sur le système racine ne suffit pas : une SQLite ouverte sous ce chemin pourrait survivre moins longtemps que prévu et ne pas suivre les bascules A/B. F6-A refuse donc de **sélectionner une SQLite persistante** sur simple preuve textuelle. Les contrôles `mountinfo` et identités de cartes sont réalisés **sur fixtures**, pas sur du matériel réel.
 
