@@ -74,7 +74,7 @@ Les [798 tests Python sur GitHub Actions, y compris la démonstration SQLite int
 
 ## Addendum F5-D — 26 octobre 2026 (tests de résistance HTTP et annotations fictives)
 
-La [phase F5-D](f5d-adversarial-pc-contract-2026-10-26.md), développée en [PR #44](https://github.com/Jean-Philippe56520/Microduck/pull/44), ajoute des essais contre des réponses JSON/HTTP **fictives** : faux ordres moteurs, faux consentement/identités, étiquette animale non fondée, retards et rejouements. Le flux HTTP de test hostile ne sort pas de **127.0.0.1** ; aucun vrai Ollama ou Qwen n'est lancé, aucun contrôle de `robotd` ou capteur du robot n'est testé.
+La [phase F5-D](f5d-adversarial-pc-contract-2026-10-26.md), fusionnée via [PR #44](https://github.com/Jean-Philippe56520/Microduck/pull/44) après [808 tests Python et une démonstration fictive réussis en CI](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40253911518), ajoute des essais contre des réponses JSON/HTTP **fictives** : faux ordres moteurs, faux consentement/identités, étiquette animale non fondée, retards et rejouements. Le flux HTTP de test hostile ne sort pas de **127.0.0.1** ; aucun vrai Ollama ou Qwen n'est lancé, aucun contrôle de `robotd` ou capteur du robot n'est testé.
 
 Le délai monotone total sur le **corps** de la réponse Ollama est une propriété logicielle testée sur l'hôte CI ; il ne garantit ni un délai strict pour les **en-têtes** d'un pair malveillant, ni l'interopérabilité avec le serveur Ollama réel, ni l'authentification du PC. La limite `Content-Length` et l'interdiction de réponses `chunked` sont des choix prudents **à vérifier sur la version Ollama installée**. La consultation reste facultative, hors de la boucle moteur.
 

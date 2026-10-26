@@ -1,6 +1,6 @@
 # F5-D — Résistance aux réponses PC malveillantes et aux pannes
 
-**26 octobre 2026 — [PR #44](https://github.com/Jean-Philippe56520/Microduck/pull/44) ; code et tests logiciels, aucun modèle Ollama exécuté.** F5-A, F5-B et F5-C sont sur `main` avant cette PR. Les exemples sont des catégories fictives anonymes ; aucune personne, voix, image, identité, moteur ou caméra réel n'est utilisé.
+**26 octobre 2026 — [PR #44](https://github.com/Jean-Philippe56520/Microduck/pull/44) fusionnée après revue ; code et tests logiciels, aucun modèle Ollama exécuté.** F5-A, F5-B et F5-C sont sur `main` avant cette PR. Les exemples sont des catégories fictives anonymes ; aucune personne, voix, image, identité, moteur ou caméra réel n'est utilisé.
 
 ## Menaces vérifiées dans les fixtures
 
@@ -39,6 +39,6 @@ python -m unittest discover -s tests -v
 python -m microduck_companion.f5d_adversarial_demo
 ```
 
-**État de validation logiciel :** le dernier code testé sur fixtures a obtenu **808 tests Python réussis** dans [la CI de la branche](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40253675766). La réussite de la CI du **dernier commit documentaire**, puis la revue/fusion, sont à confirmer. Aucune instruction de mouvement n'est exécutée.
+**Validation logicielle :** [808 tests Python, compilation et démonstration F5-D fictive réussis en CI](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40253911518), après revue puis [fusion de PR #44](https://github.com/Jean-Philippe56520/Microduck/pull/44). La validation Ollama/Qwen et robot physique reste ouverte. Aucune instruction de mouvement n'est exécutée.
 
 **Étape suivante : F6-A**, préparation des interfaces embarquées et inventaire des services OEM, **sans portage ni déploiement réel**. La comparaison des modèles 4B puis 9B sur le PC constitue un essai distinct qui reste nécessaire avant de prétendre valider l'assistance du PC.
