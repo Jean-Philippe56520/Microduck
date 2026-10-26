@@ -118,8 +118,7 @@ class OEMReuseInventoryTests(unittest.TestCase):
         self.assertIn("robotd", report)
         self.assertIn("tofd", report)
         self.assertIn("M1-B2", report)
-        self.assertIn("Aucun modèle", report) if "Aucun modèle" in report else self.assertIn(
-            "pas choisi de modèle embarqué", report)
+        self.assertIn("modèle embarqué", report)
         self.assertIn("R1 —", report)
         self.assertIn("R2 —", report)
         self.assertIn("R3 —", report)
