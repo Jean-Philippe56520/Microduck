@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**EX1 — journal d'intentions et de résolutions fictives (PR à vérifier en CI) :** [contrat/tests](docs/ex1-mock-experience-ledger-2026-10-26.md). `experience_ledger.py` réutilise une `ExperienceMemory` et les `PassiveIntent` de F2 pour distinguer `proposed`, `mock_executed`, `refused` et `interrupted` : **`mock_executed` signifie uniquement scénario fictif, jamais un mouvement sur robot**. Trace rétractable, idempotente et bornée ; aucune écriture de récompense, identité, image/audio, doublon P2a/F4-A ou commande `robotd`. Cat-A2b reste prioritaire et EX2 (attribution de conséquences) n'est pas codé.
+
+
 **EX0 — plan d'apprentissage par l'expérience (26/10/2026 ; documentation uniquement) :** [plan détaillé](docs/kwipi-experiential-learning-plan-2026-10-26.md). Kwipi doit pouvoir observer une nouveauté, rappeler ses souvenirs, proposer une expérience, constater les effets d'une **action réellement exécutée**, attribuer prudemment les conséquences et adapter lentement ses choix. Réutiliser F2/F4/ExperienceMemory et F5 pour Qwen facultatif, sans nouveau cerveau, seconde SQLite ni pilote moteur. **Aucun apprentissage physique, langage humain compris ou geste autonome livré** ; la priorité reste **Cat-A2b (vraies prises basses)** avant intégration. Première PR cognitive future : EX1, contrat d'épisode sur fixtures, après arbitrage des priorités.
 
 
