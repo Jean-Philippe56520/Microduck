@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 from .passive_intentions import PassiveIntent, _valid_motivations
 from .passive_memory import PassiveObservationJournal, _check_wall
 from .passive_learning import PassiveLearning
+from .behavioral_memory import BehavioralMemory, MAX_STORED, MAX_BIAS
 from .mock_social_cues import MockSocialPlan
 
 if TYPE_CHECKING:
@@ -32,6 +33,11 @@ REQUIRES_OEM_REVIEW = frozenset(HISTORICAL_OEM_STATES) - DESCRIPTIVE_ONLY
 _FAMILIARITY = frozenset({"unknown", "new_category", "seen_once", "familiar_category", "unavailable"})
 _AFFECTS = frozenset({"quiet", "calm", "curious", "attentive", "playful", "sociable", "resting", "watchful"})
 _DRIVES = frozenset({"curiosity", "sociability", "play", "energy", "caution"})
+_HABITS = frozenset({"neutral", "inspection_encouraged",
+                     "inspection_reserved", "unavailable"})
+# Two concordant mock outcomes are required before reporting a habit.
+MIN_HABIT_EVIDENCE = 2
+MIN_HABIT_BIAS = 0.08
 
 
 @dataclass(frozen=True)
@@ -49,6 +55,10 @@ class BehaviorPortrait:
     category_observations: int
     attention_bias: float
     reason: str
+    outcome_bias: float = 0.0
+    mock_positive_outcomes: int = 0
+    mock_negative_outcomes: int = 0
+    inspection_habit: str = "neutral"
     source: str = "mock_post_decision_only"
     executed: bool = False
     physical_execution_authorized: bool = False
@@ -67,6 +77,13 @@ class BehaviorPortrait:
                 or self.category_observations < 0
                 or type(self.attention_bias) is not float
                 or not -0.12 <= self.attention_bias <= 0.12
+                or type(self.outcome_bias) is not float
+                or not -MAX_BIAS <= self.outcome_bias <= MAX_BIAS
+                or any(type(x) is not int or x < 0 or x > MAX_STORED
+                       for x in (self.mock_positive_outcomes,
+                                 self.mock_negative_outcomes))
+                or self.mock_positive_outcomes + self.mock_negative_outcomes > MAX_STORED
+                or self.inspection_habit not in _HABITS
                 or self.reason not in {
                     "passive_attention", "passive_rest", "passive_idle",
                     "mock_social_glance", "mock_social_play",
@@ -121,6 +138,7 @@ def describe_behavior(
     journal: PassiveObservationJournal,
     now_wall_epoch_s: float,
     learning: PassiveLearning | None = None,
+    behavioral: BehavioralMemory | None = None,
 ) -> BehaviorPortrait:
     """Describe F2/F4's decision using ONLY the existing motivations and SQLite.
 
@@ -141,6 +159,11 @@ def describe_behavior(
             raise TypeError("existing PassiveLearning required")
         if learning._memory is not brain.memory:
             raise ValueError("learning must use the same ExperienceMemory")
+    if behavioral is not None:
+        if not isinstance(behavioral, BehavioralMemory):
+            raise TypeError("existing F4-A BehavioralMemory required")
+        if behavioral._memory is not brain.memory:
+            raise ValueError("behavioral history must share the one ExperienceMemory")
     wall = _check_wall(now_wall_epoch_s)
     if not _valid_motivations(brain.motives):
         raise ValueError("invalid simulated motivation values")
@@ -159,6 +182,7 @@ def describe_behavior(
         affect = "watchful"
 
     familiarity, count, bias = "unknown", 0, 0.0
+    result_bias, positive, negative, habit = 0.0, 0, 0, "neutral"
     try:
         if kind is not None and category is not None and category != "unknown":
             count = journal.category_count(kind, category, now_wall_epoch_s=wall)
@@ -166,10 +190,27 @@ def describe_behavior(
                            "seen_once" if count == 1 else "familiar_category")
         if learning is not None:
             bias = float(learning.preference(intention))
-    except (sqlite3.Error, ValueError):
+        if behavioral is not None:
+            # F4-A joins the original P2a mock evidence. Reopen/retract/prune
+            # change this report without a duplicate personality ledger.
+            summary = behavioral.summary(now_wall_epoch_s=wall)
+            if (summary.source != "explicit_mock_followup_only"
+                    or summary.verified_on_robot
+                    or summary.executed_actions
+                    or summary.motor_commands_issued):
+                raise ValueError("not a historical, non-motor mock summary")
+            result_bias = float(summary.bias)
+            positive, negative = summary.positive, summary.negative
+            if positive + negative >= MIN_HABIT_EVIDENCE:
+                if result_bias >= MIN_HABIT_BIAS - 1e-12:
+                    habit = "inspection_encouraged"
+                elif result_bias <= -MIN_HABIT_BIAS + 1e-12:
+                    habit = "inspection_reserved"
+    except (sqlite3.Error, ValueError, OverflowError):
         # Missing or corrupted memory cannot manufacture familiarity or a
         # learned preference. Downgrade to a quiet, uninformative portrait.
         return BehaviorPortrait("Chill", "quiet", dominant,
-                                "unavailable", 0, 0.0, "history_unavailable")
+                                "unavailable", 0, 0.0, "history_unavailable",
+                                inspection_habit="unavailable")
     return BehaviorPortrait(state, affect, dominant, familiarity, count, bias,
-                            reason)
+                            reason, result_bias, positive, negative, habit)
