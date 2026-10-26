@@ -189,12 +189,23 @@ def _metrics(refs, queries, *, kind, cutoff) -> dict:
     known = wrong = unknown = unknown_rejected = 0
     accepted_known = right = false_known = ambiguous = 0
     per_pose: dict[int, list[int]] = defaultdict(lambda: [0, 0])
+    # Keep source-level diagnostics without disclosing arbitrary local labels.
+    # Source indices are scoped to this result and carry NO identity claim.
+    per_source = defaultdict(lambda: {
+        "queries": 0, "correct_known": 0,
+        "wrong_known": 0, "known_abstentions": 0,
+        "unknown_rejected": 0, "false_known_on_unknown": 0,
+        "ambiguous": 0,
+    })
     for actual, pose, candidate in queries:
         is_known = actual in refs
         predicted, status = _predict(
             refs, candidate, kind=kind, threshold=cutoff)
+        source_stats = per_source[actual]
+        source_stats["queries"] += 1
         if status == "ambiguous":
             ambiguous += 1
+            source_stats["ambiguous"] += 1
         if is_known:
             known += 1
             per_pose[pose][0] += 1
@@ -202,15 +213,21 @@ def _metrics(refs, queries, *, kind, cutoff) -> dict:
                 accepted_known += 1
             if predicted == actual:
                 right += 1
+                source_stats["correct_known"] += 1
                 per_pose[pose][1] += 1
             elif predicted is not None:
                 wrong += 1
+                source_stats["wrong_known"] += 1
+            else:
+                source_stats["known_abstentions"] += 1
         else:
             unknown += 1
             if predicted is None:
                 unknown_rejected += 1
+                source_stats["unknown_rejected"] += 1
             else:
                 false_known += 1
+                source_stats["false_known_on_unknown"] += 1
     if not known or not unknown:
         raise R2BEvidenceError("known and unknown independent captures required")
     return {
@@ -222,6 +239,10 @@ def _metrics(refs, queries, *, kind, cutoff) -> dict:
         "unknown_recall": unknown_rejected / unknown,
         "false_known_on_unknown": false_known,
         "ambiguous_abstentions": ambiguous,
+        "by_source_anonymous": [
+            {"source_index": index, "enrolled": actual in refs, **per_source[actual]}
+            for index, actual in enumerate(sorted(per_source), start=1)
+        ],
         "known_recall_by_pose_index": {
             str(p): {"correct": a[1], "total": a[0]}
             for p, a in sorted(per_pose.items())
