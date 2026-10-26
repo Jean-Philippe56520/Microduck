@@ -381,10 +381,16 @@ class OptionalOllamaWorker:
                 < cycle.request.expires_monotonic_s):
             return False
         budget = cycle.request.expires_monotonic_s - now
+        try:
+            future = self._pool.submit(
+                self.client.query, cycle.request, timeout_s=min(budget, 2.0),
+            )
+        except RuntimeError:
+            # Executor shutdown must not poison the worker with a false
+            # pending cycle. F5-C records unavailable and stays local.
+            return False
         self._cycle = cycle
-        self._future = self._pool.submit(
-            self.client.query, cycle.request, timeout_s=min(budget, 2.0),
-        )
+        self._future = future
         return True
 
     def poll(self) -> OptionalPCAdvisory | None:
