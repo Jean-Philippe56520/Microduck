@@ -114,7 +114,10 @@ class MultiviewPatternMemory:
                     group_id INTEGER NOT NULL REFERENCES m1b_groups(id),
                     modality TEXT NOT NULL CHECK(modality IN ('image','audio')),
                     feature_version INTEGER NOT NULL CHECK(feature_version=1),
-                    fingerprint BLOB NOT NULL CHECK(length(fingerprint) IN (16,64)),
+                    fingerprint BLOB NOT NULL CHECK(
+                        (modality='image' AND length(fingerprint)=64) OR
+                        (modality='audio' AND length(fingerprint)=16)
+                    ),
                     sightings INTEGER NOT NULL CHECK(sightings BETWEEN 1 AND 2147483647),
                     last_seen_epoch_s REAL NOT NULL,
                     UNIQUE(modality,feature_version,fingerprint)
