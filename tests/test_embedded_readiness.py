@@ -163,6 +163,12 @@ class StorageTests(unittest.TestCase):
         state=inspect_data_mount(bad,partlabel_device=DATA_SOURCE)
         self.assertEqual("not_writable_mount",state.status)
 
+    def test_readonly_superblock_is_rejected_even_if_mount_says_rw(self):
+        bad=LINE.replace("ext4 /dev/mmcblk0p5 rw,noatime",
+                         "ext4 /dev/mmcblk0p5 ro,noatime")
+        self.assertEqual("not_writable_mount", inspect_data_mount(
+            bad,partlabel_device=DATA_SOURCE).status)
+
     def test_root_fstype_overlay_and_bind_subdir_rejected(self):
         variants=(
             LINE.replace("ext4 /dev/mmcblk0p5","overlay /dev/mmcblk0p5"),
