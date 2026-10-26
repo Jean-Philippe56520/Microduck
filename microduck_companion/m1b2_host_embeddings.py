@@ -126,8 +126,14 @@ def _image_learned(session, image, np, timings: list[float]):
     # ImageNet class DISTRIBUTION as a learned descriptor, not an instance
     # recognition embedding. Similar cats may be incorrectly merged.
     logits = np.asarray(raw[0], dtype=np.float64)
-    scores = np.exp(logits - logits.max())
-    scores /= scores.sum()
+    # Some ImageNet ONNX exports emit probabilities rather than logits.
+    # A second softmax would flatten them and create misleading matches.
+    if (logits.min() >= 0 and logits.max() <= 1
+            and abs(float(logits.sum()) - 1.) <= .001):
+        scores = logits
+    else:
+        scores = np.exp(logits - logits.max())
+        scores /= scores.sum()
     return tuple(float(v) for v in scores)
 
 
