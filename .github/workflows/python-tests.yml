@@ -67,3 +67,8 @@ jobs:
         run: |
           # No LAN access, Ollama/Qwen, camera, speaker, servo or motor action.
           python -m microduck_companion.f5a_contract_demo
+      - name: F5-B loopback HTTP fixture and offline model comparison plan
+        run: |
+          # Binds only to local 127.0.0.1; no Ollama/Qwen or outside requests.
+          python -m microduck_companion.f5b_transport_demo
+          python -m microduck_companion.f5b_benchmark
