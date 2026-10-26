@@ -32,6 +32,20 @@ Les incohérences spatiales supprimant les coordonnées, la barrière de confian
 
 Aucune mesure supplémentaire de RAM libre, occupation disque SQLite réelle sur Yocto, température, charge CPU sur RK3566, fréquence moteur, autonomie ou accès à un robot physique. Les plafonds de tables ne sont **pas une preuve de marge de mémoire/stockage**. Le script `scripts/resource-audit.sh` doit encore être exécuté sur le futur robot dans le protocole prévu, avant tout déploiement.
 
+## Addendum F4-C — 26 octobre 2026 (social uniquement fictif)
+
+Le [rapport F4-C](f4c-social-cue-contract-2026-10-26.md) présente des **propositions de comportements sans aucune exécution**. Les durées `glance=250 ms`, `play_cue=300 ms` et `chirp=180 ms` sont des **durées nominales de messages de simulation**, et **non des mouvements de tête/sons réellement mesurés**. Les drapeaux de consentement et de supervision sont déclarés sur des fixtures, sans vérification juridique, parentale ou physique ; l'analyse des classes animales ne prouve aucune reconnaissance individuelle.
+
+[689 tests Python réussis en CI hôte Linux](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40248330199), dont 27 nouveaux F4-C, ont confirmé la proposition `silence` par défaut, les limites de fréquence et la persistance d'un cooldown entre deux processus Python. La SQLite ne conserve que catégorie, type de proposition et horodatage ; les limites **128 lignes / 7 jours / 2 sons fictifs par 10 min** sont des contraintes logicielles, **pas des mesures de charge ou d'énergie sur le RK3566**.
+
+Aucun matériel Microduck testé : **zéro émission audio**, zéro moteur/servo/regard, zéro caméra/microphone authentifiés, aucun capteur ToF réel, aucune RAM libre, température, fréquence de contrôle ou autonomie énergétique mesurée. La taille d'une table ou une durée nominale de proposition ne permet pas d'inférer une capacité physique. Avant intégration : audit avec `scripts/resource-audit.sh`, politiques OEM préservées et contrôles de consentement réels.
+
+## Addendum F4-C — 26 octobre 2026 (interactions sociales fictives)
+
+La [phase F4-C](f4c-social-cue-contract-2026-10-26.md) ajoute une couche **non exécutable** de propositions sociales sur `AutonomyBrain` et des catégories de **fixtures** : silence par défaut, regards, invitations au jeu, petits signaux sonores et repos théorique. **Aucun moteur de regard, haut-parleur, micro, caméra ni capteur OEM n'a été activé.** Les temps de 250 ms (`glance`), 180 ms (`chirp`) et 300 ms (`play_cue`) sont **des durées déclarées de propositions**, et non des latences, consommations ou temps d'action réellement mesurés.
+
+Les [689 tests Python et deux processus de démonstration](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40248330199) montrent le maintien du silence sans opt-in de scénario, l'absence de commande motrice/audio et les quotas de propositions **sur un hôte GitHub Actions uniquement**. Le contexte `operator_opt_in` n'est **pas un mécanisme réel de vérification du consentement**, même quand il est vrai dans un test. L'historique des propositions est borné à 128 lignes sur 7 jours dans la SQLite existante : ce seuil **ne mesure ni le RSS, ni la mémoire réellement libre, ni l'énergie, ni la température du Microduck**. Le robot physique reste indisponible ; il n'existe aucune mesure nouvelle de capacité sonore, cadence moteur, capteurs, comportement en présence d'enfants/animaux ni sécurité mécanique. L'audit `scripts/resource-audit.sh` reste à effectuer sur le RK3566 avant tout déploiement.
+
 ## Verdict
 
 Le Microduck permet raisonnablement de viser : mémoire persistante locale, moteur d'autonomie, exploration prudente, observation visuelle événementielle, identification de catégories d'animaux et interaction sociale élémentaire. Il reste à développer et à valider : détection personnalisée d'animaux, identification non biométrique des personnes familières, reconnaissance vocale, exploration sûre en environnement non contrôlé, et intégration du cerveau autonome à robotd. Qwen multimodal se placera initialement sur un PC local.

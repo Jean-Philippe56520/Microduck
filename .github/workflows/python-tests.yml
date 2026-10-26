@@ -51,3 +51,9 @@ jobs:
           # floor safety, socket, sensor, camera, or actuator is involved.
           python -m microduck_companion.f4b_spatial_demo --database "$RUNNER_TEMP/f4b-fictive-spatial.sqlite3" --session first
           python -m microduck_companion.f4b_spatial_demo --database "$RUNNER_TEMP/f4b-fictive-spatial.sqlite3" --session second
+      - name: F4-C silent social cues and cross-process SQLite cooldown
+        run: |
+          # Mock-only bark label and operator scenario, NOT microphone input.
+          # No speaker, camera, robotd or motor I/O; both processes share DB.
+          python -m microduck_companion.f4c_social_demo --database "$RUNNER_TEMP/f4c-social.sqlite3" --session first
+          python -m microduck_companion.f4c_social_demo --database "$RUNNER_TEMP/f4c-social.sqlite3" --session second
