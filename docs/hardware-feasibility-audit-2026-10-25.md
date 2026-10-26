@@ -72,6 +72,14 @@ La [phase F5-C](f5c-sparse-consultations-2026-10-26.md), développée en [PR #43
 
 Les [798 tests Python sur GitHub Actions, y compris la démonstration SQLite inter-processus](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40252645890), ne consultent aucun vrai Ollama, ne pilotent aucun actionneur, ne mesurent ni puissance, latence radio réelle, RAM libre, température, autonomie, eMMC, NPU ou fréquence moteur du Microduck. Aucun chiffre de performance Qwen 4B/9B sur le PC n'a été produit. Le script `scripts/resource-audit.sh` reste à exécuter sur matériel physique lorsqu'il sera disponible, et les interfaces de sécurité OEM restent seules responsables des mouvements.
 
+## Addendum F5-D — 26 octobre 2026 (tests de résistance HTTP et annotations fictives)
+
+La [phase F5-D](f5d-adversarial-pc-contract-2026-10-26.md), développée en [PR #44](https://github.com/Jean-Philippe56520/Microduck/pull/44), ajoute des essais contre des réponses JSON/HTTP **fictives** : faux ordres moteurs, faux consentement/identités, étiquette animale non fondée, retards et rejouements. Le flux HTTP de test hostile ne sort pas de **127.0.0.1** ; aucun vrai Ollama ou Qwen n'est lancé, aucun contrôle de `robotd` ou capteur du robot n'est testé.
+
+Le délai monotone total sur le **corps** de la réponse Ollama est une propriété logicielle testée sur l'hôte CI ; il ne garantit ni un délai strict pour les **en-têtes** d'un pair malveillant, ni l'interopérabilité avec le serveur Ollama réel, ni l'authentification du PC. La limite `Content-Length` et l'interdiction de réponses `chunked` sont des choix prudents **à vérifier sur la version Ollama installée**. La consultation reste facultative, hors de la boucle moteur.
+
+**Aucune nouvelle mesure physique** de RAM libre, RSS, CPU/NPU, latence de mouvement, eMMC réellement disponible, batterie ou température RK3566 n'est fournie par F5-D. Les résultats de tests logiciels GitHub Actions ne doivent pas être présentés comme une validation de sûreté sur le Microduck. `scripts/resource-audit.sh` et les essais supervisés restent à réaliser sur le robot physique après acquisition.
+
 ## Verdict
 
 Le Microduck permet raisonnablement de viser : mémoire persistante locale, moteur d'autonomie, exploration prudente, observation visuelle événementielle, identification de catégories d'animaux et interaction sociale élémentaire. Il reste à développer et à valider : détection personnalisée d'animaux, identification non biométrique des personnes familières, reconnaissance vocale, exploration sûre en environnement non contrôlé, et intégration du cerveau autonome à robotd. Qwen multimodal se placera initialement sur un PC local.
