@@ -11,7 +11,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 
-from .behavior_personality import BehaviorPortrait
+from .behavior_personality import (
+    BehaviorPortrait, DESCRIPTIVE_ONLY, _AFFECTS, _HABITS,
+)
 from .mock_social_cues import MockSocialContext
 
 MAX_MOCK_CUE_AGE_S = 1.5
@@ -25,7 +27,7 @@ _REASONS_BY_STATUS = {
         "no_mock_cue", "mock_opt_in_missing", "mock_quiet_mode",
         "mock_safety_or_stop", "stale_future_mock_cue",
         "self_generated_noise_or_motion", "petting_ended",
-        "sound_context_not_opted_in",
+        "sound_context_not_opted_in", "personality_history_unavailable",
     }),
     "oem_owned": frozenset({"oem_petting_coo_already_owned"}),
     "hypothesis": frozenset({"ambient_noise_startle_unverified"}),
@@ -108,9 +110,9 @@ class MockExpressionHint:
                     and self.historical_candidate is not None)
                 or (self.status not in {"oem_owned", "hypothesis"}
                     and self.historical_candidate is not None)
-                or type(self.base_state) is not str
-                or type(self.base_affect) is not str
-                or type(self.inspection_habit) is not str
+                or self.base_state not in DESCRIPTIVE_ONLY
+                or self.base_affect not in _AFFECTS
+                or self.inspection_habit not in _HABITS
                 or self.source != "mock_expression_read_only"
                 or self.executed or self.physical_execution_authorized
                 or self.motor_commands_issued or self.speaker_commands_issued
@@ -159,6 +161,9 @@ def describe_oem_expression(
 
     if cue is None:
         return hint("silent", "no_mock_cue")
+    if (portrait.reason == "history_unavailable"
+            or portrait.inspection_habit == "unavailable"):
+        return hint("silent", "personality_history_unavailable")
     if not (context.operator_opt_in and context.supervised
             and context.privacy_reviewed):
         return hint("silent", "mock_opt_in_missing")
