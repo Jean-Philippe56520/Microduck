@@ -25,7 +25,7 @@ BIAS_STEP = 0.01
 MAX_ATTENTION_BIAS = 0.04
 _SUPPORTED = {
     "observe": (frozenset(OBJECT_CATEGORIES - {"unknown"}),
-                "object_label", frozenset({"motion", "distance"})),
+                "object_label", frozenset({"motion"})),
     "listen": (frozenset(_SOUND_CATEGORIES - {"unknown"}),
                "sound_label", frozenset({"sound"})),
 }
@@ -33,11 +33,11 @@ _SUPPORTED = {
 
 @dataclass(frozen=True)
 class MockAttentionTrend:
-    """A context-limited, fictional expectation, NEVER a physical preference."""
+    """A context-limited, fictional attention hint, NEVER a physical preference."""
 
     intention: str
     category: str
-    independent_sessions: int
+    distinct_mock_sessions: int
     changed: int
     unchanged: int
     attention_bias: float
@@ -64,7 +64,7 @@ def compute_mock_attention_trend(
 ) -> MockAttentionTrend:
     """Pure SELECT of active EX1+EX2 evidence; no extra table or UPDATE.
 
-    Distinct fixture sessions, not event count, delimit the repeated pattern.
+    Distinct claimed fixture session tokens, not event count, delimit the pattern.\n    Tokens do not prove truly independent real-world trials.
     Candidate rows are re-validated against the stored EX1 chronology and
     EX2 metadata; SQL tampering/mixed provenance must not become a hint.
     Competing events, social responses, missing cues, unknown targets,
@@ -142,7 +142,7 @@ def compute_mock_attention_trend(
                   else "repeated_temporal_mock_pattern")
     return MockAttentionTrend(
         intention=intention, category=category,
-        independent_sessions=n, changed=changed, unchanged=unchanged,
+        distinct_mock_sessions=n, changed=changed, unchanged=unchanged,
         attention_bias=bias, status=status,
     )
 
