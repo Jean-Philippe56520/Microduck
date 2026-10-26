@@ -14,6 +14,7 @@ from microduck_companion.autonomy import AutonomyBrain
 from microduck_companion.behavior_continuity import MockBehaviorSituation
 from microduck_companion.episodic_memory import ExperienceMemory
 from microduck_companion.mock_social_cues import MockSocialPlan
+from microduck_companion.oem_expression_hints import MockOemConditions
 from microduck_companion.passive_memory import PassiveObservationJournal
 from microduck_companion.passive_sources import PassiveRead
 from microduck_companion.perception import PerceptionEvent, PerceptionSnapshot
@@ -187,7 +188,9 @@ class PD3Tests(unittest.TestCase):
         current=reading("ball")
         out,adv,_,_,_=self.prepared(current=current,optin=True)
         self.assertEqual("not_needed",adv.status)
-        self.assertEqual("no_semantic_behavior",out.reason)
+        self.assertEqual("no_f5_inspection_question",out.reason)
+        # New F2 brain is required for a distinct fictional session.
+        self.brain=AutonomyBrain(self.mem)
         # Previous known => no repetition even if current is unresolved.
         out,_,_,_,_=self.prepared(
             previous=reading("ball",at=NOW-1,seq=1),optin=True)
@@ -245,17 +248,11 @@ class PD3Tests(unittest.TestCase):
     def test_invalid_privacy_and_safety_context_preempt(self):
         candidates=(
             MockBehaviorSituation(
-                conditions=__import__(
-                    "microduck_companion.oem_expression_hints",fromlist=[
-                    "MockOemConditions"]).MockOemConditions(stop_requested=True)),
+                conditions=MockOemConditions(stop_requested=True)),
             MockBehaviorSituation(
-                conditions=__import__(
-                    "microduck_companion.oem_expression_hints",fromlist=[
-                    "MockOemConditions"]).MockOemConditions(fallen=True)),
+                conditions=MockOemConditions(fallen=True)),
             MockBehaviorSituation(
-                conditions=__import__(
-                    "microduck_companion.oem_expression_hints",fromlist=[
-                    "MockOemConditions"]).MockOemConditions(busy=True)),
+                conditions=MockOemConditions(busy=True)),
         )
         out,adv,p,d,_=self.prepared()
         self.assertTrue(out.interesting)
@@ -371,8 +368,16 @@ class PD3Tests(unittest.TestCase):
         ).fetchall()
         writes=self.mem.conn.total_changes
         quotas=policy.counts()
+        out,adv,p,d,ctx=self.prepared(optin=True)
+        self.assertTrue(out.interesting)
         for _ in range(20):
-            out,adv,p,d,ctx=self.prepared(optin=True)
+            # Re-assess the same F5-A local decision; NEVER tick F2 again.
+            out=assess_mock_pc_opportunity(
+                adv,portrait=p,disposition=d,
+                previous_read=reading(at=NOW-1,seq=1),
+                current_read=reading(),situation=ctx,
+                motivations=self.brain.motives,
+                now_monotonic_s=NOW+.1,pc_opt_in=True)
             self.assertTrue(out.interesting)
             self.assertFalse(out.eligible_for_transport)
         after=self.mem.conn.execute(
