@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from pathlib import Path
 import struct
 import tempfile
@@ -42,7 +43,11 @@ class DcaseToyPreparationTests(unittest.TestCase):
             out.setnchannels(channels)
             out.setsampwidth(2)
             out.setframerate(hz)
-            out.writeframes(struct.pack("<h", value) * hz * seconds * channels)
+            # A non-DC artificial sinusoid: the existing M1-B fingerprint
+            # deliberately rejects constant-amplitude (uninformative) audio.
+            cycle = b"".join(struct.pack("<h", round(value * math.sin(
+                2 * math.pi * (180 + value) * i / hz))) for i in range(hz))
+            out.writeframes(cycle * seconds * channels)
 
     def _prepare(self):
         return prepare(
