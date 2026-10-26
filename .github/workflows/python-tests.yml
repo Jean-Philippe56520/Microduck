@@ -121,3 +121,10 @@ jobs:
           # person, animal, real Ollama, paid API, OEM socket or motors.
           python -m microduck_companion.m1a_multimodal_demo --database "$RUNNER_TEMP/m1a-mock-patterns.sqlite3" --session first
           python -m microduck_companion.m1a_multimodal_demo --database "$RUNNER_TEMP/m1a-mock-patterns.sqlite3" --session second
+      - name: M1-B configurable multiview memory and 512-cycle CPU host probe
+        run: |
+          # Only deterministic image/tone fixtures; no robot, sound capture,
+          # camera, PC inference, real identifier or motor command.
+          python -m microduck_companion.m1b_multiview_demo --database "$RUNNER_TEMP/m1b-fixture.sqlite3" --session first
+          python -m microduck_companion.m1b_multiview_demo --database "$RUNNER_TEMP/m1b-fixture.sqlite3" --session second
+          python -m microduck_companion.m1b_multiview_demo --host-scaling
