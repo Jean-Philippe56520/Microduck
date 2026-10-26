@@ -49,11 +49,12 @@ TEST_UNKNOWN_IDS = tuple(range(17, 21))
 ALL_POSES = REFERENCE_POSES + QUERY_POSES
 MAX_MANIFEST_BYTES = 64 * 1024
 MAX_WAV_BYTES = 48_000
+MAX_LOCAL_PNG_BYTES = 1_000_000
 HEX64 = re.compile(r"[0-9a-f]{64}\Z", re.ASCII)
-FILE_RE = re.compile(r"[a-z0-9][a-z0-9_-]{0,45}\.wav\Z", re.ASCII)
+FILE_RE = re.compile(r"[a-z0-9][a-z0-9_-]{0,45}\.(?:wav|png)\Z", re.ASCII)
 SOURCE_RE = re.compile(r"s-[a-z0-9]{3,24}\Z", re.ASCII)
 TAKE_RE = re.compile(r"t-[a-z0-9]{3,24}\Z", re.ASCII)
-SPLITS = ("validation", "test_known", "test_unknown")
+SPLITS = ("validation", "validation_unknown", "test_known", "test_unknown")
 
 
 class R2BEvidenceError(ValueError):
@@ -265,7 +266,9 @@ def evaluate_captures(samples: dict, *, kinds=("legacy",)) -> dict:
     }
 
 
-def _audio_manifest(raw: bytes):
+def _capture_manifest(raw: bytes, *, media_ext: str):
+    if media_ext not in ("wav", "png"):
+        raise R2BEvidenceError("unsupported licensed-media format")
     if type(raw) is not bytes or len(raw) > MAX_MANIFEST_BYTES:
         raise R2BEvidenceError("bounded JSON manifest required")
     data = _parse_json(raw)
@@ -294,6 +297,7 @@ def _audio_manifest(raw: bytes):
         filename, group, session, take = (
             item[k] for k in ("file", "source_id", "session_id", "take_id"))
         if (type(filename) is not str or not FILE_RE.fullmatch(filename)
+                or not filename.endswith("." + media_ext)
                 or type(group) is not str or not SOURCE_RE.fullmatch(group)
                 or type(session) is not str or not TAKE_RE.fullmatch(session)
                 or type(take) is not str or not TAKE_RE.fullmatch(take)
@@ -313,14 +317,14 @@ def _audio_manifest(raw: bytes):
         groups[(item["split"], group)].append(item)
     for split in SPLITS:
         sources = [group for (sp, group) in groups if sp == split]
-        minimum = 2 if split != "test_unknown" else 1
+        minimum = 2 if split in ("validation", "test_known") else 1
         if len(sources) < minimum:
             raise R2BEvidenceError("insufficient source-separated audio data")
         for source in sources:
             takes = groups[(split, source)]
             refs = [e for e in takes if e["role"] == "reference"]
             queries = [e for e in takes if e["role"] == "query"]
-            if split == "test_unknown":
+            if split in ("test_unknown", "validation_unknown"):
                 if refs or not queries:
                     raise R2BEvidenceError("unknown source must not be enrolled")
             elif len(refs) < 1 or len(queries) < 1:
@@ -330,13 +334,38 @@ def _audio_manifest(raw: bytes):
     return tuple(items)
 
 
-def _read_wav_take(media_root: Path, filename: str, sha: str):
+def _audio_manifest(raw: bytes):
+    """Compatibility name; use the one shared local capture manifest parser."""
+    return _capture_manifest(raw, media_ext="wav")
+
+
+def _checked_take_path(media_root: Path, filename: str, extension: str) -> Path:
     if (not isinstance(media_root, Path) or not media_root.is_dir()
-            or type(filename) is not str or not FILE_RE.fullmatch(filename)):
-        raise R2BEvidenceError("private local audio root required")
+            or type(filename) is not str or not FILE_RE.fullmatch(filename)
+            or not filename.endswith("." + extension)):
+        raise R2BEvidenceError("approved local media directory required")
     target = media_root / filename
     if target.is_symlink() or target.resolve().parent != media_root.resolve():
-        raise R2BEvidenceError("path traversal and symlink forbidden")
+        raise R2BEvidenceError("path traversal or media symlink forbidden")
+    return target
+
+
+def _read_png_take(media_root: Path, filename: str, sha: str):
+    from PIL import Image
+    target = _checked_take_path(media_root, filename, "png")
+    if _digest(target, max_bytes=MAX_LOCAL_PNG_BYTES) != sha:
+        raise R2BEvidenceError("PNG take checksum mismatch")
+    with Image.open(target) as src:
+        if (src.format != "PNG" or not 32 <= src.width <= 1024
+                or not 32 <= src.height <= 1024):
+            raise R2BEvidenceError("unsafe local PNG dimensions")
+        src.load()
+        return src.convert("RGB").resize(
+            (224, 224), Image.Resampling.BILINEAR)
+
+
+def _read_wav_take(media_root: Path, filename: str, sha: str):
+    target = _checked_take_path(media_root, filename, "wav")
     if _digest(target, max_bytes=MAX_WAV_BYTES) != sha:
         raise R2BEvidenceError("WAV take checksum mismatch")
     import struct
@@ -393,12 +422,15 @@ def run_audio_manifest(manifest: Path, media_root: Path, audio_model=None):
             )
             return refs, queries
         val_r, val_q = cohort("validation", known=True)
+        _, val_unknown = cohort("validation_unknown", known=False)
         test_r, test_q = cohort("test_known", known=True)
         _, unk_q = cohort("test_unknown", known=False)
         threshold = conservative_threshold(
-            _negative_scores(val_r, val_q, kind=kind))
+            _negative_scores(val_r, val_q + val_unknown, kind=kind))
         result[kind] = {
             "threshold_frozen_on_validation_only": threshold,
+            "validation": _metrics(
+                val_r, val_q + val_unknown, kind=kind, cutoff=threshold),
             "test": _metrics(test_r, test_q + unk_q,
                              kind=kind, cutoff=threshold),
         }
