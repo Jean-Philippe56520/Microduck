@@ -4,7 +4,7 @@
 
 Ce registre est le complément de [C1–C2 : revue détaillée de six dépôts](community-reuse-audit-2026-10-26.md), de [R0 : audit OEM épinglé](oem-reuse-audit-2026-10-26.md), de [R1.5 : audit rétroactif](r15-retrospective-reuse-audit-2026-10-26.md) et du [protocole « réutiliser avant de créer »](development-reuse-protocol.md).
 
-**But précis :** pour chaque chantier *du nôtre*, comparer l'existant réellement codé dans `microduck_companion/`, la source OEM épinglée, **les PR officielles encore ouvertes**, puis les projets communautaires. Sélectionner les **références à consulter dès maintenant**, et *non* des morceaux de code à importer. Une référence « maintenant » n'est ni une dépendance, ni une licence automatiquement validée, ni une instruction de déploiement.
+**But précis :** pour chaque chantier *du nôtre*, comparer l'existant réellement codé dans `microduck_companion/`, la source OEM épinglée, **les PR encore ouvertes sur le dépôt officiel (parfois proposées par des tiers)**, puis les projets communautaires. Sélectionner les **références à consulter dès maintenant**, et *non* des morceaux de code à importer. Une référence « maintenant » n'est ni une dépendance, ni une licence automatiquement validée, ni une instruction de déploiement.
 
 ## 1. Niveaux de décision
 
@@ -40,15 +40,17 @@ Ce sont **des références documentaires**, à date, non des dépendances ni des
 | Niveau | Référence, pourquoi | Statut vérifié au 26/10/2026 |
 | --- | --- | --- |
 | **SOCLE officiel** | [microduck](https://github.com/pollen-robotics/microduck), [microduck_rl](https://github.com/pollen-robotics/microduck_rl), [microduck_yocto](https://github.com/pollen-robotics/microduck_yocto) | Propriétaires du runtime, des politiques et de l'OS ; pour les APIs, consulter **d'abord les révisions épinglées** et vérifier ensuite les évolutions amont |
-| **VEILLE PRIORITAIRE — cerveau** | [PR officielle #381](https://github.com/pollen-robotics/microduck/pull/381), [GC-RENCAO](https://github.com/GC-RENCAO/microduck-companion) | La PR #381 contient **uniquement un document de design** communautaire, non adopté sur `main`; GC montre des comportements simulés |
-| **VEILLE PRIORITAIRE — cartographie/navigabilité** | [PR officielle #414](https://github.com/pollen-robotics/microduck/pull/414), [QuackNav](https://github.com/andreagenovese/quacknav), [microduck-brain](https://github.com/samoxis/microduck-brain) | #414 propose le service constructeur `mapd` en PR ouverte avec validation sur journaux physiques ; QuackNav et Brain restent des pilotes **simulés**. Aucun ensemble commun sécurisé n'a été vérifié |
+| **VEILLE PRIORITAIRE — cerveau** | [PR #381 sur le dépôt OEM](https://github.com/pollen-robotics/microduck/pull/381), [GC-RENCAO](https://github.com/GC-RENCAO/microduck-companion) | La PR #381 contient **uniquement un document de design** communautaire, non adopté sur `main`; GC montre des comportements simulés |
+| **VEILLE PRIORITAIRE — cartographie/navigabilité** | [PR #414 sur le dépôt OEM](https://github.com/pollen-robotics/microduck/pull/414), [QuackNav](https://github.com/andreagenovese/quacknav), [microduck-brain](https://github.com/samoxis/microduck-brain) | #414 propose le service constructeur `mapd` en PR ouverte avec validation sur journaux physiques ; QuackNav et Brain restent des pilotes **simulés**. Aucun ensemble commun sécurisé n'a été vérifié |
 | **VEILLE PRIORITAIRE — audio** | [Quacksat](https://github.com/andreagenovese/quacksat) (mots-clés/VAD et adaptateurs), [microduck-twin](https://github.com/digows/microduck-twin) (champ audio simulé) | Modules écrits ; pas de preuve équivalente de reconnaissance persistante du même bruit indépendant, ni de validation des 2 sur notre robot |
 | **VEILLE CONDITIONNELLE** | [Smartulf123](https://github.com/Smartulf123/microduck-companion), [quack-control](https://github.com/andreagenovese/quack-control), [microduck-lab](https://github.com/jonathanhawkins/microduck-lab), [microduck-studio](https://github.com/microai-lab/microduck-studio) | Pour suivi/voix PC, cockpit, simulation RL CPU, interface de développement ; ouvrir seulement si le chantier correspondant démarre |
 | **HORS PÉRIMÈTRE R2** | [microduck-backflip](https://github.com/Lulzx/microduck-backflip) | Entraînement acrobatique ; aucun besoin pour reconnaissance/mémoire |
 
+**Statut des contributions :** #381 a été ouverte par **xaqmusic**, contributeur externe, et ne contient qu'une proposition documentaire ; #414 est portée sur une branche de **pollen-robotics/microduck**, mais demeure ouverte et non fusionnée. Le dépôt hôte d'une PR ne signifie donc pas que son contenu est adopté ou distribué par Pollen.
+
 **Licences observées à la racine :** Apache-2.0 pour les six projets de C1–C2, ainsi que Quacksat, quack-control et microduck-lab ; **MIT pour microduck-studio**. Ce contrôle **ne vaut pas** audit des licences de modèles, médias, patches, dépendances, interfaces et autres assets ; ne copier aucun fichier sans ce contrôle, et conserver les attributions.
 
-**Point de vigilance important pour la navigation :** l'ancienne [PR officielle #127 (maploc)](https://github.com/pollen-robotics/microduck/pull/127) est encore ouverte et fait partie de l'histoire technique, **mais #414 (maploc v2 + mapd) doit être évaluée en premier** pour tout nouveau travail. Le `maploc` dans QuackNav et l'éventuel `mapd` officiel ne sont pas présumés interchangeables. Comparer explicitement les versions `duck-ipc-proto`, la propriété de la carte, les flux ToF/odométrie, le budget CPU et la route de refus/STOP.
+**Point de vigilance important pour la navigation :** l'ancienne [PR #127 sur le dépôt OEM (maploc)](https://github.com/pollen-robotics/microduck/pull/127) est encore ouverte et fait partie de l'histoire technique, **mais #414 (maploc v2 + mapd) doit être évaluée en premier** pour tout nouveau travail. Le `maploc` dans QuackNav et l'éventuel `mapd` officiel ne sont pas présumés interchangeables. Comparer explicitement les versions `duck-ipc-proto`, la propriété de la carte, les flux ToF/odométrie, le budget CPU et la route de refus/STOP.
 
 ## 4. Impact immédiat sur notre plan R2 et les instructions
 
@@ -57,7 +59,7 @@ Ce sont **des références documentaires**, à date, non des dépendances ni des
 1. **R2-B+1** : les mêmes bancs M1-A/M1-B/B2 ; corpus de **sons réellement réenregistrés**, provenance/licences, négatifs ressemblants, seuil de validation fixe, `unknown` et erreurs.
 2. **R2-B+2** : davantage de vues indépendantes et instances confusables, sans confondre classe vs identité.
 3. **R2-C / R2-D** : comparer les faux rapprochements et poursuivre la mémoire **mono-écrivain** avec garde-fous et mesures réelles SQLite sur hôte.
-4. **En parallèle, sans code ni déploiement** : conserver les références officielles #381/#414 et communautaires dans ce registre. Avant tout chantier ultérieur : vérifier si la PR a fusionné, les versions et les fonctions effectives. **Ne pas retarder R2 pour créer une nouvelle stack de navigation, de dialogue ou de simulation.**
+4. **En parallèle, sans code ni déploiement** : conserver les propositions #381/#414 sur le dépôt constructeur et les références communautaires dans ce registre. Avant tout chantier ultérieur : vérifier si la PR a fusionné, les versions et les fonctions effectives. **Ne pas retarder R2 pour créer une nouvelle stack de navigation, de dialogue ou de simulation.**
 
 ### Proposition pour les instructions permanentes (ne pas appliquer automatiquement)
 
