@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**Addendum R2-A — 26 octobre 2026 :** [sélection d'une seule mémoire R2 sur fixtures](r2a-single-memory-selection-2026-10-26.md). Le protocole réutilise M1-B/`ExperienceMemory` avec un garde-fou optionnel contre la double persistance M1-A dans le chemin R2, sans migration ni suppression de données. Les signatures de 64/16 octets, le plafond de blobs et `PRAGMA page_count` **ne prouvent pas** la marge de stockage disponible du RK3566 (index, WAL, pages libres, système, RSS, caches). Une ancienne application peut toujours écrire séparément : l'opération R2 suivante refusera alors le mélange. Aucune mesure réelle RAM/CPU/thermie ni déploiement physique nouveau.
+
+
 **Audit M1-B2 sur runner Linux (non transférable au RK3566) :** la [CI ONNX publique](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40309136430) a observé 145 180 Kio de **pic RSS du processus entier**, environ 14 Mo + 16,1 Mo de poids et des médianes d'inférence 6,86 ms image / 3,60 ms son (prétraitement et collecte exclus). Les vecteurs float32 de 4 000/4 096 octets ne sont PAS la RAM du modèle ni l'espace SQLite effectivement consommé. Sur Microduck, RAM libre, charge CPU, chauffe, disque réellement disponible et échéances moteurs restent inconnus. Aucun déploiement ou appel OEM/Qwen n'est issu de ce lot. [Rapport M1-B2](m1b2-host-embeddings-2026-10-26.md).
 
 Date : 2026-10-25. Audit documentaire et revue de code, **sans accès au robot physique**.
