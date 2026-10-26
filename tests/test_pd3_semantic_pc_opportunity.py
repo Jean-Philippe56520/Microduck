@@ -200,7 +200,7 @@ class PD3Tests(unittest.TestCase):
         self.assertEqual("invalid_or_private_mock_samples",out.reason)
 
     def test_private_person_sound_and_freeform_labels_are_rejected(self):
-        for mode in ("unknown_person","unknown_sound","Malo"):
+        for mode in ("unknown_person","unknown_sound","PrivateNameFixtureX"):
             with self.subTest(mode=mode):
                 # Keep the current F5 advisory valid, inject suspect OLD
                 # independent fixture to test the PD3 privacy boundary.
@@ -210,7 +210,7 @@ class PD3Tests(unittest.TestCase):
                 self.assertEqual(0,out.pc_requests_issued)
 
     def test_person_or_voice_current_can_never_be_consulted(self):
-        for mode in ("unknown_person","unknown_sound","Malo"):
+        for mode in ("unknown_person","unknown_sound","PrivateNameFixtureX"):
             with self.subTest(mode=mode):
                 one=reading(mode)
                 out,adv,_,_,_=self.prepared(current=one,optin=True)
