@@ -1,5 +1,8 @@
 # R2-C — Clôture de l'identification d'instances et pivot vers la perception par catégories
 
+**Suite autorisée et exécutée, Cat-A pilote :** [résultats réels de catégories](cata-category-detection-pilot-2026-10-26.md) et [PR #63](https://github.com/Jean-Philippe56520/Microduck/pull/63). Le nouveau détecteur hôte ne reconnaît correctement que **4/6** images CC0 TEST entières et **3/6** moitiés inférieures ; sur 12 chaises, **8/12** entières, **0/12** recadrées. Le recadrage est une occultation artificielle, **pas une vue à 25 cm**, donc cet essai n'autorise ni déploiement ni mouvement et ne modifie pas la décision d'arrêter les identités d'instances. Prochaine étude Cat-A2 à autoriser ; Cat-B/C/D restent prévues.
+
+
 **26 octobre 2026 — décision d'architecture validée par l'utilisateur, analyse rétrospective documentaire et prototype de suggestion `inspect` sur fixtures.**
 
 **Statut :** résultats précédents relus ; **aucun modèle d'identité sélectionné**, aucune nouvelle inférence réelle relancée pour cette décision. Le [prototype de vérification des indices partiels](../microduck_companion/category_inspection.py) est uniquement une proposition cognitive sur **données fictives**, sans caméra, regard physique, réseau Qwen ou écriture mémoire.
