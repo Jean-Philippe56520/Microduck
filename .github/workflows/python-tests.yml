@@ -63,3 +63,7 @@ jobs:
           # No real names, faces, voices, BLE/NFC tags, camera or actuators.
           python -m microduck_companion.f4d_optin_demo --database "$RUNNER_TEMP/f4d-only-fictional-identities.sqlite3" --session first
           python -m microduck_companion.f4d_optin_demo --database "$RUNNER_TEMP/f4d-only-fictional-identities.sqlite3" --session second
+      - name: F5-A optional PC contract with fictional offline answer
+        run: |
+          # No LAN access, Ollama/Qwen, camera, speaker, servo or motor action.
+          python -m microduck_companion.f5a_contract_demo

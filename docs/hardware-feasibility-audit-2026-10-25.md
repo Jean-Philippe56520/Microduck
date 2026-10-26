@@ -54,6 +54,12 @@ Le prototype limite **24 associations** et des durées de 60 secondes à 30 jour
 
 Aucun audit matériel n'a été ajouté : `scripts/resource-audit.sh` reste à exécuter sur le futur Microduck pour RAM libre, CPU, température, fréquence moteur, espace persistant et consommation. Le robot physique est toujours absent, et les systèmes de sécurité OEM restent inchangés.
 
+## Addendum F5-A — 26 octobre 2026 (contrat d'hypothèses PC hors réseau)
+
+Le [contrat F5-A](f5a-pc-hypotheses-2026-10-26.md), fusionné via [PR #41](https://github.com/Jean-Philippe56520/Microduck/pull/41) après [757 tests Python réussis en CI hôte](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40250745954), n'utilise **ni LAN, ni Ollama, ni Qwen, ni véritable inférence**. Une requête et sa réponse sont des JSON **fictifs**, générés/testés par Python sur hôte CI. Une fenêtre de validité logique de 2 s, au plus 4 096 octets de réponse et quatre hypothèses constituent des **bornes de protocole**, pas des mesures de latence, débit, mémoire ou énergétique du PC. Une confiance alléguée ne mesure aucune précision de modèle.
+
+F5-A ne charge aucun modèle sur le RK3566, ne valide aucun accès caméra/audio/NPU et ne modifie ni `robotd`, ni `mediad`, ni `tofd`. **Aucune nouvelle valeur** de RSS, RAM libre, CPU, température, cadence de commande, capacité de stockage ou autonomie n'est établie pour le Microduck physique. L'exécution de `scripts/resource-audit.sh` sur le matériel reste nécessaire. L'authentification du futur serveur et les délais de réseau effectifs appartiennent à F5-B/C.
+
 ## Verdict
 
 Le Microduck permet raisonnablement de viser : mémoire persistante locale, moteur d'autonomie, exploration prudente, observation visuelle événementielle, identification de catégories d'animaux et interaction sociale élémentaire. Il reste à développer et à valider : détection personnalisée d'animaux, identification non biométrique des personnes familières, reconnaissance vocale, exploration sûre en environnement non contrôlé, et intégration du cerveau autonome à robotd. Qwen multimodal se placera initialement sur un PC local.
