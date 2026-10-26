@@ -37,6 +37,30 @@ class BehavioralSummary:
     motor_commands_issued: int = 0
 
 
+def valid_mock_summary(summary: object) -> bool:
+    """Validate an F4-A-only aggregate before another subsystem uses it.
+
+    A ledger summary is not a real experience, motor authorization or
+    personal identity. This validator is pure and does not modify SQLite.
+    """
+    return (
+        isinstance(summary, BehavioralSummary)
+        and type(summary.positive) is int
+        and type(summary.negative) is int
+        and summary.positive >= 0 and summary.negative >= 0
+        and summary.positive + summary.negative <= MAX_STORED
+        and type(summary.bias) is float
+        and math.isfinite(summary.bias)
+        and -MAX_BIAS <= summary.bias <= MAX_BIAS
+        and summary.source == "explicit_mock_followup_only"
+        and summary.verified_on_robot is False
+        and type(summary.executed_actions) is int
+        and summary.executed_actions == 0
+        and type(summary.motor_commands_issued) is int
+        and summary.motor_commands_issued == 0
+    )
+
+
 @dataclass(frozen=True)
 class BehavioralTrace:
     mock_cycle_id: int

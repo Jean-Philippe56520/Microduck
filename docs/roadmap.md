@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P-B — habitudes et personnalité cohérente, étape expérimentale :** [contrat mémoire/émotion simulée](kwipi-personality-continuity-pb-2026-10-26.md), [test de continuité](../tests/test_personality_continuity.py). À la vue P-A ajoutent lecture seule de `BehavioralMemory` (résultats fictifs vérifiés), persistance après redémarrage via la même SQLite, correction/expiration, seuil de deux retours pour exposer une tendance, et biais F2 `inspect` limité et **opt-in**. Aucune mémoire du caractère distincte, aucun moteur ni émotion vécue, aucune preuve d'apprentissage physique ; la priorité Cat-A2 reste inchangée. **Vérification logicielle P-B réussie : 1 056 tests Python exécutés, 4 ignorés, zéro échec** ([CI GitHub Actions #40394372640](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40394372640)) ; aucune validation sur robot. Étape suivante P-C : sources réelles et garde-fous avant expressions OEM, puis P-D/M9 si fonctions livrées.
+
+
 **P-A — personnalité évolutive, première tranche strictement descriptive :** [contrat/évaluation](kwipi-behavior-personality-16states-2026-10-26.md), [vue `BehaviorPortrait`](../microduck_companion/behavior_personality.py) et [tests ciblés](../tests/test_behavior_personality.py). Liste les seize comportements OEM historiques mais ne relie **que quatre états de description fictive** aux intentions F2/F4 déjà retenues, aux motivations et à la familiarité des catégories F1/F2 sur la **même SQLite**. Ni seconde machine d'états exécutrice, ni animation moteur, ni capteur physique, ni Qwen. Étapes futures : preuve de conséquences, cohérence multi-sessions, interface M9, puis validation robot. **Cat-A2 conserve sa priorité.**
 
 

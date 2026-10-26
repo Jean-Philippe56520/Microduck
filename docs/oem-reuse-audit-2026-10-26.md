@@ -1,5 +1,8 @@
 # Audit de réutilisation OEM — autonomie et mémoire Microduck Companion
 
+**Addendum P-B (26/10/2026) :** [réutilisation supplémentaire](kwipi-personality-continuity-pb-2026-10-26.md). F4-A `BehavioralMemory` (résultats P2a fictifs vérifiés, corrections et 14 jours/256 lignes) est **relue**, et non reproduite, pour fournir un faible biais facultatif à l'inspection cognitive F2 et une tendance descriptive dans P-A. Aucune table, nouvelle boucle/arbitrage moteur, copie OEM ou animation concurrente. `robotd` reste seul propriétaire de l'exécution ; M9 OEM et PR #381 non fusionnée ne sont pas traités comme des API. Aucun déploiement ni preuve matérielle.
+
+
 **Complément P-A (26/10/2026) :** la [matrice de personnalité à 16 états historiques](kwipi-behavior-personality-16states-2026-10-26.md) confirme : **réutiliser** OEM IdleHead/sons et F2/F4/ExperienceMemory ; **adapter** uniquement la présentation `AutonomyBrain.describe_behavior` après une intention fictive ; **ne pas créer** de second scheduler, contrôleur, base ou boucle 50 Hz. Le code décrit 4 états sur fixtures et référence 12 états conditionnels. Les services M9 OEM non fusionnés et PR #381 restent des prérequis de compatibilité. Pas de changement de matériel ou licence, ni mesures RK3566.
 
 

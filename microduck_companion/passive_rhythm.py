@@ -19,6 +19,7 @@ from .passive_intentions import (PassiveIntent, propose_passive_intention,
                                  _valid_motivations, _valid_scalar)
 from .passive_memory import PassiveObservationJournal
 from .passive_learning import PassiveLearning
+from .behavioral_memory import BehavioralMemory, valid_mock_summary
 from .passive_observations import summarize_passive
 from .passive_sources import PassiveRead
 
@@ -123,7 +124,8 @@ class PassiveRhythm:
     def tick(self, reading: PassiveRead, *,
              journal: PassiveObservationJournal, motivations: Motivations,
              now_monotonic_s: float, now_wall_epoch_s: float,
-             learning: PassiveLearning | None = None) -> PassiveIntent:
+             learning: PassiveLearning | None = None,
+             behavioral: BehavioralMemory | None = None) -> PassiveIntent:
         """One strictly passive, mock-only cognitive cycle.
 
         F2-A validation is called *inside* this module. The caller cannot
@@ -141,6 +143,11 @@ class PassiveRhythm:
                 raise TypeError("expected optional F2-C passive learning")
             if learning._memory is not journal._memory:
                 raise ValueError("learning must share the journal SQLite")
+        if behavioral is not None:
+            if not isinstance(behavioral, BehavioralMemory):
+                raise TypeError("existing F4-A BehavioralMemory required")
+            if behavioral._memory is not journal._memory:
+                raise ValueError("F4-A memory must share F1/F2 SQLite")
         if not _valid_scalar(now_monotonic_s) or not _valid_scalar(now_wall_epoch_s):
             raise ValueError("clocks must be finite and nonnegative")
         now = float(now_monotonic_s)
@@ -224,6 +231,23 @@ class PassiveRhythm:
                 candidates.append(("listen", "sound_label", obs.category,
                                    "fictional_sound_category"))
 
+        # F4-A stores only explicitly corroborated P2a *fictional* outcomes.
+        # The optional bounded summary is an inspection tendency, not a
+        # second learned policy or evidence of physical execution. Read once.
+        outcome_bias = 0.0
+        if behavioral is not None and any(c[0] == "inspect" for c in candidates):
+            try:
+                summary = behavioral.summary(now_wall_epoch_s=now_wall_epoch_s)
+                if not valid_mock_summary(summary):
+                    return self._record(self._idle("invalid_mock_outcome_summary"),
+                                        motivations=motivations,
+                                        update_energy=False)
+                outcome_bias = summary.bias
+            except (sqlite3.Error, ValueError, OverflowError):
+                return self._record(self._idle("behavioral_history_unavailable"),
+                                    motivations=motivations,
+                                    update_energy=False)
+
         # Keep category-only cooldowns: never retain raw frames, track IDs,
         # transcripts or identities in scheduler state.
         self._cooldown_until = {
@@ -240,6 +264,8 @@ class PassiveRhythm:
                 self._cooldown_blocks += 1
                 continue
             score = self._score(intention, category, motivations)
+            if intention == "inspect":
+                score += outcome_bias  # <= +/-0.12, mock-only; no motor effect
             # Explicitly opt-in: F2-B callers keep their original fixed scores.
             # These tiny values only rank passive proposals, never motor acts.
             if learning is not None:
