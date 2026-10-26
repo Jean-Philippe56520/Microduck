@@ -1,5 +1,7 @@
 # Instructions de contribution aux agents — Microduck Companion
 
+**Nom exact du robot : Kwipi.** Phrase d'activation prévue « Hé Kwipi ! » (non codée ni validée), sans mouvement déclenché par une reconnaissance vocale. Ne pas réintroduire un ancien nom, même dans les titres de nouveaux tests.
+
 **Appliquer impérativement le [protocole « réutiliser avant de créer »](docs/development-reuse-protocol.md) pour chaque demande et PR.** Le code courant, les tests et les sous-modules épinglés font foi, jamais une ancienne discussion.
 
 1. Lire README.md, docs/plan-action.md, docs/roadmap.md, docs/hardware-feasibility-audit-2026-10-25.md et les fichiers concernés.
