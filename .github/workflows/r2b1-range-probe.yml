@@ -1,5 +1,8 @@
 name: R2-B+1 source byte-range probe (no audio extraction)
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - r2b1/real-sound-validation-2026-10-26
