@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P-A — personnalité évolutive, première tranche strictement descriptive :** [contrat/évaluation](kwipi-behavior-personality-16states-2026-10-26.md), [vue `BehaviorPortrait`](../microduck_companion/behavior_personality.py) et [tests ciblés](../tests/test_behavior_personality.py). Liste les seize comportements OEM historiques mais ne relie **que quatre états de description fictive** aux intentions F2/F4 déjà retenues, aux motivations et à la familiarité des catégories F1/F2 sur la **même SQLite**. Ni seconde machine d'états exécutrice, ni animation moteur, ni capteur physique, ni Qwen. Étapes futures : preuve de conséquences, cohérence multi-sessions, interface M9, puis validation robot. **Cat-A2 conserve sa priorité.**
+
+
 **Cat-A, essai de catégories effectué sur PC (26/10/2026) :** [rapport](cata-category-detection-pilot-2026-10-26.md), [PR #63](https://github.com/Jean-Philippe56520/Microduck/pull/63). Détecteur YOLOX-Nano Apache-2.0 416 px, seuil 0,25 prédéfini. Cat/dog/unknown CC0 : **4/6 images TEST entières correctes** contre **3/6 recadrages inférieurs** ; 12 chaises ABO : **8/12 entières**, **0/12 recadrées**. Vision basse simulée par coupe d'image, **pas** capteur physique à 25 cm. **État RETESTER** : données réelles de proximité, personne et balle annotées, classes chaussures/parties non couvertes, localisation et vrais rejets à vérifier. Cat-B/C/D ne sont pas lancés ; l'identité d'instance reste suspendue.
 
 
