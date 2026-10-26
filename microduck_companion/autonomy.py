@@ -128,6 +128,21 @@ class AutonomyBrain:
             self._passive_rhythm = PassiveRhythm()
         return self._passive_rhythm.metrics(self.motives)
 
+    def describe_behavior(self, selected, *, journal: PassiveObservationJournal,
+                          now_wall_epoch_s: float,
+                          learning: PassiveLearning | None = None):
+        """Read-only 16-state OEM-inspired personality PORTRAIT after F2/F4.
+
+        Does not re-run arbitration, update motivation, write SQLite, or
+        issue actions. Only a few historical states have mock descriptions;
+        no 16-state physical skill engine is claimed or installed.
+        """
+        from .behavior_personality import describe_behavior
+        return describe_behavior(
+            selected, brain=self, journal=journal,
+            now_wall_epoch_s=now_wall_epoch_s, learning=learning,
+        )
+
     def choose_from_snapshot(self, snapshot: PerceptionSnapshot,
                              now: float | None = None) -> Plan:
         """Production-facing input boundary; stale/untrusted safety data halts.

@@ -1,5 +1,8 @@
 # Audit de réutilisation OEM — autonomie et mémoire Microduck Companion
 
+**Complément P-A (26/10/2026) :** la [matrice de personnalité à 16 états historiques](kwipi-behavior-personality-16states-2026-10-26.md) confirme : **réutiliser** OEM IdleHead/sons et F2/F4/ExperienceMemory ; **adapter** uniquement la présentation `AutonomyBrain.describe_behavior` après une intention fictive ; **ne pas créer** de second scheduler, contrôleur, base ou boucle 50 Hz. Le code décrit 4 états sur fixtures et référence 12 états conditionnels. Les services M9 OEM non fusionnés et PR #381 restent des prérequis de compatibilité. Pas de changement de matériel ou licence, ni mesures RK3566.
+
+
 **26 octobre 2026 — revue de sources, sans déploiement ni nouvelle capacité physique.**
 Décision : conserver le constructeur comme **propriétaire exclusif des capteurs, des intentions motrices et des animations embarquées** ; conserver Companion comme **prototype de cognition/mémoire non motrice** tant qu'une interface OEM d'autonomie n'est pas définie. Ne pas créer un second contrôleur de mouvement ou un second système permanent de comportements à côté du futur cerveau M9.
 

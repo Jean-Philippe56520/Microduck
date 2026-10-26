@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**Addendum P-A, personnalité à 16 états historiques (26/10/2026) :** le nouveau portrait `behavior_personality.py` lit seulement `ExperienceMemory` sur fixtures et décrit quatre états non exécutés ; **aucune mesure nouvelle de RSS, CPU, RAM libre, eMMC, chaleur, latence, batterie, NPU, microphone ou cadence des moteurs sur RK3566**. Il n'y a aucun portage, aucune garantie de consommation et aucun nouveau moteur. Les douze autres états attendent un contrat OEM/sûreté. Audit physique `scripts/resource-audit.sh` toujours obligatoire.
+
+
 **Addendum Cat-A hôte (26/10/2026) :** [évaluation YOLOX-Nano catégorie-first](cata-category-detection-pilot-2026-10-26.md). Sur **32 images publiques** et **64 inférences CPU** (images entières et coupes artificielles) : **médiane ONNX 10,700 ms**, CPU utilisateur processus **2,703 s**, pic RSS processus **138 324 Kio**, durée réseau inclus **10,689 s**. Ce ne sont **ni** les coûts d'un pipeline caméra/ToF/robot complet **ni** une mesure RK3566/NPU, ni un budget thermique, de batterie, de stockage SQLite ou d'actionnement. Aucun détecteur catégorie embarqué validé, aucune marge mémoire présumée. `scripts/resource-audit.sh` reste obligatoire sur robot physique.
 
 

@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**Personnalité/16 états OEM — P-A expérimental, non moteur :** [contrat et matrice de réutilisation](docs/kwipi-behavior-personality-16states-2026-10-26.md). Le [catalogue des 16 états historiques](microduck_companion/behavior_personality.py) et `AutonomyBrain.describe_behavior` fournissent une **description en lecture seule** des intentions F2/F4 existantes, des cinq motivations et des occurrences de **catégories** dans l'unique SQLite `ExperienceMemory`. **Quatre** états (Chill, LookAround, Nap, BallPlay) sont décrits sur fixtures seulement, **douze** sont différés ; aucune animation, mémoire supplémentaire, reconnaissance d'identité, émotion ressentie ou commande robot. Aucun portage matériel. La PR du lot fournit les tests, sans remplacer l'OEM M9 ni changer la priorité Cat-A2.
+
+
 **Cat-A — pilote réel de reconnaissance de catégories pour Kwipi (26/10/2026) :** [résultats et limites](docs/cata-category-detection-pilot-2026-10-26.md), [PR #63](https://github.com/Jean-Philippe56520/Microduck/pull/63). YOLOX Nano Apache-2.0 (~3,49 Mo, SHA vérifié), sans nouvelle mémoire ni commande moteur, réutilise **20 photos CC0 de chats/chiens/inconnus** et **12 vues ABO de chaises**. **TEST CC0 : 4/6 bonnes catégories sur image entière, 3/6 sur moitié inférieure artificielle ; chaises : 8/12 entières, 0/12 moitié inférieure.** Aucun humain ni balle évalué sur images annotées dédiées, aucune chaussure/main/pied dans les classes COCO du modèle, pas de vue réelle à hauteur de robot, pas de mAP ni de portage RKNN. **Verdict : retester, pas de déploiement.** Les suites Cat-A2/Cat-B ne sont pas lancées.
 
 

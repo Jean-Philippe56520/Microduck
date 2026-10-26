@@ -1,0 +1,175 @@
+"""Read-only personality portrait over the existing F2/F4 mock decisions.
+
+The 16 names are an OEM *historical* catalogue, not 16 installed skills.
+No scheduler, emotion database, new SQLite table, media, sound, motor or
+robotd command is created here. This is a post-decision description only.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+import sqlite3
+from typing import TYPE_CHECKING
+
+from .passive_intentions import PassiveIntent, _valid_motivations
+from .passive_memory import PassiveObservationJournal, _check_wall
+from .passive_learning import PassiveLearning
+from .mock_social_cues import MockSocialPlan
+
+if TYPE_CHECKING:
+    from .autonomy import AutonomyBrain
+
+# Exactly the names documented by the OEM historical autonomous prototype.
+# Never silently reinterpret these labels as currently shipped capabilities.
+HISTORICAL_OEM_STATES = (
+    "Chill", "LookAround", "Wander", "TurnInPlace", "Zoomies",
+    "Startle", "Stretch", "Ruffle", "Preen", "Sneeze", "Dance",
+    "GroundPick", "Nap", "BallPlay", "Petted", "Held",
+)
+# Only these names can currently describe F2/F4 *fictional proposals*.
+# Even these do not execute a gesture or mean an OEM skill is running.
+DESCRIPTIVE_ONLY = frozenset({"Chill", "LookAround", "Nap", "BallPlay"})
+REQUIRES_OEM_REVIEW = frozenset(HISTORICAL_OEM_STATES) - DESCRIPTIVE_ONLY
+_FAMILIARITY = frozenset({"unknown", "new_category", "seen_once", "familiar_category", "unavailable"})
+_AFFECTS = frozenset({"quiet", "calm", "curious", "attentive", "playful", "sociable", "resting", "watchful"})
+_DRIVES = frozenset({"curiosity", "sociability", "play", "energy", "caution"})
+
+
+@dataclass(frozen=True)
+class BehaviorPortrait:
+    """Bounded, inspectable *mock* expression, never a robot action.
+
+    A category count means historical *category* occurrences, not the return
+    of a familiar person, pet, toy instance or the success of an action.
+    """
+
+    state: str
+    affect: str
+    dominant_motivation: str
+    familiarity: str
+    category_observations: int
+    attention_bias: float
+    reason: str
+    source: str = "mock_post_decision_only"
+    executed: bool = False
+    physical_execution_authorized: bool = False
+    motor_commands_issued: int = 0
+    speaker_commands_issued: int = 0
+    pc_requests_issued: int = 0
+    memories_written: int = 0
+    identity_verified: bool = False
+
+    def __post_init__(self) -> None:
+        if (self.state not in DESCRIPTIVE_ONLY
+                or self.affect not in _AFFECTS
+                or self.dominant_motivation not in _DRIVES
+                or self.familiarity not in _FAMILIARITY
+                or type(self.category_observations) is not int
+                or self.category_observations < 0
+                or type(self.attention_bias) is not float
+                or not -0.12 <= self.attention_bias <= 0.12
+                or self.reason not in {
+                    "passive_attention", "passive_rest", "passive_idle",
+                    "mock_social_glance", "mock_social_play",
+                    "mock_social_chirp", "mock_social_rest", "mock_social_silence",
+                    "history_unavailable",
+                }
+                or self.source != "mock_post_decision_only"
+                or self.executed or self.physical_execution_authorized
+                or self.motor_commands_issued or self.speaker_commands_issued
+                or self.pc_requests_issued or self.memories_written
+                or self.identity_verified):
+            raise ValueError("behavior portrait cannot report execution or unbounded claims")
+
+
+def behavior_catalog() -> tuple[tuple[str, str], ...]:
+    """All 16 *names*, with honest present-vs-planned integration status."""
+    return tuple((name, "mock_description_only" if name in DESCRIPTIVE_ONLY
+                  else "requires_oem_m9_or_sensor_review")
+                 for name in HISTORICAL_OEM_STATES)
+
+
+def _interpret(selected: PassiveIntent | MockSocialPlan) -> tuple[str, str, str, str | None, str | None, str]:
+    """Interpret an already selected proposal. Never select an action."""
+    if isinstance(selected, PassiveIntent):
+        if selected.intention == "rest":
+            return "Nap", "resting", "passive_rest", None, None, selected.intention
+        if selected.intention == "idle":
+            return "Chill", "calm", "passive_idle", None, None, selected.intention
+        if selected.intention == "listen":
+            affect = "attentive"
+        else:
+            affect = "curious"
+        return ("LookAround", affect, "passive_attention",
+                selected.target_kind, selected.target_category, selected.intention)
+    if isinstance(selected, MockSocialPlan):
+        plans = {
+            "silence": ("Chill", "quiet", "mock_social_silence"),
+            "rest": ("Nap", "resting", "mock_social_rest"),
+            "glance": ("LookAround", "curious", "mock_social_glance"),
+            "chirp": ("Chill", "sociable", "mock_social_chirp"),
+            "play_cue": ("BallPlay", "playful", "mock_social_play"),
+        }
+        state, affect, reason = plans[selected.kind]
+        kind = "sound_label" if selected.kind == "chirp" else "object_label"
+        return state, affect, reason, kind if selected.category else None, selected.category, selected.kind
+    raise TypeError("use an existing F2 PassiveIntent or F4-C MockSocialPlan")
+
+
+def describe_behavior(
+    selected: PassiveIntent | MockSocialPlan, *,
+    brain: AutonomyBrain,
+    journal: PassiveObservationJournal,
+    now_wall_epoch_s: float,
+    learning: PassiveLearning | None = None,
+) -> BehaviorPortrait:
+    """Describe F2/F4's decision using ONLY the existing motivations and SQLite.
+
+    The selected proposal is an input: this function never calls the F2
+    arbitration a second time or appends a social cue. No extra writer or
+    second cadence loop is permitted. Historical counts are mock-only.
+    """
+    from .autonomy import AutonomyBrain
+
+    if not isinstance(brain, AutonomyBrain):
+        raise TypeError("existing AutonomyBrain required")
+    if not isinstance(journal, PassiveObservationJournal):
+        raise TypeError("existing PassiveObservationJournal required")
+    if brain.memory is not journal._memory:
+        raise ValueError("brain and journal must share the same ExperienceMemory")
+    if learning is not None:
+        if not isinstance(learning, PassiveLearning):
+            raise TypeError("existing PassiveLearning required")
+        if learning._memory is not brain.memory:
+            raise ValueError("learning must use the same ExperienceMemory")
+    wall = _check_wall(now_wall_epoch_s)
+    if not _valid_motivations(brain.motives):
+        raise ValueError("invalid simulated motivation values")
+    state, affect, reason, kind, category, intention = _interpret(selected)
+
+    # Rest is F2's simulated motivation bookkeeping, not battery level.
+    # Preserve the selected non-motor decision rather than re-arbitrate.
+    motives = brain.motives
+    drives = {
+        "curiosity": motives.curiosity, "sociability": motives.sociability,
+        "play": motives.play, "energy": 1.0 - motives.energy,
+        "caution": motives.caution,
+    }
+    dominant = max(drives, key=drives.get)
+    if state == "Chill" and affect == "calm" and motives.caution >= 0.75:
+        affect = "watchful"
+
+    familiarity, count, bias = "unknown", 0, 0.0
+    try:
+        if kind is not None and category is not None and category != "unknown":
+            count = journal.category_count(kind, category, now_wall_epoch_s=wall)
+            familiarity = ("new_category" if count == 0 else
+                           "seen_once" if count == 1 else "familiar_category")
+        if learning is not None:
+            bias = float(learning.preference(intention))
+    except (sqlite3.Error, ValueError):
+        # Missing or corrupted memory cannot manufacture familiarity or a
+        # learned preference. Downgrade to a quiet, uninformative portrait.
+        return BehaviorPortrait("Chill", "quiet", dominant,
+                                "unavailable", 0, 0.0, "history_unavailable")
+    return BehaviorPortrait(state, affect, dominant, familiarity, count, bias,
+                            reason)

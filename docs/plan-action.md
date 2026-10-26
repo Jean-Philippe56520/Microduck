@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**Lot P-A personnalité autorisé en parallèle sans effet moteur :** [contrat 16 états historiques](kwipi-behavior-personality-16states-2026-10-26.md). Réutiliser les motifs/intentions F2, la mémoire F1/F2 et les propositions sociales F4-C : `AutonomyBrain.describe_behavior` est une **lecture après arbitrage**, zéro écriture SQLite/commande, sans nouvel arbitre. Catalogue exhaustif des 16 noms OEM ; 4 états décrits sur fixtures, 12 conservés comme prérequis OEM/sûreté. **Cat-A2 reste prioritaire** pour la perception réelle de catégories. Aucune émotion vécue, action physique, apprentissage de conséquence réelle, intégration M9 ou test robot revendiqué.
+
+
 **Avancement Cat-A, première validation sur photographies réelles (26/10/2026) :** [rapport, scores et droits](cata-category-detection-pilot-2026-10-26.md), [PR #63](https://github.com/Jean-Philippe56520/Microduck/pull/63). Kwipi : catégories `cat/dog/unknown` sur 6 images CC0 TEST : **4/6 correctes entières, 3/6 sur recadrage partiel artificiel** ; `chair` sur 12 photos ABO : **8/12 entières, 0/12 partielles**. Modèle YOLOX Nano Apache-2.0 testé sur PC seulement, sans identité, mémoire supplémentaire, moteurs ni Qwen. Classes `person/ball` disponibles mais **pas encore évaluées par catégories de vérité terrain**, `shoe/hand/foot` non supportées. **Cat-A ne passe pas la porte de validation : prochaine tâche Cat-A2 = données variées et prises réellement basses puis métriques de localisation, uniquement sur nouveau périmètre.** Aucun portage/robot test.
 
 
