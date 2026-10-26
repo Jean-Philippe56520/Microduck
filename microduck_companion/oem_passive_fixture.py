@@ -65,6 +65,76 @@ class OEMFixtureMetadata:
     raw_media_stored_bytes: int = 0
     pc_requests_issued: int = 0
 
+    def __post_init__(self) -> None:
+        # A direct caller must not forge a 'sensor verified' report by
+        # constructing this dataclass with elevated flags.
+        statuses = {
+            "webrtc_metadata_fixture": {
+                "unavailable", "invalid_fixture", "metadata_unverified",
+                "duck_candidates_unverified", "no_candidate_boxes",
+            },
+            "media_frame_header_fixture": {
+                "unavailable", "invalid_fixture", "header_unverified",
+                "stale_or_future",
+            },
+            "tof_notification_fixture": {
+                "unavailable", "invalid_fixture", "depth_shape_unverified",
+                "stale_or_future", "duplicate_or_out_of_order", "clock_reset",
+            },
+            "audio_cue_fixture": {
+                "unavailable", "invalid_fixture", "fixture_hypothesis_only",
+                "stale_or_future", "duplicate_or_out_of_order",
+                "clock_regression", "rate_limited",
+            },
+        }
+        if self.lane not in LANES or self.status not in statuses[self.lane]:
+            raise ValueError("unsupported OEM fixture state")
+        _clock(self.received_monotonic_s)
+        if (self.source_authenticated or self.motion_authorized
+                or self.motor_commands_issued != 0
+                or self.raw_media_stored_bytes != 0
+                or self.pc_requests_issued != 0
+                or self.category != "unknown"):
+            raise ValueError("fixture cannot promote source, identity or actions")
+        if (type(self.metadata_bytes) is not int
+                or not 0 <= self.metadata_bytes <= 4096):
+            raise ValueError("invalid metadata byte budget")
+        if self.advertised_media_bytes is not None and (
+                type(self.advertised_media_bytes) is not int
+                or not 0 <= self.advertised_media_bytes <= 4*1024*1024):
+            raise ValueError("invalid advertised byte count")
+        if (type(self.duck_box_count) is not int
+                or not 0 <= self.duck_box_count <= 32
+                or type(self.tof_zone_count) is not int
+                or self.tof_zone_count not in (0, 64)):
+            raise ValueError("invalid fixture counts")
+        if self.sequence is not None and (
+                type(self.sequence) is not int
+                or not 0 <= self.sequence < 2**63):
+            raise ValueError("invalid fixture sequence")
+        for val in (self.sample_age_s, self.detector_reported_ms):
+            if val is not None and (
+                    type(val) not in (int, float)
+                    or not math.isfinite(val) or val < 0):
+                raise ValueError("invalid fixture timing")
+        if (self.sample_age_s is not None
+                and self.sample_age_s > MAX_FRAME_AGE_S):
+            raise ValueError("fixture age exceeds maximum")
+        bases = {
+            "none", "capture_time_unverified", "unverified_wall_clock",
+            "local_fixture_receipt_monotonic", "synthetic_monotonic_checked",
+        }
+        if self.timestamp_basis not in bases:
+            raise ValueError("unsupported timestamp provenance")
+        if (self.lane != "webrtc_metadata_fixture"
+                and (self.duck_box_count or self.detector_reported_ms is not None)):
+            raise ValueError("duck detections only belong to WebRTC metadata")
+        if self.lane != "tof_notification_fixture" and self.tof_zone_count:
+            raise ValueError("ToF count belongs only to a ToF fixture")
+        if (self.lane != "media_frame_header_fixture"
+                and self.advertised_media_bytes is not None):
+            raise ValueError("frame byte count belongs only to media.frame")
+
     def to_passive_read(self) -> PassiveRead:
         """Reuse F1/F2 boundaries; metadata can NEVER become an 'ok' sensor read.
 
@@ -76,6 +146,7 @@ class OEMFixtureMetadata:
         status = ("unavailable_or_invalid" if self.status in {
             "unavailable", "invalid_fixture", "stale_or_future",
             "duplicate_or_out_of_order", "clock_reset", "rate_limited",
+            "clock_regression",
         } else "metadata_only_unverified")
         return PassiveRead(
             status=status,
