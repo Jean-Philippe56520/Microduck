@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**Addendum P-B (26/10/2026, sans matériel) :** ajout de lectures facultatives de la SQLite `ExperienceMemory` F4-A après décision F2/P-A, sans image, réseau, son, servomoteur, tâche de fond ou nouvelle table ; **aucun RSS, CPU, I/O SQLite p95, RAM libre, thermique ni délai sur RK3566 mesuré**. Ne pas extrapoler ces tests hôte. Le budget de lecture devra être profilé avant activation sur robot, sans attendre la boucle 50 Hz `robotd`. Le contrôle `scripts/resource-audit.sh` et ses exigences de sécurité restent obligatoires.
+
+
 **Addendum P-A, personnalité à 16 états historiques (26/10/2026) :** le nouveau portrait `behavior_personality.py` lit seulement `ExperienceMemory` sur fixtures et décrit quatre états non exécutés ; **aucune mesure nouvelle de RSS, CPU, RAM libre, eMMC, chaleur, latence, batterie, NPU, microphone ou cadence des moteurs sur RK3566**. Il n'y a aucun portage, aucune garantie de consommation et aucun nouveau moteur. Les douze autres états attendent un contrat OEM/sûreté. Audit physique `scripts/resource-audit.sh` toujours obligatoire.
 
 
