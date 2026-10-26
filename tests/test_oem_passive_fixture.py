@@ -274,7 +274,7 @@ class R1OEMFixtureTests(unittest.TestCase):
                 receipt, now_monotonic_s=100.1,
                 now_wall_epoch_s=1_830_000_000.)
             self.assertEqual(0, rows)
-        self.assertEqual([], journal.recent(now_wall_epoch_s=1_830_000_000.))
+        self.assertEqual((), journal.recent(now_wall_epoch_s=1_830_000_000.))
 
 
 if __name__ == "__main__":
