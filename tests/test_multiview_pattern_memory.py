@@ -184,7 +184,7 @@ class GroupedMemoryTests(unittest.TestCase):
         self.assertEqual(32,self.store.stats()["fingerprint_bytes"])
 
     def test_neither_label_nor_text_automatically_identifies_an_individual(self):
-        for cat in ("Kitty","Nessquick","Malo","person","speech"):
+        for cat in ("fixture_pet_a","fixture_pet_b","fixture_child","person","speech"):
             with self.subTest(cat=cat),self.assertRaises(ValueError):
                 if cat=="speech":
                     self.store.observe_audio(
