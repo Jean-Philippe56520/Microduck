@@ -25,7 +25,7 @@ import statistics
 import time
 
 from .cata2_bbox_eval import (
-    Box, CocoCase, MAX_RESULTS, decode_boxes, evaluate_localization,
+    Box, CocoCase, decode_boxes, evaluate_localization,
 )
 from .cata_yolox_categories import (
     CATEGORIES, MAX_IMAGE_BYTES, MODEL_SHA256, MIN_SCORE, SIZE,
@@ -151,7 +151,7 @@ def _private_root_guard(root: Path):
 def _jpeg_dimensions(blob: bytes) -> tuple[int, int]:
     """Require Pillow to verify dimensions; no guessing from declared metadata."""
     try:
-        from PIL import Image, ImageOps, UnidentifiedImageError
+        from PIL import Image
         with Image.open(BytesIO(blob)) as im:
             if im.format != "JPEG" or im.getexif().get(274, 1) != 1:
                 raise PhotoBaselineError("not a nonrotated JPEG")
@@ -160,7 +160,7 @@ def _jpeg_dimensions(blob: bytes) -> tuple[int, int]:
             # Decode here to detect truncated media before any ONNX request.
             im.load()
             return im.size
-    except (OSError, ValueError, UnidentifiedImageError) as e:
+    except (OSError, ValueError) as e:
         if isinstance(e, PhotoBaselineError):
             raise
         raise PhotoBaselineError("unreadable or corrupt local JPEG") from e
@@ -194,6 +194,11 @@ def load_private_low_dataset(manifest_path: Path) -> LowDataset:
             or not 4 <= len(data["samples"]) <= MAX_SAMPLES):
         raise PhotoBaselineError("invalid low-camera manifest schema or budget")
 
+    if ((root / "images").is_symlink()
+            or (root / "evidence").is_symlink()
+            or not (root / "images").is_dir()
+            or not (root / "evidence").is_dir()):
+        raise PhotoBaselineError("private media directories cannot be linked")
     sessions = {}
     for v in data["sessions"]:
         if type(v) is not dict or set(v) != SESSION_FIELDS:
