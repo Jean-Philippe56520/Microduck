@@ -46,13 +46,11 @@ class ConsultationChoice:
     reason: str
     local_intention: str
     motor_commands_issued: int = 0
-    network_commands_issued: int = 0
 
     def __post_init__(self) -> None:
         if (type(self.allowed) is not bool or not self.reason
                 or type(self.local_intention) is not str
-                or self.motor_commands_issued != 0
-                or self.network_commands_issued != 0):
+                or self.motor_commands_issued != 0):
             raise ValueError("a quota decision cannot actuate the robot")
 
 
