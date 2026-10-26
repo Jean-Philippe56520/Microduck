@@ -1,6 +1,6 @@
 # F5-A — Contrat PC facultatif de seules hypothèses (fixtures)
 
-**26 octobre 2026 — logiciel Python, en revue.** F4-D [fusionnée via PR #40](https://github.com/Jean-Philippe56520/Microduck/pull/40). La phase F5-A fournit **un contrat local sans réseau**. Elle ne lance ni Ollama, ni Qwen, ni caméra, ni microphone, ni dispositif NFC/BLE, ni moteur, ni haut-parleur.
+**26 octobre 2026 — [PR #41](https://github.com/Jean-Philippe56520/Microduck/pull/41), logiciel Python en revue.** F4-D [fusionnée via PR #40](https://github.com/Jean-Philippe56520/Microduck/pull/40). La phase F5-A fournit **un contrat local sans réseau**. Elle ne lance ni Ollama, ni Qwen, ni caméra, ni microphone, ni dispositif NFC/BLE, ni moteur, ni haut-parleur.
 
 ## Pourquoi cette séparation
 

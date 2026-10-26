@@ -174,6 +174,32 @@ class PCContractTests(unittest.TestCase):
                 finally:
                     mem.close()
 
+    def test_low_confidence_sensitive_raw_event_is_also_private(self):
+        for kind, category in (("object_label","person"),
+                               ("sound_label","speech")):
+            with self.subTest(kind=kind):
+                mem=ExperienceMemory()
+                try:
+                    journal=PassiveObservationJournal(mem)
+                    events=(
+                        PerceptionEvent("object_label","unknown","mock",
+                                        NOW,1.,.96,track_id="track-unresolved"),
+                        PerceptionEvent(kind,category,"mock",NOW,1.,.1,
+                                        track_id="track-private"
+                                        if kind=="object_label" else None),
+                    )
+                    result=start_optional_pc_cycle(
+                        AutonomyBrain(mem),
+                        PassiveRead("ok",
+                            PerceptionSnapshot("mock",events,NOW),
+                            1,"mock_fixture_unix"),
+                        journal=journal,
+                        now_monotonic_s=NOW,now_wall_epoch_s=WALL,
+                    )
+                    self.assertIsNone(result.request)
+                finally:
+                    mem.close()
+
     def test_observed_known_object_uses_local_choice_no_pc(self):
         cycle = self.start(fixture("ball"))
         self.assertEqual("observe", cycle.local_intent.intention)
@@ -330,6 +356,29 @@ class PCContractTests(unittest.TestCase):
             received_monotonic_s=NOW+MAX_WAIT_S+.01)
         self.assertEqual("response_rejected",late.status)
         self.assertEqual(cycle.local_intent,late.local_intent)
+
+    def test_reply_at_exact_deadline_is_rejected_not_materialized(self):
+        cycle=self.start()
+        done=finish_optional_pc_cycle(
+            cycle,response(cycle.request),
+            received_monotonic_s=cycle.request.expires_monotonic_s)
+        self.assertEqual("response_rejected",done.status)
+        self.assertEqual((),done.hypotheses)
+
+    def test_conflicting_pc_hypotheses_remain_separate_and_untrusted(self):
+        cycle=self.start()
+        data=[
+            {"kind":"object_label","category":"dog","confidence":.95,"ttl_s":1.},
+            {"kind":"object_label","category":"cat","confidence":.94,"ttl_s":1.},
+        ]
+        done=finish_optional_pc_cycle(
+            cycle,response(cycle.request,data),
+            received_monotonic_s=NOW+.1)
+        self.assertEqual("hypotheses_unverified",done.status)
+        self.assertEqual(2,len(done.hypotheses))
+        self.assertTrue(all(not h.verified for h in done.hypotheses))
+        self.assertEqual("inspect",done.local_intent.intention)
+        self.assertIsNone(self.mem.get("track-f5a"))
 
     def test_invalid_receipt_clock_rejected(self):
         cycle=self.start()

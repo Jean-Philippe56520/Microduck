@@ -186,7 +186,13 @@ def _prepare_request(read: PassiveRead, intent: PassiveIntent,
             or not isinstance(read.snapshot, PerceptionSnapshot)
             or read.snapshot.environment != "mock"
             or any(e.kind not in PASSIVE_KINDS or e.source != "mock"
-                   for e in read.snapshot.events)):
+                   for e in read.snapshot.events)
+            or any(
+                (e.kind == "object_label" and e.value == "person")
+                or (e.kind == "sound_label"
+                    and e.value in SENSITIVE_SOUND_CATEGORIES)
+                for e in read.snapshot.events
+            )):
         return None
     try:
         found = summarize_passive(read.snapshot, now=now_monotonic_s)
@@ -271,7 +277,7 @@ def parse_pc_reply(
         raise TypeError("PCRequest required")
     if (not _finite(received_monotonic_s)
             or not request.created_monotonic_s <= received_monotonic_s
-            <= request.expires_monotonic_s):
+            < request.expires_monotonic_s):
         raise PCContractError("late, future or invalid local receipt time")
     data = _decode_reply(wire)
     if (set(data) != {"schema_version", "request_id", "source", "hypotheses"}
