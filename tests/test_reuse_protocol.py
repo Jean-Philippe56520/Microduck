@@ -56,13 +56,20 @@ class ReuseFirstProtocolTests(unittest.TestCase):
         self.assertIn("parse_depth", report)
         self.assertIn("to_passive_read()", report)
         self.assertIn("R2", report)
+        alias_name = "r1-oem-passive-fixture-2026-10-26.md"
+        canonical_name = "r1-oem-passive-fixture-contract-2026-10-26.md"
+        alias = (ROOT / "docs" / alias_name).read_text(encoding="utf-8")
+        self.assertIn(canonical_name, alias)
+        self.assertNotIn("## 1.", alias)  # link only; never a second report
         for path in ("README.md", "docs/roadmap.md",
                      "docs/plan-action.md",
                      "docs/hardware-feasibility-audit-2026-10-25.md"):
             with self.subTest(path=path):
                 content = (ROOT / path).read_text(encoding="utf-8")
-                self.assertIn("r1-oem-passive-fixture-contract-2026-10-26.md",
-                              content)
+                self.assertTrue(
+                    canonical_name in content or alias_name in content,
+                    "report reference must resolve through canonical or alias",
+                )
 
     def test_r1_reuses_existing_validators_instead_of_redoing_parsers(self):
         parsed = ast.parse((ROOT / "microduck_companion/oem_passive_fixture.py")
