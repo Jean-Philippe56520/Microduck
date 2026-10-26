@@ -35,7 +35,7 @@ from .visual_photo_mobilenet_demo import PhotoBaselineError
 # Annotations: COCO Consortium, CC BY 4.0, republished losslessly by LibreYOLO.
 ANNOTATIONS_URL = (
     "https://huggingface.co/datasets/LibreYOLO/coco2017/resolve/"
-    "0fd5d13def671852e24a2acba2eb21e4660d6aaa/instances_val2017.json"
+    "main/instances_val2017.json"
 )
 ANNOTATIONS_SHA256 = (
     "e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aee fa635b8c810b6f"
