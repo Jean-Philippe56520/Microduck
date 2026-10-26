@@ -89,6 +89,11 @@ class DcaseToyPreparationTests(unittest.TestCase):
         self.assertEqual(1, report["candidates"]["legacy"]["test"]["unknown_queries"])
         self.assertEqual("declared_not_authenticated",
                          report["rights_and_source_independence"])
+        per_source = report["candidates"]["legacy"]["test"]["by_source_anonymous"]
+        self.assertEqual(3, len(per_source))
+        self.assertEqual(2, sum(x["enrolled"] for x in per_source))
+        self.assertEqual(3, sum(x["queries"] for x in per_source))
+        self.assertNotIn("s-car01", json.dumps(per_source))
         self.assertFalse(report["hardware_validated"])
         self.assertEqual(0, report["motor_commands"])
 
