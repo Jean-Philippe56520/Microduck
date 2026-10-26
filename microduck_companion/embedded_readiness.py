@@ -175,7 +175,10 @@ def inspect_data_mount(mountinfo_text: str, *,
     fstype, source = after[0], after[1]
     if fields[3] != "/" or fstype != "ext4":
         return StorageInspection("not_data_ext4")
-    if "rw" not in fields[5].split(","):
+    # Both mount options and superblock options matter: a read-only
+    # filesystem may still have a writable-looking mount-option field.
+    if ("rw" not in fields[5].split(",")
+            or "rw" not in after[2].split(",")):
         return StorageInspection("not_writable_mount")
     if partlabel_device is None:
         return StorageInspection("partlabel_unconfirmed")
