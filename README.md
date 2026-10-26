@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**R2-B — banc de captures indépendantes (codé, NON validé sur corpus réel) :** [protocole visuel/audio](docs/r2b-independent-capture-evaluation-2026-10-26.md) et comparateur sur hôte réutilisant les empreintes M1-A, scores M1-B2, décisions prudentes et mémoire R2-A **sans écrire dans SQLite**. Support optionnel COIL-20 (étude non commerciale, droits revus + hash externe obligatoires), ainsi que manifestes locaux de PNG/WAV autorisés, avec sessions/sources indépendantes, inconnus et seuils figés sur validation. **Les résultats des fixtures synthétiques de CI ne sont pas des scores de reconnaissance réelle.** Aucune nouvelle mémoire, inférence embarquée, photo/voix privée sur GitHub, Qwen, moteur ou capteur.
+
+
 **R2-A — mémoire unique pour les prochaines expériences, sans déploiement :** [choix et limites documentés](docs/r2a-single-memory-selection-2026-10-26.md). Le **module M1-B existant** dispose d'une option explicite `r2a_single_writer=True` : elle refuse les anciennes lignes M1-A, les schémas partiels et une réouverture susceptible de supprimer des exemplaires ; ses transactions revérifient la sélection. M1-A reste une baseline via ses extracteurs **purs**, sans double persistance dans le chemin R2-A. **Ce garde-fou n'empêche pas globalement un ancien programme d'écrire dans M1-A** : une telle écriture provoque le refus de l'opération R2-A suivante. Aucun troisième stockage, modèle, Qwen, moteur ou capteur réel.
 
 
