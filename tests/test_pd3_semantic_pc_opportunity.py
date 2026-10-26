@@ -220,7 +220,7 @@ class PD3Tests(unittest.TestCase):
                 self.assertEqual(0,out.pc_requests_issued)
 
     def test_same_or_out_of_order_sequence_fails_closed(self):
-        for seq in (0,2,3):
+        for seq in (-1,2,3):
             with self.subTest(seq=seq):
                 old=reading(at=NOW-1,seq=seq)
                 out,_,_,_,_=self.prepared(previous=old)
