@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**Cat-A2a — premier lot de localisation réelle, sans fausse « vue basse » :** [audit et protocole](cata2-coco-bbox-host-2026-10-26.md). Réutilise strictement le modèle Cat-A YOLOX Nano (SHA/Apache-2.0) et le seuil fixé, ajoute une comparaison de boîtes annotées COCO2017 validation sur **24 JPEG publics CC BY déclaratifs**, répartis en 5 classes et 4 négatifs, IoU≥0,50 et AP50/erreurs de rejet. Nouvelles métriques du modèle à relever par [CI spécifique](../.github/workflows/cat-a2-coco-bbox.yml), sans JPEG/poids committés. **Hauteur de caméra non connue, donc zéro vraie prise à 25 cm certifiée ; Cat-A2b attend un corpus bas indépendant et autorisé.** Cela ne valide ni `shoe`, mains/pieds, autonomie, locomotion, capteur OEM, NPU ni performances RK3566. Pas de nouveau cerveau/SQLite/moteur ; priorité catégorie-first maintenue.
+
+
 **P-C — expressions prudentes liées à la personnalité (fixtures, sans nouvelle boucle) :** [audit OEM et contrat](kwipi-oem-expressions-pc-2026-10-26.md). Le `pet-detect` constructeur dispose déjà de `PettingEvent::Start` et `robotd` joue `coo` si son état le permet ; **ne pas dupliquer cette voix**. `Noise/Voice` OEM ne sont pour l'instant que journalisés. `oem_expression_hints.py` relie **fictivement** ces étiquettes aux portraits P-A/P-B et aux candidats historiques `Petted`/`Startle`, sans capteur, parole comprise, son, mouvement, Qwen, écriture SQLite ni accès matériel. Conditions de refus : consentement fictif absent, mode calme, signaux périmés, chute/occupation/arrêt, auto-son/mouvement. **Cat-A2 demeure prioritaire** ; raccordement réel OEM et validation sur robot restent des lots distincts.
 
 
