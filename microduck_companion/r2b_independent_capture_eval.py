@@ -568,16 +568,25 @@ def _abo_https_bytes(url: str, *, limit: int) -> bytes:
     return data
 
 
-def _abo_spin_sample():
-    """Select first 12 COMPLETE distinct spin sequences deterministically.
+def _abo_spin_sample(*, allowed_spin_ids: frozenset[str] | None = None,
+                     source_count: int = ABO_SOURCE_COUNT):
+    """Read bounded official ABO spin frames, optionally for a PRESELECTED cohort.
 
-    The metadata belongs to the official CC BY 4.0 ABO dataset. Spin IDs
-    signify *sequences*; two distinct spin IDs are NOT independently proven
-    distinct physical objects. We intentionally do not read names/listings.
+    With no options, preserve exactly the original 12-sequence R2-B study.
+    Filtering is only by catalogue metadata determined *before* downloading
+    any media or computing recognition scores. A distinct spin != certified
+    distinct physical object.
     """
     from urllib.request import Request, urlopen
     from urllib.parse import urlparse
     allowed = re.compile(r"[0-9a-f]{8}\Z", re.ASCII)
+    if (type(source_count) is not int or not 1 <= source_count <= 64
+            or (allowed_spin_ids is not None and (
+                type(allowed_spin_ids) is not frozenset
+                or not source_count <= len(allowed_spin_ids) <= 350
+                or any(type(v) is not str or not allowed.fullmatch(v)
+                       for v in allowed_spin_ids)))):
+        raise R2BEvidenceError("invalid preselected ABO cohort")
     groups: dict[str, dict[int, str]] = {}
     order: list[str] = []
     with urlopen(Request(ABO_METADATA, headers={
@@ -600,8 +609,10 @@ def _abo_spin_sample():
                     spin = row.get("spin_id")
                     if type(spin) is not str or not allowed.fullmatch(spin):
                         raise R2BEvidenceError("invalid official ABO spin ID")
+                    if allowed_spin_ids is not None and spin not in allowed_spin_ids:
+                        continue
                     if spin not in groups:
-                        if len(groups) >= 48:
+                        if len(groups) >= max(48, source_count * 5):
                             continue
                         groups[spin] = {}
                         order.append(spin)
@@ -617,12 +628,12 @@ def _abo_spin_sample():
                         raise R2BEvidenceError("ABO metadata path collision")
                     groups[spin][angle] = expected
                     if sum(len(v) == len(ABO_POSES) for v in groups.values()) >= (
-                        ABO_SOURCE_COUNT
+                        source_count
                     ):
                         break
     selected = [spin for spin in order
-                if len(groups[spin]) == len(ABO_POSES)][:ABO_SOURCE_COUNT]
-    if len(selected) != ABO_SOURCE_COUNT:
+                if len(groups[spin]) == len(ABO_POSES)][:source_count]
+    if len(selected) != source_count:
         raise R2BEvidenceError("not enough complete original ABO spin sequences")
     return tuple((spin, groups[spin]) for spin in selected)
 
