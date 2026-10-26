@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**Addendum R2-B — 26 octobre 2026 :** le [banc de captures indépendantes](r2b-independent-capture-evaluation-2026-10-26.md) est conçu pour travailler sur PC : inférence facultative MobileNetV2/YAMNet, fichiers locaux approuvés et manifestes, seuils validés hors test. Les fichiers média ne sont pas sauvegardés en SQLite et aucune mesure sur RK3566 n'a été réalisée. Les ressources CPU/RSS mesurées à terme sur hôte et les tailles théoriques d'empreintes ne garantissent pas de capacité disponible pour robotd/mediad/tofd. Le COIL-20 officiel fait l'objet de restrictions non commerciales et n'est pas téléchargé ni exécuté automatiquement dans CI ; aucune licence personnelle présumée.
+
+
 **Addendum R2-A — 26 octobre 2026 :** [sélection d'une seule mémoire R2 sur fixtures](r2a-single-memory-selection-2026-10-26.md). Le protocole réutilise M1-B/`ExperienceMemory` avec un garde-fou optionnel contre la double persistance M1-A dans le chemin R2, sans migration ni suppression de données. Les signatures de 64/16 octets, le plafond de blobs et `PRAGMA page_count` **ne prouvent pas** la marge de stockage disponible du RK3566 (index, WAL, pages libres, système, RSS, caches). Une ancienne application peut toujours écrire séparément : l'opération R2 suivante refusera alors le mélange. Aucune mesure réelle RAM/CPU/thermie ni déploiement physique nouveau.
 
 
