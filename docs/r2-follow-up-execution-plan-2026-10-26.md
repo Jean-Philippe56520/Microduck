@@ -2,7 +2,7 @@
 
 **R2-B+1, point d'étape réel (26/10/2026) :** [PR #60](https://github.com/Jean-Philippe56520/Microduck/pull/60) et [rapport](r2b1-real-audio-results-2026-10-26.md). La provenance ToyADMOS IND décrit des opérations d'une même machine enregistrées séparément, mais pas les dates ou microphones. **Le banc a été réellement exécuté** (34 extraits de 6 machines), avec **0/10 connues reconnues**, **1 fausse fusion entre machines connues**, **5/5 inconnues rejetées** sur TEST. **M1-B n'est pas promue** ; l'échec de rappel exige une autre évaluation audio ultérieure, sans adapter les seuils au TEST. Les 993 tests du code réussissent (1 ignoré) ; R2-B+2 **pas entamé sans nouveau Go**.
 
-**Actualisation R2-B+1 (26/10/2026) :** [PR #59](https://github.com/Jean-Philippe56520/Microduck/pull/59) ajoute une voie locale préparatoire fondée sur [DCASE2020/ToyADMOS IND](r2b1-independent-audio-2026-10-26.md), en conservant l'évaluateur R2-B. Les modèles, la mémoire et le robot sont inchangés. **Aucun échantillon audio physique réel exécuté dans ce lot** ; le taux de reconnaissance reste inconnu et le passage à R2-C n'est pas autorisé. **R2-B+2 ne doit pas commencer sans nouveau go explicite.**
+**Historique de la phase préparatoire R2-B+1, avant les résultats réels :** [PR #59](https://github.com/Jean-Philippe56520/Microduck/pull/59) ajoute une voie locale préparatoire fondée sur [DCASE2020/ToyADMOS IND](r2b1-independent-audio-2026-10-26.md), en conservant l'évaluateur R2-B. Les modèles, la mémoire et le robot sont inchangés. **Aucun échantillon audio physique réel exécuté dans ce lot** ; le taux de reconnaissance reste inconnu et le passage à R2-C n'est pas autorisé. **R2-B+2 ne doit pas commencer sans nouveau go explicite.**
 
 **26 octobre 2026 — plan de travail, pas livraison de nouvelles fonctions.** Ce document détaille l’ordre des prochains lots du [plan opérationnel](plan-action.md). Il repose sur [R2-A](r2a-single-memory-selection-2026-10-26.md), [R2-B](r2b-independent-capture-evaluation-2026-10-26.md), l’[audit rétroactif R1.5](r15-retrospective-reuse-audit-2026-10-26.md) et la règle [« réutiliser avant de créer »](development-reuse-protocol.md).
 
@@ -78,10 +78,10 @@
 | Lot | État au 26/10/2026 | Porte pour le suivant |
 | --- | --- | --- |
 | R2-A, R2-B (socle et premier ABO) | **Fusionnés**, benchmark visuel hôte seulement | Ne pas transformer les résultats ABO en validation d’identité |
-| **R2-B+1 — audio indépendant** | **Prévu, premier lot à ouvrir** | Données authentiquement distinctes, droits et mesures ; sinon diagnostic « preuve manquante » |
+| **R2-B+1 — audio indépendant** | **Test réel exécuté sur 34 extraits** ; M1-B : **0/10 familières reconnues, 1 fausse fusion**, modèle non retenu ([rapport](r2b1-real-audio-results-2026-10-26.md)) | Étudier ultérieurement d'autres descripteurs avec prises plus variées ; ne pas régler le seuil sur test |
 | R2-B+2 — robustesse visuelle | Prévu | Diversité de sources et négatifs proches, absence de fuite |
 | R2-C — comparaison et décision | Prévu | Faux rapprochements, inconnus, coût ressources et décision par modalité |
 | R2-D — mémoire sur PC | Prévu | Une seule SQLite, provenance contrôlée, revue des sessions et croissance |
 | M1-C/R4, R3, R5/F7 | Prévus et conditionnels | Hors ligne préservé, OEM respecté, mesure physique avant déploiement |
 
-**Première action recommandée :** exécuter **R2-B+1**, sans toucher à M1-B/robotd, et ne lancer R2-B+2 qu’après revue du rapport sonore ou constat documenté d’insuffisance de corpus.
+**Décision après le test R2-B+1 :** garder le résultat négatif et le comportement `unknown`, sans prétendre à une reconnaissance fiable. Une étude audio distincte pourra être autorisée ultérieurement ; **R2-B+2 n'est pas démarré et requiert le prochain Go de l'utilisateur**.
