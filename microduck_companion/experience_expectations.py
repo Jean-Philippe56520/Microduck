@@ -64,7 +64,7 @@ def compute_mock_attention_trend(
 ) -> MockAttentionTrend:
     """Pure SELECT of active EX1+EX2 evidence; no extra table or UPDATE.
 
-    Distinct claimed fixture session tokens, not event count, delimit the pattern.\n    Tokens do not prove truly independent real-world trials.
+    Distinct claimed fixture session tokens, not event count, delimit the\n    pattern. Tokens do not prove independent real-world trials.
     Candidate rows are re-validated against the stored EX1 chronology and
     EX2 metadata; SQL tampering/mixed provenance must not become a hint.
     Competing events, social responses, missing cues, unknown targets,
