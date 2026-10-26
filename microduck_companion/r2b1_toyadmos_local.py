@@ -184,9 +184,9 @@ def prepare(
         for name, raw, _ in items:
             output = dest / name
             with output.open("xb") as fp:
+                created.append(output)
                 fp.write(raw)
             output.chmod(0o600)
-            created.append(output)
         lineage = {
             "dataset": DATASET_DOI, "license": LICENSE,
             "rights_and_operation_independence": "user_reviewed_not_authenticated",
@@ -198,10 +198,11 @@ def prepare(
         }
         audit = dest / "provenance-local.json"
         with audit.open("x", encoding="utf-8") as fp:
+            created.append(audit)
             json.dump(lineage, fp, indent=2, sort_keys=True)
         audit.chmod(0o600)
-        created.append(audit)
         with manifest_file.open("x", encoding="utf-8") as fp:
+            created.append(manifest_file)
             json.dump(manifest, fp, indent=2, sort_keys=True)
         manifest_file.chmod(0o600)
     except BaseException:
@@ -229,6 +230,8 @@ def main(argv=None) -> int:
     parser.add_argument("--noncommercial-license-reviewed", action="store_true")
     parser.add_argument("--independent-operations-reviewed", action="store_true")
     args = parser.parse_args(argv)
+    if not args.noncommercial_license_reviewed or not args.independent_operations_reviewed:
+        parser.error("explicit noncommercial license and independent-operation review required")
     result = prepare(
         args.dataset_root, args.audio_root, args.audio_manifest,
         reviewed_noncommercial_rights=args.noncommercial_license_reviewed,
