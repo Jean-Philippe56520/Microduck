@@ -4,6 +4,8 @@
 
 Projet de robot autonome, curieux, explorateur et social.
 
+**Audit rétroactif R1.5 (avant R2) :** [verdict sur les développements précédents](docs/r15-retrospective-reuse-audit-2026-10-26.md). La plupart des modules ont une utilité de **prototype/tests**, mais leurs variantes ne doivent pas toutes être embarquées : R2 doit utiliser **une seule mémoire active** (M1-B candidate, M1-A témoin sans double écriture), garder F1/F2/F5 existants et exclure les diagnostics moteurs du robot. Revue statique et tests de cohérence, aucune modification moteur, ni modèle sélectionné ou validation RK3566.
+
 **Méthode permanente : réutiliser avant de créer.** [Protocole de développement](docs/development-reuse-protocol.md), [consignes pour agents](AGENTS.md) et [checklist de PR](.github/pull_request_template.md) imposent l'inspection du constructeur épinglé et de nos modules avant tout nouveau code, avec justification vérifiable en cas de lacune. **R1**, [contrat de perception passive sur fixtures](docs/r1-oem-passive-fixture-contract-2026-10-26.md), réutilise les parseurs F3-C/F3-E et `sim_ipc` au lieu de créer d'autres lecteurs de caméra, audio ou ToF. Aucune caméra, aucun micro, aucun capteur physique, aucun mouvement, Qwen ou mémoire réelle n'est raccordé.
 
 
