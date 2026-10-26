@@ -90,7 +90,8 @@ class R2B1RemoteZipFixtureTests(unittest.TestCase):
             independent_operations_reviewed=True, opener=client,
         )
         self.assertEqual(6, result["source_count"])
-        self.assertEqual(10, result["selected_original_file_count"])
+        self.assertEqual(12, result["selected_original_file_count"])
+        self.assertEqual(10, result["clips_evaluated"])
         self.assertEqual(10, result["benchmark"]["manifest_entries"])
         self.assertEqual("declared_not_authenticated",
                          result["benchmark"]["rights_and_source_independence"])
