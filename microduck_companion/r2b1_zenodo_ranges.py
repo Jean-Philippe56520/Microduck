@@ -8,22 +8,19 @@ different recording days/rooms/microphones or a reliable home sound recognizer.
 from __future__ import annotations
 
 import argparse
-from contextlib import closing
-import io
+import hashlib
 import json
-import os
 from pathlib import Path
 import re
 import tempfile
 import urllib.parse
 import urllib.request
-import wave
 import zipfile
 
 from .r2b1_toyadmos_local import (
-    DATASET_DOI, FAMILIES, MAX_INPUT_BYTES, ORIGINAL_RE, prepare,
+    DATASET_DOI, FAMILIES, MAX_INPUT_BYTES, ORIGINAL_RE, prepare, _center_wav,
 )
-from .r2b_independent_capture_eval import R2BEvidenceError, run_audio_manifest
+from .r2b_independent_capture_eval import R2BEvidenceError, _audio_manifest, run_audio_manifest
 
 # Zenodo: https://zenodo.org/records/3678171; archive MD5 published there.
 OFFICIAL_ARCHIVES = {
@@ -33,7 +30,7 @@ OFFICIAL_ARCHIVES = {
 RECORD_URL = "https://zenodo.org/records/3678171/files/{file}?download=1"
 CHUNK = 256 * 1024
 MAX_READ = 5 * 1024 * 1024
-MAX_TRANSFER = 16 * 1024 * 1024  # per archive, including ZIP directory
+MAX_TRANSFER = 32 * 1024 * 1024  # per archive, including ZIP directory
 MAX_ARCHIVE = 2_200_000_000
 MAX_REQUESTS = 180
 RANGE_HEADER = re.compile(r"bytes (\d+)-(\d+)/(\d+)\Z", re.ASCII)
@@ -162,19 +159,89 @@ def _selected_wavs(zf: zipfile.ZipFile, family: str) -> dict[str, bytes]:
     if len(ids) < 3:
         raise R2BEvidenceError("official ZIP lacks 3 individual train/test IDs")
     selected = {}
-    for index, mid in enumerate(ids[:3]):
-        # Existing R2-B+1 preflight requires train/test for all three IDs,
-        # even though the unknown ID train file is not enrolled or scored.
-        splits = ("train", "test")
-        for split in splits:
+    for mid in ids[:3]:
+        # The original preparator requires a train file for unknown ID too,
+        # but does not enroll or score it. The first five test recordings
+        # per individual are selected BEFORE any model/threshold is evaluated.
+        for split in ("train", "test"):
             choices = sorted(candidates[(split, mid)], key=lambda x: x.filename)
-            info = choices[0]  # Deterministic first clip; never select on scores.
-            with zf.open(info) as input_file:
-                raw = input_file.read(MAX_INPUT_BYTES + 1)
-            if len(raw) != info.file_size or len(raw) > MAX_INPUT_BYTES:
-                raise R2BEvidenceError("ZIP member rejected by bounded size")
-            selected[f"{family}/{split}/{info.filename.rsplit('/', 1)[-1]}"] = raw
+            take_count = 1 if split == "train" else 5
+            if len(choices) < take_count:
+                raise R2BEvidenceError("five independent test files required")
+            for info in choices[:take_count]:
+                with zf.open(info) as input_file:
+                    raw = input_file.read(MAX_INPUT_BYTES + 1)
+                if len(raw) != info.file_size or len(raw) > MAX_INPUT_BYTES:
+                    raise R2BEvidenceError("ZIP member rejected by bounded size")
+                selected[f"{family}/{split}/{info.filename.rsplit('/', 1)[-1]}"] = raw
     return selected
+
+
+def _append_additional_queries(dataset_root: Path, derived_root: Path,
+                               manifest_file: Path) -> int:
+    """Add 4 independently recorded test operations per machine, no tuning.
+
+    Reuses the existing R2-B WAV reader and R2-B+1 one-second crop.
+    The original local preparator creates 10 entries; this adds 24 and
+    never enrolls any unknown machine.
+    """
+    ledger = json.loads(manifest_file.read_text(encoding="utf-8"))
+    records = ledger["recordings"]
+    used_names = {x["file"] for x in records}
+    used_digests = {x["sha256"] for x in records}
+    provenance_file = derived_root / "provenance-local.json"
+    provenance = json.loads(provenance_file.read_text(encoding="utf-8"))
+    for family, prefix, known_split in FAMILIES:
+        folder = dataset_root / "dev_data" / family / "test"
+        machine_ids = sorted({ORIGINAL_RE.fullmatch(x.name)[1]
+                              for x in folder.iterdir()
+                              if ORIGINAL_RE.fullmatch(x.name)})
+        if len(machine_ids) != 3:
+            raise R2BEvidenceError("unexpected selected machine ID count")
+        for index, mid in enumerate(machine_ids):
+            clips = sorted(folder.glob(f"normal_id_{mid}_*.wav"))
+            if len(clips) != 5:
+                raise R2BEvidenceError("five test operations per machine required")
+            for original in clips[1:]:  # first query already in local preparator
+                match = ORIGINAL_RE.fullmatch(original.name)
+                if match is None:
+                    raise R2BEvidenceError("bad extra query filename")
+                crop, original_hash = _center_wav(original)
+                digest = hashlib.sha256(crop).hexdigest()
+                filename = f"{prefix}{mid}-q{match[2]}.wav"
+                if filename in used_names or digest in used_digests:
+                    raise R2BEvidenceError("duplicate extra query/identity")
+                used_names.add(filename)
+                used_digests.add(digest)
+                token = f"{prefix}{mid}te{match[2]}"
+                records.append({
+                    "file": filename,
+                    "source_id": f"s-{prefix}{mid}",
+                    "session_id": f"t-{token}",
+                    "take_id": f"t-{token}",
+                    "split": (known_split if index < 2 else
+                              ("validation_unknown" if known_split == "validation"
+                               else "test_unknown")),
+                    "role": "query",
+                    "sha256": digest,
+                })
+                with (derived_root / filename).open("xb") as output:
+                    output.write(crop)
+                (derived_root / filename).chmod(0o600)
+                provenance["source_files"].append({
+                    "derived_file": filename,
+                    "original_machine_type": family,
+                    "original_machine_id": mid,
+                    "original_partition": "te",
+                    "original_filename": original.name,
+                    "original_sha256": original_hash,
+                    "derived_sha256": digest,
+                    "fixed_crop": "middle_second",
+                })
+    _audio_manifest(json.dumps(ledger, sort_keys=True).encode("utf-8"))
+    manifest_file.write_text(json.dumps(ledger, sort_keys=True), encoding="utf-8")
+    provenance_file.write_text(json.dumps(provenance, sort_keys=True), encoding="utf-8")
+    return len(records)
 
 
 def run_remote_pilot(*, license_reviewed: bool,
@@ -213,6 +280,8 @@ def run_remote_pilot(*, license_reviewed: bool,
             reviewed_noncommercial_rights=True,
             reviewed_individual_operations=True,
         )
+        clips_evaluated = _append_additional_queries(
+            dataset_root, derived_root, manifest)
         benchmark = run_audio_manifest(manifest, derived_root)
         return {
             "study": "R2-B+1 DCASE2020 ToyADMOS IND pilot",
@@ -225,7 +294,9 @@ def run_remote_pilot(*, license_reviewed: bool,
             "cropping": "center_one_second_no_model_tuning",
             "source_count": 6,
             "selected_original_file_count": sum(selected_counts.values()),
-            "clips_evaluated": prepared["derived_wav_files"],
+            "clips_evaluated": clips_evaluated,
+            "real_audio_evaluation_executed": True,
+            "queries_per_source": 5,
             "per_family_original_files": selected_counts,
             "remote_range_probe": range_metrics,
             "private_output_not_persisted": True,
