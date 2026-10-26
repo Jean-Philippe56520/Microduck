@@ -1,5 +1,8 @@
 # Audit de réutilisation OEM — autonomie et mémoire Microduck Companion
 
+**Complément Cat-A2b (26/10/2026) :** [audit et contrat de prises basses](cata2b-private-low-camera-protocol-2026-10-26.md). Vérifié : OEM `duck-detect` détecte les autres Microducks, `mediad` possède caméra et `robotd` moteurs/sûreté ; Cat-A2a possède déjà modèle YOLOX (Apache-2.0)/décodage/IoU/AP50 ; F3-A possède les IDs opaques et splits mais pas hauteur/boîtes/images. **Réutiliser** ces éléments et **créer seulement** un lecteur/validateur **local privé** de JPEG et mesures de caméra avec contrôle de provenance, sans second moteur, SQLite, modèle, acquisition, Qwen, NPU, import communautaire ou sous-module modifié. OCID (deux hauteurs sans preuve de plage précise) et OpenLORIS-Scene (~1 m) ne sont pas revendiqués comme corpus validés pour Kwipi. Aucune vraie donnée basse ni compétence motrice validée.
+
+
 **Complément Cat-A2a (26/10/2026) :** [contrat d'évaluation de boîtes](cata2-coco-bbox-host-2026-10-26.md). Le snapshot OEM épinglé `942e58e3aa6dbb28e7037203fff11866122c7567` possède `duck-detect` (cible d'autres Microducks), `mediad` (caméra) et `robotd` (sécurité/moteurs) ; **aucune de ces fonctions n'est remplacée**. Réutilisation des poids Cat-A YOLOX-Nano SHA/Apache-2.0, extraction et seuil 0,25 ; création ciblée de l'appariement IoU/AP50 non présent dans le banc initial, **sans modèle nouveau, seconde caméra, base, moteur ou inférence embarquée**. Les photos COCO VAL sont réelles mais **hauteur caméra inconnue** ; aucun résultat sur vrai point de vue bas/robot. PR OEM ouvertes non fusionnées, projets tiers C3 en veille, sans import.
 
 
