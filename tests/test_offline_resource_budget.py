@@ -114,6 +114,19 @@ class LimitsTests(unittest.TestCase):
         self.assertEqual("budget_clock_reset",
                          gate.snapshot().latched_resource_failure)
 
+    def test_invalid_postcycle_clock_latches_the_session(self):
+        from microduck_companion.passive_resilience import PassiveCycleReport
+        gate = OfflineResourceGate()
+        self.assertIsNone(gate.admit_cycle(100.))
+        report = PassiveCycleReport(
+            "ok","idle","fake",0,0,0,0.,.1,.1,1000,
+        )
+        gate.report(report,now_monotonic_s=float("nan"))
+        self.assertEqual("budget_clock_unavailable",
+                         gate.snapshot().latched_resource_failure)
+        self.assertEqual("budget_clock_unavailable",
+                         gate.admit_cycle(101.))
+
     def test_bad_clock_refuses_without_crashing(self):
         for bad in (float("nan"), float("inf"), -1, True, None):
             with self.subTest(bad=bad):
@@ -261,7 +274,7 @@ class SupervisorGateTests(unittest.TestCase):
 
     def test_over_budget_cpu_triggers_future_cooldown(self):
         self.add()
-        self.add("toy",at=101.,seq=2)
+        self.add("toy",at=102.2,seq=2)
         self.gate=OfflineResourceGate(OfflineBudgetLimits(
             max_cycle_cpu_ms=1.,cooldown_s=2.,min_cycle_gap_s=.5,
         ))
