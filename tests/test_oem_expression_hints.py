@@ -198,6 +198,20 @@ class ExpressionHintsTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.hint(cue("petting_start"),now=float("inf"))
 
+    def test_unavailable_personality_memory_cannot_promote_startle_or_petting(self):
+        stale_profile = replace(
+            self.portrait, reason="history_unavailable",
+            familiarity="unavailable", inspection_habit="unavailable")
+        before = self.mem.conn.total_changes
+        for kind in MOCK_OEM_KINDS:
+            with self.subTest(kind=kind):
+                result = self.hint(cue(kind), portrait=stale_profile)
+                self.assertEqual(
+                    ("silent", "personality_history_unavailable", None),
+                    (result.status, result.reason, result.historical_candidate))
+                self.assertEqual(0, result.motor_commands_issued)
+        self.assertEqual(before, self.mem.conn.total_changes)
+
     def test_repeated_cue_is_idempotent_no_second_scheduler(self):
         before=self.mem.conn.total_changes
         a=self.hint(cue("petting_start"))
@@ -241,7 +255,9 @@ class ExpressionHintsTests(unittest.TestCase):
             dict(sensor_reads=1),dict(pc_requests_issued=1),
             dict(audio_bytes_stored=10),dict(status="hypothesis"),
             dict(historical_candidate="Held"),
-            dict(status="silent"),
+            dict(status="silent"),dict(reason="no_mock_cue"),
+            dict(base_state="Petted"),dict(base_affect="real_emotion"),
+            dict(inspection_habit="fictional_identity"),
         ):
             with self.subTest(kw=kw):
                 with self.assertRaises(ValueError):
