@@ -25,7 +25,7 @@ Les seuils **0,968137** (audio M1-B), **0,876838** (vision M1-B) et **0,999730**
 
 ## 2. Objectif prioritaire validé : catégories et perception active
 
-Kwirou, environ 25 cm, verra parfois une **partie** d'objet ou de corps plutôt qu'un objet entier. L'objectif est une boucle **observer → hypothèses de catégories → rechercher un indice de continuité utile → observer à nouveau, si sûr → classer ou rester inconnu → intention/expérience → apprentissage progressif**.
+Kwipi, environ 25 cm, verra parfois une **partie** d'objet ou de corps plutôt qu'un objet entier. L'objectif est une boucle **observer → hypothèses de catégories → rechercher un indice de continuité utile → observer à nouveau, si sûr → classer ou rester inconnu → intention/expérience → apprentissage progressif**.
 
 **Catégories prioritaires futures :** `person`, `cat`, `dog`, `chair`, `shoe`, `ball`, avec `unknown` et `other_object`. `hand`, `forearm`, `foot`, `leg`, `paw`, `fur`, `furniture_leg`, `seat` ou `round_edge` sont des **indices partiels**, pas des catégories de personnes identifiées. Les chaussettes/chaussures isolées ne prouvent pas qu'un humain est présent. Une patte ou des poils ne prouvent pas « chat » plutôt que « chien ». Deux indices ne décrivent pas automatiquement **le même** objet ; il faut une continuité spatiale/visuelle supplémentaire.
 
