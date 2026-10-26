@@ -1,0 +1,48 @@
+name: Cat-A real category detection on public photos (host only)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'microduck_companion/cata_yolox_categories.py'
+      - 'tests/test_cata_yolox_categories.py'
+      - '.github/workflows/cat-a-yolox-categories.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  category-detection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Host-only dependencies
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0 numpy==1.26.4 onnxruntime==1.21.0
+      - name: Category decoding contracts and corrupted-input rejection
+        run: python -m unittest discover -s tests -p 'test_cata_yolox_categories.py' -v
+      - name: Fetch pinned Apache-2.0 Megvii YOLOX Nano, verify bytewise
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 120 \
+            --output "$RUNNER_TEMP/yolox_nano.onnx" \
+            "https://huggingface.co/skillsafe-ai/yolox-nano/resolve/8e308810ede488f742901a4ac597dc7796798e46/yolox_nano.onnx"
+          echo "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d  $RUNNER_TEMP/yolox_nano.onnx" | sha256sum --check
+      - name: Evaluate actual CC0 cat/dog/unknown photos and real ABO chair images
+        env:
+          OMP_NUM_THREADS: '1'
+          OPENBLAS_NUM_THREADS: '1'
+        shell: bash
+        run: |
+          # CC0 declarations: Wikimedia Commons, curated F3-B photo pages.
+          # Chairs: Amazon.com / Guillaumin et al., Amazon Berkeley Objects
+          # CC BY 4.0 https://amazon-berkeley-objects.s3.us-east-1.amazonaws.com/index.html
+          # Model: Megvii Inc. Apache-2.0 copyright 2021-2022 YOLOX.
+          # All bytes stay in memory on ephemeral runner, no artifacts/SQLite.
+          python -m microduck_companion.cata_yolox_categories \
+            --approved-public-media \
+            --model-path "$RUNNER_TEMP/yolox_nano.onnx"

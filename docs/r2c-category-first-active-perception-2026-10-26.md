@@ -1,5 +1,8 @@
 # R2-C — Clôture de l'identification d'instances et pivot vers la perception par catégories
 
+**Suite autorisée et exécutée, Cat-A pilote :** [résultats réels de catégories](cata-category-detection-pilot-2026-10-26.md) et [PR #63](https://github.com/Jean-Philippe56520/Microduck/pull/63). Le nouveau détecteur hôte ne reconnaît correctement que **4/6** images CC0 TEST entières et **3/6** moitiés inférieures ; sur 12 chaises, **8/12** entières, **0/12** recadrées. Le recadrage est une occultation artificielle, **pas une vue à 25 cm**, donc cet essai n'autorise ni déploiement ni mouvement et ne modifie pas la décision d'arrêter les identités d'instances. Prochaine étude Cat-A2 à autoriser ; Cat-B/C/D restent prévues.
+
+
 **26 octobre 2026 — décision d'architecture validée par l'utilisateur, analyse rétrospective documentaire et prototype de suggestion `inspect` sur fixtures.**
 
 **Statut :** résultats précédents relus ; **aucun modèle d'identité sélectionné**, aucune nouvelle inférence réelle relancée pour cette décision. Le [prototype de vérification des indices partiels](../microduck_companion/category_inspection.py) est uniquement une proposition cognitive sur **données fictives**, sans caméra, regard physique, réseau Qwen ou écriture mémoire.
@@ -25,7 +28,7 @@ Les seuils **0,968137** (audio M1-B), **0,876838** (vision M1-B) et **0,999730**
 
 ## 2. Objectif prioritaire validé : catégories et perception active
 
-Kwirou, environ 25 cm, verra parfois une **partie** d'objet ou de corps plutôt qu'un objet entier. L'objectif est une boucle **observer → hypothèses de catégories → rechercher un indice de continuité utile → observer à nouveau, si sûr → classer ou rester inconnu → intention/expérience → apprentissage progressif**.
+Kwipi, environ 25 cm, verra parfois une **partie** d'objet ou de corps plutôt qu'un objet entier. L'objectif est une boucle **observer → hypothèses de catégories → rechercher un indice de continuité utile → observer à nouveau, si sûr → classer ou rester inconnu → intention/expérience → apprentissage progressif**.
 
 **Catégories prioritaires futures :** `person`, `cat`, `dog`, `chair`, `shoe`, `ball`, avec `unknown` et `other_object`. `hand`, `forearm`, `foot`, `leg`, `paw`, `fur`, `furniture_leg`, `seat` ou `round_edge` sont des **indices partiels**, pas des catégories de personnes identifiées. Les chaussettes/chaussures isolées ne prouvent pas qu'un humain est présent. Une patte ou des poils ne prouvent pas « chat » plutôt que « chien ». Deux indices ne décrivent pas automatiquement **le même** objet ; il faut une continuité spatiale/visuelle supplémentaire.
 

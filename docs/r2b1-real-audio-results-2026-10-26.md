@@ -41,7 +41,7 @@ Les lectures des deux ZIP sous HTTP Range ont transféré **7 434 943 octets (To
 
 **Restrictions méthodologiques :** 2 sources connues par jeu de test, 1 inconnue par type, une seule prise de référence par machine, test sur un **type de machine différent** de la validation. Les fichiers représentent des opérations distinctes, mais leurs **dates, acoustiques indépendantes, changements de salle ou de microphone ne sont pas établis**. Les résultats ne prouvent ni reconnaissance d'animaux, ni reconnaissance de bruits domestiques, ni généralisation à d'autres types de sons. **La meilleure preuve actuellement permise est un échec sur ce petit banc contrôlé**, pas un classement définitif de tous les descripteurs audio possibles.
 
-**Non testé :** YAMNet ONNX et tout autre modèle, entraînement, bruit micro réel de Kwirou, voix `Hé Kwirou !`, acquisition OEM, matériel RK3566 et persistance de souvenirs physiques.
+**Non testé :** YAMNet ONNX et tout autre modèle, entraînement, bruit micro réel de Kwipi, voix `Hé Kwipi !`, acquisition OEM, matériel RK3566 et persistance de souvenirs physiques.
 
 ## 4. Réutiliser / adapter / créer, statut final du lot
 
