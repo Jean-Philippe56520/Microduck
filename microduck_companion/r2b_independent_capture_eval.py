@@ -381,31 +381,11 @@ def _read_wav_take(media_root: Path, filename: str, sha: str):
     return struct.unpack("<16000h", pcm)
 
 
-def run_audio_manifest(manifest: Path, media_root: Path, audio_model=None):
-    if (not isinstance(manifest, Path) or not manifest.is_file()
-            or manifest.is_symlink()
-            or not 1 <= manifest.stat().st_size <= MAX_MANIFEST_BYTES):
-        raise R2BEvidenceError("manifest file required")
-    items = _audio_manifest(manifest.read_bytes())
-    np = None
-    if audio_model is not None:
-        import numpy as np
-    descriptors = {}
-    timings: list[float] = []
-    before = resource.getrusage(resource.RUSAGE_SELF)
-    started = time.perf_counter()
-    for item in items:
-        samples = _read_wav_take(
-            media_root, item["file"], item["sha256"])
-        record = {"legacy": _audio_baseline(samples)}
-        if audio_model is not None:
-            record["learned"] = _audio_learned(
-                audio_model, samples, np, timings)
-        descriptors[item["file"]] = record
+def _evaluate_manifest_descriptors(items, descriptors, *, kinds):
+    """One shared source/session-separated evaluator for images AND audio."""
     split_groups = defaultdict(lambda: defaultdict(list))
     for item in items:
         split_groups[item["split"]][item["source_id"]].append(item)
-    kinds = ("legacy", "learned") if audio_model is not None else ("legacy",)
     result = {}
     for kind in kinds:
         def cohort(split, *, known):
@@ -434,6 +414,32 @@ def run_audio_manifest(manifest: Path, media_root: Path, audio_model=None):
             "test": _metrics(test_r, test_q + unk_q,
                              kind=kind, cutoff=threshold),
         }
+    return result
+
+
+def run_audio_manifest(manifest: Path, media_root: Path, audio_model=None):
+    if (not isinstance(manifest, Path) or not manifest.is_file()
+            or manifest.is_symlink()
+            or not 1 <= manifest.stat().st_size <= MAX_MANIFEST_BYTES):
+        raise R2BEvidenceError("manifest file required")
+    items = _audio_manifest(manifest.read_bytes())
+    np = None
+    if audio_model is not None:
+        import numpy as np
+    descriptors = {}
+    timings: list[float] = []
+    before = resource.getrusage(resource.RUSAGE_SELF)
+    started = time.perf_counter()
+    for item in items:
+        samples = _read_wav_take(
+            media_root, item["file"], item["sha256"])
+        record = {"legacy": _audio_baseline(samples)}
+        if audio_model is not None:
+            record["learned"] = _audio_learned(
+                audio_model, samples, np, timings)
+        descriptors[item["file"]] = record
+    kinds = ("legacy", "learned") if audio_model is not None else ("legacy",)
+    result = _evaluate_manifest_descriptors(items, descriptors, kinds=kinds)
     after = resource.getrusage(resource.RUSAGE_SELF)
     return {
         "scenario": "local_independent_audio_manifest_self_attested",
@@ -449,6 +455,61 @@ def run_audio_manifest(manifest: Path, media_root: Path, audio_model=None):
         "raw_audio_committed_or_saved_to_sqlite": False,
         "motor_commands": 0, "pc_requests": 0,
         "hardware_validated": False, "candidates": result,
+    }
+
+
+def run_image_manifest(manifest: Path, media_root: Path, model_file: Path | None = None):
+    """Evaluate independent local PNG takes with the same protocol as WAV.
+
+    Source/session/rights labels are SELF-ATTESTED; no image, box, label,
+    source ID or path is written back to disk or the report.
+    """
+    if (not isinstance(manifest, Path) or not manifest.is_file()
+            or manifest.is_symlink()
+            or not 1 <= manifest.stat().st_size <= MAX_MANIFEST_BYTES):
+        raise R2BEvidenceError("approved private image manifest required")
+    items = _capture_manifest(manifest.read_bytes(), media_ext="png")
+    session = None
+    np = None
+    if model_file is not None:
+        check_model_file(model_file)
+        import onnxruntime as ort
+        import numpy as np
+        opts = ort.SessionOptions()
+        opts.intra_op_num_threads = 1
+        opts.inter_op_num_threads = 1
+        session = ort.InferenceSession(
+            str(model_file), sess_options=opts,
+            providers=["CPUExecutionProvider"])
+    before = resource.getrusage(resource.RUSAGE_SELF)
+    started = time.perf_counter()
+    timings: list[float] = []
+    descriptors = {}
+    for item in items:
+        image = _read_png_take(media_root, item["file"], item["sha256"])
+        record = {"legacy": image_fingerprint(_image_baseline(image))}
+        if session is not None:
+            record["learned"] = _image_learned(
+                session, image, np, timings)
+        descriptors[item["file"]] = record
+    kinds = ("legacy", "learned") if session is not None else ("legacy",)
+    results = _evaluate_manifest_descriptors(
+        items, descriptors, kinds=kinds)
+    after = resource.getrusage(resource.RUSAGE_SELF)
+    return {
+        "scenario": "local_independent_png_capture_manifest_self_attested",
+        "rights_and_source_independence": "declared_not_authenticated",
+        "manifest_entries": len(items),
+        "image_model_onnx": session is not None,
+        "host_onnx_inference": _latency(timings) if timings else None,
+        "host_cpu_user_s": round(after.ru_utime-before.ru_utime, 3),
+        "host_cpu_system_s": round(after.ru_stime-before.ru_stime, 3),
+        "host_peak_rss_kib_whole_process": after.ru_maxrss,
+        "host_wall_s_excludes_capture": round(
+            time.perf_counter()-started, 3),
+        "raw_media_committed_or_saved_to_sqlite": False,
+        "motor_commands": 0, "pc_requests": 0,
+        "hardware_validated": False, "candidates": results,
     }
 
 
@@ -498,6 +559,8 @@ def main(argv=None):
     parser.add_argument("--noncommercial-coil20-permission-reviewed",
                         action="store_true")
     parser.add_argument("--image-model", type=Path)
+    parser.add_argument("--image-manifest", type=Path)
+    parser.add_argument("--image-root", type=Path)
     parser.add_argument("--audio-manifest", type=Path)
     parser.add_argument("--audio-root", type=Path)
     parser.add_argument("--audio-model", type=Path)
@@ -506,12 +569,16 @@ def main(argv=None):
     if not args.locally_approved_research:
         parser.error("explicit research/rights approval required")
     if (args.coil20_zip is None and args.audio_manifest is None
+            and args.image_manifest is None
             or (args.audio_manifest is None) != (args.audio_root is None)
+            or (args.image_manifest is None) != (args.image_root is None)
+            or args.coil20_zip is not None and args.image_manifest is not None
             or (args.coil20_zip is None) != (
                 args.coil20_reviewed_sha256 is None)
             or (args.coil20_zip is None and
                 args.noncommercial_coil20_permission_reviewed)
-            or args.image_model and args.coil20_zip is None
+            or args.image_model and (
+                args.coil20_zip is None and args.image_manifest is None)
             or args.audio_model and args.audio_manifest is None):
         parser.error("choose zip and/or audio manifest+root; models optional")
     report = {}
@@ -521,6 +588,10 @@ def main(argv=None):
             expected_sha256=args.coil20_reviewed_sha256,
             approved_noncommercial_research=(
                 args.noncommercial_coil20_permission_reviewed),
+            model_file=args.image_model)
+    if args.image_manifest is not None:
+        report["images_local"] = run_image_manifest(
+            args.image_manifest, args.image_root,
             model_file=args.image_model)
     if args.audio_manifest is not None:
         session = None
