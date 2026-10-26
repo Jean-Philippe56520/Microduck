@@ -145,7 +145,16 @@ def main(argv: list[str] | None = None) -> int:
         "--benchmark", action="store_true",
         help="collect host-only score loop timings (not comparable RSS)",
     )
+    parser.add_argument(
+        "--python-only-bench", action="store_true",
+        help="time only the Python scorer in its own HOST process",
+    )
     args = parser.parse_args(argv)
+    if args.python_only_bench:
+        if args.rust_bin is not None or args.benchmark:
+            parser.error("--python-only-bench excludes --rust-bin and --benchmark")
+        print(json.dumps(benchmark_python(), allow_nan=False, sort_keys=True))
+        return 0
     if args.rust_bin is None:
         parser.error("--rust-bin is required; never download/compile automatically")
     outcome = (benchmark_both(args.rust_bin) if args.benchmark
