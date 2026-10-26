@@ -297,7 +297,9 @@ class GroupedMemoryTests(unittest.TestCase):
         second=m.observe_audio(tone(),now_wall_epoch_s=START+1)
         third=m.observe_image(square(top=16,left=16),now_wall_epoch_s=START+2)
         self.assertEqual(2,m.stats()["signatures"])
-        self.assertEqual(128,m.stats()["fingerprint_bytes"])
+        # 64 + 16 + 64 exceeded the 128-byte budget, so the oldest
+        # 64-byte image is dropped. Live fields total 16 + 64 = 80 bytes.
+        self.assertEqual(80,m.stats()["fingerprint_bytes"])
         self.assertEqual(2,m.stats()["groups"])
         self.assertIsNone(self.db.conn.execute(
             "SELECT 1 FROM m1b_groups WHERE id=?",(first.group_id,),
