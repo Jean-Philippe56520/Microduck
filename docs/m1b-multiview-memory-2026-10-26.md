@@ -28,7 +28,7 @@ La méthode de comparaison reste la formule M1-A : somme de différences absolue
 | Comparaisons maximales sur une requête | 4 096 |
 | Rétention sans rencontre | 180 jours |
 
-L'éviction s'applique **à toutes les modalités** en fonction de la récence ; les groupes sans empreinte sont supprimés. Un groupe peut conserver ses autres vues lorsqu'une variante peu utile est remplacée. Un lien entre deux vues est soumis à `synthetic_same_source_claim=True` et au groupe explicite : **ce drapeau n'est ni un consentement d'une personne ni une preuve de même objet physique**. M1-A n'est **pas automatiquement migré**, pour éviter une fusion injustifiée des observations anciennes.
+L'éviction s'applique **à toutes les modalités** en fonction de la récence ; les groupes sans empreinte sont supprimés. Un groupe peut conserver ses autres vues lorsqu'une variante peu utile est remplacée. Un lien entre deux vues est soumis à `synthetic_same_source_claim=True` et au groupe explicite : **ce drapeau n'est ni un consentement d'une personne ni une preuve de même objet physique**. M1-A n'est **pas automatiquement migré**, pour éviter une fusion injustifiée des observations anciennes. Lors d'une réouverture de SQLite avec des **quotas plus stricts**, M1-B retire les anciennes signatures/groupes qui dépasseraient ces nouveaux plafonds, avec un test de non-régression dédié.
 
 Le budget de 256 Kio ne porte que sur les **BLOB d'empreintes**, pas sur le fichier SQLite, les tables d'épisodes, les index, les pages libres, ni le journal WAL éventuel. Une démonstration en hôte Linux a mesuré **80 octets de signatures mais 57 344 octets de pages SQLite** pour une base très petite ; elle ne mesure pas la place libre de la partition persistante du robot.
 
@@ -59,7 +59,7 @@ Les deux dernières lignes sont des **proxies de fusion** avec des fichiers dist
 
 ## 4. Mesure CPU/stockage hôte sur données artificielles
 
-[`m1b_multiview_demo.py --host-scaling` en CI #40302743563](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40302743563) a fait **512 tentatives** de comparaison/écriture sur des pixels synthétiques aléatoires avec **512 groupes et 512 signatures**. Une exécution sur l'hôte CI a donné un temps médian de cycle Python + SQLite **1,727 ms**, un maximum **4,876 ms**, **32 768 octets d'empreintes BLOB** et **204 800 octets de pages SQLite** sans compter un éventuel WAL. Ces données ne mesurent ni NPU ni caméra, ni le CPU/RSS réel sous charge des services, ni la température, ni le risque pour la boucle moteur 50 Hz sur RK3566.
+[`m1b_multiview_demo.py --host-scaling` en CI #40303522130](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40303522130) a fait **512 tentatives** de comparaison/écriture sur des pixels synthétiques aléatoires avec **512 groupes et 512 signatures**. Une exécution sur l'hôte CI a donné un temps médian de cycle Python + SQLite **1,845 ms**, un maximum **5,266 ms**, **32 768 octets d'empreintes BLOB** et **204 800 octets de pages SQLite** sans compter un éventuel WAL. Ces données ne mesurent ni NPU ni caméra, ni le CPU/RSS réel sous charge des services, ni la température, ni le risque pour la boucle moteur 50 Hz sur RK3566.
 
 Les métriques de charge croissent avec le nombre de signatures examinées ; avant de porter le moteur de comparaison, il faudra une politique de rappel restreinte (pré-filtrage par catégorie, index approximatif robuste ou petits embeddings) et une mesure des erreurs d'un tel filtrage. Tant qu'on ne peut pas inspecter correctement le corpus, le programme **refuse de conclure** au lieu de sauter arbitrairement des signatures.
 
@@ -70,6 +70,8 @@ Ce lot traite **des fichiers publics CC0 et des fixtures artificielles uniquemen
 Aucun service OEM, Qwen/Ollama réel, transmission d'image/voix privée, commande moteur ou haut-parleur n'est activé. Le robot physique est indisponible ; pas de validation mémoire, fréquence, thermique, batterie ou qualité de reconnaissance sur son matériel. La consultation PC reste un **indice non exécuté**, avec quota et consentement séparés du chantier F5.
 
 ## 6. Suites et critères d'arrêt
+
+La dernière [CI Python M1-B](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40303522130) valide **925 tests Python** et **4 tests Rust**. Ces tests comprennent le cas d'une réouverture avec des plafonds abaissés ; ils ne prouvent aucune performance sur le RK3566.
 
 **M1-B prouve sur hôte uniquement :** corrigé 256 global de M1-A, groupes multi-empreintes de fixtures avec limites paramétrables et eviction, détection prudente des ambiguïtés, données publiques CC0 disponibles et erreurs mesurées, tests Python, deux processus et un stress de 512 cycles artificiels. **M1-B ne prouve pas :** identification d'objets réels dans de nouvelles vues, reconnaissance d'un animal ou son à travers le bruit, biométrie, fonctionnement embarqué ou absence de saturation du stockage système.
 
