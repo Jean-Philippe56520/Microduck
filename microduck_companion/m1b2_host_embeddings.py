@@ -34,7 +34,7 @@ from .visual_photo_mobilenet_demo import check_model_file
 # from an external publisher, NOT Google. License/provenance must be reviewed.
 YAMNET_URL = (
     "https://huggingface.co/audiomagic/yamnet-onnx/resolve/"
-    "f25b741/yamnet.onnx"
+    "f25b741c2f0bdc6d7e6db24b5fddda23347dbafd/yamnet.onnx"
 )
 YAMNET_SHA256 = "d3835ffbbd4a1bb3e777f0ca217b5007907f5171dd5d17c4236b95b2af8f908e"
 AUDIO_HZ = 16000
@@ -159,8 +159,16 @@ def _audio_variants(samples: tuple[int, ...]):
         raise ValueError("16-kHz 1-s PCM16 input required")
     gain = tuple(round(.8*v) for v in samples)
     shifted = (0,)*256 + samples[:-256]  # 16 ms at 16 kHz
+    # Seeded pseudo-noise is a controlled perturbation, NOT a real
+    # room/animal/background recording; reproducible without I/O.
+    import random
+    rng = random.Random(20261026)
+    rms = math.sqrt(sum(v*v for v in samples) / len(samples))
+    sigma = .05 * rms  # approximately 26 dB SNR if no clipping
+    noisy = tuple(max(-32768, min(32767, round(v + rng.gauss(0, sigma))))
+                  for v in samples)
     return {"original": samples, "gain_80pct": gain,
-            "shift_16ms": shifted}
+            "shift_16ms": shifted, "synthetic_noise_26dB": noisy}
 
 
 def _audio_baseline(samples: tuple[int, ...]) -> bytes:
@@ -248,11 +256,19 @@ def run_public_study(image_model: Path, audio_model: Path) -> dict:
     image_times = []
     selected = [p for p in PHOTO_CATALOG if p.split in PHOTO_SPLITS]
     if (len(selected) != 12 or
-            any(p.license != "CC0-1.0" for p in selected) or
-            {p.split for p in selected} != set(PHOTO_SPLITS)):
+            sum(p.split == "validation" for p in selected) != 6 or
+            sum(p.split == "test" for p in selected) != 6 or
+            any(p.license != "CC0-1.0" for p in selected)):
         raise ValueError("exact curated holdout image roster required")
+    distinct_media = set()
+    cpu_before = resource.getrusage(resource.RUSAGE_SELF)
     for item in selected:
-        variants = _image_variants(fetch_thumbnail(item))
+        jpeg = fetch_thumbnail(item)
+        fingerprint = hashlib.sha256(jpeg).hexdigest()
+        if fingerprint in distinct_media:
+            raise ValueError("duplicate media bytes among holdout photos")
+        distinct_media.add(fingerprint)
+        variants = _image_variants(jpeg)
         images[item.filename] = {}
         for variant, value in variants.items():
             pixels = _image_baseline(value)
@@ -289,13 +305,16 @@ def run_public_study(image_model: Path, audio_model: Path) -> dict:
     audio_names = tuple(filename for filename, _, _ in PUBLIC_SOUNDS)
     audio_report = {
         "m1b_legacy_16bytes": _pairs(
-            sounds, audio_names, ("gain_80pct", "shift_16ms"),
+            sounds, audio_names,
+            ("gain_80pct", "shift_16ms", "synthetic_noise_26dB"),
             kind="legacy", threshold=float(MATCH_AUDIO) - 1e-10),
         "yamnet_1024_float32_4096bytes": _pairs(
-            sounds, audio_names, ("gain_80pct", "shift_16ms"),
+            sounds, audio_names,
+            ("gain_80pct", "shift_16ms", "synthetic_noise_26dB"),
             kind="learned", threshold=M1B2_AUDIO_THRESHOLD),
         "yamnet_cutoff_heuristic_not_calibrated": M1B2_AUDIO_THRESHOLD,
     }
+    cpu_after = resource.getrusage(resource.RUSAGE_SELF)
     return {
         "scenario": "m1b2_public_cc0_host_onnx_descriptors_pilot",
         "images": photo_report, "sounds": audio_report,
@@ -311,7 +330,12 @@ def run_public_study(image_model: Path, audio_model: Path) -> dict:
         "onnx_cpu_vision": _latency(image_times),
         "onnx_cpu_sound": _latency(sound_times),
         "host_peak_rss_kib_whole_process_not_per_model":
-            resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+            cpu_after.ru_maxrss,
+        "host_cpu_user_s_after_model_load_excludes_fetch_setup":
+            round(cpu_after.ru_utime - cpu_before.ru_utime, 3),
+        "host_cpu_system_s_after_model_load_excludes_fetch_setup":
+            round(cpu_after.ru_stime - cpu_before.ru_stime, 3),
+        "total_host_on_cpu_not_rk3566": True,
         "different_natural_views_of_same_individual": False,
         "cross_file_proxy_is_verified_distinct_physical_object": False,
         "candidate_ready_for_embedded": False,
