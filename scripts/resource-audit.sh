@@ -13,7 +13,7 @@ Microduck F6-D resource survey (read-only, no motion)
       Show an OFFLINE checklist; no host hardware is queried.
   sh scripts/resource-audit.sh --phase idle --operator-confirmed
       Take one stationary read-only snapshot on an authorized RK3566 dev unit.
-  sh scripts/resource-audit.sh --phase vision --operator-confirmed --vision-already-enabled
+  sh scripts/resource-audit.sh --phase vision --operator-confirmed --idle-reviewed --vision-already-enabled
       Take one supervised stationary snapshot. The OEM operator must have
       started vision separately; this script NEVER starts or stops services.
   sh scripts/resource-audit.sh --phase movement
@@ -54,6 +54,7 @@ fi
 phase=
 confirmed=no
 vision_confirmed=no
+idle_reviewed=no
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --phase)
@@ -72,6 +73,11 @@ while [ "$#" -gt 0 ]; do
         --vision-already-enabled)
             if [ "$vision_confirmed" = yes ]; then exit 2; fi
             vision_confirmed=yes
+            shift
+            ;;
+        --idle-reviewed)
+            if [ "$idle_reviewed" = yes ]; then exit 2; fi
+            idle_reviewed=yes
             shift
             ;;
         *)
@@ -96,12 +102,12 @@ if [ "$confirmed" != yes ]; then
     printf '%s\n' 'F6-D BLOCKED: explicit authorized-development-unit confirmation required.' >&2
     exit 3
 fi
-if [ "$phase" = vision ] && [ "$vision_confirmed" != yes ]; then
-    printf '%s\n' 'F6-D BLOCKED: vision must be enabled separately under supervision.' >&2
+if [ "$phase" = vision ] && { [ "$vision_confirmed" != yes ] || [ "$idle_reviewed" != yes ]; }; then
+    printf '%s\n' 'F6-D BLOCKED: reviewed idle baseline and independent supervised vision required.' >&2
     exit 3
 fi
-if [ "$phase" = idle ] && [ "$vision_confirmed" = yes ]; then
-    printf '%s\n' 'F6-D BLOCKED: vision claim conflicts with idle phase.' >&2
+if [ "$phase" = idle ] && { [ "$vision_confirmed" = yes ] || [ "$idle_reviewed" = yes ]; }; then
+    printf '%s\n' 'F6-D BLOCKED: vision-related claim conflicts with idle phase.' >&2
     exit 3
 fi
 
@@ -131,6 +137,7 @@ printf 'PLATFORM_GATE=rk3566_claim_only_not_authenticated\n'
 printf 'ROBOT_HARDWARE_VALIDATED=NO\n'
 printf 'MOTION_AUTHORIZED=NO\n'
 printf 'OPERATOR_CLAIM_NOT_AUTHENTICATION=YES\n'
+printf 'IDLE_REVIEW_OPERATOR_CLAIM=%s\n' "$idle_reviewed"
 printf 'UTC='
 date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || printf 'unavailable\n'
 
