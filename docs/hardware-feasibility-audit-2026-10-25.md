@@ -1,5 +1,7 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**Rappel de planification après R2-B (26/10/2026) :** [plan des prochains essais](r2-follow-up-execution-plan-2026-10-26.md). Les mesures audio/visuelles et SQLite à venir seront **sur PC** ; aucune ne permettra de présumer la RAM disponible, le stockage libre, la thermie, les délais moteurs ou l'autonomie du RK3566. Aucun matériel n'est testé dans ce lot documentaire ; le `resource-audit.sh` physique reste une porte obligatoire avant portage.
+
 **Addendum R2-B — 26 octobre 2026 :** [étude réelle sur 72 vues ABO](r2b-independent-capture-evaluation-2026-10-26.md), [runner CI #40322898625](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40322898625). MobileNetV2 ONNX CPU : médiane **8,95 ms**, p95 **9,40 ms** sur 72 inférences (hors prétraitement et téléchargement) ; pic RSS **114 764 Kio pour le processus entier**, 22,372 s mur incluant le réseau. **Ces mesures hôte ne renseignent pas la RAM libre, la chauffe, la consommation, les délais robotd ni la faisabilité RK3566.** Les médias restent en mémoire temporaire et non dans SQLite ; COIL à usage non commercial non exécuté, audio indépendant non évalué, aucune transmission personnelle ni commande constructeur.
 
 
