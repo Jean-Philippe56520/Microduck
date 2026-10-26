@@ -37,9 +37,12 @@ def _zip_fixture(family, *, unsafe=False):
     with zipfile.ZipFile(memory, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         for m in range(1, 4):
             for split in ("train", "test"):
-                name = f"dev_data/{family}/{split}/normal_id_{m:02d}_00000000.wav"
-                zf.writestr(name, _tone(m*53+(split=="test")*5+
-                                       (family=="ToyConveyor")*200))
+                sequence_numbers = range(1) if split == "train" else range(5)
+                for seq in sequence_numbers:
+                    name = (f"dev_data/{family}/{split}/"
+                            f"normal_id_{m:02d}_{seq:08d}.wav")
+                    zf.writestr(name, _tone(m*53+(split=="test")*5+seq*3+
+                                           (family=="ToyConveyor")*200))
         if unsafe:
             zf.writestr(f"dev_data/{family}/train/normal_id_04_00000000.wav",
                         b"\0"*1_100_000)
@@ -90,13 +93,14 @@ class R2B1RemoteZipFixtureTests(unittest.TestCase):
             independent_operations_reviewed=True, opener=client,
         )
         self.assertEqual(6, result["source_count"])
-        self.assertEqual(12, result["selected_original_file_count"])
-        self.assertEqual(10, result["clips_evaluated"])
-        self.assertEqual(10, result["benchmark"]["manifest_entries"])
+        self.assertEqual(36, result["selected_original_file_count"])
+        self.assertEqual(34, result["clips_evaluated"])
+        self.assertEqual(34, result["benchmark"]["manifest_entries"])
+        self.assertTrue(result["real_audio_evaluation_executed"])
         self.assertEqual("declared_not_authenticated",
                          result["benchmark"]["rights_and_source_independence"])
-        self.assertEqual(2, result["benchmark"]["candidates"]["legacy"]["test"]["known_queries"])
-        self.assertEqual(1, result["benchmark"]["candidates"]["legacy"]["test"]["unknown_queries"])
+        self.assertEqual(10, result["benchmark"]["candidates"]["legacy"]["test"]["known_queries"])
+        self.assertEqual(5, result["benchmark"]["candidates"]["legacy"]["test"]["unknown_queries"])
         self.assertFalse(result["hardware_validation"])
         self.assertFalse(result["distinct_recording_dates_or_microphones_verified"])
         self.assertGreater(client.calls, 2)
