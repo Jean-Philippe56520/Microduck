@@ -154,6 +154,19 @@ class AutonomyBrain:
             behavioral=behavioral,
         )
 
+    def describe_oem_expression(self, portrait, *, cue, context, conditions,
+                                now_monotonic_s: float):
+        """P-C: read-only contextual OEM hint after an existing P-A/B portrait.
+
+        This does not tick a second scheduler, read a microphone, issue a
+        sound/motor action, change motivations or write into ExperienceMemory.
+        """
+        from .oem_expression_hints import describe_oem_expression
+        return describe_oem_expression(
+            portrait, cue=cue, context=context, conditions=conditions,
+            now_monotonic_s=now_monotonic_s,
+        )
+
     def choose_from_snapshot(self, snapshot: PerceptionSnapshot,
                              now: float | None = None) -> Plan:
         """Production-facing input boundary; stale/untrusted safety data halts.

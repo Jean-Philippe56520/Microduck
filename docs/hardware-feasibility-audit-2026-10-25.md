@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**Addendum P-C, expressions (26/10/2026) :** `oem_expression_hints.py` est une simple fonction de description, sans nouvelle acquisition, modèle IA, moteur ou audio **dans les fixtures**. Cela **ne mesure aucun coût sur RK3566** (RAM/RSS, charge audio `pet-detect`, CPU, batterie, chaleur, stockage et latence sont inconnus). Les réactions OEM à `petting_start` restent sous `robotd`, le portage P-C2 est différé. `scripts/resource-audit.sh` sur robot reste obligatoire.
+
+
 **Addendum P-B (26/10/2026, sans matériel) :** ajout de lectures facultatives de la SQLite `ExperienceMemory` F4-A après décision F2/P-A, sans image, réseau, son, servomoteur, tâche de fond ou nouvelle table ; **aucun RSS, CPU, I/O SQLite p95, RAM libre, thermique ni délai sur RK3566 mesuré**. Ne pas extrapoler ces tests hôte. Le budget de lecture devra être profilé avant activation sur robot, sans attendre la boucle 50 Hz `robotd`. Le contrôle `scripts/resource-audit.sh` et ses exigences de sécurité restent obligatoires.
 
 

@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**P-C — expressions contextuelles OEM (propositions fictives seulement) :** [audit et contrat](docs/kwipi-oem-expressions-pc-2026-10-26.md). `AutonomyBrain.describe_oem_expression` réutilise le portrait P-A/P-B, `MockSocialContext`, la réaction **`coo` aux caresses déjà gérée par `robotd`** et les noms d'événements audio OEM `Noise/Voice` **seulement sur fixtures**. `Petted` et `Startle` sont des **candidats historiques descriptifs, non des états exécutés** ; une voix détectée n'est ni parole comprise ni « Hé Kwipi ! ». Aucun second micro/haut-parleur, animation, commande, SQLite ou nouvelle motivation ; la priorité **Cat-A2** reste inchangée. Tests physiques et portage non réalisés.
+
+
 **P-B — continuité de personnalité (fixtures, sans robot) :** [audit et contrat](docs/kwipi-personality-continuity-pb-2026-10-26.md). `AutonomyBrain.describe_behavior(..., behavioral=...)` relit les **résultats fictifs explicitement corroborés** de `BehavioralMemory` F4-A pour exposer un petit penchant durable envers l'inspection, corrigeable et expirant sous 14 jours. F2-B peut facultativement utiliser ce **biais borné ±0,12 uniquement pour sa proposition immobile `inspect`**. Aucun résultat non exécuté n'est appris, aucun second SQLite/scheduler, capteur, moteur ou LLM. Les 16 états OEM restent catalogués, quatre seulement décrits ; **Cat-A2 garde la priorité**. **CI P-B réussie sur PC : 1 056 tests Python exécutés, 4 ignorés, aucun échec**, dont 21 tests P-B ; [CI GitHub Actions #40394372640](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40394372640). Aucun test sur robot.
 
 

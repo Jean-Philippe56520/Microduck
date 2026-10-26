@@ -1,5 +1,8 @@
 # Audit de réutilisation OEM — autonomie et mémoire Microduck Companion
 
+**Complément P-C (26/10/2026) :** vérification au commit OEM épinglé `942e58e3aa6dbb28e7037203fff11866122c7567` : `pet-detect/src/worker.rs` partage l'unique micro `arecord` pour la caresse et la sentinelle `SoundEvent::Noise/Voice`; `robotd/src/main.rs` consomme `PettingEvent::Start` et joue `coo` sous protections, alors que les sons ambiants sont seulement journalisés. `robotd/src/idle_head.rs` fournit déjà les mouvements d'inactivité et `sounds/src/personality.rs` des traits de voix stables. **Réutiliser** ces propriétaires ; **adapter uniquement** une lecture fictive P-A/B/F4 après décision via `oem_expression_hints.py`; **ne créer** ni second micro, synthé, commande, robotd, table SQL ou moteur M9. [Détails et limites](kwipi-oem-expressions-pc-2026-10-26.md). Aucune réaction réelle validée.
+
+
 **Addendum P-B (26/10/2026) :** [réutilisation supplémentaire](kwipi-personality-continuity-pb-2026-10-26.md). F4-A `BehavioralMemory` (résultats P2a fictifs vérifiés, corrections et 14 jours/256 lignes) est **relue**, et non reproduite, pour fournir un faible biais facultatif à l'inspection cognitive F2 et une tendance descriptive dans P-A. Aucune table, nouvelle boucle/arbitrage moteur, copie OEM ou animation concurrente. `robotd` reste seul propriétaire de l'exécution ; M9 OEM et PR #381 non fusionnée ne sont pas traités comme des API. Aucun déploiement ni preuve matérielle.
 
 
