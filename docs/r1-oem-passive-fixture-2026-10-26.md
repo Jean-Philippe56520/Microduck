@@ -59,4 +59,4 @@ python -m unittest discover -s tests -v
 
 **R2** : corpus de plusieurs prises *indépendantes* d'un même objet ou événement sonore, négatifs difficiles, seuils validés et `unknown`, mesure RSS/CPU/SQLite sur PC. **R3** : compatibilité avec M9 si Pollen publie une véritable interface de cerveau autonome, sans arbitre moteur parallèle. **R4** : Qwen facultatif seulement sous opt-in et quota. **R5** : audit matériel et tests physiques conditionnels, sans supposer les ressources libres du RK3566.
 
-La [règle de développement « réutiliser avant de créer »](reuse-first-protocol.md) s'applique à chaque lot.
+La [règle de développement « réutiliser avant de créer »](development-reuse-protocol.md) s'applique à chaque lot.
