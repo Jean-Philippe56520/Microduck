@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**R2-A — mémoire unique pour les prochaines expériences, sans déploiement :** [choix et limites documentés](docs/r2a-single-memory-selection-2026-10-26.md). Le **module M1-B existant** dispose d'une option explicite `r2a_single_writer=True` : elle refuse les anciennes lignes M1-A, les schémas partiels et une réouverture susceptible de supprimer des exemplaires ; ses transactions revérifient la sélection. M1-A reste une baseline via ses extracteurs **purs**, sans double persistance dans le chemin R2-A. **Ce garde-fou n'empêche pas globalement un ancien programme d'écrire dans M1-A** : une telle écriture provoque le refus de l'opération R2-A suivante. Aucun troisième stockage, modèle, Qwen, moteur ou capteur réel.
+
+
 **M1-B2 — pilote CPU hôte réussi en CI, sans déploiement :** 934 tests Python réussis sur la branche et [banc comparatif CC0 ONNX](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40309136430) exécuté. Sur six photos de TEST, MobileNetV2 retrouve 6/6 rotations et recadrages dérivés du même fichier (contre 0/6 M1-B), mais rapproche aussi 1/15 paires de fichiers différents ; YAMNet retrouve 2/2 décalages mais 0/2 sons avec bruit numérique. **Aucune identification de même objet sur de vrais angles naturels, ni reconnaissance audio robuste démontrée.** [Rapport M1-B2](docs/m1b2-host-embeddings-2026-10-26.md). Aucun poids, média, PC connecté au robot, ni intégration SQLite/OEM.
 
 Projet de robot autonome, curieux, explorateur et social.
