@@ -62,7 +62,7 @@ F5-A ne charge aucun modèle sur le RK3566, ne valide aucun accès caméra/audio
 
 ## Addendum F5-B — 26 octobre 2026
 
-Le [rapport F5-B](f5b-ollama-local-transport-2026-10-26.md) décrit un client HTTP local Python et un worker sans interaction motrice. Les tests utilisent un serveur HTTP simulé sur 127.0.0.1. Aucun véritable modèle Ollama ou Qwen 4B/9B n'a été exécuté et aucune mesure PC réelle n'est disponible. Le comparateur PC est en mode sans réseau par défaut.
+Le [rapport F5-B](f5b-ollama-local-transport-2026-10-26.md) décrit un client HTTP local Python et un worker sans interaction motrice. Les [781 tests Python réussis en CI hôte](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40251807307), dont les nouveaux tests réseau F5-B, utilisent un serveur HTTP simulé sur 127.0.0.1. Aucun véritable modèle Ollama ou Qwen 4B/9B n'a été exécuté et aucune mesure PC réelle n'est disponible. Le comparateur PC est en mode sans réseau par défaut.
 
 Les limites configurées de taille de réponse et de délai sont des règles logicielles, pas des mesures de RAM, de latence Ollama, de GPU/NPU ou d'énergie. Les ressources du robot RK3566 et sa température restent inconnues. L'audit physique `scripts/resource-audit.sh` doit encore être effectué sur matériel réel. Le dépôt ne contient aucun modèle ni donnée privée.
 

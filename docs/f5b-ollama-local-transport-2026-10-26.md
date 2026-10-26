@@ -1,6 +1,6 @@
 # F5-B — Client Ollama facultatif et banc de comparaison PC
 
-**26 octobre 2026 — [PR #42](https://github.com/Jean-Philippe56520/Microduck/pull/42) ; niveau de preuve : logiciel/test HTTP local simulé.** La phase F5-A ([PR #41](https://github.com/Jean-Philippe56520/Microduck/pull/41)) est intégrée à `main`. Aucune requête à un **vrai** Ollama/Qwen ni mesure des 64 Go de RAM du PC, de puissance, d'accélération ou d'autonomie du robot n'a été effectuée par nos tests CI.
+**26 octobre 2026 — [PR #42](https://github.com/Jean-Philippe56520/Microduck/pull/42) fusionnée après revue du logiciel ; niveau de preuve : test HTTP local simulé.** La phase F5-A ([PR #41](https://github.com/Jean-Philippe56520/Microduck/pull/41)) est intégrée à `main`. Aucune requête à un **vrai** Ollama/Qwen ni mesure des 64 Go de RAM du PC, de puissance, d'accélération ou d'autonomie du robot n'a été effectuée par nos tests CI.
 
 ## 1. Architecture retenue
 
@@ -16,7 +16,7 @@ Les classes et commandes sensorielles constructeur demeurent intactes : `robotd`
 
 `tests/test_ollama_local_client.py` ouvre un **petit serveur HTTP simulé sur 127.0.0.1 uniquement**, qui **n'est pas Ollama**. Les tests couvrent le corps de requête expurgé, l'échange HTTP, les réponses de type F5-A, les erreurs de connexion, les délais, redirections non suivies, mauvaise identité modèle, enveloppes et champs malformés, sorties trop volumineuses, commandes et catégories non étayées, l'exclusion de LAN/Internet sans opt-in, le worker non bloquant et le repli hors connexion.
 
-`microduck_companion/f5b_transport_demo.py` réalise un échange HTTP **réel en boucle locale**, mais uniquement contre ce serveur fictif, sans télécharger ni exécuter de modèle. `python -m microduck_companion.f5b_benchmark` lance le **mode à blanc**, aucun réseau. La CI exécute la suite de tests et les deux commandes sans PC disponible.
+`microduck_companion/f5b_transport_demo.py` réalise un échange HTTP **réel en boucle locale**, mais uniquement contre ce serveur fictif, sans télécharger ni exécuter de modèle. `python -m microduck_companion.f5b_benchmark` lance le **mode à blanc**, aucun réseau. La [CI GitHub Actions (https://github.com/Jean-Philippe56520/Microduck/actions/runs/40251807307)](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40251807307) a réussi avec **781 tests Python**, la compilation, la démo HTTP fictive et le banc dry run, sans PC Ollama disponible.
 
 ## 3. Banc Qwen 4B puis 9B sur PC — non exécuté
 
@@ -46,4 +46,4 @@ Pour un PC sur réseau plutôt que localhost, **ne pas exposer le port Ollama di
 - Aucun budget thermique/RAM/eMMC/CPU ou profil de latence du Microduck RK3566, aucun contrôle réel `robotd`/capteurs.
 - Aucun service continu, résolution de contradictions ni fréquence intelligente de consultation : **F5-C** apportera quotas, critères de nouveauté et pannes cumulées. La reconnaissance des animaux et la locomotion resteront des chantiers distincts.
 
-**Statut cible de F5-B :** client, worker et banc codés ; **tests HTTP locaux** et suite CI attestés ; **validation Ollama/Qwen sur PC restant à effectuer**. Ne jamais présenter F5-B comme une comparaison réelle de performances tant que les résultats PC sont absents.
+**Statut livré de F5-B :** client, worker et banc codés, [PR #42 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/42) après [781 tests en CI](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40251807307) ; **validation Ollama/Qwen sur PC restant à effectuer**. Ne jamais présenter F5-B comme une comparaison réelle de performances tant que les résultats PC sont absents.
