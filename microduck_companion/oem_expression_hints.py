@@ -20,13 +20,17 @@ MOCK_OEM_KINDS = frozenset({
 })
 _HISTORICAL_HINTS = frozenset({"Petted", "Startle"})
 _STATUSES = frozenset({"silent", "oem_owned", "hypothesis", "notice_only"})
-_REASONS = frozenset({
-    "no_mock_cue", "mock_opt_in_missing", "mock_quiet_mode",
-    "mock_safety_or_stop", "stale_future_mock_cue",
-    "self_generated_noise_or_motion", "petting_ended",
-    "sound_context_not_opted_in", "oem_petting_coo_already_owned",
-    "ambient_noise_startle_unverified", "voice_detected_not_understood",
-})
+_REASONS_BY_STATUS = {
+    "silent": frozenset({
+        "no_mock_cue", "mock_opt_in_missing", "mock_quiet_mode",
+        "mock_safety_or_stop", "stale_future_mock_cue",
+        "self_generated_noise_or_motion", "petting_ended",
+        "sound_context_not_opted_in",
+    }),
+    "oem_owned": frozenset({"oem_petting_coo_already_owned"}),
+    "hypothesis": frozenset({"ambient_noise_startle_unverified"}),
+    "notice_only": frozenset({"voice_detected_not_understood"}),
+}
 
 
 def _finite_time(value: object) -> bool:
@@ -93,7 +97,8 @@ class MockExpressionHint:
     real_sensor_authenticated: bool = False
 
     def __post_init__(self) -> None:
-        if (self.status not in _STATUSES or self.reason not in _REASONS
+        if (self.status not in _STATUSES
+                or self.reason not in _REASONS_BY_STATUS.get(self.status, ())
                 or self.historical_candidate not in (_HISTORICAL_HINTS | {None})
                 or (self.status == "oem_owned"
                     and self.historical_candidate != "Petted")
