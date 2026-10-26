@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**Addendum PD2 — 27/10/2026, aucune preuve sur RK3566 :** [contrat de continuité purement fictif](pd2-coherent-mock-behavior-continuity-2026-10-27.md). Une petite structure Python process-local décrit la continuité de 16 noms historiques depuis F2/P-A/PD1 sans moteur, capteur, Qwen ni table SQLite supplémentaires. Les valeurs 2 s/8 s sont des temporisations de fixtures, **pas des mesures** de capacité 1 Go RAM/32 Go, consommation batterie ou délai robotd 50 Hz. L'inertie d'humeur n'est pas persistée ; les anciens souvenirs F4-A restent dans la SQLite existante si celle-ci est sur disque. Audit `scripts/resource-audit.sh` sur l'appareil avant portage.
+
+
 **Addendum PD1 — 27/10/2026 :** [inventaire purement logiciel des 16 noms OEM](pd1-oem-expression-capabilities-2026-10-27.md). Les quatre correspondances `IdleHead`/petting dans le code épinglé ne sont **ni des commandes utilisables par Companion, ni une mesure sur l'appareil réel**. L'interface PD1 demeure sans RPC, capture, son, SQLite supplémentaire ou moteur ; ses coûts et l'éventuelle consommation RAM/CPU/thermique sur RK3566 **n'ont pas été mesurés**, et 1 Go de RAM / 32 Go nominaux ne sont pas une marge garantie. Maintenir `scripts/resource-audit.sh` avant toute nouvelle animation ou processus.
 
 
