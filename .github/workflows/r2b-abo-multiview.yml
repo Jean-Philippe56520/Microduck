@@ -23,6 +23,8 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_r2b_independent_capture_eval.py' -v
       - name: Install host-only image/ONNX CPU tools
         run: python -m pip install --disable-pip-version-check Pillow==11.3.0 numpy==1.26.4 onnxruntime==1.21.0
+      - name: Test the optional local PNG manifest adapter with synthetic pixels
+        run: python -m unittest discover -s tests -p 'test_r2b_independent_capture_eval.py' -v
       - name: Obtain SHA-pinned M1-B2 vision model into temporary runner
         shell: bash
         run: |
