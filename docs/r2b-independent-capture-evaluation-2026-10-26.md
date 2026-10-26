@@ -116,10 +116,33 @@ python -m microduck_companion.r2b_independent_capture_eval \
 
 Les options `--image-model` et `--audio-model` acceptent les fichiers ONNX **déjà existants** dont les hashes correspondent à M1-B2, uniquement pour une comparaison CPU hôte. Aucun accès réseau, moteur, capteur OEM, PC Qwen ni résultat d'identité certifié. Les dépendances Pillow / NumPy / ONNX Runtime restent facultatives et uniquement pour les évaluations réelles correspondant aux formats.
 
+## 4 bis. Résultats réellement observés — vues originales ABO (hôte CI)
+
+[GitHub Actions #40322898625](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40322898625) : **exécution complète réussie** du comparatif sur le commit de code `b779659ad70f1b8ed0bcff3f83476d9a23d50db3`, 72 JPEG originaux issus de **12 séquences ABO**, 6 orientations par séquence. Aucun JPEG sauvegardé dans GitHub et aucun entraînement. Empreinte SHA-256 de sélection des séquences : `735bfd69085e83765e27263a9e1fbde68dab0bc3a304a85b11a65bde6366799d`. Empreinte combinée des SHA-256 des images : `78e0181b7b316139d11467cd797844eee7dba5df1dff42be89995e98a0065428`. Ces empreintes documentent **cette exécution**, pas l'origine certifiée de chacun des objets physiques.
+
+| Critère | M1-B classique, 64 octets | MobileNetV2 ImageNet, 1 000 scores |
+| --- | ---: | ---: |
+| Seuil choisi sur validation seule (similarité) | **0,869485** | **0,682008** |
+| Validation : vues inscrites retrouvées | 5/20 (**25 %**) | 12/20 (**60 %**) |
+| Validation : vues inconnues rejetées | 4/4 | 4/4 |
+| **Test indépendant : vues inscrites retrouvées** | **10/16 (62,5 %)** | **15/16 (93,75 %)** |
+| **Test : vues de séquences non inscrites rejetées** | **8/8** | **8/8** |
+| Test : fausses associations à une autre séquence connue | 0/16 | 0/16 |
+| Test : inconnues acceptées à tort | 0/8 | 0/8 |
+| Test : abstentions parmi les inscrites (pas de faux rattachement) | 6/16 | 1/16 |
+
+L'écart est **prometteur mais non significatif au sens d'une validation robuste** : seulement **4 séquences connues test**, chacune vue 4 fois, et **2 séquences inconnues test**. Ces observations sont corrélées à l'intérieur de chaque séquence ; **16 vues ne sont pas 16 objets indépendants**. Les « inconnus » sont ici seulement des *spin_id* absents des références et non la preuve que deux séquences représentent des produits physiquement distincts. La performance validation plus faible révèle des variations importantes selon les objets choisis. Un seul seuil conservateur peut aussi refuser des objets connus.
+
+**Ressources runner Linux** : 72 appels MobileNetV2 ONNX CPU, inférence médiane **8,95 ms**, p95 **9,40 ms** (hors prétraitement, lecture réseau et scoring) ; pic RSS du **processus entier** **114 764 Kio** (~112 Mio), CPU utilisateur **2,810 s**, CPU système **0,079 s**, durée murale **22,372 s**, incluant téléchargement. Ces chiffres ne sont **pas** une mesure du RK3566, de sa RAM libre, de l'énergie, de la température ou des délais moteurs.
+
+**Interprétation :** MobileNetV2 améliore cette comparaison de séquences sous angles réels mais utilise des **probabilités de classes ImageNet**, susceptibles d'associer deux objets semblables. Aucune identification individuelle robuste n'est démontrée ; aucun modèle n'est sélectionné pour le robot. La mémoire M1-B/R2-A ne reçoit **aucune nouvelle donnée réelle** ; son schéma reste strictement limité aux fixtures synthétiques.
+
+**Audio :** aucun ensemble de sons *physiquement enregistrés à plusieurs reprises* n'a encore été évalué. Les WAV du test logiciel sont des sinusoïdes générées et ne doivent pas être comptés comme des enregistrements indépendants.
+
 ## 5. Validation et blocages avant R2-C
 
 Les **tests unitaires CI sont sur données inventées** : manifestes artificiels, matrices de descripteurs fictives, sons sinusoïdaux générés, altération de SHA, source réutilisée entre splits, trames/sessions dupliquées, CLI sans consentement, refus des chemins symlinks. **Ils ne constituent pas une mesure de reconnaissance de captures réellement indépendantes**.
 
-État à compléter depuis la CI de la PR : nombre de tests et SHA de commit. **Aucun score COIL-20 ni audio de source physique réelle n'a été mesuré** par ce lot, tant que le contenu n'est pas acquis avec des droits/étiquettes vérifiables. La mesure RSS hôte ne remplace pas l'audit de RAM réellement disponible, thermique ou latence moteur du RK3566.
+Le comparatif **visuel ABO public** a été exécuté et documenté ci-dessus. Le corpus **COIL-20** restreint et les sons provenant d'une **même source physiquement réenregistrée** restent non exécutés. Les résultats des fixtures CI ne constituent pas des performances de reconnaissance réelles. La mesure RSS hôte ne remplace pas l'audit de RAM réellement disponible, thermique ou latence moteur du RK3566.
 
 **Porte de sortie scientifique R2-B :** obtenir un sous-ensemble documenté avec des captures physiques distinctes, consentement ou licence vérifié, et exécuter le benchmark une fois, puis consigner sans sélectionner un modèle sur le jeu de test. **R2-C ne doit pas conclure** sur la précision ou l'intégration embarquée avant cette preuve. La partie R2-B infrastructure peut être fusionnée indépendamment comme banc passif, sans autoriser la mémorisation réelle de média dans les tables limitées aux fixtures M1-B.
