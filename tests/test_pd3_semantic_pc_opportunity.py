@@ -65,6 +65,9 @@ class PD3Tests(unittest.TestCase):
     def prepared(self, *, previous=None, current=None, cue="none",
                  now=NOW+.1, optin=False, portrait=None, disposition=None,
                  situation=None, advisory=None):
+        # Every prepared() represents a separate fictional F2 session.
+        # F2-A/B must never be re-ticked on a duplicated (sequence=2) frame.
+        self.brain=AutonomyBrain(self.mem)
         old=previous if previous is not None else reading(at=NOW-1,seq=1)
         new=current if current is not None else reading()
         if advisory is None:
