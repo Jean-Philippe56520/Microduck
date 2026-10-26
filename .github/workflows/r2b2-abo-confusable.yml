@@ -1,53 +1,48 @@
-name: R2-B+2 ABO product-category metadata preflight
+name: R2-B+2 ABO chairs same-class multi-angle test (host only)
 on:
   pull_request:
     paths:
-      - .github/workflows/r2b2-abo-confusable.yml
+      - microduck_companion/r2b_independent_capture_eval.py
       - microduck_companion/r2b2_abo_confusables.py
       - tests/test_r2b2_abo_confusables.py
+      - .github/workflows/r2b2-abo-confusable.yml
   workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
-  abo-categories:
+  abo-same-category:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Inspect official catalogue metadata only, no pictures
+      - name: Verify R2-B+2 contracts on artificial data first
+        run: python -m unittest discover -s tests -p 'test_r2b2_abo_confusables.py' -v
+      - name: Install optional host-only inference packages
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0 numpy==1.26.4 onnxruntime==1.21.0
+      - name: Download SHA-256-verified existing MobileNetV2 model into temporary runner
         shell: bash
         run: |
-          python - <<'PY'
-          import urllib.request, gzip, io, json, collections
-          base="https://amazon-berkeley-objects.s3.us-east-1.amazonaws.com/listings/metadata/listings_{}.json.gz"
-          counts=collections.Counter()
-          examples=collections.defaultdict(list)
-          for i in range(2):
-              url=base.format(i)
-              req=urllib.request.Request(url,headers={"User-Agent":"Microduck-R2B2-catalog-audit/1"})
-              with urllib.request.urlopen(req,timeout=30) as response:
-                  if response.geturl()!=url:raise RuntimeError("redirect")
-                  packed=response.read(10_000_001)
-              if len(packed)>10_000_000:raise RuntimeError("metadata too large")
-              lines=0; with_spins=0
-              with gzip.GzipFile(fileobj=io.BytesIO(packed)) as f:
-                  for line in f:
-                      lines+=1
-                      if lines>15000:raise RuntimeError("too many listing lines")
-                      item=json.loads(line)
-                      spin=item.get("spin_id")
-                      if not isinstance(spin,str) or len(spin)!=8:continue
-                      with_spins+=1
-                      raw=item.get("product_type")
-                      if isinstance(raw,list):
-                          raw=raw[0].get("value") if raw and isinstance(raw[0],dict) else None
-                      if not isinstance(raw,str):continue
-                      counts[raw]+=1
-                      if len(examples[raw])<3:examples[raw].append(spin)
-              print("shard",i,"raw_bytes",len(packed),"lines",lines,"spins",with_spins)
-          print("top_types",json.dumps(counts.most_common(30)))
-          print("examples",json.dumps({k:examples[k] for k,_ in counts.most_common(6)}))
-          PY
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 90 \
+            --output "$RUNNER_TEMP/mobilenetv2-12.onnx" \
+            "https://huggingface.co/onnxmodelzoo/mobilenetv2-12/resolve/main/mobilenetv2-12.onnx"
+          echo "c0c3f76d93fa3fd6580652a45618618a220fced18babf65774ed169de0432ad5  $RUNNER_TEMP/mobilenetv2-12.onnx" | sha256sum --check
+      - name: Evaluate CC BY 4.0 original CHAIR spin frames with distinct catalogue item IDs
+        env:
+          OMP_NUM_THREADS: '1'
+          OPENBLAS_NUM_THREADS: '1'
+        shell: bash
+        run: |
+          # Attribution: Amazon.com / Guillaumin et al.; Amazon Berkeley Objects
+          # CC BY 4.0 official https://amazon-berkeley-objects.s3.us-east-1.amazonaws.com/index.html
+          # Same type CHAIR is a confusable-category PROXY, not independently
+          # confirmed visually similar distinct manufactured objects.
+          # All data/model files ephemeral, no media artifacts or private IDs.
+          python -m microduck_companion.r2b2_abo_confusables \
+            --locally-approved-ccby-research \
+            --image-model "$RUNNER_TEMP/mobilenetv2-12.onnx"
