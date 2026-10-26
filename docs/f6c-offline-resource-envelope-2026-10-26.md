@@ -49,6 +49,12 @@ python -m microduck_companion.f6c_offline_budget_demo
 
 La CI compile les fichiers Python et lance le scénario avec les tests historiques. Les mesures `p50/p95`, temps CPU et `ru_maxrss` qu'il affiche sont les mesures du **processus GitHub Actions**, pas du robot. Les seuils de 4 s et deux événements de la démonstration sont des choix **de test**, pas une fréquence caméra, ToF ou moteur.
 
+### Preuve effectivement mesurée sur GitHub Actions
+
+La [CI F6-C #40257113819](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40257113819) a réussi : **861 tests Python**, soit **20 tests supplémentaires** par rapport à la base F6-B, et démonstration complète F6-C hors réseau. Les six sollicitations ont produit **trois acceptations**, **un refus de cadence**, **un refus de quota d'événements** et **un refus de quota de cycles**. Le superviseur a traité **quatre acquisitions F1-B**, écrit **trois observations** et enregistré **trois conséquences fictives** F2-C, sans aucun mouvement ni PC.
+
+Mesures réellement produites par le **processus Linux GitHub Actions** pendant cette seule démonstration : latence p50 des six rapports **0,196 ms**, p95 par rang le plus proche **1,887 ms** (c'est le maximum des six), moyenne du **CPU du processus entier** par rapport **0,551 ms** et pic historique RSS de processus **18 324 Kio**. Les horloges de provenance des observations sont **synthétiques**, seules les mesures de charge du processus sont réelles. Ces chiffres ne garantissent aucun délai sur le robot et ne représentent ni consommation électrique, ni mémoire disponible du RK3566, ni performance de la vision.
+
 ## 4. Limites et risques vérifiables
 
 - Les budgets CPU et de durée sont **coopératifs et a posteriori** : Python peut être bloqué par une requête I/O ou SQLite malgré F6-C. Un dépassement constaté ne coupe **pas** le thread ni la boucle `robotd`, et ne révoque pas une écriture déjà commise.
