@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**Addendum PD0 — 27/10/2026, documentaire :** [16 comportements historiques, besoin sémantique et Qwen PC](pd0-behavior-states-selective-qwen-2026-10-27.md). Aucun état supplémentaire ne tourne sur RK3566 ; pas de budget d'humeur, d'animation, de transmission d'image, de consommation Ollama ou de mémoire persistante mesuré. F5 actuel est un contrat de catégories fictives sans médias ; plus tard, tout traitement multimodal est déporté vers PC facultatif et borné, sans bloquer `robotd` 50 Hz. Avant portage : audit `scripts/resource-audit.sh`, vérification du stockage réellement monté, RAM libre, CPU/thermie, propriétés des animations OEM et sûreté. Les 32 Go nominaux ne sont pas un espace libre garanti.
+
+
 **Addendum EX2 (26/10/2026 ; [PR #71](https://github.com/Jean-Philippe56520/Microduck/pull/71), [CI hôte 1 139 tests, 19 ignorés](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40413719554), non validé sur robot) :** [effets fictifs et Journal de Kwipi](ex2-mock-effects-kwipi-journal-2026-10-26.md). Un lecteur PC local ouvre une base de test EX1/EX2 existante en `mode=ro`, sans collecte ni écriture sur RK3566. Les fenêtres fictives (2 s avant/après), les plafonds de 256 effets/14 jours et l'export à 50 lignes ne sont pas des résultats de RAM/CPU/stockage physique. Aucun test moteur 50 Hz, température, eMMC, SQLite WAL ou autonomie réelle ; consulter le constructeur et `scripts/resource-audit.sh` après réception. Ne pas activer de journaux à haute fréquence ni de chemin persistant avant audit.
 
 
