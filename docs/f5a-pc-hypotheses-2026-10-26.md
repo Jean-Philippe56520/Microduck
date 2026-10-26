@@ -1,6 +1,6 @@
 # F5-A — Contrat PC facultatif de seules hypothèses (fixtures)
 
-**26 octobre 2026 — [PR #41](https://github.com/Jean-Philippe56520/Microduck/pull/41), logiciel Python en revue.** F4-D [fusionnée via PR #40](https://github.com/Jean-Philippe56520/Microduck/pull/40). La phase F5-A fournit **un contrat local sans réseau**. Elle ne lance ni Ollama, ni Qwen, ni caméra, ni microphone, ni dispositif NFC/BLE, ni moteur, ni haut-parleur.
+**26 octobre 2026 — [PR #41](https://github.com/Jean-Philippe56520/Microduck/pull/41) fusionnée, logiciel Python testé sur fixtures.** F4-D [fusionnée via PR #40](https://github.com/Jean-Philippe56520/Microduck/pull/40). La phase F5-A fournit **un contrat local sans réseau**. Elle ne lance ni Ollama, ni Qwen, ni caméra, ni microphone, ni dispositif NFC/BLE, ni moteur, ni haut-parleur.
 
 ## Pourquoi cette séparation
 
@@ -27,6 +27,6 @@ python -m unittest discover -s tests -v
 python -m microduck_companion.f5a_contract_demo
 ```
 
-**Validation limitée :** tests CPU sur l'hôte de CI (après ouverture de la PR). Pas de mesure du PC Ryzen AI, 4B/9B, accélération, coût énergétique, délai réel de réseau ou budget mémoire RK3566. Aucun résultat matériel ni nouvelle marche MuJoCo.
+**Validation limitée :** [757 tests Python réussis, dont 34 nouveaux F5-A, compilation et démonstration fictive en CI](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40250745954) sur hôte Linux GitHub Actions. Pas de mesure du PC Ryzen AI, 4B/9B, accélération, coût énergétique, délai réel de réseau ou budget mémoire RK3566. Aucun résultat matériel ni nouvelle marche MuJoCo.
 
 **Étape suivante F5-B :** créer et mesurer séparément un client Ollama local sécurisé et comparer des modèles multimodaux 4B puis 9B, en conservant la possibilité de faire chaque cycle **sans PC**. Les réponses de ce client continueront à être traitées comme non vérifiées et sans contrôle des actionneurs.
