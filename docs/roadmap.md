@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**PD2 — continuité descriptive et prudente des 16 états (27/10/2026 ; candidat sur fixtures, CI à vérifier) :** [matrice et critères](pd2-coherent-mock-behavior-continuity-2026-10-27.md). Après la décision F2/F4, petit adaptateur dans le cerveau existant : dix signaux explicitement synthétiques + quatre portraits P-A + deux indices P-C, seuils provisoires, courtes fenêtres de maintien, refus et corrections F4-A. Aucun état moteur historique disponible, aucune exécution, aucun Qwen, aucune voix/image, aucune nouvelle base ; humeur process-local non persistée. Cat-A2b prioritaire, PD3 ensuite.
+
+
 **PD1 — catalogue non exécutable des seize comportements OEM (27/10/2026 ; [PR #74](https://github.com/Jean-Philippe56520/Microduck/pull/74), [CI hôte 1 176 tests, 19 ignorés, zéro échec](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40418679064)) :** [audit source, interface et tests](pd1-oem-expression-capabilities-2026-10-27.md). Dans P-A, `BehaviorExpressionCapability` inventorie 4 indices **partiels** déjà présents dans les sources constructeur (Chill/LookAround/Nap/Petted), douze états sans indice partiel confirmé, et **zéro compétence complète à 16 états dispatchable**. Liaison descriptive optionnelle P-C, aucune création d'ordonnanceur, geste, son, mémoire ou consultation Qwen. La preuve est un test logiciel sur fixtures, pas un essai robot. PD2 cohérence puis PD3 besoin d'information non moteur ; Cat-A2b prioritaire.
 
 
