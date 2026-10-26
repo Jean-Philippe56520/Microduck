@@ -13,7 +13,9 @@ from typing import TYPE_CHECKING
 from .passive_intentions import PassiveIntent, _valid_motivations
 from .passive_memory import PassiveObservationJournal, _check_wall
 from .passive_learning import PassiveLearning
-from .behavioral_memory import BehavioralMemory, MAX_STORED, MAX_BIAS
+from .behavioral_memory import (
+    BehavioralMemory, MAX_STORED, MAX_BIAS, valid_mock_summary,
+)
 from .mock_social_cues import MockSocialPlan
 
 if TYPE_CHECKING:
@@ -194,10 +196,7 @@ def describe_behavior(
             # F4-A joins the original P2a mock evidence. Reopen/retract/prune
             # change this report without a duplicate personality ledger.
             summary = behavioral.summary(now_wall_epoch_s=wall)
-            if (summary.source != "explicit_mock_followup_only"
-                    or summary.verified_on_robot
-                    or summary.executed_actions
-                    or summary.motor_commands_issued):
+            if not valid_mock_summary(summary):
                 raise ValueError("not a historical, non-motor mock summary")
             result_bias = float(summary.bias)
             positive, negative = summary.positive, summary.negative
