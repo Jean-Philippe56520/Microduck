@@ -151,11 +151,15 @@ class PolicyTests(unittest.TestCase):
                                       status="response_rejected"))
         denied=self.reserve(cycle(),wall=WALL+122)
         self.assertEqual("circuit_open",denied.reason)
+        # The 300s circuit is not the only safeguard: two calls within
+        # the 600s rolling window must still be exhausted first.
+        self.assertEqual("window_quota",self.reserve(
+            cycle(),wall=WALL+62+BACKOFF_S).reason)
         resumed=cycle()
-        self.assertTrue(self.reserve(resumed,wall=WALL+62+BACKOFF_S).allowed)
-        self.assertTrue(self.complete(resumed,wall=WALL+63+BACKOFF_S))
+        self.assertTrue(self.reserve(resumed,wall=WALL+601).allowed)
+        self.assertTrue(self.complete(resumed,wall=WALL+602))
         self.assertEqual("cooldown",self.reserve(
-            cycle(),wall=WALL+64+BACKOFF_S).reason)
+            cycle(),wall=WALL+603).reason)
 
     def test_crash_pending_recovers_as_failure_with_no_replay(self):
         first=cycle()
