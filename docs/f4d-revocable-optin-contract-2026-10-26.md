@@ -1,6 +1,6 @@
 # F4-D — Associations locales volontaires et révocables sur fixtures
 
-**26 octobre 2026 — [PR #40](https://github.com/Jean-Philippe56520/Microduck/pull/40), à revoir, non fusionnée.** Cette étape suit [F4-C fusionnée via PR #39](https://github.com/Jean-Philippe56520/Microduck/pull/39), après [689 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40248575737). **Aucun robot physique, lecteur NFC/BLE, caméra ni dispositif réel d'identification disponible dans cette phase.**
+**26 octobre 2026 — [PR #40](https://github.com/Jean-Philippe56520/Microduck/pull/40), fusionnée après revue.** Cette étape suit [F4-C fusionnée via PR #39](https://github.com/Jean-Philippe56520/Microduck/pull/39), après [689 tests Python réussis](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40248575737). **Aucun robot physique, lecteur NFC/BLE, caméra ni dispositif réel d'identification disponible dans cette phase.**
 
 ## 1. Objectif et frontière de confiance
 
@@ -66,4 +66,4 @@ python -m microduck_companion.f4d_optin_demo --database /tmp/microduck-f4d-fixtu
 - Aucun lien entre l'association et les propositions sociales F4-C, les choix moteur `robotd`, le PC Qwen ou des actions physiques ;
 - Aucune mesure RAM/RSS/température du RK3566, consommation énergétique ou sécurité à proximité d'un enfant ou d'un animal réel.
 
-**Statut : codé et testé sur fixtures fictives, non validé sur robot physique.** Le prochain lot logiciel **F5-A**, distinct après revue et fusion de F4-D, posera **le contrat de Qwen facultatif sur PC**, avec hypothèses typées, refus des ordres moteurs, délais et repli local hors réseau. Une suggestion LLM ne devra jamais devenir une observation authentifiée ou un accès à une identité.
+**Statut : codé et testé sur fixtures fictives, non validé sur robot physique.** Le prochain lot logiciel **F5-A**, distinct de F4-D, posera **le contrat de Qwen facultatif sur PC**, avec hypothèses typées, refus des ordres moteurs, délais et repli local hors réseau. Une suggestion LLM ne devra jamais devenir une observation authentifiée ou un accès à une identité.
