@@ -66,6 +66,12 @@ Le [rapport F5-B](f5b-ollama-local-transport-2026-10-26.md) décrit un client HT
 
 Les limites configurées de taille de réponse et de délai sont des règles logicielles, pas des mesures de RAM, de latence Ollama, de GPU/NPU ou d'énergie. Les ressources du robot RK3566 et sa température restent inconnues. L'audit physique `scripts/resource-audit.sh` doit encore être effectué sur matériel réel. Le dépôt ne contient aucun modèle ni donnée privée.
 
+## Addendum F5-C — 26 octobre 2026 (quota logiciel, pas de mesure matérielle)
+
+La [phase F5-C](f5c-sparse-consultations-2026-10-26.md), développée en [PR #43](https://github.com/Jean-Philippe56520/Microduck/pull/43), limite les tentatives de consultation PC sur **observations fictives**. Les chiffres 60 s, 2 consultations par 10 min, 8 par jour, 3 s de reprise des demandes interrompues et 300 s après deux pannes sont des **seuils logiciels de départ**, ni des mesures énergétiques ni une cadence viable démontrée sur le RK3566. La transaction SQLite a une attente configurée de 20 ms, **sans garantie de délai sur le robot**.
+
+Les [798 tests Python sur GitHub Actions, y compris la démonstration SQLite inter-processus](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40252645890), ne consultent aucun vrai Ollama, ne pilotent aucun actionneur, ne mesurent ni puissance, latence radio réelle, RAM libre, température, autonomie, eMMC, NPU ou fréquence moteur du Microduck. Aucun chiffre de performance Qwen 4B/9B sur le PC n'a été produit. Le script `scripts/resource-audit.sh` reste à exécuter sur matériel physique lorsqu'il sera disponible, et les interfaces de sécurité OEM restent seules responsables des mouvements.
+
 ## Verdict
 
 Le Microduck permet raisonnablement de viser : mémoire persistante locale, moteur d'autonomie, exploration prudente, observation visuelle événementielle, identification de catégories d'animaux et interaction sociale élémentaire. Il reste à développer et à valider : détection personnalisée d'animaux, identification non biométrique des personnes familières, reconnaissance vocale, exploration sûre en environnement non contrôlé, et intégration du cerveau autonome à robotd. Qwen multimodal se placera initialement sur un PC local.

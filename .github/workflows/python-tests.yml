@@ -72,3 +72,9 @@ jobs:
           # Binds only to local 127.0.0.1; no Ollama/Qwen or outside requests.
           python -m microduck_companion.f5b_transport_demo
           python -m microduck_companion.f5b_benchmark
+      - name: F5-C persistent opt-in quota across independent mock processes
+        run: |
+          # Two fresh Python processes share only an anonymous SQLite quota.
+          # No external network, real Ollama/Qwen, sensor, motor or speaker.
+          python -m microduck_companion.f5c_policy_demo --database "$RUNNER_TEMP/f5c-pc-quota.sqlite3" --session first
+          python -m microduck_companion.f5c_policy_demo --database "$RUNNER_TEMP/f5c-pc-quota.sqlite3" --session second
