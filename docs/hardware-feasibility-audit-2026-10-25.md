@@ -70,7 +70,7 @@ Les limites configurées de taille de réponse et de délai sont des règles log
 
 La [phase F5-C](f5c-sparse-consultations-2026-10-26.md), développée en [PR #43](https://github.com/Jean-Philippe56520/Microduck/pull/43), limite les tentatives de consultation PC sur **observations fictives**. Les chiffres 60 s, 2 consultations par 10 min, 8 par jour, 3 s de reprise des demandes interrompues et 300 s après deux pannes sont des **seuils logiciels de départ**, ni des mesures énergétiques ni une cadence viable démontrée sur le RK3566. La transaction SQLite a une attente configurée de 20 ms, **sans garantie de délai sur le robot**.
 
-Les tests CPU sur GitHub Actions ne consultent aucun vrai Ollama, ne pilotent aucun actionneur, ne mesurent ni puissance, latence radio réelle, RAM libre, température, autonomie, eMMC, NPU ou fréquence moteur du Microduck. Aucun chiffre de performance Qwen 4B/9B sur le PC n'a été produit. Le script `scripts/resource-audit.sh` reste à exécuter sur matériel physique lorsqu'il sera disponible, et les interfaces de sécurité OEM restent seules responsables des mouvements.
+Les [798 tests Python sur GitHub Actions, y compris la démonstration SQLite inter-processus](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40252645890), ne consultent aucun vrai Ollama, ne pilotent aucun actionneur, ne mesurent ni puissance, latence radio réelle, RAM libre, température, autonomie, eMMC, NPU ou fréquence moteur du Microduck. Aucun chiffre de performance Qwen 4B/9B sur le PC n'a été produit. Le script `scripts/resource-audit.sh` reste à exécuter sur matériel physique lorsqu'il sera disponible, et les interfaces de sécurité OEM restent seules responsables des mouvements.
 
 ## Verdict
 

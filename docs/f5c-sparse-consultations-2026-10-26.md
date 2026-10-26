@@ -1,6 +1,6 @@
 # F5-C — Consultations PC parcimonieuses, quotas et repli local
 
-**26 octobre 2026 — PR #43, développement Python expérimental sur données fictives.** F5-A (#41) et F5-B (#42) sont fusionnées. Aucun Microduck physique, vraie caméra, Ollama ou modèle Qwen 4B/9B n'est utilisé par les tests de cette phase.
+**26 octobre 2026 — [PR #43 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/43), logiciel Python testé sur données fictives.** F5-A (#41) et F5-B (#42) sont fusionnées. Aucun Microduck physique, vraie caméra, Ollama ou modèle Qwen 4B/9B n'est utilisé par les tests de cette phase.
 
 ## Contrat et intégration
 
@@ -32,4 +32,4 @@ F5-C ne mesure pas la latence réseau d'Ollama sur le PC de l'utilisateur, ni se
 
 **F5-D** devra tester une résistance plus large aux réponses adversariales, à l'interception d'un réseau non authentifié, à la perte prolongée du PC, aux retours mal corrélés et aux pannes persistantes. Les horloges et l'initialisation SQLite ne disposent pas de preuve temps réel ; avant le robot, auditer les ressources et conserver les mécanismes OEM.
 
-**Statut attendu de la PR #43 :** code, tests de fixtures et démonstration multi-processus validés en CI, puis revue et fusion ; validation physique et vrai PC Qwen toujours **non effectuées**.
+**Statut livré de la PR #43 :** [798 tests Python, compilation et démonstration en deux processus réussis en CI](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40252645890), [PR #43 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/43) après revue ; validation physique et vrai PC Qwen toujours **non effectuées**.
