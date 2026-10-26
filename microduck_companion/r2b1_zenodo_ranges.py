@@ -163,7 +163,9 @@ def _selected_wavs(zf: zipfile.ZipFile, family: str) -> dict[str, bytes]:
         raise R2BEvidenceError("official ZIP lacks 3 individual train/test IDs")
     selected = {}
     for index, mid in enumerate(ids[:3]):
-        splits = ("train", "test") if index < 2 else ("test",)
+        # Existing R2-B+1 preflight requires train/test for all three IDs,
+        # even though the unknown ID train file is not enrolled or scored.
+        splits = ("train", "test")
         for split in splits:
             choices = sorted(candidates[(split, mid)], key=lambda x: x.filename)
             info = choices[0]  # Deterministic first clip; never select on scores.
@@ -223,6 +225,7 @@ def run_remote_pilot(*, license_reviewed: bool,
             "cropping": "center_one_second_no_model_tuning",
             "source_count": 6,
             "selected_original_file_count": sum(selected_counts.values()),
+            "clips_evaluated": prepared["derived_wav_files"],
             "per_family_original_files": selected_counts,
             "remote_range_probe": range_metrics,
             "private_output_not_persisted": True,
