@@ -7,7 +7,7 @@ The images are independent PHOTOS, NOT views of one verified physical object.
 The positive tests are brightness/gain changes to the SAME recording only,
 NOT evidence of view/voice/source recognition in a home.
 
-Dependencies ONLY for this optional HOST benchmark: Pillow + ffmpeg command.
+Dependencies ONLY for this optional HOST benchmark: Pillow + ffmpeg\n(binary may be supplied by optional pinned imageio-ffmpeg wheel).
 No files created; JPEG/OGG decoded in RAM. Network timeouts/refusals are
 honestly reported as unavailable, not turned into invented measurements.
 """
@@ -81,14 +81,25 @@ def load_cc0_ogg(filename: str, *, opener=urlopen) -> bytes:
     return raw
 
 
+def _host_ffmpeg() -> str:
+    """Find system ffmpeg or the optional pinned imageio-ffmpeg host wheel."""
+    system=shutil.which("ffmpeg")
+    if system:
+        return system
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except (ImportError, OSError, RuntimeError) as exc:
+        raise RuntimeError("ffmpeg host decoder is unavailable") from exc
+
+
 def decoded_loudest_pcm(raw: bytes) -> bytes:
     """Decode public OGG to 8kHz mono PCM in memory, then choose one window."""
     if type(raw) is not bytes or not raw.startswith(b"OggS") or len(raw)>MAX_PUBLIC_OGG:
         raise ValueError("expected bounded OGG bytes")
-    if shutil.which("ffmpeg") is None:
-        raise RuntimeError("ffmpeg host decoder is unavailable")
+    decoder=_host_ffmpeg()
     result=subprocess.run([
-        "ffmpeg","-hide_banner","-loglevel","error",
+        decoder,"-hide_banner","-loglevel","error",
         "-i","pipe:0","-t","5","-ac","1","-ar","8000",
         "-f","s16le","pipe:1",
     ],input=raw,capture_output=True,timeout=15,check=False)
@@ -142,8 +153,7 @@ def run_public_spot_check() -> dict:
     One missing source yields an explicit 'unavailable' exception, not
     an apparent successful evaluation on a smaller hidden test set.
     """
-    if shutil.which("ffmpeg") is None:
-        raise RuntimeError("ffmpeg not installed on host")
+    _host_ffmpeg()  # Fail before network if decoder is absent.
     images=tuple(
         (filename,public_image_gray32(filename))
         for filename in PHOTO_NAMES
