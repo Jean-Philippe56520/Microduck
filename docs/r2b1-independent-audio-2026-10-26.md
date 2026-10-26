@@ -1,7 +1,7 @@
-# R2-B+1 — Audio : préparation vérifiable, résultats réels encore absents
+# R2-B+1 — Préparateur audio initial, puis test sur prises réelles
 
 **26 octobre 2026 — lot indépendant de R2-B+2, non lancé.**
-**Statut : code et tests de protocole sur WAV synthétiques ; AUCUN corpus audio réel exécuté ; aucune précision acoustique réelle démontrée.**
+**État historique de la PR #59 (préparation) :** code et tests WAV synthétiques, **aucun corpus réel exécuté à cette date de clôture du lot**. **Depuis la PR #60 :** [l'évaluation de 34 extraits réels sur six machines](r2b1-real-audio-results-2026-10-26.md) a été exécutée ; **M1-B échoue sur le test (0/10 connues correctement reconnues, 1 fausse fusion)**. Le présent fichier décrit surtout la préparation et ses garde-fous, pas le résultat final.
 
 ## Sources internes, décisions et absence de doublon
 
@@ -52,6 +52,6 @@ Le préparateur refuse les droits/prises non examinés, liens symboliques, médi
 
 [Tests R2-B+1](../tests/test_r2b1_toyadmos_local.py) : WAV **purement synthétiques** (sans signification acoustique réelle) pour prouver validateur, cohortes source séparées, SHA, faux doublons, formats rejetés, confidentialité de chemins, absence de mouvement et réutilisation de l'évaluateur. Ils n'établissent aucune performance de reconnaissance réelle.
 
-**Blocage explicite :** les vrais ZIP Zenodo ne sont pas accessibles dans ce runtime et n'ont pas été fournis. Aucun son physique n'a été exécuté dans la chaîne ; il est interdit de publier un taux de reconnaissance, de sélectionner un modèle audio ou de déclarer le passage au portage embarqué.
+**Blocage initial, PR #59 uniquement :** le runtime de préparation n'avait pas les fichiers Zenodo. **Ce blocage a été levé en PR #60** par lecture HTTP Range dans GitHub Actions ; voir le [rapport de résultats réels](r2b1-real-audio-results-2026-10-26.md). Il reste interdit de promouvoir un modèle audio sur cette base.
 
-**Décision R2-B+1 :** outillage prêt et testé uniquement si CI verte ; validation audio réelle **en attente de corpus**. R2-B+2 reste strictement **non démarré**, conformément à la demande de l'utilisateur.
+**Décision révisée :** outillage préparatoire testé et essai réel exécuté dans la PR #60 ; **M1-B ne satisfait pas le rappel des sons familiers et commet une fausse fusion**. Aucun modèle n'est retenu. R2-B+2 reste strictement **non démarré** sans nouveau Go.

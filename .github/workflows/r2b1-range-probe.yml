@@ -1,0 +1,30 @@
+name: R2-B+1 DCASE ToyADMOS real sound pilot (no media artifacts)
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'microduck_companion/r2b1_zenodo_ranges.py'
+      - 'microduck_companion/r2b1_toyadmos_local.py'
+      - 'microduck_companion/r2b_independent_capture_eval.py'
+      - 'tests/test_r2b1_zenodo_ranges.py'
+      - 'docs/r2b1-real-audio-results-2026-10-26.md'
+      - '.github/workflows/r2b1-range-probe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real_audio_pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Evaluate 34 real recording clips from 6 machines using strict Zenodo ranges
+        shell: bash
+        run: |
+          python -m microduck_companion.r2b1_zenodo_ranges \
+            --reviewed-cc-by-nc-sa-noncommercial \
+            --reviewed-original-operation-provenance
