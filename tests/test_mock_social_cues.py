@@ -355,13 +355,16 @@ class SocialProposalTests(unittest.TestCase):
 
     def test_brain_motion_safety_unaffected_by_social_glance(self):
         from microduck_companion.perception import PerceptionSnapshot
+        before=self.mem.experience_count()
         self.assertEqual("glance",self.cue().kind)
+        self.assertEqual(before,self.mem.experience_count())
         plan=self.brain.choose_from_snapshot(
             PerceptionSnapshot("mock",(),100.),now=100.1)
         self.assertEqual("halt",plan.intention)
+        # The existing safety planner logs its own decision; the social
+        # composer must never log executed actions or modify that planner.
         self.assertEqual(0,self.mem.conn.execute(
             "SELECT COUNT(*) FROM intent_preferences").fetchone()[0])
-        self.assertEqual(0,self.mem.experience_count())
 
 if __name__=="__main__":
     unittest.main()
