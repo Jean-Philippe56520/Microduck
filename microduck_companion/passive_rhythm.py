@@ -19,7 +19,7 @@ from .passive_intentions import (PassiveIntent, propose_passive_intention,
                                  _valid_motivations, _valid_scalar)
 from .passive_memory import PassiveObservationJournal
 from .passive_learning import PassiveLearning
-from .behavioral_memory import BehavioralMemory
+from .behavioral_memory import BehavioralMemory, valid_mock_summary
 from .passive_observations import summarize_passive
 from .passive_sources import PassiveRead
 
@@ -238,11 +238,7 @@ class PassiveRhythm:
         if behavioral is not None and any(c[0] == "inspect" for c in candidates):
             try:
                 summary = behavioral.summary(now_wall_epoch_s=now_wall_epoch_s)
-                if (summary.source != "explicit_mock_followup_only"
-                        or summary.verified_on_robot
-                        or summary.executed_actions
-                        or summary.motor_commands_issued
-                        or not -0.12 <= summary.bias <= 0.12):
+                if not valid_mock_summary(summary):
                     return self._record(self._idle("invalid_mock_outcome_summary"),
                                         motivations=motivations,
                                         update_energy=False)
