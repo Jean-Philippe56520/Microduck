@@ -110,6 +110,22 @@ def _image_baseline(image) -> bytes:
         .tobytes()
 
 
+def imagenet_distribution(values: tuple[float, ...]) -> tuple[float, ...]:
+    """Retain class probabilities, or softmax logits exactly once."""
+    if (type(values) is not tuple or len(values) != 1000 or
+            any(type(v) is not float or not math.isfinite(v) for v in values)):
+        raise ValueError("expected finite 1000-class ImageNet output")
+    if min(values) >= 0. and max(values) <= 1. and abs(sum(values)-1.) <= .001:
+        total = sum(values)
+        return tuple(x / total for x in values)
+    top = max(values)
+    weights = tuple(math.exp(x-top) for x in values)
+    total = sum(weights)
+    if not math.isfinite(total) or total <= 0:
+        raise ValueError("invalid ImageNet normalization")
+    return tuple(x/total for x in weights)
+
+
 def _image_learned(session, image, np, timings: list[float]):
     inputs = session.get_inputs()
     if len(inputs) != 1:
@@ -125,16 +141,7 @@ def _image_learned(session, image, np, timings: list[float]):
         raise ValueError("unexpected or nonfinite ImageNet output")
     # ImageNet class DISTRIBUTION as a learned descriptor, not an instance
     # recognition embedding. Similar cats may be incorrectly merged.
-    logits = np.asarray(raw[0], dtype=np.float64)
-    # Some ImageNet ONNX exports emit probabilities rather than logits.
-    # A second softmax would flatten them and create misleading matches.
-    if (logits.min() >= 0 and logits.max() <= 1
-            and abs(float(logits.sum()) - 1.) <= .001):
-        scores = logits
-    else:
-        scores = np.exp(logits - logits.max())
-        scores /= scores.sum()
-    return tuple(float(v) for v in scores)
+    return imagenet_distribution(tuple(float(v) for v in raw[0]))
 
 
 def _decode_audio_16k(ogg: bytes) -> tuple[int, ...]:
