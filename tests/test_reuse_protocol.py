@@ -49,7 +49,7 @@ class ReuseFirstProtocolTests(unittest.TestCase):
                 self.assertIn(required, template)
 
     def test_r1_canonical_report_and_links_exist(self):
-        canonical = ROOT / "docs/r1-oem-passive-fixture-2026-10-26.md"
+        canonical = ROOT / "docs/r1-oem-passive-fixture-contract-2026-10-26.md"
         self.assertTrue(canonical.is_file())
         report = canonical.read_text(encoding="utf-8")
         self.assertIn("parse_oem_shape_notification", report)
@@ -61,7 +61,7 @@ class ReuseFirstProtocolTests(unittest.TestCase):
                      "docs/hardware-feasibility-audit-2026-10-25.md"):
             with self.subTest(path=path):
                 content = (ROOT / path).read_text(encoding="utf-8")
-                self.assertIn("r1-oem-passive-fixture-2026-10-26.md",
+                self.assertIn("r1-oem-passive-fixture-contract-2026-10-26.md",
                               content)
 
     def test_r1_reuses_existing_validators_instead_of_redoing_parsers(self):
