@@ -33,7 +33,7 @@ class DcaseToyPreparationTests(unittest.TestCase):
                 for mid in range(1, 4):
                     filename = folder / f"normal_id_{mid:02d}_00000000.wav"
                     self._wav(
-                        filename, value=200 + family_idx * 200
+                        filename, value=2000 + family_idx * 200
                         + mid * 20 + part_idx)
 
     @staticmethod
