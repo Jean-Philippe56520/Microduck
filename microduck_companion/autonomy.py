@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from .passive_intentions import PassiveIntent
     from .passive_rhythm import PassiveRhythmMetrics
     from .passive_learning import PassiveLearning
+    from .behavioral_memory import BehavioralMemory
 
 
 @dataclass(frozen=True)
@@ -92,7 +93,8 @@ class AutonomyBrain:
                                  journal: PassiveObservationJournal,
                                  now_monotonic_s: float,
                                  now_wall_epoch_s: float,
-                                 learning: PassiveLearning | None = None) -> PassiveIntent:
+                                 learning: PassiveLearning | None = None,
+                                 behavioral: BehavioralMemory | None = None) -> PassiveIntent:
         """F2-B/F2-C: pace non-motor proposals; optional mock-only bias.
 
         Reuses F2-A provenance checking and the same ExperienceMemory journal.
@@ -102,6 +104,7 @@ class AutonomyBrain:
         from .passive_rhythm import PassiveRhythm
         from .passive_memory import PassiveObservationJournal
         from .passive_learning import PassiveLearning
+        from .behavioral_memory import BehavioralMemory
 
         if not isinstance(journal, PassiveObservationJournal):
             raise TypeError("a passive journal is required")
@@ -112,12 +115,18 @@ class AutonomyBrain:
                 raise TypeError("F2-C learning must be PassiveLearning")
             if learning._memory is not self.memory:
                 raise ValueError("F2-C learning must share the brain SQLite")
+        if behavioral is not None:
+            if not isinstance(behavioral, BehavioralMemory):
+                raise TypeError("F4-A behavioral memory must be BehavioralMemory")
+            if behavioral._memory is not self.memory:
+                raise ValueError("F4-A must share the same ExperienceMemory")
         if self._passive_rhythm is None:
             self._passive_rhythm = PassiveRhythm()
         return self._passive_rhythm.tick(
             reading, journal=journal, motivations=self.motives,
             now_monotonic_s=now_monotonic_s,
             now_wall_epoch_s=now_wall_epoch_s, learning=learning,
+            behavioral=behavioral,
         )
 
     def passive_rhythm_metrics(self) -> PassiveRhythmMetrics:
@@ -130,7 +139,8 @@ class AutonomyBrain:
 
     def describe_behavior(self, selected, *, journal: PassiveObservationJournal,
                           now_wall_epoch_s: float,
-                          learning: PassiveLearning | None = None):
+                          learning: PassiveLearning | None = None,
+                          behavioral: BehavioralMemory | None = None):
         """Read-only 16-state OEM-inspired personality PORTRAIT after F2/F4.
 
         Does not re-run arbitration, update motivation, write SQLite, or
@@ -141,6 +151,7 @@ class AutonomyBrain:
         return describe_behavior(
             selected, brain=self, journal=journal,
             now_wall_epoch_s=now_wall_epoch_s, learning=learning,
+            behavioral=behavioral,
         )
 
     def choose_from_snapshot(self, snapshot: PerceptionSnapshot,
