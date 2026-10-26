@@ -1,6 +1,6 @@
 # PD3 — Besoin sémantique de Kwipi, avant toute consultation Qwen
 
-**27 octobre 2026 — code et tests sur fixtures fictives ; aucun appel PC/Qwen et aucune validation sur Microduck physique.** [PD0](pd0-behavior-states-selective-qwen-2026-10-27.md) fixe la politique ; [PD1](pd1-oem-expression-capabilities-2026-10-27.md) le catalogue historique des 16 états ; [PD2](pd2-coherent-mock-behavior-continuity-2026-10-27.md) une continuité **descriptive**, non motrice. [Cat-A2b et le plan directeur](plan-action.md) conservent la priorité des prises visuelles réelles basses.
+**27 octobre 2026 — [PR #76](https://github.com/Jean-Philippe56520/Microduck/pull/76) et [CI hôte #40422474003](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40422474003) : 1 221 tests exécutés, 19 ignorés, zéro échec, dont 22 scénarios PD3. Code sur fixtures fictives ; aucun appel PC/Qwen et aucune validation sur Microduck physique.** [PD0](pd0-behavior-states-selective-qwen-2026-10-27.md) fixe la politique ; [PD1](pd1-oem-expression-capabilities-2026-10-27.md) le catalogue historique des 16 états ; [PD2](pd2-coherent-mock-behavior-continuity-2026-10-27.md) une continuité **descriptive**, non motrice. [Cat-A2b et le plan directeur](plan-action.md) conservent la priorité des prises visuelles réelles basses.
 
 ## 1. Choix architectural : deux décisions distinctes
 
