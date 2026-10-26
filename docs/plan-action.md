@@ -4,6 +4,8 @@
 
 **Référence unique pour les prochains travaux · version du 26 octobre 2026 · dépôt `Jean-Philippe56520/Microduck` · branche de référence `main`.**
 
+**Décision R0 après audit des sources OEM épinglées :** [matrice de réutilisation](oem-reuse-audit-2026-10-26.md) et [inventaire machine](oem-reuse-inventory-2026-10-26.json). Le constructeur code déjà `IdleHead`, `pet-detect`, `mediad`, `tofd`, mouvements et sûreté ; **son M9 « autonomous brain » est documenté, mais absent du daemon épinglé**. Ne pas développer un second contrôleur moteur ou une seconde animation idle. Le prototype Python `AutonomyBrain` reste un banc non moteur, sans le déclarer « cerveau embarqué ». **Priorité ciblée : R1 contrat de lecture passive OEM sur fixtures → R2 vraies mémoires multi-vues sur PC → R3 compatibilité M9 si API livrée → R4 Qwen optionnel → R5 robot réel**, sans changer la hiérarchie F0–F8 ni la suspension des moteurs.
+
 **Décision : priorité à l'autonomie cognitive et aux perceptions *sans déplacement*.** Le diagnostic de locomotion P0a–P0j est conservé, mais les nouveaux essais moteurs sont **mis en attente**, pas déclarés résolus. Le précédent ordre P0 → P1 → P2 est archivé dans [l'ancien plan](plan-action-historique-2026-10-25.md). La [roadmap](roadmap.md) conserve les résultats historiques, le [plan MuJoCo](mujoco-integration-plan.md) décrit les procédures et l'[audit matériel](hardware-feasibility-audit-2026-10-25.md) répertorie les limites connues. **Ce fichier définit seul les phases et lots prioritaires.**
 
 ## 1. Mission, contrat de fonctionnement et limites
