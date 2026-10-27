@@ -6,7 +6,8 @@ param(
     [string]$Image = "",
     [ValidateSet("simple", "strict", "balanced")][string]$Mode = "simple",
     [switch]$VisionCheck,
-    [switch]$ComparePrompts
+    [switch]$ComparePrompts,
+    [switch]$RolePreview
 )
 
 $ErrorActionPreference = "Stop"
@@ -51,14 +52,18 @@ if ($VisionCheck -and $Image) {
     Write-Host "Autotest synthetique : ne pas fournir d'image privee."
     exit 2
 }
-if ($VisionCheck -and $ComparePrompts) {
-    Write-Host "Choisir un seul autotest a la fois."
+if (($VisionCheck -and $ComparePrompts) -or ($VisionCheck -and $RolePreview) -or ($ComparePrompts -and $RolePreview)) {
+    Write-Host "Choisir un seul mode d'essai a la fois."
     exit 2
 }
 if ($VisionCheck) {
     Write-Host "Autotest visuel : deux carres rouge/bleu generes en memoire, aucune photo personnelle."
     Write-Host "Le double-clic sur VERIFIER_VISION_KWIPI.cmd autorise uniquement ces deux images synthetiques."
 } else {
+    if ($RolePreview) {
+        Write-Host "Simulation du role reel de conseil de Kwipi, aucun robot connecte."
+        Write-Host "Une image approuvee, une reponse courte NON verifiee, pas de memoire."
+    }
     if ($ComparePrompts) {
         Write-Host "Comparaison : deux analyses locales de la MEME photo, consignes simple puis equilibree."
         Write-Host "Aucune photo ni reponse brute ne sera envoyee a GitHub ou sauvegardee."
@@ -151,6 +156,10 @@ try {
         if ($VisionCheck) {
             & $python -m microduck_companion.qwen9b_vision_check `
                 --ollama-port $Port --timeout 120
+        } elseif ($RolePreview) {
+            & $python -m microduck_companion.qwen9b_role_preview `
+                --image $Image --ollama-port $Port --timeout 120 `
+                --authorize-image --reviewed-no-private-subjects
         } elseif ($ComparePrompts) {
             & $python -m microduck_companion.qwen9b_prompt_comparison `
                 --image $Image --ollama-port $Port --timeout 120 `
@@ -170,6 +179,8 @@ try {
     }
     if ($VisionCheck) {
         Write-Host "Deux couleurs simples distinguees, vision d'objets reels NON verifiee."
+    } elseif ($RolePreview) {
+        Write-Host "Conseil Qwen de role candidat teste sur PC, AUCUNE connaissance verifiee ni action."
     } elseif ($ComparePrompts) {
         Write-Host "Deux consignes comparees, categories NON verifiees; aucun apprentissage."
     } else {

@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**F5 v3 — rôle de conseil PC candidat, 28/10/2026.** Réutilise Qwen3.5 9B sur le PC et Ollama existant avec image <=2 Mo, JPEG <=512 px et 100 ko, `num_ctx=4096`, `num_predict=180`, `think=false`, `keep_alive=0`, timeout borné : budgets logiciels, PAS mesures de performances. Le pilote renvoie temps de chargement/traitement/génération et tokens si Ollama les expose ; mesure GPU réelle/RSS/thermie PC encore à faire. **Aucun nouveau modèle ou process embarqué** sur RK3566 ~1 Gio, pas d'interférence `robotd` 50 Hz ; ne jamais conclure de l'essai PC à une capacité physique. [Contrat](kwipi-qwen9b-role-contract-v1-2026-10-28.md).
+
+
 **F5 v2 — confirmation modèle visuel et durée native PC (27/10/2026).** L'opérateur vérifie que Ollama `127.0.0.1:11435` répond et que `ollama show qwen3.5:9b` affiche `architecture=qwen35`, 9,0B, quantification Q4_K_M, capacité `vision` et projecteur 456,01M. En mode CLI natif sur photo de chaise, la description détaillée des meubles arrive après **≈ 1 min non instrumentée**, alors que le pilote JSON retournait `unknown`/`other_object` en ≈11–13 s sur son JPEG réduit. Ces durées ne sont **pas comparables** sans contrôle du nombre de tokens, du temps de chargement, de la résolution et de l'utilisation GPU. `ollama ps` était vide **avant** l'essai : aucun placement GPU prouvé pendant celui-ci. Priorités métrologie PC : `total_duration`, `load_duration`, `prompt_eval_duration`, `eval_duration`, `eval_count`, RSS et charge GPU, plusieurs essais à longueur de sortie fixée ; ne pas extrapoler au RK3566 (~1 Gio) ni au robotd 50 Hz. **9B reste PC uniquement.** [Rapport](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 

@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**F5 v3 — audit réutiliser/adaptateur/créer (28/10/2026).** **RÉUTILISER** Qwen3.5 9B existant, `OllamaEndpoint` F5-B, `prepare_jpeg` F5 v2, lanceur PowerShell, règles OEM `robotd` et SQLite unique inchangées ; **ADAPTER** uniquement une instruction système versionnée destinée à un conseiller facultatif (pas Kwipi lui-même), **CRÉER** le test PC isolé en texte court et ses fixtures. Aucun modèle 8B, poids tiers, sous-module OEM, commande motrice, nouveau lecteur caméra ou service réseau permanent. [Rôle v1 candidat](kwipi-qwen9b-role-contract-v1-2026-10-28.md).
+
+
 **F5 v2 — réutilisation validée du modèle natif (27/10/2026).** Rapport réel de l'opérateur : Qwen3.5 9B multimodal déjà installé dans Ollama Windows reconnaît une chaise et d'autres meubles en description libre, contrairement aux étiquettes `unknown`/`other_object` du pilote F5 v2 sur la scène. **RÉUTILISER** le modèle 9B et l'API Ollama actuels, **ADAPTER ensuite** l'interface PC sans surapprendre deux photos ; mesurer l'effet de compression, consignes et JSON à entrée identique ; **NE PAS CRÉER** de modèle neuronal, pilote moteur ou seconde SQLite ; pas de téléchargement Qwen 8B justifié à ce stade. Travaux OEM #381/#414, sous-modules et tiers inchangés. [Compte rendu](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 
