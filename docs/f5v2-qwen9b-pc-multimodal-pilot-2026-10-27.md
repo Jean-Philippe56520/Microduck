@@ -31,7 +31,7 @@ Dans une copie locale **à jour** de Microduck Companion :
 ```powershell
 py -3.12 -m venv .venv-qwen9b
 .\.venv-qwen9b\Scripts\python.exe -m pip install Pillow==11.3.0
-.\.venv-qwen9b\Scripts\python.exe -m microduck_companion.qwen9b_advisor_v2 --image "C:\\chemin\\vers\\image-publique.jpg" --authorize-image --reviewed-no-private-subjects
+.\.venv-qwen9b\Scripts\python.exe -m microduck_companion.qwen9b_advisor_v2 --image "C:\chemin\vers\image-publique.jpg" --authorize-image --reviewed-no-private-subjects
 ```
 
 Ne pas utiliser les 29 photos privées Cat-A2b sans revue explicite de leur confidentialité et de leurs droits. L'outil affiche seulement le résultat structuré et la latence locale, pas l'image ; il ne prouve pas que Qwen a répondu correctement. **Ne pas exposer le port 11434 directement sur le réseau**. Les mesures p50/p95/RSS d'un vrai 9B restent à effectuer sur le PC Ryzen AI / 64 Go, sans supposer un accélérateur actif.
