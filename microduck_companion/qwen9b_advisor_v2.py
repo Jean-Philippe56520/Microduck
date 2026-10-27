@@ -278,7 +278,7 @@ def parse_reply(question: ImageQuestion, content: bytes, *,
 
 def _wire(question: ImageQuestion) -> bytes:
     data = {"model": MODEL, "stream": False, "think": False,
-            "keep_alive": "0", "options": {"temperature": 0, "num_predict": 600},
+            "keep_alive": "0", "options": {"temperature": 0, "num_predict": 600, "num_ctx": 4096},
             "format": schema(),
             "messages": [
                 {"role": "system", "content": SYSTEM_PROMPT},
@@ -405,7 +405,11 @@ def main() -> int:
                         help="Operator has reviewed image for people, text, screens and privacy")
     parser.add_argument("--category", choices=CATEGORIES, default="unknown")
     parser.add_argument("--timeout", type=float, default=90.0)
+    parser.add_argument("--ollama-port", type=int, default=11434,
+                        help="Local Ollama port (11435 for the dedicated GPU server)")
     args = parser.parse_args()
+    if not 1 <= args.ollama_port <= 65535:
+        parser.error("--ollama-port must be between 1 and 65535")
     if not args.authorize_image or not args.reviewed_no_private_subjects:
         parser.error("both operator authorization flags are mandatory")
     # Read one operator-chosen file, not a camera or private memory archive.
@@ -416,7 +420,9 @@ def main() -> int:
     now = time.monotonic()
     question = ImageQuestion(uuid.uuid4().hex, image_jpeg, args.category, True, True,
                              now, now + min(180, args.timeout))
-    result = Qwen9BPCClient().query(question, timeout_s=args.timeout)
+    from .ollama_local_client import OllamaEndpoint
+    endpoint = OllamaEndpoint(f"http://127.0.0.1:{args.ollama_port}")
+    result = Qwen9BPCClient(endpoint).query(question, timeout_s=args.timeout)
     # Print sanitized enums and locally measured latency only, never pixels.
     print(json.dumps({
         "status": result.status,
