@@ -4,8 +4,9 @@
 param(
     [ValidateRange(1, 65535)][int]$Port = 11435,
     [string]$Image = "",
-    [ValidateSet("simple", "strict")][string]$Mode = "simple",
-    [switch]$VisionCheck
+    [ValidateSet("simple", "strict", "balanced")][string]$Mode = "simple",
+    [switch]$VisionCheck,
+    [switch]$ComparePrompts
 )
 
 $ErrorActionPreference = "Stop"
@@ -50,10 +51,18 @@ if ($VisionCheck -and $Image) {
     Write-Host "Autotest synthetique : ne pas fournir d'image privee."
     exit 2
 }
+if ($VisionCheck -and $ComparePrompts) {
+    Write-Host "Choisir un seul autotest a la fois."
+    exit 2
+}
 if ($VisionCheck) {
     Write-Host "Autotest visuel : deux carres rouge/bleu generes en memoire, aucune photo personnelle."
     Write-Host "Le double-clic sur VERIFIER_VISION_KWIPI.cmd autorise uniquement ces deux images synthetiques."
 } else {
+    if ($ComparePrompts) {
+        Write-Host "Comparaison : deux analyses locales de la MEME photo, consignes simple puis equilibree."
+        Write-Host "Aucune photo ni reponse brute ne sera envoyee a GitHub ou sauvegardee."
+    }
     if (-not $Image) {
         try {
             Add-Type -AssemblyName System.Windows.Forms
@@ -84,7 +93,10 @@ if ($VisionCheck) {
     Write-Host "Avant l'envoi local : verifier visuellement l'image et ses droits."
     Write-Host "Aucun visage, ecran, texte prive, adresse, document ou contenu personnel."
     Write-Host "Ne pas utiliser sans revue explicite les photos privees Cat-A2b."
-    $consent = Read-Host "Image autorisee et inspectee pour cette unique analyse ? Tapez OUI"
+    if ($ComparePrompts) {
+        Write-Host "Votre approbation couvre EXACTEMENT deux appels successifs au meme Ollama local."
+    }
+    $consent = Read-Host "Image autorisee et inspectee pour cet essai ? Tapez OUI"
     if ($consent -cne "OUI") {
         Write-Host "Aucun appel Qwen : consentement non confirme."
         exit 1
@@ -139,6 +151,10 @@ try {
         if ($VisionCheck) {
             & $python -m microduck_companion.qwen9b_vision_check `
                 --ollama-port $Port --timeout 120
+        } elseif ($ComparePrompts) {
+            & $python -m microduck_companion.qwen9b_prompt_comparison `
+                --image $Image --ollama-port $Port --timeout 120 `
+                --authorize-image --reviewed-no-private-subjects
         } else {
             & $python -m microduck_companion.qwen9b_advisor_v2 `
                 --image $Image --ollama-port $Port --mode $Mode --timeout 180 `
@@ -154,6 +170,8 @@ try {
     }
     if ($VisionCheck) {
         Write-Host "Deux couleurs simples distinguees, vision d'objets reels NON verifiee."
+    } elseif ($ComparePrompts) {
+        Write-Host "Deux consignes comparees, categories NON verifiees; aucun apprentissage."
     } else {
         Write-Host "Reponse structuree acceptee, mais connaissance NON verifiee."
     }

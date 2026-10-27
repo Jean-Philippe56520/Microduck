@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**C3 / F5 v2 — audit de réutilisation pour comparaison visuelle A/B (27/10/2026) :** réutiliser `qwen3.5:9b` déjà présent dans Ollama PC, `OllamaEndpoint` F5-B (loopback), JPEG anonymisé du pilote F5 v2, JSON Schema, validation d'UUID, lanceur PowerShell existant ; adapter seulement le prompt `balanced` et ajouter le petit lanceur `COMPARER_VISION_KWIPI.cmd` et les tests. Pas d'import de Qwen3-VL 8B, nouveau serveur, pilote OEM, poids communautaires, second modèle moteur ou SQLite. Les révisions OEM #381/#414 restent hors de ce lot. [Plan A/B](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **F5 v2 — décision réutiliser/adapter/créer (27/10/2026) :** RÉUTILISER les poids locaux de `qwen3.5:9b`, le transport F5-B `OllamaEndpoint`, la préparation JPEG et les lanceurs Windows existants ; ADAPTER uniquement le même client pour un mini-schéma `request_id/color`, contrôlé et borné ; CRÉER un lanceur explicite de deux images rouges/bleues synthétiques sans média utilisateur. **Aucun nouveau modèle Qwen 8B, moteur, serveur, sous-module OEM ou projet communautaire importé.** Les PR OEM #381/#414 restent références non épinglées. Tests fixtures PC, test réel 9B du diagnostic pas encore fait. [Rapport](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 

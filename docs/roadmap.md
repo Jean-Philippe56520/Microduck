@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**B / F5 v2 — comparaison de prompts après validation couleur (27/10/2026) :** vrai test rouge/bleu Qwen 9B réussi mais classification `dog_bed` ratée (`unknown` sur photo). Étape suivante : `COMPARER_VISION_KWIPI.cmd` sur un seul objet photographié, image révisée/autorisation explicite pour DEUX appels locaux, comparaison A/B `simple` (original) vs `balanced` (catégorie la plus plausible, `unknown` seulement si incertitude réelle). Même JPEG, schéma/limites et Qwen3.5 9B ; ni nouvel entraînement ni détecteur embarqué. Analyse quantitative ultérieure sur photos indépendamment annotées incluant catégories inédites et fausses classifications. [F5 v2](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **B / F5 v2 — diagnostic de vision avant exploration des usages (27/10/2026) :** deux images réelles/dessin auparavant produisaient surtout `unknown` ; photo d'un couchage pour animal testée sur PC (9,703 s) : `category=unknown` et `depiction=unknown`, insuffisant. Prochaine porte : autotest sans données privées pour distinguer le rouge du bleu avec le Qwen3.5 9B sur le même chemin JPEG/Ollama. `VERIFIER_VISION_KWIPI.cmd` génère 2 images temporaires **en RAM**, utilise le client F5 v2 existant, refuse réponse structurée incorrecte et ferme le serveur qu'il a ouvert. Test succès = seulement indice que les pixels atteignent le modèle, **pas reconnaissance d'objet**. Ensuite évaluer sur photos indépendamment annotées et contre un cas sans image / sans PC avant d'enrichir l'Advisor. [Détails](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 
