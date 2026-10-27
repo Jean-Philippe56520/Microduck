@@ -225,11 +225,13 @@ class ExecutionEvidenceAudit:
         }
         reward = r["reward"]
         if r["disposition"] == "mock_feedback":
+            try:
+                value = _numeric(reward)
+            except (TypeError, ValueError):
+                return _verdict(family, key, "invalid_provenance")
             if (r["intention"] != "inspect_object"
                     or r["outcome"] not in expected
-                    or reward is None
-                    or not math.isfinite(float(reward))
-                    or abs(float(reward) - expected[r["outcome"]]) > 1e-12):
+                    or abs(value - expected[r["outcome"]]) > 1e-12):
                 return _verdict(family, key, "invalid_provenance")
             return _verdict(
                 family, key, "mock_feedback_only",
