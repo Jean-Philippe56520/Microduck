@@ -177,3 +177,22 @@ La branche de la PR #98 introduit :
 - **Aucune inférence de correction automatique :** `result=comparison_completed` signifie seulement que les deux réponses ont été reçues et acceptées syntaxiquement. Ce n'est pas une victoire du prompt `balanced`, ni une preuve de reconnaissance. Une seule photo et deux générations ne suffisent pas à évaluer les taux de fausses catégories. L'annotation indépendante doit précéder l'analyse ; répéter sur scènes diverses (objets familiers, objets hors vocabulaire, angles bas et occultations) après ce diagnostic.
 
 **Validation du code :** 40 tests ciblés locaux réussis sur faux Ollama, dont nouveaux tests pour les deux requêtes avec JPEG identique, UUID distincts, sortie refusée, consentement, limites et lanceur ; CI GitHub de ce commit à vérifier. Le vrai modèle 9B n'a pas encore exécuté le **mode balanced**, et la photo domestique n'est pas incluse dans le dépôt. Aucun robot physique, modèle neuronal réentraîné, contrôle moteur ou intégration mémoire n'a été introduit.
+
+## A/B réel sur photographie de couchage pour animal — rapport opérateur du 27 octobre 2026
+
+Après réussite de l'autotest rouge/bleu, l'opérateur a exécuté `COMPARER_VISION_KWIPI.cmd` sur une **photographie réelle déjà autorisée**. Le résultat a été communiqué uniquement sous forme de JSON de catégories et de mesures : aucune photographie ni réponse brute du modèle n'a été copiée dans GitHub. La catégorie de référence, fixée lors de l'inspection préalable de cette photo, est **`dog_bed`** pour le couchage/rembourrage destiné à un animal (hypothèse visuelle plausible, non preuve du propriétaire ou de l'usage exact) ; le type de support attendu est `photograph`.
+
+| Mesure | `simple` | `balanced` |
+|---|---|---|
+| `status` | `unverified` | `unverified` |
+| `diagnostic_stage/reason` | `none/none` | `none/none` |
+| `category` | `unknown` | `other_object` |
+| `depiction` | `unknown` | `photograph` |
+| `visibility` | `clear` | `clear` |
+| `latency_s` | `11.172` | `11.953` |
+
+`result=comparison_completed`, `verified_recognition=false`, `photos_saved_by_companion=0`, `motor_commands_issued=0` et `memory_writes=0` dans la sortie du **pilote PC passif**. Le code confirme que l'image JPEG retraitée, les énumérations admises et le schéma JSON sont identiques entre les deux appels ; seules les consignes système, l'UUID de corrélation et l'heure de requête diffèrent. L'étiquette `dog_bed` attendue n'est injectée dans aucun prompt.
+
+**Interprétation :** `balanced` montre une amélioration locale du type d'image et passe d'une abstention totale à un objet générique. **La catégorie souhaitée n'est correctement reconnue par aucun des deux modes.** L'expérience sur une seule photo ne suffit pas pour choisir définitivement un prompt, affirmer une compétence de perception fiable ou comparer les vitesses. Il est prématuré d'ajouter ces sorties à `ExperienceMemory`, d'exécuter des gestes OEM ou d'imputer l'erreur uniquement aux poids du modèle. Le test couleur établit une discrimination élémentaire, pas la reconnaissance sémantique d'objets.
+
+**Porte de validation suivante (sans changer les prompts en fonction de ce résultat) :** utiliser un petit jeu de photographies **inédites, consenties et indépendamment annotées**, incluant des classes présentes (`ball`, `chair`, `sock`, `cat`, `dog`, `dog_bed` seulement si autorisé), ainsi que des objets hors taxonomie (par exemple `shoe` qui n'est pas dans les 11 classes et doit être compté `other_object`, et `unknown` pour les ambiguïtés véritables). Préférer les objets inanimés pour commencer, avec scènes simples, basses et partiellement visibles. Garder le même 9B, le même JPEG/contrat sur les deux modes ; compter les bonnes catégories, mauvaises classifications, abstentions, types d'image et latences, sans exporter de médias. Les séries très petites sont exploratoires, non une mesure robuste de généralisation. Aucun test réel du robot ni des ressources RK3566.
