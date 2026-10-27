@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**F5 v2 — mode visuel simple et lanceur Windows (27/10/2026) :** les seuls changements sont sur PC (`qwen3.5:9b`, `127.0.0.1:11435`, Pillow dans l'environnement Python isole), pas sur RK3566. Le schema minimal de sortie ne garantit ni acceleration, ni RSS, ni latence reelle plus faible sans mesure. Photos manuelles et consenties ; 2 Mo source, 16 MP, JPEG nettoye 512 px/100 ko, 4 096 tokens de contexte et sortie bornee ; aucun media persiste par Companion. Tests Python simulant Ollama, pas de nouveau test thermique robot. Audit physique toujours obligatoire.
+
+
 **F5 v2 - retour de mesure PC de l'operateur (27/10/2026) :** Qwen3.5 9B sous Ollama 0.40.11 et AMD Radeon 860M, Ollama `100% GPU` rapporte sur port `11435`, sans preuve de RAM/RSS mesuree et sans lien RK3566 ; pilote image synthetique en 25,312 / 28,5 / 28,453 secondes, variabilite du schema de sortie. Correction logicielle de diagnostic et d'UUID n'ajoutant aucun modele, image, lecteur, process, RAM ni connexion au robot. Audits `scripts/resource-audit.sh` sur robot reel restent requis. [Details](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 

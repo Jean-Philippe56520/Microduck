@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**Audit de reutilisation F5 v2 simple (27/10/2026, PR #98) :** choix REUTILISER le `qwen3.5:9b` deja telecharge sur PC (pas d'import supplementaire de Qwen3-VL 8B), REUTILISER Ollama et le transport valide `OllamaEndpoint` F5-B, ADAPTER le schema pour une sortie de perception minimale, CREER seulement le lanceur Windows (test manuel avec choix de photo). Aucun ajout de code/poids communautaire, sous-module OEM, moteur, capteur ou memoire. Les PR OEM #381 et #414 ainsi que QuackNav restent a auditer separement. Images privees absentes du depot. [Protocole PC](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **Revue F5 v2 - diagnostics 27/10/2026 :** reutiliser le transport de loopback F5-B et le modele Ollama local `qwen3.5:9b` deja choisi ; ajuster uniquement le contrat JSON du pilote et les codes de refus, tests PC par faux serveur. Pas de sous-module OEM change, pas de code/poids de la communaute importe, pas d'identites, medias prives ou interaction motrice. Projets OEM #381/#414 restent non repris dans ce lot. [Contrat PC](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 

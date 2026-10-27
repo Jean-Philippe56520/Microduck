@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**B / F5 v2 — simplification pour mesurer la vision Qwen 9B (27/10/2026) :** conserver `qwen3.5:9b` PC ; tester d'abord une sortie de perception a 4 champs via `--mode simple` et `TESTER_KWIPI.cmd`, puis evaluer photos autorisees, erreurs, rejets, incertitude, latences et RSS avant d'ajouter usages/relations/effets. Le schéma strict reste disponible comme reference mais pas requis pour les premiers essais. Aucun nouveau reseau neuronal, poids ni service embarque ; pas d'autonomie acquise. Code et 25 tests locaux sur fausses reponses ; CI complète et essais Qwen reel du mode simple a confirmer. [Protocole](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **F5 v2 - diagnostic Qwen 9B sur PC, 27/10/2026 :** ajout de motifs de refus fixes sans texte modele (`diagnostic_reason`) et contrainte explicite de l'UUID attendu dans le schema Ollama. Reutiliser F5-B, conserver tous les refus, aucun stockage media/souvenir, aucun moteur ni F5 v1 modifie. 18 tests locaux sur transport mock (pas Qwen reel) ; CI a verifier. Prochain test operateur : une requete autorisee et son code de rejet, puis evaluation sur nouvelles photos sans entrainement et sans affaiblissement des gardes. [Dossier](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 

@@ -384,5 +384,170 @@ class FixedModelOutputReasonTests(unittest.TestCase):
         self.assertEqual('none', AdvisoryResult('unverified', q.request_id).diagnostic_reason)
 
 
+class SimpleVisualPilot(unittest.TestCase):
+    """Minimal visual interpretation fixture, never runs the real model."""
+
+    def simple_reply(self, q, **changes):
+        result = {"request_id": q.request_id, "category": "unknown",
+                  "depiction": "drawing", "visibility": "clear"}
+        result.update(changes)
+        return result
+
+    def test_simple_wire_is_bounded_and_has_no_motor_or_free_text(self):
+        from microduck_companion.qwen9b_advisor_v2 import _wire_simple, simple_schema
+        q = question()
+        strict_wire = json.loads(_wire(q))
+        data = json.loads(_wire_simple(q))
+        self.assertEqual(MODEL, data["model"])
+        self.assertFalse(data["stream"])
+        self.assertFalse(data["think"])
+        self.assertEqual("0", data["keep_alive"])
+        self.assertEqual(4096, data["options"]["num_ctx"])
+        self.assertEqual(180, data["options"]["num_predict"])
+        self.assertEqual(q.image_jpeg, base64.b64decode(data["messages"][1]["images"][0]))
+        self.assertEqual(1, len(data["messages"][1]["images"]))
+        self.assertEqual({"request_id", "category", "depiction", "visibility"},
+                         set(data["format"]["required"]))
+        self.assertFalse(data["format"]["additionalProperties"])
+        self.assertEqual([q.request_id], data["format"]["properties"]["request_id"]["enum"])
+        self.assertEqual(simple_schema(q), data["format"])
+        self.assertIn('hypotheses', strict_wire['format']['required'])  # old mode unchanged
+        self.assertNotIn('motor', json.dumps(data['format']).lower())
+        self.assertNotIn('reward', json.dumps(data['format']).lower())
+        self.assertNotIn('SQLite', data['messages'][1]['content'])
+
+    def test_simple_accepts_ambiguous_drawing_without_inventing_confidence(self):
+        from microduck_companion.qwen9b_advisor_v2 import parse_simple_reply
+        q = question(now=100)
+        o = parse_simple_reply(q, json.dumps(self.simple_reply(q)).encode(),
+                               received_monotonic_s=100.2)
+        self.assertEqual('unknown', o.category)
+        self.assertEqual('drawing', o.depiction)
+        self.assertEqual('clear', o.visibility)
+        self.assertFalse(o.verified)
+        self.assertFalse(hasattr(o, 'confidence'))
+
+    def test_simple_rejects_untrusted_extra_data_bad_enum_and_wrong_id(self):
+        from microduck_companion.qwen9b_advisor_v2 import parse_simple_reply, ModelOutputRejected
+        q = question(now=100)
+        invalid = [
+            (self.simple_reply(q, category='kick_dog'), 'enum_invalid'),
+            (self.simple_reply(q, visibility='totally_safe'), 'enum_invalid'),
+            (self.simple_reply(q, depiction='image with Alice'), 'enum_invalid'),
+            (self.simple_reply(q, request_id=uuid.uuid4().hex), 'request_id_mismatch'),
+            (self.simple_reply(q, command='ground_pick'), 'fields_invalid'),
+            (self.simple_reply(q, category=True), 'enum_invalid'),
+        ]
+        for data, expected in invalid:
+            with self.subTest(bad=data), self.assertRaises(ModelOutputRejected) as err:
+                parse_simple_reply(q, json.dumps(data).encode(), received_monotonic_s=100.3)
+            self.assertEqual(expected, err.exception.reason)
+        raw = json.dumps(self.simple_reply(q)).replace('"category": "unknown"',
+                             '"category": "unknown", "category": "ball"')
+        with self.assertRaises(ModelOutputRejected) as err:
+            parse_simple_reply(q, raw.encode(), received_monotonic_s=100.3)
+        self.assertEqual('duplicate_key', err.exception.reason)
+        with self.assertRaises(AdvisorError):
+            parse_simple_reply(q, json.dumps(self.simple_reply(q)).encode(),
+                               received_monotonic_s=110)
+
+    def test_simple_http_good_and_rejected_never_write_or_control(self):
+        from microduck_companion.qwen9b_advisor_v2 import _wire_simple
+        for bad in (False, True):
+            with self.subTest(bad=bad):
+                q = question()
+                seen = []
+                payload = self.simple_reply(q)
+                if bad:
+                    payload['motor_command'] = 'kick_left'
+                class Handler(BaseHTTPRequestHandler):
+                    def log_message(self, *_args):
+                        pass
+                    def do_POST(self):
+                        sent = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+                        seen.append(sent)
+                        response = {'model': MODEL, 'done': True,
+                                    'message': {'role': 'assistant',
+                                                'content': json.dumps(payload)}}
+                        wire = json.dumps(response).encode()
+                        self.send_response(200)
+                        self.send_header('Content-Type', 'application/json')
+                        self.send_header('Content-Length', str(len(wire)))
+                        self.end_headers()
+                        self.wfile.write(wire)
+                server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+                thread = threading.Thread(target=server.serve_forever, daemon=True)
+                thread.start()
+                try:
+                    ep = OllamaEndpoint(f'http://127.0.0.1:{server.server_address[1]}')
+                    result = Qwen9BPCClient(ep).query(q, timeout_s=2, mode='simple')
+                    self.assertEqual('rejected' if bad else 'unverified', result.status)
+                    self.assertEqual((), result.hypotheses)
+                    self.assertIsNone(result.visual_observation if bad else None)
+                    if not bad:
+                        self.assertEqual('unknown', result.visual_observation.category)
+                        self.assertFalse(result.visual_observation.verified)
+                    else:
+                        self.assertEqual('fields_invalid', result.diagnostic_reason)
+                    self.assertEqual(0, result.motor_commands_issued)
+                    self.assertEqual(0, result.memory_writes)
+                    self.assertEqual(_wire_simple(q), json.dumps(seen[0], separators=(',', ':')).encode())
+                finally:
+                    server.shutdown()
+                    server.server_close()
+                    thread.join(timeout=2)
+
+    def test_rejected_visual_label_never_survives_into_status(self):
+        from microduck_companion.qwen9b_advisor_v2 import AdvisoryResult, SimpleVisualObservation
+        q = question()
+        o = SimpleVisualObservation('ball', 'photograph', 'partial')
+        with self.assertRaises(ValueError):
+            AdvisoryResult('rejected', q.request_id, visual_observation=o)
+        with self.assertRaises(ValueError):
+            SimpleVisualObservation('person', 'photograph', 'clear', verified=True)
+        with self.assertRaises(ValueError):
+            Qwen9BPCClient().query(q, timeout_s=1, mode='please_motor')
+
+    def test_cli_simple_is_default_and_strict_remains_explicit(self):
+        import tempfile
+        import sys
+        from pathlib import Path
+        from PIL import Image
+        from microduck_companion.qwen9b_advisor_v2 import main, AdvisoryResult
+        with tempfile.TemporaryDirectory() as root:
+            img = Path(root) / 'test.png'
+            Image.new('RGB', (20, 20), (20, 40, 70)).save(img)
+            for extra, simple in [((), True), (('--mode', 'strict'), False)]:
+                with self.subTest(extra=extra), patch.object(sys, 'argv', [
+                    'qwen9b_advisor_v2', '--image', str(img),
+                    '--authorize-image', '--reviewed-no-private-subjects',
+                    *extra,
+                ]), patch('microduck_companion.qwen9b_advisor_v2.Qwen9BPCClient') as client:
+                    client.return_value.query.side_effect = lambda q, **kw: AdvisoryResult(
+                        'unverified', q.request_id, ())
+                    with patch('builtins.print'):
+                        self.assertEqual(0, main())
+                    kwargs = client.return_value.query.call_args.kwargs
+                    self.assertEqual(simple, kwargs.get('mode') == 'simple')
+
+    def test_windows_launcher_is_opt_in_and_local_only(self):
+        from pathlib import Path
+        root = Path(__file__).resolve().parents[1]
+        launcher = (root / 'TESTER_KWIPI.cmd').read_text(encoding='utf-8')
+        ps = (root / 'scripts' / 'kwipi-vision-test.ps1').read_text(encoding='utf-8')
+        self.assertIn('kwipi-vision-test.ps1', launcher)
+        self.assertIn('ExecutionPolicy RemoteSigned', launcher)
+        self.assertIn('127.0.0.1', ps)
+        self.assertIn('Read-Host', ps)
+        self.assertIn('-cne "OUI"', ps)
+        self.assertIn('--mode $Mode', ps)
+        self.assertIn('--authorize-image --reviewed-no-private-subjects', ps)
+        self.assertIn('qwen3.5:9b', ps)
+        self.assertNotIn('api.openai.com', ps)
+        self.assertNotIn('github.com', ps.lower())
+        self.assertNotIn('Invoke-WebRequest', ps)
+        self.assertNotIn('Set-ExecutionPolicy', ps)
+
+
 if __name__ == '__main__':
     unittest.main()

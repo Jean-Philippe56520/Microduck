@@ -1,5 +1,9 @@
 # Microduck Companion
 
+**F5 v2 — essai visuel simplifie Qwen3.5 9B sur PC (27/10/2026, PR #98 non fusionnee) :**
+Le mode `simple` est maintenant le mode CLI par defaut : 4 champs fermes (`request_id`, `category`, `depiction`, `visibility`) au lieu de 7 listes de concepts, pour evaluer la perception avant tout raisonnement causal. Le validateur refuse toujours les sorties non conformes, le mode historique `--mode strict` reste disponible ; aucun effet moteur ni SQLite. Pour Windows 11 : faire `git pull --ff-only` dans `Microduck-Qwen9B`, puis **double-cliquer `TESTER_KWIPI.cmd`**. Il utilise le serveur local Ollama port 11435 et l'environnement Python isole deja installe, ouvre un choix de fichier et exige `OUI` apres revue de confidentialite, sans envoyer de fichier a GitHub. Tests Python locaux 25/25 avec faux Ollama, **pas encore teste sur le vrai Qwen avec ce mode ni sur Windows en CI**. [Protocole F5 v2](docs/f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **F5 v2 - diagnostic de refus Qwen 9B sur PC (27/10/2026, PR #98 en cours) :** premier essai multimodal reel operateur avec image synthetique (25,312 s `unverified/unknown`, puis 28,5 et 28,453 s `rejected/model_output`). Correctif : code `diagnostic_reason` limite aux motifs locaux (JSON, identifiant, champs, categories, etc.), identifiant de correlation contraint par `format` JSON Schema et valide a nouveau a la reception ; aucune sortie brute, ecriture SQLite, action motrice ou media dans GitHub. Tests cibles locaux 18/18 avec faux transport ; CI et nouvel essai reel a confirmer. [Protocole](docs/f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 
