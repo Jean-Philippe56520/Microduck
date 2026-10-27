@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**F5 v2 — connexion ciblée au serveur PC GPU (27/10/2026 ; pilote uniquement, pas de mesure Advisor réelle) :** le client CLI accepte maintenant `--ollama-port 11435` pour sélectionner explicitement le serveur Ollama local distinct de `11434` ; `options.num_ctx=4096` est transmis par requête pour borner le contexte sans modifier la configuration système. [Contrat et usage](docs/f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md). Tests ciblés locaux 13/13, CI complète du dernier commit encore à confirmer ; aucun transfert depuis robot, mémoire ou images privées.
+
+
 **F5 v2 — pilote Qwen3.5 9B visuel PC uniquement (27/10/2026, [protocole](docs/f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md)) :** nouveau contrat versionné séparé de F5 v1, une image opérateur explicitement autorisée/contrôlée et recompressée sans métadonnées, `POST /api/chat` Ollama 9B sur loopback et JSON d'hypothèses strictement borné. Tests de schéma, confidentialité, retards, panne Ollama et faux HTTP local ; **aucun vrai modèle 9B exécuté, aucun média privé, aucun capteur OEM, aucune SQLite, aucun moteur**. Les étapes suivantes sont mesure réelle du 9B sur PC puis branchement facultatif à F2/F4 avec quota et chiffrement ; aucun déploiement robot.
 
 
