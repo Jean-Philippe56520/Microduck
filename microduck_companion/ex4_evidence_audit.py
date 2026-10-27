@@ -161,6 +161,9 @@ class ExecutionEvidenceAudit:
                 corrected=True,
             )
         if (e["active"] != 1 or e["source"] != "mock_fixture_only"
+                or p["intention"] not in {"observe", "inspect", "listen"}
+                or p["target_kind"] not in {"object_label", "sound_label"}
+                or p["target_category"] is None
                 or e["same_scene"] not in (0, 1)
                 or e["competing_event"] not in (0, 1)):
             return _verdict(family, key, "invalid_provenance")
@@ -346,7 +349,11 @@ class ExecutionEvidenceAudit:
             return _verdict(family, key, "invalid_provenance")
         return _verdict(
             family, key, "no_action_executed",
-            proposed="simulated_proposal", observed="simulated_telemetry",
+            proposed="simulated_proposal",
+            observed=(
+                "simulated_telemetry" if r["quality"] == "coherent"
+                else "not_attested"
+            ),
             source="simulator_ipc",
         )
 
