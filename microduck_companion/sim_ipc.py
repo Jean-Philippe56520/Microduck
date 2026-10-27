@@ -18,6 +18,10 @@ from typing import Any
 MAX_LINE_BYTES = 65_536
 _MAX_QUEUED_NOTIFICATIONS = 16
 _ALLOWED_READS = frozenset({"robot.health", "robot.subscribe", "tof.stream"})
+_ROLE_READS = {
+    "robotd": frozenset({"robot.health", "robot.subscribe"}),
+    "tofd": frozenset({"tof.stream"}),
+}
 _SUBSCRIPTIONS = {"robot.subscribe": "robot.state", "tof.stream": "tof.frame"}
 
 
@@ -174,10 +178,16 @@ class ReadOnlyUnixRpc:
     socket can fabricate its data; this transport does not authenticate hardware.
     """
 
-    def __init__(self, path: str | os.PathLike[str], *, timeout_s: float = 1.0):
+    def __init__(self, path: str | os.PathLike[str], *, timeout_s: float = 1.0,
+                 role: str | None = None):
         if not _finite(timeout_s) or not 0 < timeout_s <= 30:
             raise ValueError("timeout_s must be finite in (0, 30]")
+        if role is not None and (type(role) is not str or role not in _ROLE_READS):
+            raise ValueError("unsupported simulator daemon role")
         self.path = os.fspath(path)
+        # A role is a *local expected endpoint*, not peer authentication.
+        # The independent parsers still validate every received frame.
+        self.role = role
         self.timeout_s = float(timeout_s)
         self._socket: socket.socket | None = None
         self._buffer = b""
@@ -254,6 +264,8 @@ class ReadOnlyUnixRpc:
         """Send only an explicitly permitted read/subscription method."""
         if method not in _ALLOWED_READS:
             raise ValueError(f"method not permitted by read-only client: {method}")
+        if self.role is not None and method not in _ROLE_READS[self.role]:
+            raise ValueError("read method does not belong to expected daemon role")
         if hz is not None and method != "robot.subscribe":
             raise ValueError("hz only supported for robot.subscribe")
         if method == "robot.subscribe" and (type(hz) is not int or not 1 <= hz <= 10):
@@ -322,6 +334,6 @@ class ReadOnlyUnixRpc:
 
 def read_health(path: str | os.PathLike[str], *, timeout_s: float = 1.) -> HealthReading:
     """Single read-only robot.health call against the robotd Unix socket."""
-    with ReadOnlyUnixRpc(path, timeout_s=timeout_s) as reader:
+    with ReadOnlyUnixRpc(path, timeout_s=timeout_s, role="robotd") as reader:
         result = reader.request("robot.health")
         return parse_health(result, time.monotonic())
