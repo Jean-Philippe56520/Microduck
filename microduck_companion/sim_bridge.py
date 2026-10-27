@@ -45,7 +45,8 @@ class SimulatorTelemetryAssessment:
     semantic_category_verified: bool = False
 
     def __post_init__(self) -> None:
-        if (self.status not in _ASSESSMENT_STATES
+        if (type(self.status) is not str
+                or self.status not in _ASSESSMENT_STATES
                 or self.source != _SIMULATOR_CLAIM
                 or any(getattr(self, flag) is not False for flag in (
                     "physical_robot_verified", "floor_certified",
