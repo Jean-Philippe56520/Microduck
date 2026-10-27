@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**CI Python isolée sur GitHub Actions (27/10/2026, PR #98) :** le workflow existant crée désormais un `venv` éphémère par exécution, y installe Pillow et exécute l'ensemble des tests/fixtures Companion, sans environnement Python sur ton PC ni dépendance au GPU. Un déclencheur `pull_request` suffit aux branches en PR ; `push` est réservé à `main` pour éviter de doubler inutilement les minutes GitHub Actions. Cela **ne teste pas** la vraie inférence Qwen3.5 9B sur Radeon 860M ni les photos privées Windows, qui restent strictement locales et consenties. [Workflow](.github/workflows/python-tests.yml) ; [protocole F5 v2](docs/f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **F5 v2 — essai visuel simplifie Qwen3.5 9B sur PC (27/10/2026, PR #98 non fusionnee) :**
 Le mode `simple` est maintenant le mode CLI par defaut : 4 champs fermes (`request_id`, `category`, `depiction`, `visibility`) au lieu de 7 listes de concepts, pour evaluer la perception avant tout raisonnement causal. Le validateur refuse toujours les sorties non conformes, le mode historique `--mode strict` reste disponible ; aucun effet moteur ni SQLite. Pour Windows 11 : faire `git pull --ff-only` dans `Microduck-Qwen9B`, puis **double-cliquer `TESTER_KWIPI.cmd`**. Il utilise le serveur local Ollama port 11435 et l'environnement Python isole deja installe, ouvre un choix de fichier et exige `OUI` apres revue de confidentialite, sans envoyer de fichier a GitHub. Tests Python locaux 25/25 avec faux Ollama, **pas encore teste sur le vrai Qwen avec ce mode ni sur Windows en CI**. [Protocole F5 v2](docs/f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
