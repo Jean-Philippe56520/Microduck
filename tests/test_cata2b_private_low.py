@@ -121,6 +121,45 @@ class PrivateLowCaptureTests(unittest.TestCase):
         self.assertNotIn("evidence/", json.dumps(result))
         self.assertNotIn("camera-ruler.jpg", json.dumps(result))
 
+    def test_private_coverage_reports_omissions_only_from_test(self):
+        report = summarize_private_dataset(self.validate())
+        counts = report["coverage_by_split_operator_declared"]
+        self.assertEqual(1, counts["train"]["categories"]["cat"]["annotated_instances"])
+        self.assertEqual(1, counts["validation"]["categories"]["dog"]["annotated_instances"])
+        self.assertEqual(0, counts["test"]["categories"]["cat"]["annotated_instances"])
+        self.assertEqual(1, counts["test"]["categories"]["chair"]["partial_instances"])
+        self.assertEqual(1, counts["test"]["categories"]["chair"]["images_with_class"])
+        self.assertEqual(1, counts["test"]["negative_images"])
+        self.assertEqual(2, counts["test"]["declared_sessions"])
+        self.assertEqual(2, counts["test"]["declared_sites"])
+        self.assertEqual(
+            {"person", "cat", "dog", "sports_ball"}, set(report["missing_test_categories"]))
+        self.assertIn("person", report["test_categories_without_partial_examples"])
+        self.assertTrue(report["coverage_counts_do_not_prove_independent_captures"])
+        public = json.dumps(report)
+        for secret in (str(self.root), "g-000000000000", "s-000000000000",
+                       "e-000000000000"):
+            self.assertNotIn(secret, public)
+
+    def test_coverage_counts_instances_and_photos_separately(self):
+        self.data["samples"][2]["boxes"].extend([
+            {"category": "chair", "xyxy": [40, 60, 70, 90], "visibility": "full"},
+            {"category": "dog", "xyxy": [15, 55, 40, 85], "visibility": "partial"},
+        ])
+        report = summarize_private_dataset(self.validate())
+        counts = report["coverage_by_split_operator_declared"]["test"]
+        chair = counts["categories"]["chair"]
+        self.assertEqual(2, chair["annotated_instances"])
+        self.assertEqual(1, chair["images_with_class"])
+        self.assertEqual(1, chair["full_instances"])
+        self.assertEqual(1, chair["partial_instances"])
+        self.assertEqual(1, chair["declared_sessions_with_class"])
+        self.assertEqual(1, chair["declared_sites_with_class"])
+        self.assertNotIn("dog", report["missing_test_categories"])
+        self.assertNotIn("dog", report["test_categories_without_partial_examples"])
+        self.assertEqual(1, counts["categories"]["dog"]["annotated_instances"])
+        self.assertEqual(1, counts["negative_images"])
+
     def test_manifest_with_private_name_or_path_field_rejected(self):
         for key, value in (
             ("name", "anonymous-person?"), ("image_file", "../../etc/passwd"),

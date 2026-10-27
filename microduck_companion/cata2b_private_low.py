@@ -294,9 +294,56 @@ def load_private_low_dataset(manifest_path: Path) -> LowDataset:
                       sha256(raw).hexdigest())
 
 
+def _declared_class_coverage(data: LowDataset) -> dict:
+    """Count validated annotations; site/session labels are operator-declared.
+
+    No identifiers, media or filenames are returned. Counts are advisory,
+    not proof of independent capture, accuracy or deployment readiness.
+    """
+    sites = {session.session_id: session.site_group_id
+             for session in data.sessions}
+    coverage = {}
+    for split in ("train", "validation", "test"):
+        rows = tuple(s for s in data.samples if s.split == split)
+        classes = {}
+        for category in CATEGORIES:
+            pairs = tuple(
+                (sample, visibility)
+                for sample in rows
+                for box, visibility in zip(sample.ground_truth, sample.visibility)
+                if box.category == category
+            )
+            classes[category] = {
+                "annotated_instances": len(pairs),
+                "images_with_class": sum(
+                    any(box.category == category for box in sample.ground_truth)
+                    for sample in rows
+                ),
+                "full_instances": sum(v == "full" for _, v in pairs),
+                "partial_instances": sum(v == "partial" for _, v in pairs),
+                "declared_sessions_with_class": len({
+                    sample.session_id for sample, _ in pairs
+                }),
+                "declared_sites_with_class": len({
+                    sites[sample.session_id] for sample, _ in pairs
+                }),
+            }
+        coverage[split] = {
+            "images": len(rows),
+            "negative_images": sum(not sample.ground_truth for sample in rows),
+            "declared_sessions": len({sample.session_id for sample in rows}),
+            "declared_sites": len({
+                sites[sample.session_id] for sample in rows
+            }),
+            "categories": classes,
+        }
+    return coverage
+
+
 def summarize_private_dataset(data: LowDataset) -> dict:
     if not isinstance(data, LowDataset):
         raise TypeError("validated private dataset required")
+    coverage = _declared_class_coverage(data)
     counts = {
         k: sum(s.split == k for s in data.samples)
         for k in ("train", "validation", "test")
@@ -316,6 +363,16 @@ def summarize_private_dataset(data: LowDataset) -> dict:
         "robot_camera_viewpoint_confirmed": False,
         "all_local_jpegs_hashes_and_dimensions_checked": True,
         "dataset_splits": counts,
+        "coverage_by_split_operator_declared": coverage,
+        "missing_test_categories": [
+            category for category in CATEGORIES
+            if coverage["test"]["categories"][category]["annotated_instances"] == 0
+        ],
+        "test_categories_without_partial_examples": [
+            category for category in CATEGORIES
+            if coverage["test"]["categories"][category]["partial_instances"] == 0
+        ],
+        "coverage_counts_do_not_prove_independent_captures": True,
         "test_partial_objects": sum(
             v == "partial" for s in test for v in s.visibility
         ),
