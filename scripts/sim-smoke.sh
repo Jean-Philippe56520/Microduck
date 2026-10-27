@@ -53,6 +53,20 @@ case "$MODE" in
         ;;
 esac
 
+# X2-C must never coexist with any opt-in test that commands locomotion.
+# An X2-C run only measures read-only OEM telemetry and local SQLite.
+if [ "${DUCK_SIM_X2C_ACCEPTANCE:-NO}" = YES ]; then
+    for motion_flag in "${DUCK_SIM_SHORT_MOVE:-NO}" \
+                       "${DUCK_SIM_WALK_COMPARE:-NO}" \
+                       "${DUCK_SIM_WALK_TRIAL:-NO}" \
+                       "${DUCK_SIM_POLICY_PAIR:-NO}"; do
+        if [ "$motion_flag" = YES ]; then
+            printf 'X2-C refuses simultaneous simulated motor experiments.\\n' >&2
+            exit 2
+        fi
+    done
+fi
+
 git -C "$ROOT" submodule update --init --recursive
 [ -x "$SIM" ] || { printf 'Missing official duck-sim script\n' >&2; exit 2; }
 [ -f "$DUCK_SIM_RL/pyproject.toml" ] || {
@@ -139,6 +153,33 @@ if [ "${DUCK_SIM_PASSIVE_CYCLES:-NO}" = YES ]; then
         --database "$DUCK_SIM_STATE/p2b-passive.sqlite3" \
         --session p2b-session-b --cycles 3 --interval 0.6 \
         --output "$DUCK_SIM_STATE/p2b-passive-session-b.json"
+fi
+# X2-C: independent real-daemon runs, one NEW shared database. Preserve
+# only concise, privacy-free reports (never audio, images or ToF 8x8 grids).
+# This is explicitly opt-in on the dedicated GitHub simulator branch.
+if [ "${DUCK_SIM_X2C_ACCEPTANCE:-NO}" = YES ]; then
+    rm -f "$DUCK_SIM_STATE/x2c-passive.sqlite3" \
+          "$DUCK_SIM_STATE/x2c-passive.sqlite3-wal" \
+          "$DUCK_SIM_STATE/x2c-passive.sqlite3-shm" \
+          "$DUCK_SIM_STATE/x2c-passive-session-a.json" \
+          "$DUCK_SIM_STATE/x2c-passive-session-b.json" \
+          "$DUCK_SIM_STATE/x2c-acceptance.json"
+    python3 -m microduck_companion.sim_passive_cycles \
+        --state-dir "$DUCK_SIM_STATE" \
+        --database "$DUCK_SIM_STATE/x2c-passive.sqlite3" \
+        --session x2c-session-a --cycles 3 --interval 0.6 \
+        --output "$DUCK_SIM_STATE/x2c-passive-session-a.json"
+    python3 -m microduck_companion.sim_passive_cycles \
+        --state-dir "$DUCK_SIM_STATE" \
+        --database "$DUCK_SIM_STATE/x2c-passive.sqlite3" \
+        --session x2c-session-b --cycles 3 --interval 0.6 \
+        --output "$DUCK_SIM_STATE/x2c-passive-session-b.json"
+    python3 -m microduck_companion.sim_x2c_acceptance \
+        --repo-root "$ROOT" \
+        --database "$DUCK_SIM_STATE/x2c-passive.sqlite3" \
+        --first "$DUCK_SIM_STATE/x2c-passive-session-a.json" \
+        --second "$DUCK_SIM_STATE/x2c-passive-session-b.json" \
+        --output "$DUCK_SIM_STATE/x2c-acceptance.json"
 fi
 python3 -m microduck_companion.sim_zone_probe --state-dir "$DUCK_SIM_STATE" \
     --rl-root "$DUCK_SIM_RL" --port "$DUCK_SIM_PORT"

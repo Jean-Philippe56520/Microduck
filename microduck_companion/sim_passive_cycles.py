@@ -11,6 +11,7 @@ from dataclasses import dataclass
 import json
 import math
 from pathlib import Path
+import statistics
 import sys
 import time
 import uuid
@@ -21,6 +22,11 @@ from .perception import PerceptionSnapshot
 from .sim_bridge import (
     DEFAULT_MAX_AGE_S, SimulatorTelemetry, read_simulator_telemetry,
 )
+
+try:
+    import resource  # POSIX; GitHub X2-C uses Ubuntu. Never run on robot.
+except ImportError:  # Keep host fixtures importable on other platforms.
+    resource = None
 
 _MOTION = frozenset({"explore", "play_with_object"})
 _QUALITY = frozenset({"coherent", "invalid_or_missing", "nonadvancing_frame"})
@@ -286,18 +292,63 @@ def run_session(state_dir: Path, database: Path, *, session: str,
     if (type(timeout_s) not in (int, float) or not math.isfinite(timeout_s)
             or not 0 < timeout_s <= 10):
         raise ValueError("timeout must be in (0, 10] seconds")
+    # Per-process HOST metrics only: Linux ru_maxrss is a peak in KiB, NOT
+    # an estimate of incremental load or of the 1-GiB RK3566 robot.
+    wall_start = time.perf_counter()
+    cpu_start = time.process_time()
     memory = ExperienceMemory(database)
     try:
         runner = PassiveSimCycleRunner(memory, session=session)
         records = []
+        samples: list[dict[str, float | int]] = []
         for index in range(cycles):
             if index:
                 time.sleep(interval_s)
             # New connections and fresh observations at *each* cycle.
             # This function has only three read/subscribe RPCs whitelisted.
+            read_start = time.perf_counter()
             telemetry = read_simulator_telemetry(state_dir, timeout_s=timeout_s)
+            read_ms = (time.perf_counter() - read_start) * 1000.
+            decision_start = time.perf_counter()
             records.append(runner.step(telemetry, now=time.monotonic()))
+            decision_ms = (time.perf_counter() - decision_start) * 1000.
+            samples.append({
+                "sequence": index + 1,
+                "acquisition_ms": round(read_ms, 3),
+                "decision_ms": round(decision_ms, 3),
+            })
         history = runner.history()
+
+        def percentile(values: list[float], pct: float) -> float:
+            ordered = sorted(values)
+            # Nearest-rank p95: for a 3-cycle run this is the maximum sample.
+            index = max(0, math.ceil(pct * len(ordered)) - 1)
+            return round(ordered[index], 3)
+
+        acquisitions = [float(x["acquisition_ms"]) for x in samples]
+        decisions = [float(x["decision_ms"]) for x in samples]
+        db_path = Path(database)
+        wal_path = Path(str(database) + "-wal")
+        rss_kib = (int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+                   if resource is not None and sys.platform.startswith("linux")
+                   else None)
+        host_metrics = {
+            "latency_basis": "host_perf_counter_ms_nearest_rank_p95",
+            "acquisition_ms_p50": round(statistics.median(acquisitions), 3),
+            "acquisition_ms_p95": percentile(acquisitions, 0.95),
+            "decision_ms_p50": round(statistics.median(decisions), 3),
+            "decision_ms_p95": percentile(decisions, 0.95),
+            "process_cpu_ms": round(
+                (time.process_time() - cpu_start) * 1000., 3),
+            "session_wall_ms": round(
+                (time.perf_counter() - wall_start) * 1000., 3),
+            "process_peak_rss_kib": rss_kib,
+            "sqlite_file_bytes": db_path.stat().st_size
+                if db_path.is_file() else 0,
+            "sqlite_wal_bytes": wal_path.stat().st_size
+                if wal_path.is_file() else 0,
+            "samples": samples,
+        }
         return {
             "source": "official_simulator_sockets_unverified_hardware",
             "session": runner.session,
@@ -309,6 +360,7 @@ def run_session(state_dir: Path, database: Path, *, session: str,
                 for r in records
             ],
             "journal_count": len(history),
+            "host_metrics": host_metrics,
             "coherent_cycles": sum(r.quality == "coherent" for r in records),
             "motor_commands_issued": 0,
             "verified_consequences": 0,
