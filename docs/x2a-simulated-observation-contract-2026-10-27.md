@@ -1,6 +1,6 @@
 # X2-A — Contrat de lecture de télémétrie simulée sans autorité (27 octobre 2026)
 
-**Statut : implémentation sur branche de PR, résultats CI à rattacher après exécution ; tests de fixtures uniquement pour les changements X2-A.** Ne pas confondre ce lot et la démonstration P2b antérieure réellement passée sur les démons OEM dans MuJoCo.
+**Statut : implémentation dans [PR #84](https://github.com/Jean-Philippe56520/Microduck/pull/84) ; [CI hôte #40428500259](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40428500259) réussie avec **1 236 tests exécutés, 19 ignorés, zéro échec**, dont neuf tests X2-A. Changements X2-A validés sur fixtures et hôte seulement.** Ne pas confondre ce lot et la démonstration P2b antérieure réellement passée sur les démons OEM dans MuJoCo.
 
 ## Justification — réutiliser / adapter / créer
 
@@ -42,7 +42,7 @@ La classe `SimulatorTelemetryAssessment` porte des attributs explicitement faux 
 ## Tests, statut de preuve et impact
 
 - Ajouter `tests/test_x2a_simulator_source_contract.py` : lecture cohérente sans autorité, batterie inconnue, flux manquants, payloads invalides, chute/limp/santé, cadence, horloges et fraîcheur, fausses autorisations, tentative `robot.move`, méthodes sur mauvais rôle, conservation de P2b en SQLite sans exécution/récompense.
-- Réexécuter la suite complète et les tests existants de `sim_ipc`, `sim_bridge`, `sim_passive_cycles`. **CI à vérifier dans la PR**, aucun test physique et **pas de nouvelle exécution du simulateur OEM dans X2-A** ; P2b a historiquement passé son propre smoke MuJoCo.
+- Réexécuter la suite complète et les tests existants de `sim_ipc`, `sim_bridge`, `sim_passive_cycles`. **CI hôte validée sur PR #84**, aucun test physique et **pas de nouvelle exécution du simulateur OEM dans X2-A** ; P2b a historiquement passé son propre smoke MuJoCo.
 - Aucun nouveau paquet, stockage, boucle, microphone, image, RPC moteur, Qwen, système de récompense, sous-module ni changement `robotd`.
 - Aucun coût CPU/RSS/RAM/stockage ajouté quantifié sur RK3566 ; profilage/latences réels attendent X2-C et [#82](https://github.com/Jean-Philippe56520/Microduck/issues/82).
 - **Porte X2-B** : relire cette matrice avant de partager de l'historique simulé avec les cinq motivations. F2/ex1/ex2 acceptent actuellement des **fixtures mock** ; interdit de réétiqueter une trame OEM en `mock` pour les contourner. Si seuls batterie/santé/ToF non sémantique sont disponibles, rester sur `idle/rest/halt`, pas de catégorie chat/chien/personne inférée.
