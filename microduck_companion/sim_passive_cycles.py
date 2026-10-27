@@ -28,12 +28,6 @@ _QUALITY = frozenset({"coherent", "invalid_or_missing", "nonadvancing_frame"})
 # physical safety. Their bound limits how far back a prior simulator report
 # may influence a descriptive attention hint.
 MAX_CONTEXT_AGE_S = 60.
-_ATTENTION = frozenset({"not_evaluated", "abstain", "idle", "rest", "observe_status"})
-_COMPARISON = frozenset({
-    "not_evaluated", "no_reference", "interrupted", "incompatible_clock",
-    "expired", "unknown_battery", "stable_band", "low_to_normal",
-    "normal_to_low",
-})
 
 
 @dataclass(frozen=True)
@@ -273,7 +267,7 @@ class PassiveSimCycleRunner:
 
     def history(self) -> list[dict]:
         rows = self.memory.conn.execute(
-            """SELECT session,sequence,observed_at,quality,intention,
+            """SELECT id,session,sequence,observed_at,quality,intention,
                       disposition,depth_seq,battery_pct,source,outcome,reward,
                       motor_commands,attention,comparison,reference_id
                FROM sim_passive_cycles ORDER BY id"""
