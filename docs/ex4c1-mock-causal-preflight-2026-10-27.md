@@ -1,6 +1,6 @@
 # EX4-C1 — Précontrôle des chaînes d'effets fictives et refus de causalité physique
 
-**27 octobre 2026 — [PR #90](https://github.com/Jean-Philippe56520/Microduck/pull/90), empilée sur [#89 EX4-B](https://github.com/Jean-Philippe56520/Microduck/pull/89) puis [#88 EX4-A](https://github.com/Jean-Philippe56520/Microduck/pull/88).** Préparation partielle de l'[issue #80](https://github.com/Jean-Philippe56520/Microduck/issues/80). Le vrai robot n'est pas disponible. **EX4-C n'est pas « mémoire causale validée » : ce premier lot est C1, uniquement sur fichiers de fixtures et SQLite de test.** Aucun ordre moteur ou consultation d'IA.
+**27 octobre 2026 — [PR #90](https://github.com/Jean-Philippe56520/Microduck/pull/90) fusionnée dans `main` après [#89 EX4-B](https://github.com/Jean-Philippe56520/Microduck/pull/89) et [#88 EX4-A](https://github.com/Jean-Philippe56520/Microduck/pull/88).** Préparation partielle de l'[issue #80](https://github.com/Jean-Philippe56520/Microduck/issues/80). Le vrai robot n'est pas disponible. **EX4-C n'est pas « mémoire causale validée » : ce premier lot est C1, uniquement sur fichiers de fixtures et SQLite de test.** Aucun ordre moteur ou consultation d'IA.
 
 ## Audit de réutilisation avant changement
 
