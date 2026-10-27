@@ -151,6 +151,37 @@ class RolePreviewTests(TestCase):
                 self.assertEqual(report["status"], "rejected")
                 self.assertNotIn("advisor_text", report)
 
+    def test_envelope_diagnostics_are_bounded_and_do_not_leak_content(self):
+        cases = (
+            ("length", "generation_truncated"),
+            ("not_a_stop", "stop_reason_invalid"),
+        )
+        for reason, expected in cases:
+            envelope = {"model": MODEL, "done": True, "done_reason": reason,
+                        "message": {"role": "assistant", "content": "private test content"},
+                        "eval_count": 180, "total_duration": 12_000_000_000}
+            with self.subTest(reason=reason):
+                with patch("microduck_companion.qwen9b_role_preview.http.client.HTTPConnection") as create:
+                    create.return_value.getresponse.return_value = Reply(json.dumps(envelope).encode())
+                    result = evaluate_local_image(_photo(), consent=True, reviewed=True)
+                self.assertEqual(result["status"], "rejected")
+                self.assertEqual(result["diagnostic"], expected)
+                self.assertNotIn("advisor_text", result)
+                self.assertNotIn("private test content", json.dumps(result))
+                self.assertEqual(result["memory_writes"], 0)
+                self.assertEqual(result["motor_commands_issued"], 0)
+                if reason == "length":
+                    self.assertEqual(result["generated_tokens"], 180)
+
+    def test_wrong_model_diagnostic_remains_non_disclosing(self):
+        data = {"model": "different:model", "done": True,
+                "message": {"role": "assistant", "content": "sensitive"}}
+        with patch("microduck_companion.qwen9b_role_preview.http.client.HTTPConnection") as create:
+            create.return_value.getresponse.return_value = Reply(json.dumps(data).encode())
+            result = evaluate_local_image(_photo(), consent=True, reviewed=True)
+        self.assertEqual(result["diagnostic"], "model_mismatch")
+        self.assertNotIn("sensitive", json.dumps(result))
+
     def test_overlong_text_refused_and_no_injection_into_actions(self):
         data = {"model": MODEL, "done": True, "done_reason": "stop",
                 "message": {"role": "assistant", "content": "x" * 1201}}
