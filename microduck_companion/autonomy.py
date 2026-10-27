@@ -197,6 +197,31 @@ class AutonomyBrain:
             now_monotonic_s=now_monotonic_s,
         )
 
+    def consider_simulator_status(self, *, quality: str,
+                                  battery_pct: float | None,
+                                  prior_battery_low: bool | None,
+                                  comparable_memory: bool) -> str:
+        """Non-motor attention hint for P2b/X2-B, not an action proposal.
+
+        Accepts only the simulator's *current* validated battery and a coarse
+        historical band. No other state is inferred from ToF or remembered
+        data. All return values describe attention, not OEM RPCs, a completed
+        rest, energy recovery, a perception category or causal learning.
+        This pure method deliberately does not modify the five motivations.
+        """
+        if quality != "coherent" or battery_pct is None:
+            return "abstain"
+        if (type(battery_pct) not in (int, float)
+                or not 0 <= battery_pct <= 100):
+            return "abstain"
+        if battery_pct <= 15:
+            return "rest"
+        if (comparable_memory and prior_battery_low is True
+                and self.motives.curiosity > self.motives.caution
+                and self.motives.energy >= 0.3):
+            return "observe_status"
+        return "idle"
+
     def choose_from_snapshot(self, snapshot: PerceptionSnapshot,
                              now: float | None = None) -> Plan:
         """Production-facing input boundary; stale/untrusted safety data halts.
@@ -295,8 +320,7 @@ class AutonomyBrain:
         # as if it was an experience. P2a and MuJoCo have separate, explicitly
         # sourced recorders that are NOT physical robot execution evidence.
         self.previous_intention = plan.intention
-        if plan.intention == "rest":
-            self.motives.energy = min(1.0, self.motives.energy + 0.025)
-        elif plan.intention not in {"halt", "idle"}:
-            self.motives.energy = max(0.0, self.motives.energy - 0.008)
+        # A proposed rest did not recharge a battery or restore energy; a
+        # proposed exploration did not expend energy. Only proven, executed
+        # outcomes may update motivations in a future audited path.
         return plan

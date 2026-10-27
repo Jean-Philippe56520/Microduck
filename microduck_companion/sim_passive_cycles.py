@@ -24,6 +24,10 @@ from .sim_bridge import (
 
 _MOTION = frozenset({"explore", "play_with_object"})
 _QUALITY = frozenset({"coherent", "invalid_or_missing", "nonadvancing_frame"})
+# Comparison windows are for *historical cognition*, never sensor TTL or
+# physical safety. Their bound limits how far back a prior simulator report
+# may influence a descriptive attention hint.
+MAX_CONTEXT_AGE_S = 60.
 
 
 @dataclass(frozen=True)
@@ -35,6 +39,9 @@ class PassiveSimCycle:
     disposition: str
     depth_seq: int | None
     battery_pct: float | None
+    attention: str = "not_evaluated"
+    comparison: str = "not_evaluated"
+    reference_id: int | None = None
 
 
 class PassiveSimCycleRunner:
@@ -75,8 +82,40 @@ class PassiveSimCycleRunner:
                     reward REAL CHECK(reward IS NULL),
                     motor_commands INTEGER NOT NULL DEFAULT 0
                         CHECK(motor_commands=0),
+                    attention TEXT NOT NULL DEFAULT 'not_evaluated'
+                        CHECK(attention IN (
+                            'not_evaluated','abstain','idle','rest','observe_status')),
+                    comparison TEXT NOT NULL DEFAULT 'not_evaluated'
+                        CHECK(comparison IN (
+                            'not_evaluated','no_reference','interrupted',
+                            'incompatible_clock','expired','unknown_battery',
+                            'stable_band','low_to_normal','normal_to_low')),
+                    reference_id INTEGER CHECK(reference_id IS NULL OR reference_id>0),
                     UNIQUE(session, sequence)
                 )""")
+            # Add only three columns to P2b's existing journal. No second DB,
+            # second writer, history purge or fabricated simulator event.
+            existing = {
+                row["name"] for row in memory.conn.execute(
+                    "PRAGMA table_info(sim_passive_cycles)"
+                )
+            }
+            additions = {
+                "attention": """TEXT NOT NULL DEFAULT 'not_evaluated'
+                    CHECK(attention IN (
+                        'not_evaluated','abstain','idle','rest','observe_status'))""",
+                "comparison": """TEXT NOT NULL DEFAULT 'not_evaluated'
+                    CHECK(comparison IN (
+                        'not_evaluated','no_reference','interrupted',
+                        'incompatible_clock','expired','unknown_battery',
+                        'stable_band','low_to_normal','normal_to_low'))""",
+                "reference_id": "INTEGER CHECK(reference_id IS NULL OR reference_id>0)",
+            }
+            for column, definition in additions.items():
+                if column not in existing:
+                    memory.conn.execute(
+                        f"ALTER TABLE sim_passive_cycles ADD COLUMN {column} {definition}"
+                    )
         self.brain = AutonomyBrain(memory)
         previous = memory.conn.execute(
             "SELECT intention FROM sim_passive_cycles ORDER BY id DESC LIMIT 1"
@@ -98,6 +137,51 @@ class PassiveSimCycleRunner:
         self._last_depth_seq = good["depth_seq"] if good else None
         self._last_state_ns = good["state_t_ns"] if good else None
         self._last_depth_ns = good["depth_t_ns"] if good else None
+
+    def _prior_power_context(self, *, now: float,
+                             depth_seq: int, state_ns: int | None,
+                             depth_ns: int | None,
+                             battery: float) -> tuple[str, int | None, bool | None]:
+        """Recall only the LAST journal row, not an unbounded search or sensor.
+
+        Do not bridge an invalid sample, reset simulator frame sequence or a
+        different monotonic clock. Old P2b rows are accepted *as history* only
+        when their original source, no-action outcome and timestamps agree.
+        """
+        row = self.memory.conn.execute(
+            """SELECT id, session, observed_at, quality, source, outcome,
+                      motor_commands, reward, depth_seq, state_t_ns,
+                      depth_t_ns, battery_pct
+               FROM sim_passive_cycles ORDER BY id DESC LIMIT 1"""
+        ).fetchone()
+        if row is None:
+            return "no_reference", None, None
+        if (row["quality"] != "coherent"
+                or row["source"] != "simulator_ipc"
+                or row["outcome"] != "no_action_executed"
+                or row["motor_commands"] != 0
+                or row["reward"] is not None):
+            return "interrupted", None, None
+        # Time base may change across processes or simulator restarts.
+        if row["observed_at"] >= now:
+            return "incompatible_clock", None, None
+        if now - row["observed_at"] > MAX_CONTEXT_AGE_S:
+            return "expired", None, None
+        # A sequence alone does not prove an unchanged simulator boot.
+        # Without both OEM monotonic frame clocks on each side, abstain.
+        if (row["depth_seq"] is None or depth_seq <= row["depth_seq"]
+                or any(v is None for v in (
+                    state_ns, depth_ns, row["state_t_ns"], row["depth_t_ns"]))
+                or state_ns <= row["state_t_ns"]
+                or depth_ns <= row["depth_t_ns"]):
+            return "incompatible_clock", None, None
+        if row["battery_pct"] is None:
+            return "unknown_battery", None, None
+        prior_low = row["battery_pct"] <= 15
+        current_low = battery <= 15
+        comparison = ("stable_band" if prior_low == current_low else
+                      "low_to_normal" if prior_low else "normal_to_low")
+        return comparison, int(row["id"]), prior_low
 
     def step(self, telemetry: SimulatorTelemetry, *, now: float,
              max_age_s: float = DEFAULT_MAX_AGE_S) -> PassiveSimCycle:
@@ -138,23 +222,39 @@ class PassiveSimCycleRunner:
         )
         battery = (telemetry.health.battery_pct
                    if quality == "coherent" and telemetry.health else None)
+        comparison, reference_id, prior_low = (
+            ("interrupted", None, None) if quality != "coherent" else
+            ("unknown_battery", None, None) if battery is None else
+            self._prior_power_context(
+                now=now, depth_seq=depth.seq,
+                state_ns=state.t_ns, depth_ns=depth.t_ns, battery=battery,
+            )
+        )
+        attention = self.brain.consider_simulator_status(
+            quality=quality, battery_pct=battery, prior_battery_low=prior_low,
+            comparable_memory=reference_id is not None,
+        )
+        # The cognitive hint is strictly descriptive; no extra decision,
+        # change to object preference, motion, PC request, or OEM signal.
         with self.memory.conn:
             self.memory.conn.execute(
                 """INSERT INTO sim_passive_cycles(
                        session,sequence,observed_at,quality,intention,
                        disposition,depth_seq,state_t_ns,depth_t_ns,battery_pct,
-                       source,outcome,reward,motor_commands)
+                       source,outcome,reward,motor_commands,
+                       attention,comparison,reference_id)
                    VALUES (?,?,?,?,?,?,?,?,?,?,
-                           'simulator_ipc','no_action_executed',NULL,0)""",
+                           'simulator_ipc','no_action_executed',NULL,0,?,?,?)""",
                 (self.session, self.sequence, now, quality, plan.intention,
                  disposition, depth.seq if depth else None,
                  state.t_ns if state else None, depth.t_ns if depth else None,
-                 battery),
+                 battery, attention, comparison, reference_id),
             )
 
         result = PassiveSimCycle(
             self.session, self.sequence, plan, quality, disposition,
             depth.seq if depth else None, battery,
+            attention, comparison, reference_id,
         )
         self.sequence += 1
         self._last_observed = now
@@ -167,9 +267,10 @@ class PassiveSimCycleRunner:
 
     def history(self) -> list[dict]:
         rows = self.memory.conn.execute(
-            """SELECT session,sequence,observed_at,quality,intention,
+            """SELECT id,session,sequence,observed_at,quality,intention,
                       disposition,depth_seq,battery_pct,source,outcome,reward,
-                      motor_commands FROM sim_passive_cycles ORDER BY id"""
+                      motor_commands,attention,comparison,reference_id
+               FROM sim_passive_cycles ORDER BY id"""
         ).fetchall()
         return [dict(row) for row in rows]
 
@@ -203,7 +304,8 @@ def run_session(state_dir: Path, database: Path, *, session: str,
             "cycles": [
                 {"sequence": r.sequence, "quality": r.quality,
                  "intention": r.plan.intention, "disposition": r.disposition,
-                 "depth_seq": r.depth_seq}
+                 "depth_seq": r.depth_seq, "attention": r.attention,
+                 "comparison": r.comparison, "reference_id": r.reference_id}
                 for r in records
             ],
             "journal_count": len(history),
