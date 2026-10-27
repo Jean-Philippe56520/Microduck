@@ -19,6 +19,12 @@ class AutonomyTests(unittest.TestCase):
     def test_default_is_not_safe_to_move(self):
         self.assertEqual("halt", self.brain.choose(Scene()).intention)
 
+    def test_legacy_chosen_plans_are_not_logged_as_executed_experiences(self):
+        # A proposed inspect/explore is not a robotd acknowledgement.
+        self.brain.choose(Scene(**self.safe, object_id="toy", object_label="toy"))
+        self.brain.choose(Scene(**self.safe))
+        self.assertEqual(0, self.memory.experience_count())
+
     def test_floor_not_confirmed(self):
         self.assertEqual("halt", self.brain.choose(
             Scene(safe_area=True)
