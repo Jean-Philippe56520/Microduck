@@ -196,3 +196,22 @@ Après réussite de l'autotest rouge/bleu, l'opérateur a exécuté `COMPARER_VI
 **Interprétation :** `balanced` montre une amélioration locale du type d'image et passe d'une abstention totale à un objet générique. **La catégorie souhaitée n'est correctement reconnue par aucun des deux modes.** L'expérience sur une seule photo ne suffit pas pour choisir définitivement un prompt, affirmer une compétence de perception fiable ou comparer les vitesses. Il est prématuré d'ajouter ces sorties à `ExperienceMemory`, d'exécuter des gestes OEM ou d'imputer l'erreur uniquement aux poids du modèle. Le test couleur établit une discrimination élémentaire, pas la reconnaissance sémantique d'objets.
 
 **Porte de validation suivante (sans changer les prompts en fonction de ce résultat) :** utiliser un petit jeu de photographies **inédites, consenties et indépendamment annotées**, incluant des classes présentes (`ball`, `chair`, `sock`, `cat`, `dog`, `dog_bed` seulement si autorisé), ainsi que des objets hors taxonomie (par exemple `shoe` qui n'est pas dans les 11 classes et doit être compté `other_object`, et `unknown` pour les ambiguïtés véritables). Préférer les objets inanimés pour commencer, avec scènes simples, basses et partiellement visibles. Garder le même 9B, le même JPEG/contrat sur les deux modes ; compter les bonnes catégories, mauvaises classifications, abstentions, types d'image et latences, sans exporter de médias. Les séries très petites sont exploratoires, non une mesure robuste de généralisation. Aucun test réel du robot ni des ressources RK3566.
+
+## A/B réel n°2 — chaise à faible hauteur devant une table (27 octobre 2026)
+
+**Source et vérité visuelle avant résultat :** l'opérateur a fourni dans la conversation une photo de chaise grise rembourrée avec une table occupant une large partie de l'arrière-plan/du haut de la scène. La **cible visée** est la chaise ; `category=chair` (catégorie déjà disponible), `depiction=photograph`, et `visibility=clear` ou `partial` selon l'importance donnée au dossier recadré. La photo personnelle n'est **pas** ajoutée à GitHub et le pilote n'a enregistré ni pixels ni réponse brute. Les deux analyses ont été approuvées par l'opérateur sur son Ollama local `127.0.0.1:11435`.
+
+| Champ | Attendu pour la chaise visée | Simple | Balanced |
+| --- | --- | --- | --- |
+| `status` | réponse non vérifiée | `unverified` | `unverified` |
+| `category` | `chair` | `unknown` | `other_object` |
+| `depiction` | `photograph` | `unknown` | `photograph` |
+| `visibility` | `clear` ou `partial` | `clear` | `clear` |
+| `latency_s` | n/a | **11.250** | **13.016** |
+| diagnostics | aucun échec de schéma | `none/none` | `none/none` |
+
+Le comparateur a renvoyé `result=comparison_completed`, `verified_recognition=false`, `photos_saved_by_companion=0`, `memory_writes=0`, `motor_commands_issued=0` ; ce sont des **compteurs du pilote PC**, non du robot. Ces résultats reproduisent le motif de la précédente photo de couchage : le mode équilibré choisit le type de support correctement mais pas la catégorie d'intérêt.
+
+**Audit du prétraitement, réalisé hors GitHub sur une copie de l'image partagée dans la conversation :** entrée JPEG **1 152 × 1 536**, 545 381 octets, sortie selon `prepare_jpeg` (Pillow, auto-orientation EXIF, RGB, `thumbnail((512,512))`, JPEG qualité 75 sans métadonnées) = **384 × 512**, **28 855 octets**. En inspection humaine, la silhouette rembourrée de la chaise, ses pieds et son assise sont toujours discernables. L'image réduite n'est pas sauvegardée dans le dépôt ; cette vérification ne prouve pas les octets exacts transmis par le PC de l'opérateur. Le simple redimensionnement n'explique pas manifestement l'erreur, mais son impact quantitatif n'a pas été évalué.
+
+**Point de prudence :** `other_object` pourrait désigner la table (ou d'autres objets) plutôt que la chaise : la taxonomie F5 v2 comprend `chair`, mais pas `table`, et l'actuel schéma ne renvoie ni localisation ni objet de référence. Ne pas présenter cet essai comme preuve que le modèle est incapable de reconnaître une chaise ; il a **échoué à classer la cible choisie par l'humain dans cette scène**. Tester des photos d'objets uniques à composition simple puis de la même catégorie en scène multi-objets, avec référence établie avant inférence, pour isoler l'erreur de focus, de prompt, de redimensionnement ou de capacité multimodale. Éviter de retoucher l'invite sur ces deux exemples et de connecter les hypothèses à `ExperienceMemory` ou au robot.

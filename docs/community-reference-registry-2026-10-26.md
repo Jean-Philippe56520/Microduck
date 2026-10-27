@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**C3 / F5 v2 — audit de second essai photo réel (27/10/2026).** Réutiliser le 9B multimodal local, le client F5-B, la compression EXIF-free et les deux prompts du pilote. Observation : même image de chaise devant table à faible hauteur, résultat simple `unknown`, équilibré `other_object` au lieu de `chair`. L'étiquette `table` n'existe pas dans les 11 catégories actuelles ; impossible d'affirmer quel objet Qwen a sélectionné. Ne pas créer de modèle concurrent, deuxième détecteur, taxonomie improvisée ou nouvelles commandes OEM en réaction à une seule photo. Prioriser l'évaluation indépendante de focus/région d'intérêt, de l'objet isolé et du cas inconnu avant toute adaptation. Aucun projet tiers importé, OEM #381/#414 toujours non épinglés. [F5 v2](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **C3 / F5 v2 — conclusion d'essai A/B 27/10/2026 :** comparaison sur même JPEG d'un couchage pour animal, Qwen3.5 9B déjà local : `simple=unknown/unknown`, `balanced=other_object/photograph` (tous deux valides, pas de `dog_bed`). **RÉUTILISER** 9B/Ollama/F5-B, **CONSERVER** le pilote et ses deux modes sans retouche dictée par un seul exemple ; **CRÉER** uniquement une évaluation indépendante sur scènes nouvelles avant d'adapter taxonomie/prompt. Pas d'import Qwen 8B ou projet tiers, pas de changement sous-module constructeur ; OEM #381/#414 toujours non épinglés. Pas de média privé/identité en dépôt. [Bilan](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 

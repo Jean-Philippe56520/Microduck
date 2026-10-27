@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**F5 v2 — deuxième essai photo réelle Qwen 9B sur PC (27/10/2026).** Chaise grise photographiée à faible hauteur avec table, appels `simple=11,250 s`, `balanced=13,016 s`, catégorie attendue `chair`, sorties `unknown` puis `other_object`. QA du chemin d'entrée à partir de la photo partagée : JPEG source 1 152×1 536 / 545 381 octets -> JPEG modèle 384×512 / ≈28 855 octets en qualité 75 (`prepare_jpeg`, max 512 px et 100 Ko), silhouette de chaise toujours reconnaissable lors de l'inspection. **Ce n'est pas une mesure de vision du modèle** ; l'image réellement envoyée par le PC de l'opérateur n'a pas été inspectée à distance. RSS, utilisation GPU effective, température, énergie, NPU et fonctionnement robot RK3566 restent inconnus. Pas d'extrapolation latence vers robot ou fréquence moteur 50 Hz. [F5 v2](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **F5 v2 — latences de comparaison réelle PC (27/10/2026) :** sur une même photographie autorisée analysée deux fois avec Qwen3.5 9B, mode `simple` 11,172 s et `balanced` 11,953 s. Différence d'environ 0,781 s sur **une seule observation**, non interprétable comme coût relatif du prompt : chargement, GPU réel, RSS, température, CPU, contexte et variabilité non mesurés pour l'essai. Qwen renvoie `unknown` puis `other_object`, sans catégorie `dog_bed` attendue. Il s'agit de mesures PC/logiciel, sans justification d'extrapolation à 1 Gio de RAM, RK3566 ou aux boucles moteurs 50 Hz. Mesures `scripts/resource-audit.sh` sur vrai robot toujours obligatoires. [Journal](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 
