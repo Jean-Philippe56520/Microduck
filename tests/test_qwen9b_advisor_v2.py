@@ -530,6 +530,30 @@ class SimpleVisualPilot(unittest.TestCase):
                     kwargs = client.return_value.query.call_args.kwargs
                     self.assertEqual(simple, kwargs.get('mode') == 'simple')
 
+    def test_windows_launcher_starts_local_ollama_only_after_consent(self):
+        from pathlib import Path
+        root = Path(__file__).resolve().parents[1]
+        ps = (root / 'scripts' / 'kwipi-vision-test.ps1').read_text(encoding='utf-8')
+        self.assertIn('Get-LocalOllamaTags', ps)
+        self.assertIn('Get-Command -Name ollama.exe -CommandType Application', ps)
+        self.assertIn('$env:OLLAMA_HOST = "127.0.0.1:$Port"', ps)
+        self.assertIn('$env:OLLAMA_VULKAN = "1"', ps)
+        self.assertIn('$env:OLLAMA_IGPU_ENABLE = "1"', ps)
+        self.assertIn('Start-Process -FilePath $ollama.Source', ps)
+        self.assertIn('Stop-OnlyStartedOllama -ServerProcess $serverWeStarted', ps)
+        self.assertIn('if ($null -eq $tags)', ps)
+        self.assertIn('if ($null -ne $tags) { break }', ps)
+        self.assertIn('if ($serverWeStarted.HasExited) { break }', ps)
+        self.assertLess(ps.index('$consent = Read-Host'), ps.index('Start-Process'))
+        self.assertLess(ps.index('Start-Process'), ps.index('--authorize-image --reviewed-no-private-subjects'))
+        self.assertIn('exit 2', ps)
+        self.assertIn('exit 1', ps)
+        self.assertNotIn('setx ', ps.lower())
+        self.assertNotIn('Stop-Service', ps)
+        self.assertNotIn('Stop-Process -Name', ps)
+        self.assertNotIn('ollama pull', ps.lower())
+        self.assertNotIn('Invoke-WebRequest', ps)
+
     def test_windows_launcher_is_opt_in_and_local_only(self):
         from pathlib import Path
         root = Path(__file__).resolve().parents[1]

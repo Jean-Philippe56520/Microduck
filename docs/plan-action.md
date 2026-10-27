@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**F5 v2 / correctif Windows (27/10/2026 ; PR #98 ouverte).** L'opérateur a confirmé que le lanceur simplifié échouait avant sélection d'image lorsque le serveur secondaire Ollama `127.0.0.1:11435` était arrêté. Le script Windows est modifié pour ne démarrer le serveur local **qu'après validation explicite de l'image**, avec variables Vulkan/iGPU **temporaires** et nettoyage du seul processus créé par le lanceur. Ne pas toucher au processus déjà actif ni au serveur `11434`. Aucun téléchargement, publication d'image, accès robot/moteurs ou mémoire. Tests PC locaux sur fixtures et syntaxe PowerShell en CI ; démarrage réel et placement GPU sur la machine de l'opérateur **à confirmer**. [Détails](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **Automatisation CI F5 v2 / ressources (27/10/2026, PR #98) :** environnement virtuel Python **éphémère** sur GitHub Actions par run, dépendances minimales et tests mock/fixtures existants, sans modèle téléchargé ni vrai appel GPU. Éviter les déclenchements push+PR en double (push main, PR ouverte). Ce dispositif réduit les manipulations opérateur pour les changements de code, mais ne donne pas à GitHub accès aux images privées ou au serveur Ollama `127.0.0.1:11435` de Windows. Validation réelle multimodale manuelle consentie via `TESTER_KWIPI.cmd` ; pas de runner auto-hébergé Windows non supervisé sur dépôt public. [Protocole](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 

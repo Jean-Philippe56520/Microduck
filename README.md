@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**F5 v2 — lanceur Windows autonome pour Ollama (27/10/2026 ; PR #98 non fusionnée).** Après l'essai opérateur `TESTER_KWIPI.cmd` interrompu par l'indisponibilité de `127.0.0.1:11435`, le lanceur demande d'abord de sélectionner et d'approuver l'unique image, puis détecte et démarre si nécessaire **uniquement** le serveur Ollama local `11435`, avec `OLLAMA_VULKAN=1` et `OLLAMA_IGPU_ENABLE=1` hérités par son processus. Il ne réinstalle ni modèle ni dépendance et ferme uniquement le serveur qu'il a lancé. Le serveur existant n'est pas arrêté, le port `11434` n'est pas touché. Le GPU demandé n'est pas une preuve de placement GPU ; test Windows réel du redémarrage à effectuer par l'opérateur. [Protocole](docs/f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **CI Python isolée sur GitHub Actions (27/10/2026, PR #98) :** le workflow existant crée désormais un `venv` éphémère par exécution, y installe Pillow et exécute l'ensemble des tests/fixtures Companion, sans environnement Python sur ton PC ni dépendance au GPU. Un déclencheur `pull_request` suffit aux branches en PR ; `push` est réservé à `main` pour éviter de doubler inutilement les minutes GitHub Actions. Cela **ne teste pas** la vraie inférence Qwen3.5 9B sur Radeon 860M ni les photos privées Windows, qui restent strictement locales et consenties. [Workflow](.github/workflows/python-tests.yml) ; [protocole F5 v2](docs/f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 

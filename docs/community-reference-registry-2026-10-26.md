@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**F5 v2 / audit de réutilisation — démarrage local Windows (27/10/2026) :** RÉUTILISER l'exécutable `ollama.exe` installé et l'image `qwen3.5:9b`, et le transport F5-B loopback ; ADAPTER uniquement le lanceur PC existant, pas de nouveau serveur réseau public, service, modèle ou poids. Interface vers `robotd` inchangée, PR OEM #381/#414 et travaux tiers non importés. Validation locale statique/mocks, CI ; essai sur Radeon Windows demandé avant toute promesse de stabilité ou de ressources. [F5 v2](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **Audit de reutilisation F5 v2 simple (27/10/2026, PR #98) :** choix REUTILISER le `qwen3.5:9b` deja telecharge sur PC (pas d'import supplementaire de Qwen3-VL 8B), REUTILISER Ollama et le transport valide `OllamaEndpoint` F5-B, ADAPTER le schema pour une sortie de perception minimale, CREER seulement le lanceur Windows (test manuel avec choix de photo). Aucun ajout de code/poids communautaire, sous-module OEM, moteur, capteur ou memoire. Les PR OEM #381 et #414 ainsi que QuackNav restent a auditer separement. Images privees absentes du depot. [Protocole PC](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 

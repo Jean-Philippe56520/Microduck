@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**B / F5 v2 — reproductibilité Windows 27/10/2026 :** rendre `TESTER_KWIPI.cmd` autonome face à l'absence d'Ollama sur le port dédié `11435`, sans démarrer le modèle avant choix et consentement pour une image. Réutiliser `ollama serve`, l'installation Windows et le modèle `qwen3.5:9b` existants ; options GPU Vulkan/iGPU héritées, aucun changement permanent de service. Tests statiques et Python sur faux serveur, test syntaxique PowerShell dans la CI, test réel Windows et placement GPU encore requis. [Compte rendu](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **B / F5 v2 — simplification pour mesurer la vision Qwen 9B (27/10/2026) :** conserver `qwen3.5:9b` PC ; tester d'abord une sortie de perception a 4 champs via `--mode simple` et `TESTER_KWIPI.cmd`, puis evaluer photos autorisees, erreurs, rejets, incertitude, latences et RSS avant d'ajouter usages/relations/effets. Le schéma strict reste disponible comme reference mais pas requis pour les premiers essais. Aucun nouveau reseau neuronal, poids ni service embarque ; pas d'autonomie acquise. Code et 25 tests locaux sur fausses reponses ; CI complète et essais Qwen reel du mode simple a confirmer. [Protocole](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 

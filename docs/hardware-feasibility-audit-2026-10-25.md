@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**F5 v2 / auto-démarrage Ollama PC du 27/10/2026 :** le lanceur demande le démarrage du serveur local `127.0.0.1:11435` en environnement processus Windows avec `OLLAMA_VULKAN=1`, `OLLAMA_IGPU_ENABLE=1`. Aucun serveur ou GPU n'est créé sur RK3566 ; aucun pilote embarqué, mémoire SQLite ou budget robot modifié. La présence de ces variables ne prouve pas l'utilisation effective de la Radeon 860M (à mesurer avec `ollama ps` pendant une inférence). Le processus Ollama temporaire est arrêté en fin d'essai ; les services Ollama existants ne sont pas affectés. Les mesures de RSS, latence, températures, 50 Hz et autonomie physique restent non validées sur robot.
+
+
 **F5 v2 — mode visuel simple et lanceur Windows (27/10/2026) :** les seuls changements sont sur PC (`qwen3.5:9b`, `127.0.0.1:11435`, Pillow dans l'environnement Python isole), pas sur RK3566. Le schema minimal de sortie ne garantit ni acceleration, ni RSS, ni latence reelle plus faible sans mesure. Photos manuelles et consenties ; 2 Mo source, 16 MP, JPEG nettoye 512 px/100 ko, 4 096 tokens de contexte et sortie bornee ; aucun media persiste par Companion. Tests Python simulant Ollama, pas de nouveau test thermique robot. Audit physique toujours obligatoire.
 
 

@@ -1,5 +1,5 @@
-# Kwipi F5 v2: one operator-approved image, one localhost Qwen3.5 9B call.
-# This is a manual PC-only visual probe. Never connects to robotd or SQLite.
+# Kwipi F5 v2: operator-approved image to local Qwen3.5 9B only.
+# Windows PC only. No camera, cloud, SQLite or robot motor access.
 [CmdletBinding()]
 param(
     [ValidateRange(1, 65535)][int]$Port = 11435,
@@ -14,26 +14,36 @@ if (-not (Test-Path -LiteralPath $python -PathType Leaf)) {
     $python = Join-Path $repo ".venv-qwen9b\Scripts\python.exe"
 }
 if (-not (Test-Path -LiteralPath $python -PathType Leaf)) {
-    Write-Host "Python isole introuvable. Installer Python 3.12 et l'environnement .venv-qwen9b avant l'essai."
+    Write-Host "Python isole introuvable. Reutiliser l'environnement .venv-qwen9b deja installe."
     exit 2
+}
+
+function Get-LocalOllamaTags {
+    param([int]$LocalPort)
+    try {
+        return Invoke-RestMethod -Uri ("http://127.0.0.1:{0}/api/tags" -f $LocalPort) -TimeoutSec 3 -ErrorAction Stop
+    } catch {
+        return $null
+    }
+}
+
+function Stop-OnlyStartedOllama {
+    param([System.Diagnostics.Process]$ServerProcess)
+    if ($null -ne $ServerProcess) {
+        try {
+            if (-not $ServerProcess.HasExited) {
+                Stop-Process -Id $ServerProcess.Id -Force -ErrorAction Stop
+                Write-Host "Serveur Ollama temporaire arrete apres cet essai."
+            }
+        } catch {
+            Write-Host "Fermeture automatique du serveur temporaire impossible (verifier les processus Ollama)."
+        }
+    }
 }
 
 Write-Host "Kwipi - evaluation visuelle PC, sans mouvement ni memorisation"
 Write-Host "Mode : $Mode | Modele : qwen3.5:9b | Ollama local : 127.0.0.1:$Port"
 Write-Host "L'image est preparee localement puis envoyee uniquement a Ollama sur 127.0.0.1."
-try {
-    $tags = Invoke-RestMethod -Uri ("http://127.0.0.1:{0}/api/tags" -f $Port) -TimeoutSec 5
-    $found = @($tags.models | Where-Object { $_.name -eq "qwen3.5:9b" })
-    if ($found.Count -eq 0) {
-        Write-Host "Le modele qwen3.5:9b n'est pas disponible sur ce serveur."
-        Write-Host "Verifier ollama list avec OLLAMA_HOST=127.0.0.1:$Port."
-        exit 2
-    }
-} catch {
-    Write-Host "Serveur Ollama local inaccessible sur le port $Port."
-    Write-Host "Verifier que le serveur GPU est actif sur 127.0.0.1:$Port."
-    exit 2
-}
 
 if (-not $Image) {
     try {
@@ -71,18 +81,64 @@ if ($consent -cne "OUI") {
     exit 1
 }
 
-Push-Location $repo
+# Start Ollama only AFTER the operator chose and approved this image.
+# Never kill an existing server. This process is temporary and uses localhost only.
+$serverWeStarted = $null
 try {
-    & $python -m microduck_companion.qwen9b_advisor_v2 `
-        --image $Image --ollama-port $Port --mode $Mode --timeout 180 `
-        --authorize-image --reviewed-no-private-subjects
-    $status = $LASTEXITCODE
+    $tags = Get-LocalOllamaTags -LocalPort $Port
+    if ($null -eq $tags) {
+        $ollama = Get-Command -Name ollama.exe -CommandType Application -ErrorAction SilentlyContinue
+        if ($null -eq $ollama) {
+            Write-Host "Ollama introuvable dans le PATH Windows. Verifier son installation."
+            exit 2
+        }
+        # Child process inherits these LOCAL process variables only; no setx, registry or service changes.
+        $env:OLLAMA_HOST = "127.0.0.1:$Port"
+        $env:OLLAMA_VULKAN = "1"
+        $env:OLLAMA_IGPU_ENABLE = "1"
+        Write-Host "Serveur Ollama arrete : lancement local automatique sur le port $Port."
+        Write-Host "Acceleration Vulkan demandee, mais utilisation GPU a verifier separement."
+        try {
+            $serverWeStarted = Start-Process -FilePath $ollama.Source -ArgumentList "serve" -WindowStyle Hidden -PassThru -ErrorAction Stop
+        } catch {
+            Write-Host "Impossible de demarrer Ollama localement. Aucun fichier image envoye."
+            exit 2
+        }
+        # Bounded retry for a cold Windows startup, never a background monitor.
+        for ($i = 0; $i -lt 24; $i++) {
+            Start-Sleep -Milliseconds 500
+            $tags = Get-LocalOllamaTags -LocalPort $Port
+            if ($null -ne $tags) { break }
+            if ($serverWeStarted.HasExited) { break }
+        }
+    }
+    if ($null -eq $tags) {
+        Write-Host "Serveur Ollama local inaccessible sur le port $Port, meme apres tentative de lancement."
+        Write-Host "Aucun modele telecharge ou donnees privees transferees par le lanceur."
+        exit 2
+    }
+    $found = @($tags.models | Where-Object { $_.name -eq "qwen3.5:9b" })
+    if ($found.Count -eq 0) {
+        Write-Host "Le modele qwen3.5:9b est absent de l'inventaire du serveur local."
+        Write-Host "Le lanceur ne telecharge aucun modele automatiquement."
+        exit 2
+    }
+
+    Push-Location $repo
+    try {
+        & $python -m microduck_companion.qwen9b_advisor_v2 `
+            --image $Image --ollama-port $Port --mode $Mode --timeout 180 `
+            --authorize-image --reviewed-no-private-subjects
+        $status = $LASTEXITCODE
+    } finally {
+        Pop-Location
+    }
+    if ($status -ne 0) {
+        Write-Host "Resultat non accepte : aucun effet robot ou memoire."
+        exit $status
+    }
+    Write-Host "Reponse structuree acceptee, mais connaissance NON verifiee."
+    exit 0
 } finally {
-    Pop-Location
+    Stop-OnlyStartedOllama -ServerProcess $serverWeStarted
 }
-if ($status -ne 0) {
-    Write-Host "Resultat non accepte : aucun effet robot ou memoire."
-    exit $status
-}
-Write-Host "Reponse structuree acceptee, mais connaissance NON verifiee."
-exit 0
