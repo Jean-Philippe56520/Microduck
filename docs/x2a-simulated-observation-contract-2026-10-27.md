@@ -20,7 +20,7 @@
 | Trame ToF 8×8, statut par zone, séquence et horloge | `tof.stream` → `tof.frame` | `tofd` | Présence, dimensions et ordre d'une trame simulée | Anti-escalier, sol traversable, obstacle sûr, catégorie d'objet, identité |
 | Caméra, sons, Qwen, photos, souvenirs causaux | Aucune lecture autorisée en X2-A | Aucun | Rien | Nouvelle catégorie, émotion réelle, cause-à-effet, récompense |
 
-`ReadOnlyUnixRpc` conserve les seules méthodes `robot.health`, `robot.subscribe` (1–10 Hz) et `tof.stream`. Il refuse localement toute requête motrice ou étrangère au rôle attendu, **avant** d'ouvrir une connexion. Un chemin de socket, un rôle attendu, une réponse JSON et le statut `coherent` **ne prouvent pas** l'identité de son émetteur ni son authenticité matérielle. La vérification de la version, des permissions et des identifiants de processus OEM restera un chantier distinct du portage réel. Le constructeur garde la boucle moteur 50 Hz.
+`ReadOnlyUnixRpc` conserve les seules méthodes `robot.health`, `robot.subscribe` (1–10 Hz) et `tof.stream`. Il refuse localement toute requête motrice ou étrangère au rôle attendu **avant son envoi** ; le contexte de connexion peut déjà avoir été ouvert. Un chemin de socket, un rôle attendu, une réponse JSON et le statut `coherent` **ne prouvent pas** l'identité de son émetteur ni son authenticité matérielle. La vérification de la version, des permissions et des identifiants de processus OEM restera un chantier distinct du portage réel. Le constructeur garde la boucle moteur 50 Hz.
 
 ## Qualité et comportement de repli
 
