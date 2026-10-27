@@ -290,6 +290,20 @@ class Ex4bOemWireAudit(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     inspect(reply=ack(), states=(frame,))
 
+    def test_oem_nanosecond_and_missed_counters_are_uint64(self):
+        frame = state(ns=2**63)
+        frame.packet["params"]["loop"]["missed"] = 2**63
+        v = inspect(reply=ack(), states=(frame,))
+        self.assertEqual("coherent_unlinked_telemetry", v.state_status)
+        self.assert_no_execution(v)
+
+    def test_oem_nanosecond_overflow_and_boolean_rejected(self):
+        for bad in (2**64, -1, True):
+            with self.subTest(value=bad):
+                frame = state(ns=bad)
+                with self.assertRaises(ValueError):
+                    inspect(reply=ack(), states=(frame,))
+
     def test_excessive_frames_refused(self):
         with self.assertRaises(ValueError):
             inspect(reply=ack(), states=tuple(state(at=13. + i/10, t=8 + i/10, ns=8_000_000_000+i*100_000_000) for i in range(9)))
