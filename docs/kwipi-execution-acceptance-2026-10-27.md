@@ -1,6 +1,6 @@
 # Kwipi — premier lot d'exécution du plan de conformité (27/10/2026)
 
-**Statut : code et tests proposés en PR, CI à vérifier ; zéro validation physique.** Ce lot est une **acceptation d'intégration sur fixtures** et une **mise en quarantaine de la voie historique de feedback**. Il n'implémente pas une navigation ni un traitement audio/vidéo réel.
+**Statut : [PR #77](https://github.com/Jean-Philippe56520/Microduck/pull/77) ouverte.** Première CI [#40425318908](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40425318908) verte : **1 226 tests, 19 ignorés, zéro échec**, avant un renforcement supplémentaire de la voie de planification historique. Nouvelle CI nécessaire après ce renforcement. **Zéro validation physique.** Ce lot est une **acceptation d'intégration sur fixtures** et une **mise en quarantaine de la voie historique de feedback**. Il n'implémente pas une navigation ni un traitement audio/vidéo réel.
 
 ## Audit avant modification — sources et responsabilités
 
@@ -12,10 +12,10 @@
 ## Modifications du premier lot
 
 1. **Réutiliser plutôt que recréer** : `tests/test_kwipi_integrated_host_acceptance.py` traverse les contrats existants avec une seule `ExperienceMemory` SQLite et des prises *fictives* : proposition F2, description P-A/PD2, résolution EX1 et observation EX2, consultation du journal en lecture seule, influence d'une catégorie déjà mémorisée, tendances EX3 sur trois sessions fictives puis correction/rétraction, et triage PD3 sans transmission Qwen.
-2. **Fermer une lacune héritée** : `ExperienceMemory.learn_from_outcome` refuse désormais toute récompense valide **sans preuve d'exécution** en levant `PermissionError`. L'ancienne `AutonomyBrain.feedback` conserve son nom public, mais délègue à ce refus et ne modifie plus les motivations. Les tests de l'ancienne API sont adaptés pour vérifier l'absence de récompense et de mutation en cas de retour fourni arbitrairement. Aucun texte libre ou identité n'est journalisé par ce lot.
+2. **Fermer une lacune héritée** : `ExperienceMemory.learn_from_outcome` refuse désormais toute récompense valide **sans preuve d'exécution** en levant `PermissionError`. L'ancienne `AutonomyBrain.feedback` conserve son nom public, mais délègue à ce refus et ne modifie plus les motivations. `AutonomyBrain._record` conserve ses choix **en RAM seulement** : il n'insère plus un projet d'action dans `experiences`. Les tests de l'ancienne API vérifient l'absence de récompense, mutation et fausse trace d'action exécutée. Aucun texte libre ou identité n'est journalisé par ce lot.
 3. **Ne pas détruire l'historique** : pas de suppression, migration, nouvelle table ni purge de `experiences`. Les enregistrements historiques ne constituent pas des preuves physiques. `MockCycleRunner` P2a et `record_simulated_motion` restent des **voies explicitement fictive et simulée**, distinctes des récompenses physiques.
 
-**Dette préexistante toujours ouverte :** `AutonomyBrain.choose()` continue d'écrire des décisions de démonstration dans la table historique `experiences`, sans rétention globale à ce niveau. Ne pas brancher cette API sur `robotd` et ne pas présenter son nombre de lignes comme des gestes exécutés. Faire un **lot séparé** pour la politique d'archivage/migration et l'identification des consommateurs : une suppression automatique de souvenirs préexistants serait dangereuse.
+**Dette préexistante toujours ouverte :** l'API publique historique `ExperienceMemory.record_action()` peut encore écrire explicitement dans la table `experiences` sans quota global, **mais le sélecteur `AutonomyBrain._record` ne l'appelle plus**. Ne pas connecter l'API historique à `robotd`, ne pas interpréter les anciennes lignes comme des gestes, et faire un lot séparé pour l'inventaire des consommateurs ainsi que la politique d'archivage/migration : supprimer automatiquement de vieux souvenirs serait dangereux.
 
 ## Critères et statut de preuve
 
@@ -28,7 +28,7 @@
 | EX3 trois sessions fictives → biais borné ; rétraction → biais annulé | Test de contrat, pas d'apprentissage d'un animal réel |
 | PD3 refuse le transport même après opt-in fictif | Test de contrat, zéro Qwen, zéro pixel, zéro son |
 | Feedback historique arbitraire ne met plus à jour `objects.preference` | Régression de sécurité testable |
-| Tests dans la CI de la PR | **À confirmer via exécution CI** |
+| Tests dans la CI de la PR | Première CI verte (1 226 tests, 19 ignorés) ; **CI finale à relancer après le dernier changement** |
 | Simulateur OEM en boucle fermée avec les démons | **Non exécuté dans ce lot** |
 | Caméra, microphone, ToF, Yocto, Qwen réel, RK3566, robot physique | **Non disponibles / non validés** |
 
