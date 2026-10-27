@@ -146,6 +146,15 @@ class SimPowerContextTests(unittest.TestCase):
         self.assertEqual(("incompatible_clock", "idle", None),
                          (reset.comparison, reset.attention, reset.reference_id))
 
+    def test_legacy_absent_frame_clock_cannot_build_false_continuity(self):
+        sample = reading(battery=10.)
+        old = replace(sample, state=replace(sample.state, t_ns=None))
+        self.runner.step(old, now=100.)
+        second = PassiveSimCycleRunner(self.memory, session="clock-unknown")
+        c = second.step(reading(at=101., seq=2, battery=80.), now=101.)
+        self.assertEqual(("incompatible_clock", "idle", None),
+                         (c.comparison, c.attention, c.reference_id))
+
     def test_new_session_earlier_timebase_cannot_use_future_old_history(self):
         self.runner.step(reading(at=100., seq=20, battery=10.), now=100.)
         second = PassiveSimCycleRunner(self.memory, session="new-clock")
