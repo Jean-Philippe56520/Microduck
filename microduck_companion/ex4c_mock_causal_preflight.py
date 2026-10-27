@@ -137,6 +137,11 @@ class MockCausalPreflight:
             if stages:
                 raise ValueError("scripted stage cannot upgrade an unanswered request")
             return verdict("not_attested", "not_attributable", "unanswered_or_error")
+        # Validate every caller-supplied stage even if EX1 has since been
+        # retracted, so a conflicting fake ID cannot disappear behind a
+        # historical correction. No stage can turn an OEM ack into execution.
+        if stages:
+            self._validate_stages(stages, wire=wire, now_epoch=now_epoch)
         if history.status == "missing":
             if stages:
                 raise ValueError("no source EX1 history for scripted stages")
@@ -155,9 +160,6 @@ class MockCausalPreflight:
             ):
                 raise ValueError("mock refusal/interruption has no execution")
             if stages:
-                self._validate_stages(
-                    stages, wire=wire, now_epoch=now_epoch,
-                )
                 lifecycle = self._audit._memory.conn.execute("""
                     SELECT proposed_at_epoch_s,resolved_at_epoch_s
                     FROM ex1_mock_experiences
@@ -179,9 +181,6 @@ class MockCausalPreflight:
         if not stages:
             return verdict("not_attested", "not_attributable", "no_scripted_stages")
 
-        self._validate_stages(
-            stages, wire=wire, now_epoch=now_epoch,
-        )
         stage_names = tuple(e.stage for e in stages)
         if stage_names not in (
             ("started",), ("started", "interrupted"),
