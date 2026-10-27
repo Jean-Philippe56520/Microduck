@@ -71,6 +71,23 @@ class CausalPreflightVerdict:
     physical_learning_allowed: bool = False
     motor_commands_issued: int = 0
 
+    def __post_init__(self) -> None:
+        _key(self.session, self.sequence)
+        if (self.source != "mock_fixture_crosscheck_only"
+                or self.authorized != "not_attested"
+                or self.executed != "not_attested"
+                or type(self.observations_authenticated) is not bool
+                or self.observations_authenticated
+                or type(self.causality_established) is not bool
+                or self.causality_established
+                or type(self.physical_execution_verified) is not bool
+                or self.physical_execution_verified
+                or type(self.physical_learning_allowed) is not bool
+                or self.physical_learning_allowed
+                or type(self.motor_commands_issued) is not int
+                or self.motor_commands_issued != 0):
+            raise ValueError("EX4-C mock verdict cannot claim physical proof")
+
 
 class MockCausalPreflight:
     """Use an existing EX4-A audit and its sole SQLite, with no writes.
