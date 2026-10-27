@@ -290,7 +290,10 @@ class AutonomyBrain:
         return self.memory.learn_from_outcome(object_id, action, reward)
 
     def _record(self, plan: Plan) -> Plan:
-        self.memory.record_action(plan.intention, plan.target, plan.explanation)
+        # This legacy selector has NO authenticated execution receipt. Keep
+        # the proposal process-local; a chosen action must never be persisted
+        # as if it was an experience. P2a and MuJoCo have separate, explicitly
+        # sourced recorders that are NOT physical robot execution evidence.
         self.previous_intention = plan.intention
         if plan.intention == "rest":
             self.motives.energy = min(1.0, self.motives.energy + 0.025)
