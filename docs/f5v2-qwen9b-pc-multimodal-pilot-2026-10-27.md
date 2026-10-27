@@ -138,7 +138,7 @@ La latence de 10,078 s est un chiffre du logiciel PC pour cet essai, pas une mes
 
 **Suite prioritaire :** faire quelques essais unitaires du lanceur sur **photographies d'objets inanimés** explicitement autorisées, avec catégorie attendue déterminée indépendamment, scènes simples puis masquées/inconnues. Noter `status`, `visual_observation.category`, `visual_observation.depiction` (souvent `photograph` attendu), `visibility`, refus et latence ; aucune capture contenant identifiants, documents, personnes ou informations privées. Ne pas publier les fichiers sources ni fusionner les résultats avec l'ExperienceMemory tant que l'évaluation visuelle n'est pas concluante.
 
-## F5 v2 — échec de catégorie sur photo réelle et autotest d'entrée image (28 octobre 2026)
+## F5 v2 — échec de catégorie sur photo réelle et autotest d'entrée image (27 octobre 2026)
 
 ### Rapport de l'opérateur sur une photographie autorisée
 
