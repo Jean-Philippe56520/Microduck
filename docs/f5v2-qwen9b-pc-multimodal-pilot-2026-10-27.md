@@ -137,3 +137,25 @@ Le correctif réutilise l'exécutable `ollama.exe` **déjà installé**, sans se
 La latence de 10,078 s est un chiffre du logiciel PC pour cet essai, pas une mesure fiable de débit ou d'utilisation GPU (options Vulkan/iGPU demandées, placement GPU et RSS non mesurés). Ne pas comparer directement les essais antérieurs sur disque rouge et le schéma strict aux conditions actuelles ; pas de robot disponible, aucun capteur ou effet autonome testé. Les compteurs zéro moteur et zéro mémoire sont des compteurs du pilote PC passif, pas une preuve instrumentée sur robot.
 
 **Suite prioritaire :** faire quelques essais unitaires du lanceur sur **photographies d'objets inanimés** explicitement autorisées, avec catégorie attendue déterminée indépendamment, scènes simples puis masquées/inconnues. Noter `status`, `visual_observation.category`, `visual_observation.depiction` (souvent `photograph` attendu), `visibility`, refus et latence ; aucune capture contenant identifiants, documents, personnes ou informations privées. Ne pas publier les fichiers sources ni fusionner les résultats avec l'ExperienceMemory tant que l'évaluation visuelle n'est pas concluante.
+
+## F5 v2 — échec de catégorie sur photo réelle et autotest d'entrée image (28 octobre 2026)
+
+### Rapport de l'opérateur sur une photographie autorisée
+
+L'opérateur a soumis une photographie de couchage pour animal, à faible hauteur avec meubles en arrière-plan (aucune image/copie ajoutée au dépôt). Annotation indépendante **avant** lecture de la réponse : catégorie attendue `dog_bed` dans les 11 classes disponibles, `depiction=photograph`, visibilité `clear` ou `partial` en fonction du cadrage. Le vrai Qwen3.5 9B sur Ollama localhost GPU demandé a retourné :
+
+```json
+{"diagnostic_reason":"none","diagnostic_stage":"none","hypotheses":[],"latency_s":9.703,"memory_writes":0,"mode":"simple","motor_commands_issued":0,"status":"unverified","visual_observation":{"category":"unknown","depiction":"unknown","verified":false,"visibility":"partial"}}
+```
+
+**Conclusion :** le transport et le **schéma** sont fonctionnels, mais la reconnaissance visuelle de la catégorie et du type photographique échoue pour ce cas. L'abstention peut être légitime lorsque l'information est insuffisante, mais elle ne prouve pas à elle seule que le modèle a exploité les pixels. Ne pas stocker l'objet en mémoire et ne pas interpréter `unverified` comme une prédiction correcte. Latence GPU réelle et RSS non mesurés ; temps rapporté de 9,703 s non extrapolable au robot absent.
+
+### Nouvelle commande : `VERIFIER_VISION_KWIPI.cmd`
+
+Après `git pull --ff-only` dans le clone Windows `Microduck-Qwen9B`, double-cliquer `VERIFIER_VISION_KWIPI.cmd`. Ce lanceur appelle le même script PowerShell, réutilise `ollama.exe` local (port dédié `11435`), et exécute deux demandes **explicites et limitées** sans demander une photo : un carré rouge uni puis un carré bleu uni (256×256), générés en mémoire et recompressés en JPEG sans métadonnées. Aucun fichier utilisateur n'est ouvert, aucune image n'est écrite sur le disque, aucune photo personnelle/identité n'est transmise à GitHub ou au réseau externe. Le modèle reste Qwen3.5 9B sur PC ; le script n'installe ni poids ni pilote. Le serveur local n'est fermé que s'il a été démarré par ce lanceur.
+
+L'autotest réutilise le transport borné, le contrôle de frais/expiration (120 s maximum par appel), un seul JPEG par requête, `num_ctx=4096`, `think=false`, validation `request_id` exact, contenu JSON limité à `{request_id,color}` et `color in {red,blue,unknown}`. Toute réponse malformée est rejetée sans effet sur robot/SQLite ; si la première requête échoue, la seconde n'est pas lancée. La console n'affiche que `expected`, `observed`, `status`, `diagnostic_stage`, `diagnostic_reason` et latence, jamais les textes bruts du modèle. Le code n'exécute pas de commandes moteurs et n'écrit aucun souvenir.
+
+**Interprétation** : `result=two_colors_distinguished` indique que le vrai Qwen a correctement différencié ces deux entrées simples sur ce PC dans ce test, **pas une validation générale de la vision**, de `dog_bed`, d'une identité ou de l'autonomie. `result=not_demonstrated` ne permet pas d'attribuer la panne au modèle ou au transfert d'image : examiner ensuite API/chargement multimodal, contexte et prompt séparément. Le constructeur Ollama documente `images` comme tableau de JPEG encodés base64 sur `/api/chat`, mais seuls des essais réels trancheront : https://docs.ollama.com/capabilities/vision.
+
+**Validation :** 34 tests ciblés réussis localement, dont 8 nouveaux sur la génération synthétique, JSON, HTTP loopback factice, erreurs invalides, arrêt après échec et lanceur; **aucun Qwen réel ni Windows dans ces tests**. La CI GitHub vérifie l'analyse syntaxique PowerShell et les fixtures Python ; passage de la CI du commit à consigner. La PR #98 reste ouverte et non fusionnée. Le protocole d'essai est ciblé et ne constitue ni apprentissage neuronal ni entraînement de Kwipi.

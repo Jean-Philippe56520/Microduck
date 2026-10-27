@@ -4,7 +4,8 @@
 param(
     [ValidateRange(1, 65535)][int]$Port = 11435,
     [string]$Image = "",
-    [ValidateSet("simple", "strict")][string]$Mode = "simple"
+    [ValidateSet("simple", "strict")][string]$Mode = "simple",
+    [switch]$VisionCheck
 )
 
 $ErrorActionPreference = "Stop"
@@ -45,43 +46,52 @@ Write-Host "Kwipi - evaluation visuelle PC, sans mouvement ni memorisation"
 Write-Host "Mode : $Mode | Modele : qwen3.5:9b | Ollama local : 127.0.0.1:$Port"
 Write-Host "L'image est preparee localement puis envoyee uniquement a Ollama sur 127.0.0.1."
 
-if (-not $Image) {
-    try {
-        Add-Type -AssemblyName System.Windows.Forms
-        $picker = New-Object System.Windows.Forms.OpenFileDialog
-        $picker.Title = "Choisir UNE image autorisee pour Kwipi"
-        $picker.Filter = "Images|*.jpg;*.jpeg;*.png;*.webp;*.bmp|Tous les fichiers|*.*"
-        $picker.Multiselect = $false
-        if ($picker.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) {
-            Write-Host "Essai annule : aucune image selectionnee."
-            exit 1
+if ($VisionCheck -and $Image) {
+    Write-Host "Autotest synthetique : ne pas fournir d'image privee."
+    exit 2
+}
+if ($VisionCheck) {
+    Write-Host "Autotest visuel : deux carres rouge/bleu generes en memoire, aucune photo personnelle."
+    Write-Host "Le double-clic sur VERIFIER_VISION_KWIPI.cmd autorise uniquement ces deux images synthetiques."
+} else {
+    if (-not $Image) {
+        try {
+            Add-Type -AssemblyName System.Windows.Forms
+            $picker = New-Object System.Windows.Forms.OpenFileDialog
+            $picker.Title = "Choisir UNE image autorisee pour Kwipi"
+            $picker.Filter = "Images|*.jpg;*.jpeg;*.png;*.webp;*.bmp|Tous les fichiers|*.*"
+            $picker.Multiselect = $false
+            if ($picker.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) {
+                Write-Host "Essai annule : aucune image selectionnee."
+                exit 1
+            }
+            $Image = $picker.FileName
+        } catch {
+            Write-Host "Selection graphique indisponible."
+            $Image = Read-Host "Chemin complet de l'image (sans archive de photos privees)"
+            $Image = $Image.Trim('"')
         }
-        $Image = $picker.FileName
-    } catch {
-        Write-Host "Selection graphique indisponible."
-        $Image = Read-Host "Chemin complet de l'image (sans archive de photos privees)"
-        $Image = $Image.Trim('"')
     }
-}
-if (-not (Test-Path -LiteralPath $Image -PathType Leaf)) {
-    Write-Host "Fichier image introuvable ou illisible."
-    exit 2
-}
-if ((Get-Item -LiteralPath $Image).Length -gt 2000000) {
-    Write-Host "Image trop volumineuse pour le pilote (maximum 2 Mo)."
-    exit 2
-}
+    if (-not (Test-Path -LiteralPath $Image -PathType Leaf)) {
+        Write-Host "Fichier image introuvable ou illisible."
+        exit 2
+    }
+    if ((Get-Item -LiteralPath $Image).Length -gt 2000000) {
+        Write-Host "Image trop volumineuse pour le pilote (maximum 2 Mo)."
+        exit 2
+    }
+    
+    Write-Host "Avant l'envoi local : verifier visuellement l'image et ses droits."
+    Write-Host "Aucun visage, ecran, texte prive, adresse, document ou contenu personnel."
+    Write-Host "Ne pas utiliser sans revue explicite les photos privees Cat-A2b."
+    $consent = Read-Host "Image autorisee et inspectee pour cette unique analyse ? Tapez OUI"
+    if ($consent -cne "OUI") {
+        Write-Host "Aucun appel Qwen : consentement non confirme."
+        exit 1
+    }
+ }
 
-Write-Host "Avant l'envoi local : verifier visuellement l'image et ses droits."
-Write-Host "Aucun visage, ecran, texte prive, adresse, document ou contenu personnel."
-Write-Host "Ne pas utiliser sans revue explicite les photos privees Cat-A2b."
-$consent = Read-Host "Image autorisee et inspectee pour cette unique analyse ? Tapez OUI"
-if ($consent -cne "OUI") {
-    Write-Host "Aucun appel Qwen : consentement non confirme."
-    exit 1
-}
-
-# Start Ollama only AFTER the operator chose and approved this image.
+# Start Ollama only AFTER photo approval OR explicit synthetic vision test.
 # Never kill an existing server. This process is temporary and uses localhost only.
 $serverWeStarted = $null
 try {
@@ -126,18 +136,27 @@ try {
 
     Push-Location $repo
     try {
-        & $python -m microduck_companion.qwen9b_advisor_v2 `
-            --image $Image --ollama-port $Port --mode $Mode --timeout 180 `
-            --authorize-image --reviewed-no-private-subjects
+        if ($VisionCheck) {
+            & $python -m microduck_companion.qwen9b_vision_check `
+                --ollama-port $Port --timeout 120
+        } else {
+            & $python -m microduck_companion.qwen9b_advisor_v2 `
+                --image $Image --ollama-port $Port --mode $Mode --timeout 180 `
+                --authorize-image --reviewed-no-private-subjects
+        }
         $status = $LASTEXITCODE
     } finally {
         Pop-Location
     }
     if ($status -ne 0) {
-        Write-Host "Resultat non accepte : aucun effet robot ou memoire."
+        Write-Host "Test non concluant / resultat refuse : aucun effet robot ou memoire."
         exit $status
     }
-    Write-Host "Reponse structuree acceptee, mais connaissance NON verifiee."
+    if ($VisionCheck) {
+        Write-Host "Deux couleurs simples distinguees, vision d'objets reels NON verifiee."
+    } else {
+        Write-Host "Reponse structuree acceptee, mais connaissance NON verifiee."
+    }
     exit 0
 } finally {
     Stop-OnlyStartedOllama -ServerProcess $serverWeStarted

@@ -56,6 +56,16 @@ MAX_LIST = 4
 # None of these fields is a verified fact or a motor/memory instruction.
 SIMPLE_DEPICTIONS = ("photograph", "drawing", "screen", "unknown")
 SIMPLE_VISIBILITY = ("clear", "partial", "uncertain")
+# Explicit synthetic-image diagnostic only: no person, private image or object label.
+COLOR_PROBE_CHOICES = ("red", "blue", "unknown")
+COLOR_PROBE_PROMPT = (
+    "This is a diagnostic of actual visual pixel input. Examine the ATTACHED image, "
+    "not the request ID or the JSON schema. The image is uniformly one bright color. "
+    "Choose red if the pixels look predominantly bright red, blue if the pixels "
+    "look predominantly bright blue, unknown only if you cannot see or distinguish "
+    "the attached image. Return exactly request_id and color in JSON. "
+    "No prose, object identity, actions or personal information."
+)
 SIMPLE_SYSTEM_PROMPT = (
     "You are Kwipi's OPTIONAL visual perception test, NOT a robot controller. "
     "Look at the one operator-approved picture and return only the four JSON "
@@ -271,6 +281,7 @@ class AdvisoryResult:
     diagnostic_stage: str = "none"
     diagnostic_reason: str = "none"
     visual_observation: SimpleVisualObservation | None = None
+    probe_color: str | None = None
 
     def __post_init__(self) -> None:
         if (self.status not in {"unverified", "unavailable", "rejected", "stale"}
@@ -282,7 +293,12 @@ class AdvisoryResult:
                 or self.motor_commands_issued or self.memory_writes
                 or (self.visual_observation is not None and (
                     type(self.visual_observation) is not SimpleVisualObservation
-                    or self.status != "unverified" or self.hypotheses))):
+                    or self.status != "unverified" or self.hypotheses or self.probe_color is not None))
+                or (self.probe_color is not None and (
+                    type(self.probe_color) is not str
+                    or self.probe_color not in COLOR_PROBE_CHOICES
+                    or self.status != "unverified" or self.hypotheses
+                    or self.visual_observation is not None))):
             raise ValueError("advisory must remain passive with bounded diagnostics")
 
 
@@ -419,6 +435,45 @@ def parse_simple_reply(question: ImageQuestion, content: bytes, *,
     return SimpleVisualObservation(raw["category"], raw["depiction"], raw["visibility"])
 
 
+def color_probe_schema(question: ImageQuestion) -> dict[str, Any]:
+    """Strict color probe: request ID must match; color itself is NOT trusted."""
+    return {
+        "type": "object", "additionalProperties": False,
+        "required": ["request_id", "color"],
+        "properties": {
+            "request_id": {"type": "string", "enum": [question.request_id]},
+            "color": {"type": "string", "enum": list(COLOR_PROBE_CHOICES)},
+        },
+    }
+
+
+def parse_color_probe_reply(question: ImageQuestion, content: bytes, *,
+                            received_monotonic_s: float) -> str:
+    """Accept only a bounded color enum. No raw model text is surfaced."""
+    if (type(received_monotonic_s) not in (int, float)
+            or not math.isfinite(received_monotonic_s)
+            or received_monotonic_s < question.now_monotonic_s
+            or received_monotonic_s >= question.deadline_monotonic_s):
+        raise AdvisorError("stale answer")
+    if type(content) is not bytes or not 0 < len(content) <= MAX_RESPONSE_BYTES:
+        raise ModelOutputRejected("response_size")
+    try:
+        raw = _strict_json(content)
+    except AdvisorError as exc:
+        reason = ("duplicate_key" if str(exc) == "invalid JSON"
+                  and isinstance(exc.__cause__, AdvisorError)
+                  and "duplicate JSON property" in str(exc.__cause__)
+                  else "json_invalid")
+        raise ModelOutputRejected(reason) from None
+    if type(raw) is not dict or set(raw) != {"request_id", "color"}:
+        raise ModelOutputRejected("fields_invalid")
+    if type(raw["request_id"]) is not str or raw["request_id"] != question.request_id:
+        raise ModelOutputRejected("request_id_mismatch")
+    if type(raw["color"]) is not str or raw["color"] not in COLOR_PROBE_CHOICES:
+        raise ModelOutputRejected("enum_invalid")
+    return raw["color"]
+
+
 def _wire(question: ImageQuestion) -> bytes:
     data = {"model": MODEL, "stream": False, "think": False,
             "keep_alive": "0", "options": {"temperature": 0, "num_predict": 600, "num_ctx": 4096},
@@ -457,6 +512,22 @@ def _wire_simple(question: ImageQuestion) -> bytes:
     return body
 
 
+def _wire_color_probe(question: ImageQuestion) -> bytes:
+    """Reuse F5 v2's approved JPEG, 9B request, and bounded HTTP transport."""
+    data = json.loads(_wire(question))
+    data["format"] = color_probe_schema(question)
+    data["messages"][0]["content"] = COLOR_PROBE_PROMPT
+    data["messages"][1]["content"] = (
+        "Inspect the attached solid-color synthetic image. "
+        "Return only the request_id and the dominant pixel color."
+    )
+    data["options"]["num_predict"] = 80
+    body = json.dumps(data, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    if len(body) > MAX_WIRE_BYTES:
+        raise AdvisorError("wire exceeds request budget")
+    return body
+
+
 class Qwen9BPCClient:
     """Only loopback or an authenticated tunnel ending at loopback.
 
@@ -482,9 +553,10 @@ class Qwen9BPCClient:
         if (type(timeout_s) not in (int, float) or not math.isfinite(timeout_s)
                 or not 0 < timeout_s <= 180):
             raise ValueError("timeout must be bounded")
-        if mode not in ("strict", "simple"):
+        if mode not in ("strict", "simple", "color_probe"):
             raise ValueError("unknown PC-only adviser mode")
-        body = _wire_simple(question) if mode == "simple" else _wire(question)
+        body = (_wire_simple(question) if mode == "simple" else
+                _wire_color_probe(question) if mode == "color_probe" else _wire(question))
         started = time.monotonic()
         if started >= question.deadline_monotonic_s:
             return AdvisoryResult("stale", question.request_id, latency_s=0.0,
@@ -496,6 +568,7 @@ class Qwen9BPCClient:
         diagnostic_reason = "none"
         hypotheses: tuple[AdviserHypothesis, ...] = ()
         visual_observation: SimpleVisualObservation | None = None
+        probe_color: str | None = None
         try:
             host, port = self.endpoint.host_port
             conn = http.client.HTTPConnection(host, port, timeout=timeout_s)
@@ -554,7 +627,11 @@ class Qwen9BPCClient:
                     or message.get("images") not in (None, [])):
                 raise AdvisorError("untrusted tool response")
             diagnostic_stage = "model_output"
-            if mode == "simple":
+            if mode == "color_probe":
+                probe_color = parse_color_probe_reply(
+                    question, message["content"].encode("utf-8"),
+                    received_monotonic_s=time.monotonic())
+            elif mode == "simple":
                 visual_observation = parse_simple_reply(
                     question, message["content"].encode("utf-8"),
                     received_monotonic_s=time.monotonic())
@@ -583,7 +660,8 @@ class Qwen9BPCClient:
                               latency_s=time.monotonic() - started,
                               diagnostic_stage=diagnostic_stage,
                               diagnostic_reason=diagnostic_reason,
-                              visual_observation=visual_observation)
+                              visual_observation=visual_observation,
+                              probe_color=probe_color)
 
 
 def main() -> int:
