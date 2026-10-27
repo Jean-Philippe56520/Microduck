@@ -1,6 +1,6 @@
 # EX4-B — Contrat des accusés OEM v44 et frontières de preuve
 
-**27 octobre 2026 — code de revue de trames sur fixtures, jamais un client de commande ni une mémoire causale sur robot.** Le chantier poursuit l'[issue #80](https://github.com/Jean-Philippe56520/Microduck/issues/80) après EX4-A [PR #88](https://github.com/Jean-Philippe56520/Microduck/pull/88). Il est basé sur la branche EX4-A, encore en revue ; les deux PR doivent donc être intégrées dans cet ordre. Cat-A2b [#78](https://github.com/Jean-Philippe56520/Microduck/issues/78) manque toujours de vraies photos basses autorisées.
+**27 octobre 2026 — [PR #89](https://github.com/Jean-Philippe56520/Microduck/pull/89) et [CI Python #40498153294](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40498153294) réussie (1 324 tests exécutés, 19 ignorés, zéro échec), code de revue de trames sur fixtures, jamais un client de commande ni une mémoire causale sur robot.** Le chantier poursuit l'[issue #80](https://github.com/Jean-Philippe56520/Microduck/issues/80) après EX4-A [PR #88](https://github.com/Jean-Philippe56520/Microduck/pull/88). Il est basé sur la branche EX4-A, encore en revue ; les deux PR doivent donc être intégrées dans cet ordre. Cat-A2b [#78](https://github.com/Jean-Philippe56520/Microduck/issues/78) manque toujours de vraies photos basses autorisées.
 
 ## Audit des sources, réutilisation et limites
 
