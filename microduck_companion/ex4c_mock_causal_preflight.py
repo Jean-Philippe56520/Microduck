@@ -183,16 +183,14 @@ class MockCausalPreflight:
             stages, wire=wire, now_epoch=now_epoch,
         )
         stage_names = tuple(e.stage for e in stages)
-        if stage_names == ("started",):
-            return verdict("mock_started_only", "not_attributable", "mock_incomplete")
-        if stage_names == ("started", "interrupted"):
-            return verdict("mock_interrupted", "not_attributable", "mock_interrupted")
-        if stage_names != ("started", "completed"):
+        if stage_names not in (
+            ("started",), ("started", "interrupted"),
+            ("started", "completed"),
+        ):
             raise ValueError("unsupported scripted state machine")
 
-        # A completed event in a script is not a completed action in robotd.
-        # Check independently against the persisted EX1/EX2 chronology; no
-        # mutation or attribution results from a match.
+        # Recheck EX1 times even for a partial script: a stale "started"
+        # event is not a currently pending scripted action.
         con = self._audit._memory.conn
         effect_join = self._audit._exists("ex2_mock_effects")
         if effect_join:
@@ -219,9 +217,15 @@ class MockCausalPreflight:
             raise ValueError("missing EX1 mock resolution")
         proposed = _epoch(row["proposed"])
         resolved = _epoch(row["resolved"])
-        started, completed = (s.at_epoch_s for s in stages)
-        if not proposed <= started < completed <= resolved:
-            raise ValueError("scripted stage contradicts EX1 resolution times")
+        times = tuple(s.at_epoch_s for s in stages)
+        if (not proposed <= times[0] < resolved
+                or any(not proposed < moment <= resolved for moment in times[1:])):
+            raise ValueError("scripted stages outside EX1 resolution")
+        if stage_names == ("started",):
+            return verdict("mock_started_only", "not_attributable", "mock_incomplete")
+        if stage_names == ("started", "interrupted"):
+            return verdict("mock_interrupted", "not_attributable", "mock_interrupted")
+        started, completed = times
         if row["before_cue"] is not None and row["effect_active"] == 1:
             before = _epoch(row["before_cue"])
             after = _epoch(row["after_cue"])
