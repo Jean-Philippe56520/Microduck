@@ -123,3 +123,5 @@ La commande `--validate-only` reste strictement locale, avec le **même manifest
 
 **Statut :** contrôle logiciel vérifiable sur JPEG synthétiques uniquement. Toujours **aucune vraie prise basse indépendante**, aucune précision de catégorie à hauteur de Kwipi, aucun portage ni test RK3566 ; [#78](https://github.com/Jean-Philippe56520/Microduck/issues/78) demeure ouvert.
 
+**Attention :** le [nouvel essai exploratoire à partir de trois aperçus UMD à caméra annoncée ~12 cm](cata2b-public-12cm-smoke-2026-10-27.md) est un **protocole distinct**, exclusivement public, sans manifeste `operator_private_capture`, sans preuve de hauteur par prise ni boîtes annotées. Il ne réalise pas Cat-A2b en conditions privées/robot.
+
