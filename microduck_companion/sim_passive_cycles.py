@@ -173,11 +173,13 @@ class PassiveSimCycleRunner:
             return "incompatible_clock", None, None
         if now - row["observed_at"] > MAX_CONTEXT_AGE_S:
             return "expired", None, None
+        # A sequence alone does not prove an unchanged simulator boot.
+        # Without both OEM monotonic frame clocks on each side, abstain.
         if (row["depth_seq"] is None or depth_seq <= row["depth_seq"]
-                or (state_ns is not None and row["state_t_ns"] is not None
-                    and state_ns <= row["state_t_ns"])
-                or (depth_ns is not None and row["depth_t_ns"] is not None
-                    and depth_ns <= row["depth_t_ns"])):
+                or any(v is None for v in (
+                    state_ns, depth_ns, row["state_t_ns"], row["depth_t_ns"]))
+                or state_ns <= row["state_t_ns"]
+                or depth_ns <= row["depth_t_ns"]):
             return "incompatible_clock", None, None
         if row["battery_pct"] is None:
             return "unknown_battery", None, None
