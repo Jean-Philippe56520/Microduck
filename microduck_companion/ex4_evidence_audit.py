@@ -212,7 +212,7 @@ class ExecutionEvidenceAudit:
         if not self._exists("mock_cognitive_cycles"):
             return _verdict(family, key, "missing")
         r = self._memory.conn.execute("""
-            SELECT intention,disposition,outcome,reward,source
+            SELECT id,intention,disposition,outcome,reward,source
             FROM mock_cognitive_cycles WHERE session=? AND sequence=?
         """, (session, sequence)).fetchone()
         if r is None:
@@ -225,6 +225,25 @@ class ExecutionEvidenceAudit:
         }
         reward = r["reward"]
         if r["disposition"] == "mock_feedback":
+            if self._exists("f4a_mock_behavior_outcomes"):
+                followup = self._memory.conn.execute("""
+                    SELECT outcome,source,active
+                    FROM f4a_mock_behavior_outcomes WHERE mock_cycle_id=?
+                """, (r["id"],)).fetchone()
+                if followup is not None:
+                    if followup["active"] == 0:
+                        return _verdict(
+                            family, key, "withdrawn_mock_followup",
+                            proposed="mock_fixture", source="mock",
+                            corrected=True,
+                        )
+                    if (followup["active"] != 1
+                            or followup["source"] != "explicit_mock_followup_only"
+                            or followup["outcome"] != {
+                                "explicit_mock_positive": "positive",
+                                "explicit_mock_negative": "negative",
+                            }.get(r["outcome"])):
+                        return _verdict(family, key, "invalid_provenance")
             try:
                 value = _numeric(reward)
             except (TypeError, ValueError):
