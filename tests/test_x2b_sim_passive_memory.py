@@ -60,6 +60,8 @@ class SimPowerContextTests(unittest.TestCase):
         self.assertEqual("observe_status", b.attention)
         self.assertEqual("low_to_normal", b.comparison)
         self.assertEqual(1, b.reference_id)
+        # Journal history exposes the referenced row in the *same* SQLite.
+        self.assertEqual(self.runner.history()[0]["id"], b.reference_id)
         self.assertEqual(energy, self.runner.brain.motives.energy)
         self.assertEqual(["rest", "observe_status"],
                          [x["attention"] for x in self.runner.history()])
