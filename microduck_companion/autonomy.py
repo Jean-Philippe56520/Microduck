@@ -281,12 +281,19 @@ class AutonomyBrain:
                                  obj.identifier if obj else None, request))
 
     def feedback(self, object_id: str, action: str, reward: float) -> float:
-        preference = self.memory.learn_from_outcome(object_id, action, reward)
-        self.motives.play = max(0.0, min(1.0, self.motives.play + 0.04 * reward))
-        return preference
+        """Legacy entry point: an intention without execution proof is NOT learned.
+
+        ExperienceMemory rejects all unverified positive or negative feedback.
+        Do not change motivations on this rejected path. The separate P2a
+        mock and MuJoCo trials retain their own explicit provenance.
+        """
+        return self.memory.learn_from_outcome(object_id, action, reward)
 
     def _record(self, plan: Plan) -> Plan:
-        self.memory.record_action(plan.intention, plan.target, plan.explanation)
+        # This legacy selector has NO authenticated execution receipt. Keep
+        # the proposal process-local; a chosen action must never be persisted
+        # as if it was an experience. P2a and MuJoCo have separate, explicitly
+        # sourced recorders that are NOT physical robot execution evidence.
         self.previous_intention = plan.intention
         if plan.intention == "rest":
             self.motives.energy = min(1.0, self.motives.energy + 0.025)

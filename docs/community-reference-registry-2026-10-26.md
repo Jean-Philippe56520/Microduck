@@ -1,5 +1,7 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**Revue X1 (27/10/2026) :** vérification du statut OEM [#381](https://github.com/pollen-robotics/microduck/pull/381) et [#414](https://github.com/pollen-robotics/microduck/pull/414) : **ouvertes/non fusionnées**. Choix de ce lot : **réutiliser** F1/F2/P-A/PD2/EX1–3/PD3, **adapter** la voie de retour historique en refus sans preuve et supprimer l'écriture automatique de propositions héritées dans `experiences`, **créer seulement** un test d'acceptation intermodules et son document. QuackNav/microduck-brain, Quacksat, microduck-twin, GC, Smartulf et lab/studio restent en veille ; pas d'import ni de licence ou API nouvelle. [Preuves et limites](kwipi-execution-acceptance-2026-10-27.md). Ce lot ne porte **ni** la navigation **ni** le wake-word sur le robot.
+
 **26 octobre 2026 · état : revue statique, décision documentaire, sans intégration.**
 
 Ce registre est le complément de [C1–C2 : revue détaillée de six dépôts](community-reuse-audit-2026-10-26.md), de [R0 : audit OEM épinglé](oem-reuse-audit-2026-10-26.md), de [R1.5 : audit rétroactif](r15-retrospective-reuse-audit-2026-10-26.md) et du [protocole « réutiliser avant de créer »](development-reuse-protocol.md).

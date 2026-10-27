@@ -19,6 +19,12 @@ class AutonomyTests(unittest.TestCase):
     def test_default_is_not_safe_to_move(self):
         self.assertEqual("halt", self.brain.choose(Scene()).intention)
 
+    def test_legacy_chosen_plans_are_not_logged_as_executed_experiences(self):
+        # A proposed inspect/explore is not a robotd acknowledgement.
+        self.brain.choose(Scene(**self.safe, object_id="toy", object_label="toy"))
+        self.brain.choose(Scene(**self.safe))
+        self.assertEqual(0, self.memory.experience_count())
+
     def test_floor_not_confirmed(self):
         self.assertEqual("halt", self.brain.choose(
             Scene(safe_area=True)
@@ -59,11 +65,28 @@ class AutonomyTests(unittest.TestCase):
             Scene(**self.safe)
         ).intention)
 
-    def test_feedback_affects_preference(self):
+    def test_legacy_feedback_does_not_reward_unverified_proposal(self):
         self.memory.observe("ball", "ball")
-        old = self.memory.get("ball").preference
-        updated = self.brain.feedback("ball", "play_with_object", .8)
-        self.assertGreater(updated, old)
+        initial = self.memory.get("ball").preference
+        play = self.brain.motives.play
+        with self.assertRaises(PermissionError):
+            self.brain.feedback("ball", "play_with_object", .8)
+        self.assertEqual(initial, self.memory.get("ball").preference)
+        self.assertEqual(play, self.brain.motives.play)
+        self.assertEqual(0, self.memory.experience_count())
+
+    def test_legacy_memory_rejects_valid_reward_without_execution_evidence(self):
+        self.memory.observe("ball", "ball")
+        with self.assertRaises(PermissionError):
+            self.memory.learn_from_outcome("ball", "play_with_object", -.8)
+        self.assertEqual(0., self.memory.get("ball").preference)
+
+    def test_legacy_memory_rejects_nonfinite_and_boolean_rewards(self):
+        self.memory.observe("ball", "ball")
+        for reward in (float("nan"), float("inf"), True, None):
+            with self.subTest(reward=reward), self.assertRaises(ValueError):
+                self.memory.learn_from_outcome("ball", "play_with_object", reward)
+        self.assertEqual(0, self.memory.experience_count())
 
     def test_llm_guess_is_marked_unverified(self):
         self.memory.observe("obj")

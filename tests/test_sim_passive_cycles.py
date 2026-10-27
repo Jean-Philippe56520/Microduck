@@ -61,7 +61,10 @@ class PassiveCycleUnitTests(unittest.TestCase):
                          {c["outcome"] for c in runner.history()})
         self.assertEqual({0}, {c["motor_commands"] for c in runner.history()})
         self.assertEqual({None}, {c["reward"] for c in runner.history()})
-        self.assertEqual(3, self.memory.experience_count())
+        # Three *proposals* are already recorded in sim_passive_cycles;
+        # do not also count them as executed legacy experiences.
+        self.assertEqual(3, len(runner.history()))
+        self.assertEqual(0, self.memory.experience_count())
         self.assertEqual(
             0, self.memory.conn.execute(
                 "SELECT count(*) FROM sim_motion_trials"
