@@ -101,8 +101,10 @@ class FullPipelineTests(unittest.TestCase):
             self.assertEqual(4, sum(r[1] == "ball" for r in rows))
             self.assertEqual(0, db.execute(
                 "SELECT count(*) FROM objects").fetchone()[0])
-            self.assertEqual(10, db.execute(
-                "SELECT count(*) FROM experiences WHERE action='halt'"
+            # A passive halt is a decision, never a physical experience.
+            # The eight actual mock category receipts live in their own log.
+            self.assertEqual(0, db.execute(
+                "SELECT count(*) FROM experiences"
             ).fetchone()[0])
             self.assertEqual(0, db.execute(
                 "SELECT count(*) FROM sim_motion_trials").fetchone()[0])
