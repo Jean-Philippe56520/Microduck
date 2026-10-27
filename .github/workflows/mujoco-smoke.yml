@@ -20,6 +20,7 @@ on:
       - feat/p0h-policy-slot-lineage-20261025
       - feat/p0i-controlled-policy-pair-20261025
       - feat/p2b-passive-mujoco-cycles-20261025
+      - feat/x2c-mujoco-passive-acceptance-20261027
     paths:
       - ".github/workflows/mujoco-smoke.yml"
       - "scripts/sim-smoke.sh"
@@ -88,6 +89,8 @@ jobs:
           DUCK_SIM_POLICY_PAIR: ${{ github.ref_name == 'feat/p0i-controlled-policy-pair-20261025' && 'YES' || 'NO' }}
           DUCK_SIM_GEOMETRY_COMPARE: ${{ github.ref_name == 'feat/p0g-compiled-contact-variants-20261025' && 'YES' || 'NO' }}
           DUCK_SIM_PASSIVE_CYCLES: ${{ github.ref_name == 'feat/p2b-passive-mujoco-cycles-20261025' && 'YES' || 'NO' }}
+          # This branch alone runs the two X2-C read-only simulator sessions.
+          DUCK_SIM_X2C_ACCEPTANCE: ${{ github.ref_name == 'feat/x2c-mujoco-passive-acceptance-20261027' && 'YES' || 'NO' }}
         run: |
           set -o pipefail
           timeout --signal=TERM --kill-after=30s 18m             sh scripts/sim-smoke.sh run 2>&1 | tee "${{ runner.temp }}/mujoco-smoke-console.log"
@@ -123,3 +126,6 @@ jobs:
             /tmp/duck-sim-companion/compiled-geometry-variants.json
             /tmp/duck-sim-companion/p2b-passive-session-a.json
             /tmp/duck-sim-companion/p2b-passive-session-b.json
+            /tmp/duck-sim-companion/x2c-passive-session-a.json
+            /tmp/duck-sim-companion/x2c-passive-session-b.json
+            /tmp/duck-sim-companion/x2c-acceptance.json
