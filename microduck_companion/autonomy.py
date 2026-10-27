@@ -320,8 +320,7 @@ class AutonomyBrain:
         # as if it was an experience. P2a and MuJoCo have separate, explicitly
         # sourced recorders that are NOT physical robot execution evidence.
         self.previous_intention = plan.intention
-        if plan.intention == "rest":
-            self.motives.energy = min(1.0, self.motives.energy + 0.025)
-        elif plan.intention not in {"halt", "idle"}:
-            self.motives.energy = max(0.0, self.motives.energy - 0.008)
+        # A proposed rest did not recharge a battery or restore energy; a
+        # proposed exploration did not expend energy. Only proven, executed
+        # outcomes may update motivations in a future audited path.
         return plan
