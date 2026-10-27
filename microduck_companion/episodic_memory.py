@@ -150,23 +150,18 @@ class ExperienceMemory:
             """, (time.time(), object_id, action, note))
 
     def learn_from_outcome(self, identifier: str, action: str, reward: float) -> float:
-        """Only verified observed outcomes should be passed as feedback."""
-        if not -1 <= reward <= 1:
-            raise ValueError("reward must be in [-1, 1]")
-        previous = self.get(identifier)
-        if previous is None:
-            raise KeyError(identifier)
-        updated = max(-1.0, min(1.0, previous.preference * 0.85 + 0.15 * reward))
-        with self.conn:
-            self.conn.execute(
-                "UPDATE objects SET preference=? WHERE identifier=?",
-                (updated, identifier)
-            )
-            self.conn.execute("""
-                INSERT INTO experiences(timestamp,object_id,action,outcome,note)
-                VALUES (?, ?, ?, ?, 'observed_outcome')
-            """, (time.time(), identifier, action, reward))
-        return updated
+        """Deny the legacy unverified feedback path (kept for API compatibility).
+
+        No caller can currently supply authenticated evidence that robotd
+        executed an action. In particular, a chosen plan or a Qwen guess is
+        not an outcome. The separate record_simulated_motion method keeps
+        its explicit MuJoCo provenance and must not train robot preferences.
+        Future physical feedback needs a new audited execution-proof contract.
+        """
+        if (type(reward) not in (int, float) or not math.isfinite(reward)
+                or not -1 <= reward <= 1):
+            raise ValueError("reward must be finite and in [-1, 1]")
+        raise PermissionError("legacy unverified feedback cannot update memory")
 
     def experience_count(self) -> int:
         return self.conn.execute("SELECT count(*) FROM experiences").fetchone()[0]
