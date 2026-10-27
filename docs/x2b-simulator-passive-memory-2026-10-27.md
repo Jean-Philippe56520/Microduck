@@ -1,6 +1,6 @@
 # X2-B — Attention cognitive passive et contexte simulé en SQLite (27 octobre 2026)
 
-**Statut : codé dans [PR #85](https://github.com/Jean-Philippe56520/Microduck/pull/85) ; [CI initiale #40469911199](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40469911199) réussie : 1 252 tests exécutés, 19 ignorés, zéro échec, dont 16 tests X2-B. Modifications ultérieures à valider sur le SHA final. Tests de fixtures et sur hôte uniquement.** Ce lot prépare une future acceptation MuJoCo X2-C. L'essai P2b du 25 octobre avait déjà démontré **six cycles cohérents** (deux sessions de trois) sur les vrais démons du simulateur, mais tous en `halt`, sans conséquences.
+**Statut : codé dans [PR #85 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/85) ; [CI finale #40470345439](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40470345439) réussie : 1 252 tests exécutés, 19 ignorés, zéro échec, dont 16 tests X2-B. Validation confirmée avant fusion ; code et tests sur `main` au 27/10/2026. Tests de fixtures et sur hôte uniquement.** Ce lot prépare une future acceptation MuJoCo X2-C. L'essai P2b du 25 octobre avait déjà démontré **six cycles cohérents** (deux sessions de trois) sur les vrais démons du simulateur, mais tous en `halt`, sans conséquences.
 
 ## Audit et décision réutiliser / adapter / créer
 
@@ -52,7 +52,7 @@ L'évaluation `consider_simulator_status` **ne modifie ni énergie, ni prudence,
 
 ## Vérifications et critères de sortie
 
-Les 16 tests `tests/test_x2b_sim_passive_memory.py` ont réussi lors de la première CI et vérifient les transitions, l'absence de référence, les interruptions, une batterie inconnue, la chute, les échantillons répétés/périmés, le redémarrage de session, les horloges manquantes, la comparaison bornée, une migration P2b, la réouverture du fichier SQLite et **zéro** récompense, appel Qwen ou commande moteur. Les anciennes suites P2b, X1 et X2-A doivent rester vertes.
+Les 16 tests `tests/test_x2b_sim_passive_memory.py` ont réussi lors de la CI finale et vérifient les transitions, l'absence de référence, les interruptions, une batterie inconnue, la chute, les échantillons répétés/périmés, le redémarrage de session, les horloges manquantes, la comparaison bornée, une migration P2b, la réouverture du fichier SQLite et **zéro** récompense, appel Qwen ou commande moteur. Les anciennes suites P2b, X1 et X2-A doivent rester vertes.
 
 **Niveaux de preuve :** code Python proposé ; tests CI à vérifier ; aucune nouvelle simulation officielle MuJoCo exécutée dans ce lot ; aucune caméra/son/NPU ni validation matérielle RK3566. Les indices de la télémétrie sim restent **non authentifiés comme robot réel** ; les seuils batterie 15 %, cadences 45 Hz et fenêtre 60 s sont des conventions de laboratoire, pas une garantie de sûreté domestique.
 
