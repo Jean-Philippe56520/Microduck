@@ -182,7 +182,7 @@ class ReadOnlyUnixRpc:
                  role: str | None = None):
         if not _finite(timeout_s) or not 0 < timeout_s <= 30:
             raise ValueError("timeout_s must be finite in (0, 30]")
-        if role is not None and role not in _ROLE_READS:
+        if role is not None and (type(role) is not str or role not in _ROLE_READS):
             raise ValueError("unsupported simulator daemon role")
         self.path = os.fspath(path)
         # A role is a *local expected endpoint*, not peer authentication.
@@ -334,6 +334,6 @@ class ReadOnlyUnixRpc:
 
 def read_health(path: str | os.PathLike[str], *, timeout_s: float = 1.) -> HealthReading:
     """Single read-only robot.health call against the robotd Unix socket."""
-    with ReadOnlyUnixRpc(path, timeout_s=timeout_s) as reader:
+    with ReadOnlyUnixRpc(path, timeout_s=timeout_s, role="robotd") as reader:
         result = reader.request("robot.health")
         return parse_health(result, time.monotonic())
