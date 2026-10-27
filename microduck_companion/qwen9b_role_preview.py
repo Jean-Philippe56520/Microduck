@@ -68,6 +68,29 @@ def _positive_nano(obj: dict[str, Any], key: str) -> float | None:
     return None
 
 
+def _envelope_diagnostic(envelope: Any) -> str | None:
+    """Explain only protocol failure class. Never expose Ollama output or image."""
+    if type(envelope) is not dict:
+        return "envelope_invalid"
+    if envelope.get("model") != MODEL:
+        return "model_mismatch"
+    if envelope.get("done") is not True:
+        return "response_incomplete"
+    reason = envelope.get("done_reason")
+    if reason == "length":
+        return "generation_truncated"
+    if reason not in (None, "stop"):
+        return "stop_reason_invalid"
+    message = envelope.get("message")
+    if type(message) is not dict or message.get("role") != "assistant":
+        return "message_invalid"
+    if message.get("tool_calls"):
+        return "tool_calls_rejected"
+    if message.get("thinking") not in (None, ""):
+        return "thinking_rejected"
+    return None
+
+
 def evaluate_local_image(source: bytes, *, consent: bool, reviewed: bool,
                          port: int = 11435, timeout_s: float = 120,
                          endpoint: OllamaEndpoint | None = None,
@@ -106,14 +129,16 @@ def evaluate_local_image(source: bytes, *, consent: bool, reviewed: bool,
         if not 0 < len(body) <= MAX_RESPONSE_BYTES:
             return {**base, "status": "rejected", "diagnostic": "envelope_size"}
         envelope = json.loads(body.decode("utf-8"))
-        if (type(envelope) is not dict or envelope.get("model") != MODEL
-                or envelope.get("done") is not True
-                or envelope.get("done_reason") not in (None, "stop")
-                or type(envelope.get("message")) is not dict
-                or envelope["message"].get("role") != "assistant"
-                or envelope["message"].get("tool_calls")
-                or envelope["message"].get("thinking") not in (None, "")):
-            return {**base, "status": "rejected", "diagnostic": "envelope_invalid"}
+        diagnostic = _envelope_diagnostic(envelope)
+        if diagnostic is not None:
+            rejected = {**base, "status": "rejected", "diagnostic": diagnostic}
+            if diagnostic == "generation_truncated":
+                # Numeric-only telemetry helps tune the token budget safely.
+                rejected["elapsed_s"] = round(time.monotonic() - start, 3)
+                rejected["server_total_s"] = _positive_nano(envelope, "total_duration")
+                rejected["generated_tokens"] = (envelope.get("eval_count")
+                                                if type(envelope.get("eval_count")) is int else None)
+            return rejected
         answer = envelope["message"].get("content")
         if type(answer) is not str or not 0 < len(answer) <= MAX_TEXT_CHARS:
             return {**base, "status": "rejected", "diagnostic": "model_text_size"}
