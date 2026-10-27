@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**F5 v2 — mesure PC avec vrai Qwen 9B, 27/10/2026 :** un essai `simple` de **capture d'écran d'Explorateur Windows autorisée** a répondu en 10,078 s ; lanceur Windows a démarré puis fermé le serveur Ollama local sur `11435`. Résultat structuré `unverified` / catégorie `unknown`, depiction `unknown`. Options Vulkan/iGPU demandées, mais placement effectif GPU, taux GPU, mémoire/RSS, puissance, débit et latence répétée **non mesurés** ; aucun lien causal prouvé entre simplification et vitesse, aucune extrapolation RK3566, aucun robot réel. [Protocole](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **F5 v2 / auto-démarrage Ollama PC du 27/10/2026 :** le lanceur demande le démarrage du serveur local `127.0.0.1:11435` en environnement processus Windows avec `OLLAMA_VULKAN=1`, `OLLAMA_IGPU_ENABLE=1`. Aucun serveur ou GPU n'est créé sur RK3566 ; aucun pilote embarqué, mémoire SQLite ou budget robot modifié. La présence de ces variables ne prouve pas l'utilisation effective de la Radeon 860M (à mesurer avec `ollama ps` pendant une inférence). Le processus Ollama temporaire est arrêté en fin d'essai ; les services Ollama existants ne sont pas affectés. Les mesures de RSS, latence, températures, 50 Hz et autonomie physique restent non validées sur robot.
 
 

@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**F5 v2 — essai réel du mode `simple` et auto-démarrage Windows (27/10/2026) :** image réellement choisie = capture d'écran d'Explorateur Windows (confirmée par l'opérateur) ; serveur Ollama temporaire, réponse du vrai Qwen 9B en 10,078 s, `unverified`, `unknown/unknown/clear`. Le protocole fonctionne, **pas de reconnaissance de photo d'objet** ; `depiction=screen` souhaité mais non obtenu. Étape suivante : petit protocole d'évaluation sur **photographies** d'objets inanimés variés (balle, chaussure, chaussette, chaise, objet partiellement visible et inconnu) avec vérités indépendantes et consentement. Aucune image privée versionnée, aucun effet sur les moteurs/mémoire du robot. [Détails](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **B / F5 v2 — reproductibilité Windows 27/10/2026 :** rendre `TESTER_KWIPI.cmd` autonome face à l'absence d'Ollama sur le port dédié `11435`, sans démarrer le modèle avant choix et consentement pour une image. Réutiliser `ollama serve`, l'installation Windows et le modèle `qwen3.5:9b` existants ; options GPU Vulkan/iGPU héritées, aucun changement permanent de service. Tests statiques et Python sur faux serveur, test syntaxique PowerShell dans la CI, test réel Windows et placement GPU encore requis. [Compte rendu](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 

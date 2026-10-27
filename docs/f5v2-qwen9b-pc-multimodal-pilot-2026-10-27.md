@@ -106,3 +106,34 @@ Le correctif réutilise l'exécutable `ollama.exe` **déjà installé**, sans se
 5. En cas d'échec de démarrage, d'absence de modèle ou de problème de connexion, aucune commande Qwen/robot/mémoire n'est émise et le script indique le blocage. L'usage de Vulkan/iGPU n'est qu'une demande d'accélération : vérifier séparément si Ollama place effectivement le modèle sur GPU.
 
 **Validation :** tests Python de contrat (26/26 en local), examen statique du script ; ajout d'une étape d'analyse syntaxique PowerShell sur GitHub Actions. Ce ne sont **pas** des tests d'exécution du lanceur sur Windows : le double-clic par l'opérateur est requis pour confirmer que `Start-Process`, la reprise de service et le nettoyage fonctionnent effectivement dans cette configuration. Aucun accès à la Radeon/aux photos de l'utilisateur par GitHub Actions. La PR #98 demeure non fusionnée tant qu'elle n'est pas validée et acceptée.
+
+## Premier essai du lanceur auto-démarrant et du mode simple — rapport de l'opérateur du 27 octobre 2026
+
+**Image réellement soumise, précisée par l'opérateur :** capture d'écran de l'Explorateur de fichiers Windows affichant des dossiers (et du texte à l'écran), **pas** le disque rouge synthétique évoqué dans les essais antérieurs. L'opérateur a transmis la capture dans la conversation pour expliquer ce choix ; les pixels, noms des dossiers, captures et chemins d'utilisateur **ne sont pas copiés dans GitHub**. L'opérateur a tapé `OUI` pour ce seul essai, mais la présence de texte et de chemin utilisateur rappelle qu'un consentement manuel n'est pas un contrôle automatique de confidentialité ; les prochains essais privilégieront des images d'objets sans texte ni données privées.
+
+**Sortie du vrai Qwen3.5 9B, rapportée par l'opérateur :**
+
+```json
+{
+  "diagnostic_reason": "none",
+  "diagnostic_stage": "none",
+  "hypotheses": [],
+  "latency_s": 10.078,
+  "memory_writes": 0,
+  "mode": "simple",
+  "motor_commands_issued": 0,
+  "status": "unverified",
+  "visual_observation": {
+    "category": "unknown",
+    "depiction": "unknown",
+    "verified": false,
+    "visibility": "clear"
+  }
+}
+```
+
+**Faits observables :** le lanceur Windows a signalé le démarrage automatique d'Ollama local `127.0.0.1:11435`, le résultat accepté par le protocole, puis la fermeture du seul serveur qu'il venait de lancer. Ces faits sont rapportés par l'opérateur, non reproduits dans la CI Linux. La **sortie JSON est acceptée par la validation de contrat, mais la perception n'est pas validée** : `category=unknown` est une abstention défendable puisqu'il ne s'agit pas d'un objet physique unique ; `depiction=unknown` manque pourtant la valeur `screen` attendue d'une capture d'écran. La visibilité `clear` ne compense pas cette incertitude. Un seul essai ne permet pas de conclure sur la qualité de vision du Qwen 9B.
+
+La latence de 10,078 s est un chiffre du logiciel PC pour cet essai, pas une mesure fiable de débit ou d'utilisation GPU (options Vulkan/iGPU demandées, placement GPU et RSS non mesurés). Ne pas comparer directement les essais antérieurs sur disque rouge et le schéma strict aux conditions actuelles ; pas de robot disponible, aucun capteur ou effet autonome testé. Les compteurs zéro moteur et zéro mémoire sont des compteurs du pilote PC passif, pas une preuve instrumentée sur robot.
+
+**Suite prioritaire :** faire quelques essais unitaires du lanceur sur **photographies d'objets inanimés** explicitement autorisées, avec catégorie attendue déterminée indépendamment, scènes simples puis masquées/inconnues. Noter `status`, `visual_observation.category`, `visual_observation.depiction` (souvent `photograph` attendu), `visibility`, refus et latence ; aucune capture contenant identifiants, documents, personnes ou informations privées. Ne pas publier les fichiers sources ni fusionner les résultats avec l'ExperienceMemory tant que l'évaluation visuelle n'est pas concluante.

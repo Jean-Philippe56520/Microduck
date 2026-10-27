@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**F5 v2 — essai réel du lanceur sur PC Windows (27/10/2026, PR #98).** L'opérateur a autorisé une **capture d'écran de l'Explorateur Windows** comme image d'essai. Le lanceur a démarré puis arrêté son serveur Ollama dédié `127.0.0.1:11435`. Le vrai Qwen3.5 9B a répondu en **10,078 s**, mode `simple`, `status=unverified`, diagnostics `none`, `category=unknown`, `depiction=unknown`, `visibility=clear`, `motor_commands_issued=0`, `memory_writes=0`. **Protocole PC fonctionnel ; vision non validée** : pour une capture d'écran, `depiction=screen` aurait été attendu, sans certitude sur la catégorie physique. GPU/RSS non mesurés dans cet essai ; aucun accès robot ni entraînement. Capture et chemins personnels non ajoutés au dépôt. [Compte rendu](docs/f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **F5 v2 — lanceur Windows autonome pour Ollama (27/10/2026 ; PR #98 non fusionnée).** Après l'essai opérateur `TESTER_KWIPI.cmd` interrompu par l'indisponibilité de `127.0.0.1:11435`, le lanceur demande d'abord de sélectionner et d'approuver l'unique image, puis détecte et démarre si nécessaire **uniquement** le serveur Ollama local `11435`, avec `OLLAMA_VULKAN=1` et `OLLAMA_IGPU_ENABLE=1` hérités par son processus. Il ne réinstalle ni modèle ni dépendance et ferme uniquement le serveur qu'il a lancé. Le serveur existant n'est pas arrêté, le port `11434` n'est pas touché. Le GPU demandé n'est pas une preuve de placement GPU ; test Windows réel du redémarrage à effectuer par l'opérateur. [Protocole](docs/f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 
