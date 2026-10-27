@@ -19,6 +19,11 @@ from typing import Any
 from .ollama_local_client import OllamaEndpoint
 from .qwen9b_advisor_v2 import MAX_SOURCE_BYTES, MAX_IMAGE_BYTES, prepare_jpeg
 from .qwen9b_production_role import ROLE_VERSION, SCENARIO_USER_PROMPT, SYSTEM_PROMPT
+from .qwen9b_production_role_v2 import (
+    ROLE_VERSION as ROLE_VERSION_V2,
+    SCENARIO_USER_PROMPT as SCENARIO_USER_PROMPT_V2,
+    SYSTEM_PROMPT as SYSTEM_PROMPT_V2,
+)
 
 MODEL = "qwen3.5:9b"
 MAX_WIRE_BYTES = 180_000
@@ -27,15 +32,26 @@ MAX_TEXT_CHARS = 1_200
 MAX_TIMEOUT = 180.0
 
 
-def make_request(image: bytes) -> bytes:
+def _role_prompts(version: str) -> tuple[str, str]:
+    if type(version) is not str:
+        raise ValueError("invalid role version")
+    if version == ROLE_VERSION:
+        return SYSTEM_PROMPT, SCENARIO_USER_PROMPT
+    if version == ROLE_VERSION_V2:
+        return SYSTEM_PROMPT_V2, SCENARIO_USER_PROMPT_V2
+    raise ValueError("unrecognized role version")
+
+
+def make_request(image: bytes, *, role_version: str = ROLE_VERSION) -> bytes:
     if type(image) is not bytes or not 0 < len(image) <= MAX_IMAGE_BYTES:
         raise ValueError("invalid approved JPEG budget")
+    system_prompt, scenario_prompt = _role_prompts(role_version)
     request = {
         "model": MODEL, "stream": False, "think": False, "keep_alive": "0",
         "options": {"temperature": 0, "num_predict": 180, "num_ctx": 4096},
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": SCENARIO_USER_PROMPT,
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": scenario_prompt,
              "images": [base64.b64encode(image).decode("ascii")]},
         ],
     }
@@ -54,7 +70,8 @@ def _positive_nano(obj: dict[str, Any], key: str) -> float | None:
 
 def evaluate_local_image(source: bytes, *, consent: bool, reviewed: bool,
                          port: int = 11435, timeout_s: float = 120,
-                         endpoint: OllamaEndpoint | None = None) -> dict[str, Any]:
+                         endpoint: OllamaEndpoint | None = None,
+                         role_version: str = ROLE_VERSION) -> dict[str, Any]:
     """Return a bounded human-preview transcript, NEVER validated robot facts."""
     if consent is not True or reviewed is not True:
         raise ValueError("explicit operator review and single-image consent required")
@@ -64,6 +81,7 @@ def evaluate_local_image(source: bytes, *, consent: bool, reviewed: bool,
         raise ValueError("invalid bounded timeout")
     if type(source) is not bytes or not 0 < len(source) <= MAX_SOURCE_BYTES:
         raise ValueError("invalid image input")
+    _role_prompts(role_version)
     target = endpoint if endpoint is not None else OllamaEndpoint(f"http://127.0.0.1:{port}")
     if not isinstance(target, OllamaEndpoint):
         raise ValueError("only shared F5-B endpoint allowed")
@@ -71,10 +89,10 @@ def evaluate_local_image(source: bytes, *, consent: bool, reviewed: bool,
     if not ipaddress.ip_address(host).is_loopback:
         raise ValueError("image transfer restricted to loopback")
     jpeg = prepare_jpeg(source)  # Remove metadata; no file persistence.
-    request = make_request(jpeg)
+    request = make_request(jpeg, role_version=role_version)
     start = time.monotonic()
     conn = None
-    base = {"role_version": ROLE_VERSION, "model": MODEL, "status": "unavailable",
+    base = {"role_version": role_version, "model": MODEL, "status": "unavailable",
             "unverified": True, "motor_commands_issued": 0, "memory_writes": 0,
             "photos_saved_by_companion": 0}
     try:
@@ -121,6 +139,7 @@ def main() -> int:
     p.add_argument("--image", type=Path, required=True)
     p.add_argument("--ollama-port", type=int, default=11435)
     p.add_argument("--timeout", type=float, default=120)
+    p.add_argument("--role", choices=("v1", "v2"), default="v1")
     p.add_argument("--authorize-image", action="store_true")
     p.add_argument("--reviewed-no-private-subjects", action="store_true")
     args = p.parse_args()
@@ -130,8 +149,10 @@ def main() -> int:
         if args.image.stat().st_size > MAX_SOURCE_BYTES:
             p.error("source image exceeds 2 MB")
         source = args.image.read_bytes()
+        role_version = ROLE_VERSION_V2 if args.role == "v2" else ROLE_VERSION
         report = evaluate_local_image(source, consent=True, reviewed=True,
-                                      port=args.ollama_port, timeout_s=args.timeout)
+                                      port=args.ollama_port, timeout_s=args.timeout,
+                                      role_version=role_version)
     except (OSError, ValueError) as exc:
         p.error("image unavailable or invalid; no Ollama request was sent")
     print(json.dumps(report, ensure_ascii=False, sort_keys=True))

@@ -7,7 +7,8 @@ param(
     [ValidateSet("simple", "strict", "balanced")][string]$Mode = "simple",
     [switch]$VisionCheck,
     [switch]$ComparePrompts,
-    [switch]$RolePreview
+    [switch]$RolePreview,
+    [switch]$RoleV2
 )
 
 $ErrorActionPreference = "Stop"
@@ -52,6 +53,10 @@ if ($VisionCheck -and $Image) {
     Write-Host "Autotest synthetique : ne pas fournir d'image privee."
     exit 2
 }
+if ($RoleV2 -and -not $RolePreview) {
+    Write-Host "Role v2 disponible uniquement dans l'essai conseil."
+    exit 2
+}
 if (($VisionCheck -and $ComparePrompts) -or ($VisionCheck -and $RolePreview) -or ($ComparePrompts -and $RolePreview)) {
     Write-Host "Choisir un seul mode d'essai a la fois."
     exit 2
@@ -61,6 +66,7 @@ if ($VisionCheck) {
     Write-Host "Le double-clic sur VERIFIER_VISION_KWIPI.cmd autorise uniquement ces deux images synthetiques."
 } else {
     if ($RolePreview) {
+        if ($RoleV2) { Write-Host "Role v2 : sens, options, consequences, personnalite locale de Kwipi." }
         Write-Host "Simulation du role reel de conseil de Kwipi, aucun robot connecte."
         Write-Host "Une image approuvee, une reponse courte NON verifiee, pas de memoire."
     }
@@ -157,8 +163,9 @@ try {
             & $python -m microduck_companion.qwen9b_vision_check `
                 --ollama-port $Port --timeout 120
         } elseif ($RolePreview) {
+            $roleName = if ($RoleV2) { "v2" } else { "v1" }
             & $python -m microduck_companion.qwen9b_role_preview `
-                --image $Image --ollama-port $Port --timeout 120 `
+                --image $Image --ollama-port $Port --timeout 120 --role $roleName `
                 --authorize-image --reviewed-no-private-subjects
         } elseif ($ComparePrompts) {
             & $python -m microduck_companion.qwen9b_prompt_comparison `

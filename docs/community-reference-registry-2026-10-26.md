@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**F5 v3 / audit actions OEM du rôle conseiller v2 (28/10/2026).** Sources : OEM épinglé `942e58e3aa6dbb28e7037203fff11866122c7567`, `docs/robot/cheatsheet.md` (skills `kick_left`, `roulade`, `ground_pick`, `sit_toggle`, manette bec, idle) et `docs/design/policy-channel-design.md` (slots `walk`, `stand`, `sitstand`, `ground_pick`, `kick_left`, `kick_right`, `roulade`). **RÉUTILISER** ces noms comme références de gestes **documentés, non chargés prouvés** ; **ADAPTER** les hypothèses Qwen pour ne citer que ces capacités et leurs effets/réserves ; **CRÉER** uniquement profil v2 candidat, tests et lanceur PC. `roulade` n'est pas un salto générique ; politiques communautaires et nouveaux mouvements refusés sans audit/accord, OEM #381/#414 inchangés. Pas de pilote moteur concurrent ni sous-module mis à jour. [Contrat](kwipi-qwen9b-role-contract-v2-2026-10-28.md).
+
+
 **F5 v3 — retour PC réel du rôle Qwen 9B (28/10/2026) :** l'opérateur a testé le profil complet candidat : chaise identifiée en prose et contextualisée, aucun JSON forcé, 16,515 s / 94 tokens. **RÉUTILISER** le Qwen3.5 9B déjà installé, Ollama, le client borné PC, la politique OEM sans pilote concurrent. **ADAPTER plus tard** les critères qualitatifs / l'extraction validée après évaluations indépendantes. **NE PAS CRÉER** un autre modèle de vision, second pilote servo ni mémoire sans justification. Le script n'utilise que loopback PC ; transport robot-PC sécurisé reste non livré. [Contrat v1](kwipi-qwen9b-role-contract-v1-2026-10-28.md).
 
 

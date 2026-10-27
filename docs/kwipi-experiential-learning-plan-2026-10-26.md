@@ -1,5 +1,8 @@
 # Kwipi — plan d'apprentissage autonome par l'expérience (EX)
 
+**F5 v3 / hypothèses d'expérience motrice via Qwen candidat (28/10/2026) :** apprendre n'est pas seulement classer : Qwen 9B PC propose un sens, une **piste d'interaction liée à une capacité OEM documentée**, les effets possibles et ce qu'il faudrait observer pour trancher. Il ne choisit **pas** l'action, ne lit pas les motivations ou la mémoire sans indices fournis, ne prétend pas `ground_pick` capable de transporter une chaussette, ni `kick` jeu autonome, ni `roulade` salto confirmé. Le cerveau local décide parmi possibilités **effectivement chargées, contrôlées sûres par robotd** ou l'inaction, selon curiosité/sociabilité/jeu/énergie/prudence. Mémoriser les hypothèses avec provenance séparée de l'observation ; n'apprendre la causalité qu'après geste OEM **achevé attesté**, puis résultat **observé indépendamment**. Le vrai robot reste absent et le profil v2 est un test PC sans action/mémoire. [Rôle](kwipi-qwen9b-role-contract-v2-2026-10-28.md).
+
+
 **Date : 26 octobre 2026. Statut : PLAN PROPOSÉ, DOCUMENTATION UNIQUEMENT.**
 Aucun modèle, actionneur, service, schéma SQLite ou branchement Qwen n'est livré par ce document. Aucune validation sur le robot physique. Le [plan directeur](plan-action.md) reste l'unique référence pour les priorités et les critères de passage ; **Cat-A2b et la perception par catégories passent avant un déploiement EX**.
 

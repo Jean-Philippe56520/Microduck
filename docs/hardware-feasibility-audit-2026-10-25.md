@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**F5 v3 / catalogue OEM pour expériences hypothétiques (28/10/2026) :** le rôle Qwen 9B sur PC peut désormais **nommer des gestes du catalogue OEM** (`walk`, `sit_toggle`, `kick_left/right`, `ground_pick`, `roulade`) mais **aucune politique n'est déclarée chargée sur le robot absent**, aucune compétence de saut/salto prouvée et aucun accès servo/mémoire ajouté. La commande du bec est documentée côté manette ; l'API d'animation autonome reste à auditer. Avant exécution : `robotctl policy list`, inventaire/version/état des modèles, limites sol/ToF, batterie, thermique, séquence sûre, `scripts/resource-audit.sh`, mesure du 50 Hz sous supervision. Tests v2 uniquement sur PC/fixtures, sans extrapolation mémoire/latence RK3566. [Contrat v2](kwipi-qwen9b-role-contract-v2-2026-10-28.md).
+
+
 **F5 v3 — premier chronométrage détaillé du conseiller PC (28/10/2026) :** un appel manuel Qwen3.5 9B profil `role-v1-candidate` sur photo autorisée : **16,515 s** mur, **16,509 s** Ollama, dont **3,180 s** chargement, **6,291 s** prompt+image, **7,025 s** génération de **94 tokens** (≈13,4 tokens/s) ; quelques millisecondes restantes pour les autres étapes. Une seule observation, donc aucun p50/p95 robuste, vitesse à chaud ou comparaison contrôlée native/JSON. Le traitement d'image est une étape CPU/GPU Ollama selon déploiement, pas une mesure indépendante de GPU. **Aucune preuve du placement GPU, RSS, thermique, ni marge de CPU sur RK3566 (~1 Gio), aucun robot**. Le 9B reste hors robot ; l'attente sera non bloquante seulement après implémentation et essais séparés. [Journal](kwipi-qwen9b-role-contract-v1-2026-10-28.md).
 
 
