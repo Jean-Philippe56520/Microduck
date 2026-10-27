@@ -77,6 +77,7 @@ class ImageAndSchema(unittest.TestCase):
         q = question()
         body = json.loads(_wire(q))
         self.assertEqual(MODEL, body['model'])
+        self.assertEqual(4096, body['options']['num_ctx'])
         self.assertEqual('0', body['keep_alive'])
         self.assertFalse(body['stream'])
         self.assertEqual(1, len(body['messages'][1]['images']))
@@ -138,6 +139,38 @@ class ImageAndSchema(unittest.TestCase):
 
 
 class HTTPPilot(unittest.TestCase):
+    def test_cli_can_target_dedicated_loopback_port(self):
+        import tempfile
+        import sys
+        from pathlib import Path
+        from PIL import Image
+        from microduck_companion.qwen9b_advisor_v2 import main, AdvisoryResult
+        image_file = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+        try:
+            Image.new('RGB', (20, 20), (30, 40, 50)).save(image_file, format='PNG')
+            image_file.close()
+            with patch.object(sys, 'argv', [
+                'qwen9b_advisor_v2', '--image', image_file.name,
+                '--authorize-image', '--reviewed-no-private-subjects',
+                '--ollama-port', '11435',
+            ]), patch('microduck_companion.qwen9b_advisor_v2.Qwen9BPCClient') as client:
+                client.return_value.query.side_effect = lambda q, **kw: AdvisoryResult(
+                    'unverified', q.request_id, ())
+                with patch('builtins.print'):
+                    self.assertEqual(0, main())
+                self.assertEqual(('127.0.0.1', 11435), client.call_args[0][0].host_port)
+                self.assertLessEqual(client.return_value.query.call_args[1]['timeout_s'], 180)
+        finally:
+            image_file.close()
+            Path(image_file.name).unlink(missing_ok=True)
+
+    def test_cli_rejects_invalid_port(self):
+        import sys
+        from microduck_companion.qwen9b_advisor_v2 import main
+        with patch.object(sys, 'argv', ['qwen9b_advisor_v2', '--image', 'placeholder',
+                                        '--ollama-port', '0']), self.assertRaises(SystemExit):
+            main()
+
     def test_only_existing_f5b_loopback_endpoint_allowed_for_images(self):
         with self.assertRaises(ValueError):
             OllamaEndpoint('http://example.com:11434')
