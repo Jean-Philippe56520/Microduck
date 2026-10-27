@@ -213,6 +213,66 @@ class HTTPPilot(unittest.TestCase):
             server.server_close()
             thread.join(timeout=2)
 
+    def test_diagnostic_stages_never_expose_model_text_or_run_actions(self):
+        from microduck_companion.qwen9b_advisor_v2 import AdvisoryResult
+        q = question()
+        unsafe = good_reply(q)
+        unsafe['hypotheses'][0]['motor_command'] = 'kick_left'
+        invalid_model = json.dumps(unsafe)
+        cases = [
+            ('invalid_output', {'model': MODEL, 'done': True,
+                                'message': {'role': 'assistant',
+                                            'content': invalid_model}}, 'model_output'),
+            ('generation_limit', {'model': MODEL, 'done': True,
+                                  'done_reason': 'length',
+                                  'message': {'role': 'assistant',
+                                              'content': '{'}}, 'generation_limit'),
+            ('invalid_envelope', {'model': 'other-model', 'done': True,
+                                  'message': {'role': 'assistant',
+                                              'content': invalid_model}}, 'ollama_envelope'),
+        ]
+        for name, payload, stage in cases:
+            with self.subTest(name=name):
+                class Handler(BaseHTTPRequestHandler):
+                    def log_message(self, *_args):
+                        pass
+                    def do_POST(self):
+                        self.rfile.read(int(self.headers['Content-Length']))
+                        wire = json.dumps(payload).encode()
+                        self.send_response(200)
+                        self.send_header('Content-Type', 'application/json')
+                        self.send_header('Content-Length', str(len(wire)))
+                        self.end_headers()
+                        self.wfile.write(wire)
+                server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+                thread = threading.Thread(target=server.serve_forever, daemon=True)
+                thread.start()
+                try:
+                    endpoint = OllamaEndpoint(f'http://127.0.0.1:{server.server_address[1]}')
+                    result = Qwen9BPCClient(endpoint).query(q, timeout_s=2)
+                    self.assertEqual('rejected', result.status)
+                    self.assertEqual(stage, result.diagnostic_stage)
+                    self.assertEqual((), result.hypotheses)
+                    self.assertEqual(0, result.memory_writes)
+                    self.assertEqual(0, result.motor_commands_issued)
+                    self.assertNotIn('kick_left', result.diagnostic_stage)
+                finally:
+                    server.shutdown()
+                    server.server_close()
+                    thread.join(timeout=2)
+        with self.assertRaises(ValueError):
+            AdvisoryResult('rejected', q.request_id, diagnostic_stage='raw private text')
+
+    def test_cli_missing_image_is_clean_error(self):
+        import sys
+        from microduck_companion.qwen9b_advisor_v2 import main
+        with patch.object(sys, 'argv', [
+            'qwen9b_advisor_v2', '--image', 'not_a_real_photo.jpg',
+            '--authorize-image', '--reviewed-no-private-subjects',
+        ]), self.assertRaises(SystemExit) as err:
+            main()
+        self.assertEqual(2, err.exception.code)
+
     def test_no_server_is_unavailable_without_side_effects(self):
         # Request timeouts are controlled even for connection refusal.
         q = question()

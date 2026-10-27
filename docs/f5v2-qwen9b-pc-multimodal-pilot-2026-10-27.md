@@ -48,3 +48,13 @@ Ne pas utiliser les 29 photos privées Cat-A2b sans revue explicite de leur conf
 2. **F5 v2 liaison optionnelle** après fiabilisation des sources : quotas F5-C, `AutonomyBrain` local d'abord, rappel mémoire avant PC, worker non bloquant et rejet de scène périmée ; jamais d'autorisation moteur.
 3. **Mémoire C** : contracter/projeter les hypothèses dans la SQLite existante, rétention/correction/consolidation, sans promotion en fait ni nouvelle table sans revue. Preuve physique EX4-C2 distincte.
 4. **Portage robot seulement après** Cat-A2b indépendamment annoté, ressources `scripts/resource-audit.sh`, état OEM/board réel et sûreté auditée.
+## Premier essai avec Ollama 9B sur PC Windows (rapport opérateur du 27/10/2026)
+
+- Modèle réellement téléchargé : `qwen3.5:9b` ; accélération GPU Radeon 860M rapportée avec serveur local `127.0.0.1:11435` ; aucune mesure de RSS validée par le dépôt.
+- Image de démonstration **synthétique** (disque rouge dessiné, 512 × 512, créée par l'opérateur localement), ni photographie d'objet réel, ni jeu de données privé transmis au dépôt.
+- Premier appel réel au pilote : statut `unverified`, catégorie `unknown`, confiance déclarée 0,1, latence 25,312 s, zéro commande moteur / écriture mémoire. L'abstention est raisonnable : un disque plat dessiné ne certifie pas une balle réelle.
+- Deuxième appel identique : `rejected`, latence 28,5 s, aucune hypothèse conservée, zéro commande moteur / écriture mémoire. **La cause du refus initial n'est pas observable** avec l'ancien statut agrégé ; ne pas inventer un dysfonctionnement Qwen ni attribuer une erreur de schéma sans preuve.
+- **Correctif de diagnostic (ce lot)** : `diagnostic_stage` à valeurs strictement locales `none`, `http_protocol`, `ollama_envelope`, `generation_limit`, `model_output`, `transport` ou `deadline`. Aucun texte brut de Qwen, image, nom ni identifiant privé ne sort en log. Le validateur, l'abstention, les budgets et l'autorité motrice restent inchangés. Une génération `done_reason=length` est explicitement classée comme sortie tronquée et rejetée.
+- **Mesure à poursuivre** après mise à jour de la branche sur Windows : répéter le même test 3 fois, consigner statut et `diagnostic_stage` (sans image ni sortie modèle brute), puis tester quelques photos d'objets autorisées avec référence indépendante ; surveiller latence et saturation. `keep_alive=0` décharge Qwen après chaque appel de ce pilote et peut allonger le temps total ; ne pas confondre cela avec un serveur arrêté.
+
+**Niveau de preuve :** retour d'exécution réel sur PC utilisateur, non reproductible dans la CI sans son matériel ni ses images. Le correctif ne prétend pas résoudre la variabilité du modèle ; il permet de la qualifier. Pas d'entraînement ni de validation robot.

@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**F5 v2 — premier retour Qwen 9B réel PC et diagnostic des rejets (27/10/2026)** : deux appels Windows 11 à une image synthétique autorisée (25,312 s `unverified`/`unknown` ; 28,5 s `rejected`) ; aucune preuve de reconnaissance d'une balle physique. Le nouveau champ local `diagnostic_stage` différencie protocole, enveloppe Ollama, réponse invalide et génération tronquée, sans exporter les données brutes ni changer les gardes. [Compte rendu](docs/f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md) ; pas de déploiement robot ni apprentissage moteur.
+
+
 **F5 v2 — connexion ciblée au serveur PC GPU (27/10/2026 ; pilote uniquement, pas de mesure Advisor réelle) :** le client CLI accepte maintenant `--ollama-port 11435` pour sélectionner explicitement le serveur Ollama local distinct de `11434` ; `options.num_ctx=4096` est transmis par requête pour borner le contexte sans modifier la configuration système. [Contrat et usage](docs/f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md). Tests ciblés locaux 13/13, CI complète du dernier commit encore à confirmer ; aucun transfert depuis robot, mémoire ou images privées.
 
 

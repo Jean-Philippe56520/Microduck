@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**F5 v2 — retour PC réel du 27/10/2026 :** modèle Qwen3.5 9B exécuté par l'opérateur sur Windows avec Radeon 860M et image de disque rouge synthétique autorisée ; deux appels au pilote (25,312 s : `unverified`/`unknown` ; 28,5 s : `rejected`, motif non identifiable avant correctif). Cette PR ajoute seulement un diagnostic **borné sans réponse brute** (`diagnostic_stage`), sans assouplir le validateur et sans écriture mémoire/moteur. [Protocole et résultats](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md). Tests PC simulés/CI distincts de cet essai réel ; aucune validation de reconnaissance d'objet réel.
+
+
 **Précision F5 v2 — 27/10/2026 :** [sélection de port et contexte borné du pilote PC](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md) : `--ollama-port 11435` évite de connecter l'Advisor au serveur Ollama CPU `11434` lorsqu'un GPU local utilise le port alternatif ; `num_ctx=4096` plutôt que le contexte hérité d'une session interactive longue. Pilote image manuel uniquement ; aucun raccord à F2, SQLite ou robot. Validation HTTP artificielle seulement, qualité réelle multimodale 9B non mesurée par la CI.
 
 

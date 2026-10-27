@@ -26,6 +26,11 @@ MAX_DIMENSION = 512
 MAX_RESPONSE_BYTES = 8192
 MAX_ENVELOPE_BYTES = 32768
 MAX_WIRE_BYTES = 180_000
+# Stable operator diagnostics; never include image bytes, model text or remote data.
+DIAGNOSTIC_STAGES = frozenset({
+    "none", "http_protocol", "ollama_envelope", "generation_limit",
+    "model_output", "transport", "deadline",
+})
 
 # Generic concepts, not actionable robot abilities, ownership assertions, or identities.
 CATEGORIES = ("unknown", "ball", "toy", "textile", "sock", "dog_bed", "chair", "cat", "dog", "person", "other_object")
@@ -211,6 +216,14 @@ class AdvisoryResult:
     latency_s: float | None = None
     motor_commands_issued: int = 0
     memory_writes: int = 0
+    diagnostic_stage: str = "none"
+
+    def __post_init__(self) -> None:
+        if (self.status not in {"unverified", "unavailable", "rejected", "stale"}
+                or self.diagnostic_stage not in DIAGNOSTIC_STAGES
+                or (self.status == "unverified" and self.diagnostic_stage != "none")
+                or self.motor_commands_issued or self.memory_writes):
+            raise ValueError("advisory must remain passive with bounded diagnostics")
 
 
 def schema() -> dict[str, Any]:
@@ -324,10 +337,12 @@ class Qwen9BPCClient:
         body = _wire(question)
         started = time.monotonic()
         if started >= question.deadline_monotonic_s:
-            return AdvisoryResult("stale", question.request_id, latency_s=0.0)
+            return AdvisoryResult("stale", question.request_id, latency_s=0.0,
+                                  diagnostic_stage="deadline")
         reply = None
         conn = None
         status = "unavailable"
+        diagnostic_stage = "transport"
         hypotheses: tuple[AdviserHypothesis, ...] = ()
         try:
             host, port = self.endpoint.host_port
@@ -337,9 +352,11 @@ class Qwen9BPCClient:
                 "Accept-Encoding": "identity", "Connection": "close",
             })
             reply = conn.getresponse()
+            diagnostic_stage = "http_protocol"
             if reply.status != 200:
                 return AdvisoryResult("unavailable", question.request_id,
-                                      latency_s=time.monotonic() - started)
+                                      latency_s=time.monotonic() - started,
+                                      diagnostic_stage="http_protocol")
             if not reply.getheader("Content-Type", "").lower().startswith("application/json"):
                 raise AdvisorError("unexpected response type")
             if reply.getheader("Transfer-Encoding") is not None:
@@ -356,7 +373,8 @@ class Qwen9BPCClient:
                 left = min(started + timeout_s, question.deadline_monotonic_s) - time.monotonic()
                 if left <= 0:
                     return AdvisoryResult("stale", question.request_id,
-                                          latency_s=time.monotonic() - started)
+                                          latency_s=time.monotonic() - started,
+                                          diagnostic_stage="deadline")
                 # Same bounded incremental read as the F5-B absolute-deadline logic.
                 raw_sock = getattr(getattr(reply, "fp", None), "raw", None)
                 sock = conn.sock or getattr(raw_sock, "_sock", None)
@@ -368,7 +386,11 @@ class Qwen9BPCClient:
                     raise AdvisorError("truncated reply")
                 chunks.append(chunk)
                 received += len(chunk)
+            diagnostic_stage = "ollama_envelope"
             data = _strict_json(b"".join(chunks))
+            if type(data) is dict and data.get("done_reason") == "length":
+                diagnostic_stage = "generation_limit"
+                raise AdvisorError("incomplete generation exceeds output budget")
             if (type(data) is not dict or data.get("model") != MODEL
                     or data.get("done") is not True
                     or data.get("done_reason", "stop") not in ("stop", None)
@@ -379,21 +401,27 @@ class Qwen9BPCClient:
                     or message.get("tool_calls") not in (None, [])
                     or message.get("images") not in (None, [])):
                 raise AdvisorError("untrusted tool response")
+            diagnostic_stage = "model_output"
             hypotheses = parse_reply(question, message["content"].encode("utf-8"),
                                      received_monotonic_s=time.monotonic())
             status = "unverified"
+            diagnostic_stage = "none"
         except (OSError, TimeoutError, http.client.HTTPException):
             status = "unavailable"
+            diagnostic_stage = "transport"
         except (AdvisorError, ValueError, TypeError, UnicodeError, OverflowError):
             status = ("stale" if time.monotonic() >= question.deadline_monotonic_s
                       else "rejected")
+            if status == "stale":
+                diagnostic_stage = "deadline"
         finally:
             if reply is not None:
                 reply.close()
             if conn is not None:
                 conn.close()
         return AdvisoryResult(status, question.request_id, hypotheses,
-                              latency_s=time.monotonic() - started)
+                              latency_s=time.monotonic() - started,
+                              diagnostic_stage=diagnostic_stage)
 
 
 def main() -> int:
@@ -413,7 +441,11 @@ def main() -> int:
     if not args.authorize_image or not args.reviewed_no_private_subjects:
         parser.error("both operator authorization flags are mandatory")
     # Read one operator-chosen file, not a camera or private memory archive.
-    if args.image.stat().st_size > MAX_SOURCE_BYTES:
+    try:
+        source_size = args.image.stat().st_size
+    except OSError:
+        parser.error("--image must name an existing, readable local file")
+    if source_size > MAX_SOURCE_BYTES:
         parser.error("file exceeds source budget")
     image_jpeg = prepare_jpeg(args.image.read_bytes())
     import uuid
@@ -426,6 +458,7 @@ def main() -> int:
     # Print sanitized enums and locally measured latency only, never pixels.
     print(json.dumps({
         "status": result.status,
+        "diagnostic_stage": result.diagnostic_stage,
         "hypotheses": [{
             "category": h.category, "claimed_confidence": h.claimed_confidence,
             "properties": h.properties, "uses": h.uses, "relations": h.relations,
