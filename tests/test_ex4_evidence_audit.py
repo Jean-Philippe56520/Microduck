@@ -8,6 +8,7 @@ import tempfile
 import unittest
 
 from microduck_companion.episodic_memory import ExperienceMemory
+from microduck_companion.behavioral_memory import BehavioralMemory
 from microduck_companion.experience_ledger import MockExperienceLedger, MockResolution
 from microduck_companion.experience_effects import (
     MockCue, MockEffectJournal, MockEffectPair,
@@ -94,6 +95,7 @@ class Ex4EvidenceAuditTests(unittest.TestCase):
         self.no_robot(v)
         self.memory.close()
         self.memory = ExperienceMemory(self.db)
+        self.addCleanup(self.memory.close)
         self.audit = ExecutionEvidenceAudit(self.memory)
         # Reopen real SQLite, no transient verdict cache.
         v = self.audit.review_ex1(
@@ -277,6 +279,47 @@ class Ex4EvidenceAuditTests(unittest.TestCase):
             self.memory.conn.execute(
                 "UPDATE mock_cognitive_cycles SET reward=-.4"
             )
+        v = self.audit.review_p2a(session="fixture", sequence=1)
+        self.assertEqual("invalid_provenance", v.status)
+        self.no_robot(v)
+
+    def test_f4a_retraction_revokes_visible_mock_followup(self):
+        MockCycleRunner(self.memory, session="fixture")
+        BehavioralMemory(self.memory)
+        with self.memory.conn:
+            self.memory.conn.execute("""
+                INSERT INTO mock_cognitive_cycles(
+                    session,sequence,observed_at,intention,target,
+                    disposition,outcome,reward,source
+                ) VALUES ('fixture',1,?,'inspect_object','object_anon',
+                          'mock_feedback','explicit_mock_positive',.4,'mock')
+            """, (WALL,))
+            self.memory.conn.execute("""
+                INSERT INTO f4a_mock_behavior_outcomes(
+                    mock_cycle_id,outcome,source,recorded_epoch_s,
+                    active,correction_reason
+                ) VALUES (1,'positive','explicit_mock_followup_only',?,0,
+                          'source_retracted')
+            """, (WALL,))
+        v = self.audit.review_p2a(session="fixture", sequence=1)
+        self.assertEqual("withdrawn_mock_followup", v.status)
+        self.assertTrue(v.corrected)
+        self.no_robot(v)
+        # Correction marks a historical row instead of deleting it.
+        self.assertEqual(1, self.memory.conn.execute(
+            "SELECT count(*) FROM f4a_mock_behavior_outcomes"
+        ).fetchone()[0])
+
+    def test_p2a_malformed_reward_is_invalid_not_exception(self):
+        MockCycleRunner(self.memory, session="fixture")
+        with self.memory.conn:
+            self.memory.conn.execute("""
+                INSERT INTO mock_cognitive_cycles(
+                    session,sequence,observed_at,intention,target,
+                    disposition,outcome,reward,source
+                ) VALUES ('fixture',1,?,'inspect_object','object_anon',
+                          'mock_feedback','explicit_mock_positive','bogus','mock')
+            """, (WALL,))
         v = self.audit.review_p2a(session="fixture", sequence=1)
         self.assertEqual("invalid_provenance", v.status)
         self.no_robot(v)
