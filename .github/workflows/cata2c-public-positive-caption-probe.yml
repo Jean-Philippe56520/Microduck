@@ -1,0 +1,75 @@
+name: Cat-A2c 25 public CC0 caption-positive photos on host (no low-camera claim)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "microduck_companion/cata2c_public_caption_probe.py"
+      - "tests/test_cata2c_public_caption_probe.py"
+      - "microduck_companion/visual_photo_f3d_benchmark.py"
+      - "microduck_companion/visual_photo_f3d_catalog.py"
+      - ".github/workflows/cata2c-public-positive-caption-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  caption-proposal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Existing Cat-A YOLOX host dependencies, pinned
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0 numpy==1.26.4 onnxruntime==1.21.0
+      - name: Test invalid roster, no GT, privacy and mock inference
+        run: |
+          python -m unittest discover -s tests -p 'test_cata2c_public_caption_probe.py' -v
+          python -m compileall -q microduck_companion/cata2c_public_caption_probe.py
+      - name: Download exact preapproved YOLOX Nano and verify SHA-256
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 120 \
+            --output "$RUNNER_TEMP/yolox_nano.onnx" \
+            "https://huggingface.co/skillsafe-ai/yolox-nano/resolve/8e308810ede488f742901a4ac597dc7796798e46/yolox_nano.onnx"
+          echo "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d  $RUNNER_TEMP/yolox_nano.onnx" | sha256sum --check
+      - name: Process 25 REAL public Commons CC0 claimed JPEGs and print only AGGREGATES
+        shell: bash
+        env:
+          OMP_NUM_THREADS: "1"
+          OPENBLAS_NUM_THREADS: "1"
+        run: |
+          set -euo pipefail
+          # Reuse existing F3-D source declarations and strict Wikimedia
+          # host/MIME/size checks. JPEGs never saved or artifacted.
+          # Captions are NOT independently verified bboxes and optical
+          # height UNKNOWN. Do NOT calculate precision/recall/AP50.
+          python -m microduck_companion.cata2c_public_caption_probe \
+            --approved-public-cc0-media \
+            --model-path "$RUNNER_TEMP/yolox_nano.onnx" \
+            > "$RUNNER_TEMP/cata2c_caption_report.json"
+          python - "$RUNNER_TEMP/cata2c_caption_report.json" <<'PY'
+          import json
+          import sys
+          with open(sys.argv[1], encoding="utf-8") as f:
+              r = json.load(f)
+          assert r["photos"] == 25
+          assert r["declared_positive_photos"] == 22
+          assert r["declared_non_target_photos_not_verified_negatives"] == 3
+          assert r["person_class_caption_positive_photos"] == 0
+          assert r["exhaustive_bbox_ground_truth_available"] is False
+          assert r["precision_recall_f1_ap50"] is None
+          assert r["photos_verified_camera_height_100_to_300mm"] == 0
+          assert r["thumbnail_bytes_change_without_pin"] is True
+          assert r["media_published_or_saved"] is False
+          assert r["model_training_or_threshold_tuning"] is False
+          assert r["robot_camera_or_rknn_validated"] is False
+          assert r["motor_commands"] == r["sqlite_writes"] == r["qwen_calls"] == 0
+          print(json.dumps(r, sort_keys=True))
+          PY
+      # No image/weight/identity/model artifacts. This is a DIFFERENT
+      # domain from Cat-A2b camera-height measurement.
