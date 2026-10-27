@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**F5 v2 — réutilisation validée du modèle natif (27/10/2026).** Rapport réel de l'opérateur : Qwen3.5 9B multimodal déjà installé dans Ollama Windows reconnaît une chaise et d'autres meubles en description libre, contrairement aux étiquettes `unknown`/`other_object` du pilote F5 v2 sur la scène. **RÉUTILISER** le modèle 9B et l'API Ollama actuels, **ADAPTER ensuite** l'interface PC sans surapprendre deux photos ; mesurer l'effet de compression, consignes et JSON à entrée identique ; **NE PAS CRÉER** de modèle neuronal, pilote moteur ou seconde SQLite ; pas de téléchargement Qwen 8B justifié à ce stade. Travaux OEM #381/#414, sous-modules et tiers inchangés. [Compte rendu](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **C3 / F5 v2 — audit de second essai photo réel (27/10/2026).** Réutiliser le 9B multimodal local, le client F5-B, la compression EXIF-free et les deux prompts du pilote. Observation : même image de chaise devant table à faible hauteur, résultat simple `unknown`, équilibré `other_object` au lieu de `chair`. L'étiquette `table` n'existe pas dans les 11 catégories actuelles ; impossible d'affirmer quel objet Qwen a sélectionné. Ne pas créer de modèle concurrent, deuxième détecteur, taxonomie improvisée ou nouvelles commandes OEM en réaction à une seule photo. Prioriser l'évaluation indépendante de focus/région d'intérêt, de l'objet isolé et du cas inconnu avant toute adaptation. Aucun projet tiers importé, OEM #381/#414 toujours non épinglés. [F5 v2](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
 
 
