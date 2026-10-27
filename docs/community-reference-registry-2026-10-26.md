@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**F5 v3 — retour PC réel du rôle Qwen 9B (28/10/2026) :** l'opérateur a testé le profil complet candidat : chaise identifiée en prose et contextualisée, aucun JSON forcé, 16,515 s / 94 tokens. **RÉUTILISER** le Qwen3.5 9B déjà installé, Ollama, le client borné PC, la politique OEM sans pilote concurrent. **ADAPTER plus tard** les critères qualitatifs / l'extraction validée après évaluations indépendantes. **NE PAS CRÉER** un autre modèle de vision, second pilote servo ni mémoire sans justification. Le script n'utilise que loopback PC ; transport robot-PC sécurisé reste non livré. [Contrat v1](kwipi-qwen9b-role-contract-v1-2026-10-28.md).
+
+
 **F5 v3 — audit réutiliser/adaptateur/créer (28/10/2026).** **RÉUTILISER** Qwen3.5 9B existant, `OllamaEndpoint` F5-B, `prepare_jpeg` F5 v2, lanceur PowerShell, règles OEM `robotd` et SQLite unique inchangées ; **ADAPTER** uniquement une instruction système versionnée destinée à un conseiller facultatif (pas Kwipi lui-même), **CRÉER** le test PC isolé en texte court et ses fixtures. Aucun modèle 8B, poids tiers, sous-module OEM, commande motrice, nouveau lecteur caméra ou service réseau permanent. [Rôle v1 candidat](kwipi-qwen9b-role-contract-v1-2026-10-28.md).
 
 

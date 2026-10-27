@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**F5 v3 — premier chronométrage détaillé du conseiller PC (28/10/2026) :** un appel manuel Qwen3.5 9B profil `role-v1-candidate` sur photo autorisée : **16,515 s** mur, **16,509 s** Ollama, dont **3,180 s** chargement, **6,291 s** prompt+image, **7,025 s** génération de **94 tokens** (≈13,4 tokens/s) ; quelques millisecondes restantes pour les autres étapes. Une seule observation, donc aucun p50/p95 robuste, vitesse à chaud ou comparaison contrôlée native/JSON. Le traitement d'image est une étape CPU/GPU Ollama selon déploiement, pas une mesure indépendante de GPU. **Aucune preuve du placement GPU, RSS, thermique, ni marge de CPU sur RK3566 (~1 Gio), aucun robot**. Le 9B reste hors robot ; l'attente sera non bloquante seulement après implémentation et essais séparés. [Journal](kwipi-qwen9b-role-contract-v1-2026-10-28.md).
+
+
 **F5 v3 — rôle de conseil PC candidat, 28/10/2026.** Réutilise Qwen3.5 9B sur le PC et Ollama existant avec image <=2 Mo, JPEG <=512 px et 100 ko, `num_ctx=4096`, `num_predict=180`, `think=false`, `keep_alive=0`, timeout borné : budgets logiciels, PAS mesures de performances. Le pilote renvoie temps de chargement/traitement/génération et tokens si Ollama les expose ; mesure GPU réelle/RSS/thermie PC encore à faire. **Aucun nouveau modèle ou process embarqué** sur RK3566 ~1 Gio, pas d'interférence `robotd` 50 Hz ; ne jamais conclure de l'essai PC à une capacité physique. [Contrat](kwipi-qwen9b-role-contract-v1-2026-10-28.md).
 
 

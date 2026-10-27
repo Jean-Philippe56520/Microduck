@@ -41,3 +41,22 @@ Après `git pull --ff-only` sur la branche PR #98 Windows, ouvrir **`SIMULER_CON
 5. **Robot** : audit sur unité reçue (`robotctl policy list`, `scripts/resource-audit.sh`, mémoire/stockage, ToF/IMU, température, fréquence moteurs), supervision et arrêt OEM. Aucune autonomie physique validée aujourd'hui.
 
 **Statuts :** PROMPT ET TEST PC CODÉS (cette PR) ; TESTS PYTHON SUR FIXTURES, sans vrai Qwen ; QWEN NATIF VU fonctionner auparavant sur Windows par l'opérateur avec la chaise, mais **nouveau rôle candidat non encore testé sur son PC** ; RÉSEAU ROBOT–PC, COGNITION EN DIRECT, MOTORISATION et MÉMOIRE CAUSALE NON CODÉS/VALIDÉS dans ce lot.
+## Premier essai réel du rôle v1 avec le Qwen 9B de l'opérateur — 28 octobre 2026
+
+**Origine de preuve :** journal de `SIMULER_CONSEILLER_KWIPI.cmd` collé par l'opérateur après autorisation manuelle d'**une image**, image non archivée, identité/source de la scène non inférée. Le serveur Ollama utilisé était `127.0.0.1:11435`, modèle `qwen3.5:9b`. Le résultat est `role_version=kwipi-qwen9b-role-v1-candidate`, `status=unverified`, `unverified=true`, `memory_writes=0`, `motor_commands_issued=0`, `photos_saved_by_companion=0` (compteurs du logiciel PC, **pas de mesures sur robot**).
+
+**Sortie observée (synthèse, sans copie de photo privée) :** Qwen décrit une **chaise à dossier haut et pieds fins** et un **sol en bois**. Il envisage un meuble derrière, possiblement une table, et propose prudemment un espace de vie/salle à manger. C'est un avis concret et utile sur la catégorie de chaise, meilleure réponse qualitative dans ce mode que les précédentes `unknown/other_object` du JSON F5 v2 pour des scènes apparentées. **Cela ne constitue pas une comparaison contrôlée** : le prompt, le format et la longueur ont changé ; la source image exacte n'a pas été archivée.
+
+| Mesure Ollama / pilote | Valeur PC réelle rapportée |
+| --- | ---: |
+| `elapsed_s` | 16,515 s |
+| `server_total_s` | 16,509 s |
+| `load_s` | 3,180 s |
+| `image_prompt_s` | 6,291 s |
+| `generation_s` | 7,025 s |
+| `generated_tokens` | 94 |
+| Débit de génération observé | ≈13,4 tokens/s |
+
+**Qualité à revoir sans modifier le prompt immédiatement :** la réponse indique `À vérifier : Rien` alors qu'un meuble est incertain ; cela ne donne pas de voie de clarification. Elle relève aussi que la hauteur exacte du robot est inconnue, vérité abstraite mais peu pertinente au contenu visuel fourni. Le modèle doit pouvoir **ne proposer aucune observation** si elle n'apporte rien, mais la décision doit être cohérente avec les ambiguïtés utiles. Une photo ne prouve pas à elle seule une pièce « de salle à manger », c'est une hypothèse, pas un fait. Aucun mot de la réponse n'est traduit en événement causal ni en action motrice.
+
+**Décision :** conserver le rôle comme **candidat v1 évalué sur PC**, ne pas réécrire ce profil en place ni le déclarer `production ready`. Tester sur des scènes nouvelles préannotées, objets simples et multiples, cas indéterminés, personnes/animaux/TV/risques avec consentement approprié et sans import privé ; noter exactitude des catégories, observations réellement utiles, hypothèses inventées, indices de confiance, latence et absence de commandes dangereuses. L'Advisor texte n'est **pas parsé** par le robot : construire ensuite une interface strictement versionnée et validée, avec worker PC facultatif hors 50 Hz, consentement et réseau robot-PC authentifié/chiffré, scène fraîche, quota et repli local. Aucune durée « ~16 s » ne doit être bloquante ou imposer un geste pendant l'attente.

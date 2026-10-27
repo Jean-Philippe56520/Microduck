@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**B / F5 v3 — premier essai natif du rôle candidat sur PC réel (28/10/2026) :** Qwen3.5 9B en profil `kwipi-qwen9b-role-v1-candidate` et image autorisée a donné une description de chaise utile, sortie non structurée `unverified`, **16,515 s / 94 tokens** ; Ollama rapporte 3,180 s chargement, 6,291 s traitement prompt/image, 7,025 s génération. Le conseil est **utile mais perfectible**, notamment `À vérifier : Rien` alors que la table/meuble est incertain, et la mention non nécessaire d'une hauteur inconnue. Pas de lien effectif mémoire, capteur ni robot, pas de validation de pertinence sur scènes inédites. Phase suivante : benchmark de conseils brefs avec cible, diversité, abstention et situations à risque, puis mapping machine strict hors boucle moteurs (F5 v3 future PR). [Contrat](kwipi-qwen9b-role-contract-v1-2026-10-28.md).
+
+
 **B / F5 v3 — profil de rôle de production candidat PC (28/10/2026).** Prompt versionné séparément des modes F5 v2 `simple/balanced/strict`; Qwen conseiller optionnel et non-moteur, aucun paramétrage du robot ni entraînement. Prototype opérateur `SIMULER_CONSEILLER_KWIPI.cmd` sur localhost avec image approuvée, texte français court, sortie marquée non vérifiée et télémétrie Ollama si disponible. **Prochaine porte :** test vrai 9B du nouveau rôle sur photo de chaise et scènes inédites, comparaison qualité/temps avec la CLI native, puis contrat machine validé et worker différé/consentement réseau ; aucune mémoire causale ou autonomie réelle démontrée. [Spécification](kwipi-qwen9b-role-contract-v1-2026-10-28.md).
 
 
