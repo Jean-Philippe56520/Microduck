@@ -1,6 +1,6 @@
 # Kwipi — premier lot d'exécution du plan de conformité (27/10/2026)
 
-**Statut : [PR #77](https://github.com/Jean-Philippe56520/Microduck/pull/77) ouverte.** Première CI [#40425318908](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40425318908) verte : **1 226 tests, 19 ignorés, zéro échec**, avant un renforcement supplémentaire de la voie de planification historique. Nouvelle CI nécessaire après ce renforcement. **Zéro validation physique.** Ce lot est une **acceptation d'intégration sur fixtures** et une **mise en quarantaine de la voie historique de feedback**. Il n'implémente pas une navigation ni un traitement audio/vidéo réel.
+**Statut : [PR #77](https://github.com/Jean-Philippe56520/Microduck/pull/77) fusionnée sur `main` le 27/10/2026.** [CI hôte finale #40425919775](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40425919775) **réussie : 1 227 tests exécutés, 19 ignorés, zéro échec**, y compris le renforcement de `AutonomyBrain._record` et les tests F1-D/P2b adaptés. **Zéro validation physique.** Ce lot est une **acceptation d'intégration sur fixtures** et une **mise en quarantaine de la voie historique de feedback**. Il n'implémente pas une navigation ni un traitement audio/vidéo réel.
 
 ## Audit avant modification — sources et responsabilités
 
@@ -28,7 +28,7 @@
 | EX3 trois sessions fictives → biais borné ; rétraction → biais annulé | Test de contrat, pas d'apprentissage d'un animal réel |
 | PD3 refuse le transport même après opt-in fictif | Test de contrat, zéro Qwen, zéro pixel, zéro son |
 | Feedback historique arbitraire ne met plus à jour `objects.preference` | Régression de sécurité testable |
-| Tests dans la CI de la PR | Première CI verte (1 226 tests, 19 ignorés) ; **CI finale à relancer après le dernier changement** |
+| Tests dans la CI de la PR | **Réussie : 1 227 tests exécutés, 19 ignorés, zéro échec** ([CI #40425919775](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40425919775)) |
 | Simulateur OEM en boucle fermée avec les démons | **Non exécuté dans ce lot** |
 | Caméra, microphone, ToF, Yocto, Qwen réel, RK3566, robot physique | **Non disponibles / non validés** |
 
