@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**Revue F5 v2 - diagnostics 27/10/2026 :** reutiliser le transport de loopback F5-B et le modele Ollama local `qwen3.5:9b` deja choisi ; ajuster uniquement le contrat JSON du pilote et les codes de refus, tests PC par faux serveur. Pas de sous-module OEM change, pas de code/poids de la communaute importe, pas d'identites, medias prives ou interaction motrice. Projets OEM #381/#414 restent non repris dans ce lot. [Contrat PC](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **Revue F5 v2 du 27/10/2026 — [audit/contrat](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md) :** constructeur épinglé inchangé (robotd seul moteur, mediad/tofd/pet-detect), `ground_pick` et kicks OEM non testés ; PR OEM #381/#414 pas intégrées et projets tiers C3 non importés. Réutilisation F5-B `OllamaEndpoint` et conservation intégrale F5 v1 ; création limitée à pilote PC Qwen 9B multimodal, schéma strict, consentement et mock HTTP. Aucun vrai modèle exécuté, aucun poids, média ou licence tiers ajouté au dépôt, pas de pilotage robot ni SQLite. Après essai 9B autorisé : audit de latence/RSS/confidentialité et nécessité de l'intégration non bloquante.
 
 

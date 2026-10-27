@@ -283,5 +283,106 @@ class HTTPPilot(unittest.TestCase):
         self.assertEqual(0, result.memory_writes)
 
 
+class FixedModelOutputReasonTests(unittest.TestCase):
+    """No model text, images, names, IDs or freeform exceptions in diagnostics."""
+
+    def test_schema_pins_dynamic_request_id_but_parser_remains_authoritative(self):
+        q = question()
+        body = json.loads(_wire(q))
+        self.assertEqual([q.request_id], body['format']['properties']['request_id']['enum'])
+        self.assertEqual('string', body['format']['properties']['request_id']['type'])
+        self.assertEqual(4096, body['options']['num_ctx'])
+        self.assertEqual(1, len(body['messages'][1]['images']))
+
+    def test_invalid_outputs_are_classified_without_untrusted_values(self):
+        from microduck_companion.qwen9b_advisor_v2 import (
+            ModelOutputRejected, MODEL_OUTPUT_REASONS,
+        )
+        q = question(now=100)
+        base = good_reply(q)
+        cases = []
+        cases.append((b'not-json-private-text', 'json_invalid'))
+        cases.append((json.dumps(base).replace('"schema_version": 2',
+                          '"schema_version": 2, "schema_version": 2').encode(),
+                      'duplicate_key'))
+        cases.append((b'a' * 9000, 'response_size'))
+        other = json.loads(json.dumps(base))
+        other['request_id'] = 'a' * 32
+        cases.append((json.dumps(other).encode(), 'request_id_mismatch'))
+        other = json.loads(json.dumps(base))
+        other['source'] = 'attacker_payload'
+        cases.append((json.dumps(other).encode(), 'schema_invalid'))
+        other = json.loads(json.dumps(base))
+        other['hypotheses'] = [{}] * 4
+        cases.append((json.dumps(other).encode(), 'hypotheses_invalid'))
+        other = json.loads(json.dumps(base))
+        other['hypotheses'][0]['motor_command'] = 'kick_left'
+        cases.append((json.dumps(other).encode(), 'fields_invalid'))
+        other = json.loads(json.dumps(base))
+        other['hypotheses'][0]['category'] = 'child_identity_private'
+        cases.append((json.dumps(other).encode(), 'category_invalid'))
+        other = json.loads(json.dumps(base))
+        other['hypotheses'][0]['confidence'] = -0.1
+        cases.append((json.dumps(other).encode(), 'confidence_invalid'))
+        other = json.loads(json.dumps(base))
+        other['hypotheses'][0]['risks'] = ['kick_dog']
+        cases.append((json.dumps(other).encode(), 'enum_invalid'))
+        other = json.loads(json.dumps(base))
+        other['hypotheses'][0]['risks'] = ['unknown', 'unknown']
+        cases.append((json.dumps(other).encode(), 'enum_invalid'))
+        for wire, reason in cases:
+            with self.subTest(reason=reason), self.assertRaises(ModelOutputRejected) as raised:
+                parse_reply(q, wire, received_monotonic_s=100.1)
+            self.assertEqual(reason, raised.exception.reason)
+            self.assertIn(reason, MODEL_OUTPUT_REASONS)
+            self.assertNotIn('kick_left', raised.exception.reason)
+            self.assertNotIn('private', raised.exception.reason)
+
+    def test_http_does_not_echo_model_text_or_correlation_id_in_reason(self):
+        from microduck_companion.qwen9b_advisor_v2 import AdvisoryResult
+        q = question()
+        fake = good_reply(q)
+        fake['request_id'] = '0' * 32
+        fake['hypotheses'][0]['unknown_private_identifier'] = 'private payload'
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *_args):
+                pass
+            def do_POST(self):
+                self.rfile.read(int(self.headers['Content-Length']))
+                reply = json.dumps({'model': MODEL, 'done': True,
+                                    'message': {'role': 'assistant',
+                                                'content': json.dumps(fake)}}).encode()
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length', str(len(reply)))
+                self.end_headers()
+                self.wfile.write(reply)
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        t = threading.Thread(target=server.serve_forever, daemon=True)
+        t.start()
+        try:
+            endpoint = OllamaEndpoint(f'http://127.0.0.1:{server.server_address[1]}')
+            result = Qwen9BPCClient(endpoint).query(q, timeout_s=2)
+            self.assertEqual('rejected', result.status)
+            self.assertEqual('model_output', result.diagnostic_stage)
+            self.assertEqual('request_id_mismatch', result.diagnostic_reason)
+            self.assertEqual((), result.hypotheses)
+            self.assertEqual(0, result.motor_commands_issued)
+            self.assertEqual(0, result.memory_writes)
+            self.assertNotIn(q.request_id, result.diagnostic_reason)
+            self.assertNotIn('private payload', result.diagnostic_reason)
+        finally:
+            server.shutdown()
+            server.server_close()
+            t.join(timeout=2)
+        with self.assertRaises(ValueError):
+            AdvisoryResult('rejected', q.request_id, diagnostic_stage='model_output',
+                           diagnostic_reason='unsafe data leak')
+        with self.assertRaises(ValueError):
+            AdvisoryResult('rejected', q.request_id, diagnostic_stage='transport',
+                           diagnostic_reason='schema_invalid')
+        self.assertEqual('none', AdvisoryResult('unverified', q.request_id).diagnostic_reason)
+
+
 if __name__ == '__main__':
     unittest.main()

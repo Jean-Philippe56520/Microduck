@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**F5 v2 - diagnostic de refus Qwen 9B sur PC (27/10/2026, PR #98 en cours) :** premier essai multimodal reel operateur avec image synthetique (25,312 s `unverified/unknown`, puis 28,5 et 28,453 s `rejected/model_output`). Correctif : code `diagnostic_reason` limite aux motifs locaux (JSON, identifiant, champs, categories, etc.), identifiant de correlation contraint par `format` JSON Schema et valide a nouveau a la reception ; aucune sortie brute, ecriture SQLite, action motrice ou media dans GitHub. Tests cibles locaux 18/18 avec faux transport ; CI et nouvel essai reel a confirmer. [Protocole](docs/f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **F5 v2 — premier retour Qwen 9B réel PC et diagnostic des rejets (27/10/2026)** : deux appels Windows 11 à une image synthétique autorisée (25,312 s `unverified`/`unknown` ; 28,5 s `rejected`) ; aucune preuve de reconnaissance d'une balle physique. Le nouveau champ local `diagnostic_stage` différencie protocole, enveloppe Ollama, réponse invalide et génération tronquée, sans exporter les données brutes ni changer les gardes. [Compte rendu](docs/f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md) ; pas de déploiement robot ni apprentissage moteur.
 
 

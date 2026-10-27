@@ -58,3 +58,17 @@ Ne pas utiliser les 29 photos privées Cat-A2b sans revue explicite de leur conf
 - **Mesure à poursuivre** après mise à jour de la branche sur Windows : répéter le même test 3 fois, consigner statut et `diagnostic_stage` (sans image ni sortie modèle brute), puis tester quelques photos d'objets autorisées avec référence indépendante ; surveiller latence et saturation. `keep_alive=0` décharge Qwen après chaque appel de ce pilote et peut allonger le temps total ; ne pas confondre cela avec un serveur arrêté.
 
 **Niveau de preuve :** retour d'exécution réel sur PC utilisateur, non reproductible dans la CI sans son matériel ni ses images. Le correctif ne prétend pas résoudre la variabilité du modèle ; il permet de la qualifier. Pas d'entraînement ni de validation robot.
+
+## F5 v2 - correction de diagnostic apres `model_output` (27/10/2026)
+
+Deux essais reels sur le PC de l'operateur se terminent par `rejected` apres une premiere reponse `unknown` acceptee. Le diagnostic de premier niveau `model_output` localise le refus dans `parse_reply` : il ne prouve pas la nature de l'erreur. La prochaine execution fournit `diagnostic_reason`, code fixe parmi `none`, `json_invalid`, `duplicate_key`, `response_size`, `schema_invalid`, `request_id_mismatch`, `hypotheses_invalid`, `fields_invalid`, `category_invalid`, `confidence_invalid`, `enum_invalid`, `other`. Ni reponse brute, ni image, ni texte libre, ni valeur de champ ne sont conserves ou imprimes.
+
+Le `format` JSON Schema demande maintenant `request_id: {type: string, enum: [UUID_de_la_requete]}` : cela peut diminuer les refus dus a la copie erronee de l'identifiant mais **la verification de correlation sur la reponse reste obligatoire**. Pas d'assouplissement du validateur, pas de correction silencieuse, pas de nouvelle requete automatique, pas de changements moteurs/SQLite, pas d'autre modele. **Hypothese de diagnostic, non cause prouvee ni correction validee sur le vrai Qwen**. Les tests locaux avec un faux `OllamaEndpoint` et serveur HTTP : 18/18 ; le depot et la CI Python reelle feront autorite pour le lot publie.
+
+Apres `git pull --ff-only` dans le clone de la branche PR #98 sur Windows, faire **un seul** essai supplementaire avec l'image synthetique deja autorisee :
+
+```powershell
+& "$HOME\.venv-qwen9b\Scripts\python.exe" -m microduck_companion.qwen9b_advisor_v2 --image "$HOME\kwipi_balle_test.jpg" --ollama-port 11435 --timeout 180 --authorize-image --reviewed-no-private-subjects
+```
+
+Comparer `status`, `diagnostic_stage`, `diagnostic_reason` et `latency_s`. Les images et les reponses Ollama brutes ne doivent pas etre transmises. Si le modele renvoie `unverified`, la structure est acceptee mais **aucune reconnaissance d'objet reel n'est demontree** : `unknown` reste recevable devant un disque 2D.

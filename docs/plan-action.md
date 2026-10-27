@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**F5 v2 - precision des rejets du vrai Qwen 9B (27/10/2026, PR #98) :** deux premiers appels PC Windows sur disque rouge synthetique = `unknown/unverified` puis `model_output/rejected` ; le rejet confirme un echec de validation, PAS sa cause exacte. Nouveau `diagnostic_reason` a valeurs fermees, et `request_id` epingle dans le schema Ollama avec validation strictement maintenue. Pas d'exposition de reponses brutes ni modification F5 v1, robotd ou ExperienceMemory. [Essais et tests](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md) ; prochaine porte : mise a jour PC et nouveau test pour identifier la cause, puis images reelles autorisees. Les valeurs Windows ne prouvent aucune performance RK3566.
+
+
 **F5 v2 — retour PC réel du 27/10/2026 :** modèle Qwen3.5 9B exécuté par l'opérateur sur Windows avec Radeon 860M et image de disque rouge synthétique autorisée ; deux appels au pilote (25,312 s : `unverified`/`unknown` ; 28,5 s : `rejected`, motif non identifiable avant correctif). Cette PR ajoute seulement un diagnostic **borné sans réponse brute** (`diagnostic_stage`), sans assouplir le validateur et sans écriture mémoire/moteur. [Protocole et résultats](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md). Tests PC simulés/CI distincts de cet essai réel ; aucune validation de reconnaissance d'objet réel.
 
 

@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**F5 v2 - retour de mesure PC de l'operateur (27/10/2026) :** Qwen3.5 9B sous Ollama 0.40.11 et AMD Radeon 860M, Ollama `100% GPU` rapporte sur port `11435`, sans preuve de RAM/RSS mesuree et sans lien RK3566 ; pilote image synthetique en 25,312 / 28,5 / 28,453 secondes, variabilite du schema de sortie. Correction logicielle de diagnostic et d'UUID n'ajoutant aucun modele, image, lecteur, process, RAM ni connexion au robot. Audits `scripts/resource-audit.sh` sur robot reel restent requis. [Details](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **Addendum F5 v2 Qwen 9B — 27/10/2026 (PC uniquement, tests fictifs) :** [pilote image PC](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md) sans process, modèle, image, micro, base ou réseau supplémentaire sur le RK3566. Sur le PC, image source plafonnée à 2 Mo / 16 MP, JPEG transmis <=100 ko, dimensions <=512 px, enveloppe HTTP <=32 ko, sortie Qwen <=8 ko ; ce sont **budgets logiciels pilotes et non mesures de RAM ou débit**. Ajout de Pillow **sur runner Python CI seulement** et pour préparer un JPEG sur PC, pas sur Yocto. La mémoire, le RSS/CPU/thermique réels du 9B, Ollama et du robot restent **non mesurés** ; maintien obligatoire de `scripts/resource-audit.sh` sur l'unité physique avant portage.
 
 

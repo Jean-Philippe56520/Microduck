@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**F5 v2 - diagnostic Qwen 9B sur PC, 27/10/2026 :** ajout de motifs de refus fixes sans texte modele (`diagnostic_reason`) et contrainte explicite de l'UUID attendu dans le schema Ollama. Reutiliser F5-B, conserver tous les refus, aucun stockage media/souvenir, aucun moteur ni F5 v1 modifie. 18 tests locaux sur transport mock (pas Qwen reel) ; CI a verifier. Prochain test operateur : une requete autorisee et son code de rejet, puis evaluation sur nouvelles photos sans entrainement et sans affaiblissement des gardes. [Dossier](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md).
+
+
 **F5 v2 pilote Qwen 9B multimodal PC (27/10/2026, logiciel en PR) :** [nouveau pilote manuel](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md) : préparation image contrôlée, transport localhost seulement et réponses JSON de catégories/usages/risques/observations non vérifiées, sans commande motrice. F5 v1 intact. Les tests mock HTTP n'établissent pas la qualité de Qwen ; les performances Ryzen AI, les photographies autorisées et l'intégration à la mémoire restent à tester. Étapes suivantes : essai réel 9B PC, bouclage mémoire et généralisation avec/sans PC, Cat-A2b puis audit robot.
 
 

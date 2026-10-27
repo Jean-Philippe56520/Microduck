@@ -31,6 +31,14 @@ DIAGNOSTIC_STAGES = frozenset({
     "none", "http_protocol", "ollama_envelope", "generation_limit",
     "model_output", "transport", "deadline",
 })
+# Closed diagnostic reasons ONLY for parse/validation failures: never output
+# model text, request identifiers, image features or arbitrary exceptions.
+MODEL_OUTPUT_REASONS = frozenset({
+    "none", "json_invalid", "duplicate_key", "response_size",
+    "schema_invalid", "request_id_mismatch", "hypotheses_invalid",
+    "fields_invalid", "category_invalid", "confidence_invalid",
+    "enum_invalid", "other",
+})
 
 # Generic concepts, not actionable robot abilities, ownership assertions, or identities.
 CATEGORIES = ("unknown", "ball", "toy", "textile", "sock", "dog_bed", "chair", "cat", "dog", "person", "other_object")
@@ -58,6 +66,16 @@ SYSTEM_PROMPT = (
 
 class AdvisorError(ValueError):
     """Rejected or stale adviser message; never authority to change robot state."""
+
+
+class ModelOutputRejected(AdvisorError):
+    """Fixed safe reason; never incorporates text provided by Ollama."""
+
+    def __init__(self, reason: str) -> None:
+        if reason not in MODEL_OUTPUT_REASONS or reason == "none":
+            raise ValueError("unsupported model diagnostic reason")
+        super().__init__(reason)
+        self.reason = reason
 
 
 def _strict_json(data: bytes) -> Any:
@@ -217,16 +235,30 @@ class AdvisoryResult:
     motor_commands_issued: int = 0
     memory_writes: int = 0
     diagnostic_stage: str = "none"
+    diagnostic_reason: str = "none"
 
     def __post_init__(self) -> None:
         if (self.status not in {"unverified", "unavailable", "rejected", "stale"}
                 or self.diagnostic_stage not in DIAGNOSTIC_STAGES
+                or self.diagnostic_reason not in MODEL_OUTPUT_REASONS
+                or (self.diagnostic_stage != "model_output" and self.diagnostic_reason != "none")
+                or (self.diagnostic_stage == "model_output" and self.diagnostic_reason == "none")
                 or (self.status == "unverified" and self.diagnostic_stage != "none")
                 or self.motor_commands_issued or self.memory_writes):
             raise ValueError("advisory must remain passive with bounded diagnostics")
 
 
-def schema() -> dict[str, Any]:
+def schema(request_id: str | None = None) -> dict[str, Any]:
+    """Constrain the model to echo this exact ID; still validate on receipt.
+
+    The schema constraint improves generation, but is never a trust boundary.
+    """
+    if request_id is not None and (type(request_id) is not str
+                                or len(request_id) != 32
+                                or any(c not in "0123456789abcdef" for c in request_id)):
+        raise ValueError("invalid correlation identifier")
+    request_id_field = ({"type": "string", "enum": [request_id]}
+                        if request_id is not None else {"type": "string"})
     properties: dict[str, Any] = {
         "category": {"type": "string", "enum": list(CATEGORIES)},
         "confidence": {"type": "number", "minimum": 0, "maximum": 1},
@@ -243,7 +275,7 @@ def schema() -> dict[str, Any]:
             "required": ["schema_version", "request_id", "source", "hypotheses"],
             "properties": {
                 "schema_version": {"type": "integer", "enum": [VERSION]},
-                "request_id": {"type": "string"},
+                "request_id": request_id_field,
                 "source": {"type": "string", "enum": [SOURCE]},
                 "hypotheses": {"type": "array", "maxItems": 3, "items": item},
             }}
@@ -251,40 +283,57 @@ def schema() -> dict[str, Any]:
 
 def parse_reply(question: ImageQuestion, content: bytes, *,
                 received_monotonic_s: float) -> tuple[AdviserHypothesis, ...]:
+    """Fail closed; report only a bounded validation category, never model text."""
     if (type(received_monotonic_s) not in (float, int)
             or not math.isfinite(received_monotonic_s)
             or received_monotonic_s < question.now_monotonic_s
             or received_monotonic_s >= question.deadline_monotonic_s):
         raise AdvisorError("stale answer")
     if type(content) is not bytes or not 0 < len(content) <= MAX_RESPONSE_BYTES:
-        raise AdvisorError("response length refused")
-    raw = _strict_json(content)
-    if (type(raw) is not dict or set(raw) != {"schema_version", "request_id", "source", "hypotheses"}
-            or type(raw["schema_version"]) is not int or raw["schema_version"] != VERSION
-            or raw["request_id"] != question.request_id
-            or raw["source"] != SOURCE
-            or type(raw["hypotheses"]) is not list
-            or len(raw["hypotheses"]) > 3):
-        raise AdvisorError("wrong v2 schema or request ID")
+        raise ModelOutputRejected("response_size")
+    try:
+        raw = _strict_json(content)
+    except AdvisorError as exc:
+        # The exception string is local-only and never displayed. Do not
+        # forward arbitrary model text or JSON error positions to the CLI.
+        reason = ("duplicate_key" if str(exc) == "invalid JSON"
+                  and isinstance(exc.__cause__, AdvisorError)
+                  and "duplicate JSON property" in str(exc.__cause__)
+                  else "json_invalid")
+        raise ModelOutputRejected(reason) from None
+    if (type(raw) is not dict
+            or set(raw) != {"schema_version", "request_id", "source", "hypotheses"}
+            or type(raw["schema_version"]) is not int
+            or raw["schema_version"] != VERSION
+            or raw["source"] != SOURCE):
+        raise ModelOutputRejected("schema_invalid")
+    if type(raw["request_id"]) is not str or raw["request_id"] != question.request_id:
+        raise ModelOutputRejected("request_id_mismatch")
+    if type(raw["hypotheses"]) is not list or len(raw["hypotheses"]) > 3:
+        raise ModelOutputRejected("hypotheses_invalid")
     answer: list[AdviserHypothesis] = []
     seen: set[str] = set()
     required = {"category", "confidence", "properties", "uses", "relations",
                 "possible_outcomes", "suggested_observations", "risks", "unknowns"}
     for item in raw["hypotheses"]:
         if type(item) is not dict or set(item) != required:
-            raise AdvisorError("unknown response fields")
+            raise ModelOutputRejected("fields_invalid")
         cat = item["category"]
+        if type(cat) is not str or cat not in CATEGORIES or cat in seen:
+            raise ModelOutputRejected("category_invalid")
         confidence = item["confidence"]
-        if (type(cat) is not str or cat not in CATEGORIES or cat in seen
-                or type(confidence) not in (int, float) or not math.isfinite(confidence)
+        if (type(confidence) not in (int, float) or not math.isfinite(confidence)
                 or not 0 <= confidence <= 1):
-            raise AdvisorError("invalid category or confidence")
+            raise ModelOutputRejected("confidence_invalid")
         seen.add(cat)
-        kw = {key: _enum_array(item[key], values) for key, values in (
-            ("properties", PROPERTIES), ("uses", USES), ("relations", RELATIONS),
-            ("possible_outcomes", OUTCOMES),
-            ("suggested_observations", OBSERVATIONS), ("risks", RISKS),
-            ("unknowns", UNKNOWNS))}
+        try:
+            kw = {key: _enum_array(item[key], values) for key, values in (
+                ("properties", PROPERTIES), ("uses", USES), ("relations", RELATIONS),
+                ("possible_outcomes", OUTCOMES),
+                ("suggested_observations", OBSERVATIONS), ("risks", RISKS),
+                ("unknowns", UNKNOWNS))}
+        except AdvisorError:
+            raise ModelOutputRejected("enum_invalid") from None
         answer.append(AdviserHypothesis(cat, float(confidence), **kw))
     return tuple(answer)
 
@@ -292,7 +341,7 @@ def parse_reply(question: ImageQuestion, content: bytes, *,
 def _wire(question: ImageQuestion) -> bytes:
     data = {"model": MODEL, "stream": False, "think": False,
             "keep_alive": "0", "options": {"temperature": 0, "num_predict": 600, "num_ctx": 4096},
-            "format": schema(),
+            "format": schema(question.request_id),
             "messages": [
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": json.dumps({
@@ -343,6 +392,7 @@ class Qwen9BPCClient:
         conn = None
         status = "unavailable"
         diagnostic_stage = "transport"
+        diagnostic_reason = "none"
         hypotheses: tuple[AdviserHypothesis, ...] = ()
         try:
             host, port = self.endpoint.host_port
@@ -409,11 +459,14 @@ class Qwen9BPCClient:
         except (OSError, TimeoutError, http.client.HTTPException):
             status = "unavailable"
             diagnostic_stage = "transport"
-        except (AdvisorError, ValueError, TypeError, UnicodeError, OverflowError):
+        except (AdvisorError, ValueError, TypeError, UnicodeError, OverflowError) as exc:
             status = ("stale" if time.monotonic() >= question.deadline_monotonic_s
                       else "rejected")
             if status == "stale":
                 diagnostic_stage = "deadline"
+            elif diagnostic_stage == "model_output":
+                diagnostic_reason = (exc.reason if isinstance(exc, ModelOutputRejected)
+                                     else "other")
         finally:
             if reply is not None:
                 reply.close()
@@ -421,7 +474,8 @@ class Qwen9BPCClient:
                 conn.close()
         return AdvisoryResult(status, question.request_id, hypotheses,
                               latency_s=time.monotonic() - started,
-                              diagnostic_stage=diagnostic_stage)
+                              diagnostic_stage=diagnostic_stage,
+                              diagnostic_reason=diagnostic_reason)
 
 
 def main() -> int:
@@ -459,6 +513,7 @@ def main() -> int:
     print(json.dumps({
         "status": result.status,
         "diagnostic_stage": result.diagnostic_stage,
+        "diagnostic_reason": result.diagnostic_reason,
         "hypotheses": [{
             "category": h.category, "claimed_confidence": h.claimed_confidence,
             "properties": h.properties, "uses": h.uses, "relations": h.relations,
