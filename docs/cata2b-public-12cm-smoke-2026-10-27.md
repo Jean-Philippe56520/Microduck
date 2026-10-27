@@ -35,7 +35,9 @@ Reproduire également via [workflow CI dédié](../.github/workflows/cata2b-publ
 
 ## 4. Résultats et limite de l'étape
 
-**Résultat à remplir à partir des logs CI réels de la PR** : nombres de propositions par classe, provenance validée, temps CPU et RSS runner. **Aucun TP/FP/FN, précision, rappel ou AP50 ne peut être calculé à partir d'images non contre-annotées** ; un résultat « zéro balle » n'est ni la preuve de leur absence ni une mesure de rappel.
+**Résultat CI #40522854949 (27/10/2026)** : 3 PNG d'aperçu publics et modèle YOLOX-Nano vérifiés par empreintes, **0 boîte proposée au seuil 0,25 pour les cinq catégories**. Sans annotations indépendantes, impossible de calculer des vrais/faux positifs, des faux négatifs, la précision, le rappel ou AP50. CPU hôte GitHub : inférence médiane **16,453 ms**, p95 **16,893 ms** (n=3), RSS maximal du **processus Python** **105 872 Kio** (~103,4 Mio) ; CPU utilisateur boucle **0,205 s** ; durée incluant téléchargement **1,228 s**. [CI ciblée réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40522854949) : **8 tests spécifiques exécutés et réussis**. [CI Python PR réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40522854975) : **1 386 tests recensés, 29 ignorés** ; les 8 nouveaux tests sont ignorés dans la suite générale sans Pillow mais exécutés en CI ciblée. Zéro métrique embarquée RK3566 et zéro GT.
+
+**Digest agrégé SHA-256 des images source vérifiées** : `46edf513214e9d8d7f702385b55484704385075ca3adfeff1e4024a3e3476ff3`. Le zéro observé ne prouve ni l'absence d'objets ni un échec du modèle : les scènes n'ont pas été contre-annotées.
 
 Le nombre de vraies images privées à hauteur de Kwipi reste **zéro**. Les trois PNG sources sont des prises réelles avec **hauteur générale déclarée par les auteurs**, non des photos synthétiques ; la hauteur de **chaque prise** n'est pas vérifiée par nous et la pertinence exacte de ces vues pour les cinq classes reste à contrôler.
 
