@@ -1,7 +1,7 @@
 """EX4-C: mock causal cross-check. No physical execution or reward is possible."""
 from __future__ import annotations
 
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
 import tempfile
 import unittest
@@ -133,6 +133,22 @@ class Ex4cMockCausalPreflightTests(unittest.TestCase):
         self.assertEqual(("mock_completed_only", "temporal_only", "mock_temporal_only"),
                          (v.stage_status, v.effect_status, v.status))
         self.assert_no_robot(v)
+
+    def test_forged_verdict_cannot_claim_physical_proof(self):
+        self.seed()
+        v = self.review()
+        for key, value in (
+            ("physical_learning_allowed", True),
+            ("causality_established", True),
+            ("physical_execution_verified", True),
+            ("observations_authenticated", True),
+            ("motor_commands_issued", 1),
+            ("authorized", "robotd"),
+            ("executed", "confirmed"),
+            ("source", "on_robot"),
+        ):
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                replace(v, **{key: value})
 
     def test_original_oem_ack_stays_only_queued(self):
         self.seed()
