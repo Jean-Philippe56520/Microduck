@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**Précision F5 v2 — 27/10/2026 :** [sélection de port et contexte borné du pilote PC](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md) : `--ollama-port 11435` évite de connecter l'Advisor au serveur Ollama CPU `11434` lorsqu'un GPU local utilise le port alternatif ; `num_ctx=4096` plutôt que le contexte hérité d'une session interactive longue. Pilote image manuel uniquement ; aucun raccord à F2, SQLite ou robot. Validation HTTP artificielle seulement, qualité réelle multimodale 9B non mesurée par la CI.
+
+
 **F5 v2 pilote PC — 27/10/2026 (PR de code en revue) :** [contrat Qwen 9B multimodal à commande manuelle](f5v2-qwen9b-pc-multimodal-pilot-2026-10-27.md), sans toucher à F5-A/B/C/D v1. Réutiliser `OllamaEndpoint` F5-B, proposer une seule image JPEG autorisée/réduite et produire uniquement hypothèses codées/non vérifiées. Tests de faux serveur Ollama et refus : **ni vrai Qwen 9B ni integration `AutonomyBrain`/SQLite/robot/moteur livrés**. Prochaine porte : essai `qwen3.5:9b` sur PC Windows avec médias autorisés, mesures erreurs/latence/RSS, puis consultation non bloquante à quota et relecture mémoire. Cat-A2b #78 reste prioritaire pour la vraie perception embarquée ; EX4-C2 attend preuves physiques.
 
 
