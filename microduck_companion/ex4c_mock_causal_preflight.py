@@ -156,8 +156,19 @@ class MockCausalPreflight:
                 raise ValueError("mock refusal/interruption has no execution")
             if stages:
                 self._validate_stages(
-                    stages, proposal=proposal, wire=wire, now_epoch=now_epoch,
+                    stages, wire=wire, now_epoch=now_epoch,
                 )
+                lifecycle = self._audit._memory.conn.execute("""
+                    SELECT proposed_at_epoch_s,resolved_at_epoch_s
+                    FROM ex1_mock_experiences
+                    WHERE session=? AND sequence=?
+                """, (wire.session, wire.sequence)).fetchone()
+                if lifecycle is None or lifecycle["resolved_at_epoch_s"] is None:
+                    raise ValueError("missing EX1 mock resolution")
+                at = stages[0].at_epoch_s
+                if not (lifecycle["proposed_at_epoch_s"] <= at
+                        <= lifecycle["resolved_at_epoch_s"]):
+                    raise ValueError("scripted refusal outside EX1 lifecycle")
             return verdict(history.status, "not_observed", history.status)
         if history.status not in _EFFECT_STATUSES:
             return verdict("invalid", "not_attributable", "invalid_mock_history")
@@ -169,7 +180,7 @@ class MockCausalPreflight:
             return verdict("not_attested", "not_attributable", "no_scripted_stages")
 
         self._validate_stages(
-            stages, proposal=proposal, wire=wire, now_epoch=now_epoch,
+            stages, wire=wire, now_epoch=now_epoch,
         )
         stage_names = tuple(e.stage for e in stages)
         if stage_names == ("started",):
@@ -183,16 +194,27 @@ class MockCausalPreflight:
         # Check independently against the persisted EX1/EX2 chronology; no
         # mutation or attribution results from a match.
         con = self._audit._memory.conn
-        row = con.execute("""
-            SELECT p.proposed_at_epoch_s AS proposed,
-                   p.resolved_at_epoch_s AS resolved,
-                   e.before_epoch_s AS before_cue,
-                   e.after_epoch_s AS after_cue,
-                   e.active AS effect_active
-            FROM ex1_mock_experiences p
-            LEFT JOIN ex2_mock_effects e ON e.ex1_id=p.id
-            WHERE p.session=? AND p.sequence=?
-        """, (wire.session, wire.sequence)).fetchone()
+        effect_join = self._audit._exists("ex2_mock_effects")
+        if effect_join:
+            row = con.execute("""
+                SELECT p.proposed_at_epoch_s AS proposed,
+                       p.resolved_at_epoch_s AS resolved,
+                       e.before_epoch_s AS before_cue,
+                       e.after_epoch_s AS after_cue,
+                       e.active AS effect_active
+                FROM ex1_mock_experiences p
+                LEFT JOIN ex2_mock_effects e ON e.ex1_id=p.id
+                WHERE p.session=? AND p.sequence=?
+            """, (wire.session, wire.sequence)).fetchone()
+        else:
+            row = con.execute("""
+                SELECT proposed_at_epoch_s AS proposed,
+                       resolved_at_epoch_s AS resolved,
+                       NULL AS before_cue, NULL AS after_cue,
+                       NULL AS effect_active
+                FROM ex1_mock_experiences
+                WHERE session=? AND sequence=?
+            """, (wire.session, wire.sequence)).fetchone()
         if row is None or row["resolved"] is None:
             raise ValueError("missing EX1 mock resolution")
         proposed = _epoch(row["proposed"])
@@ -222,7 +244,6 @@ class MockCausalPreflight:
     def _validate_stages(
         stages: tuple[ScriptedStage, ...],
         *,
-        proposal: OemWireProposal,
         wire: OemWireVerdict,
         now_epoch: float,
     ) -> None:
