@@ -21,7 +21,6 @@ MAX_FRAMES = 8
 MAX_LOCAL_WINDOW_S = 30.0  # Laboratory sanity check, not a robot deadline
 _SKILL = re.compile(r"[A-Za-z0-9_-]{1,64}\Z")
 _TARGETS = {"robot.do", "robot.look", "robot.move", "robot.head", "robot.stop"}
-_CONTINUOUS = {"robot.move", "robot.head"}
 _STATE_FIELDS = frozenset({
     "t", "t_ns", "move", "head", "policy", "safety", "loop", "joints",
     "targets", "velocities", "currents_ma", "odom", "theremin",
@@ -38,8 +37,9 @@ def _number(value: object, *, nonnegative: bool = False) -> float:
     return out
 
 
-def _integer(value: object, *, allow_zero: bool = False) -> int:
-    if type(value) is not int or not (0 if allow_zero else 1) <= value <= 2_147_483_647:
+def _integer(value: object, *, allow_zero: bool = False,
+             maximum: int = 2_147_483_647) -> int:
+    if type(value) is not int or not (0 if allow_zero else 1) <= value <= maximum:
         raise ValueError("invalid OEM fixture integer")
     return value
 
@@ -194,7 +194,7 @@ def _state(frame: OemWireFrame) -> tuple[float, int, bool, bool]:
     p = _obj(packet["params"], required={"t", "t_ns", "move", "policy", "safety", "loop"},
              optional=_STATE_FIELDS - {"t", "t_ns", "move", "policy", "safety", "loop"})
     elapsed = _number(p["t"], nonnegative=True)
-    mono = _integer(p["t_ns"], allow_zero=True)
+    mono = _integer(p["t_ns"], allow_zero=True, maximum=2**64 - 1)
     if type(p["policy"]) is not str or not p["policy"] or len(p["policy"]) > 64:
         raise ValueError("invalid policy label")
     move = _obj(p["move"], required={"requested", "applied"}, optional={"limited_by"})
@@ -213,7 +213,7 @@ def _state(frame: OemWireFrame) -> tuple[float, int, bool, bool]:
         raise ValueError("invalid pickup flag")
     control_loop = _obj(p["loop"], required={"hz", "missed"})
     _number(control_loop["hz"], nonnegative=True)
-    _integer(control_loop["missed"], allow_zero=True)
+    _integer(control_loop["missed"], allow_zero=True, maximum=2**64 - 1)
     unsafe = safety["fallen"] or safety["limp"] or safety.get("picked_up", False)
     limited = bool(limits)
     return elapsed, mono, unsafe, limited
