@@ -396,6 +396,14 @@ class Ex4cMockCausalPreflightTests(unittest.TestCase):
         self.assertEqual("withdrawn",v.status)
         self.assert_no_robot(v)
 
+    def test_withdrawn_history_still_rejects_unmatched_mock_rpc(self):
+        self.seed()
+        self.ledger.retract(
+            session=SESSION, sequence=1, reason="source_retracted",
+        )
+        with self.assertRaises(ValueError):
+            self.review(ev=stages(rpc_id=999))
+
     def test_retracted_ex2_no_longer_used(self):
         self.seed()
         self.assertTrue(self.effects.retract(
