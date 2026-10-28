@@ -1,6 +1,6 @@
 # N4 — Taille SQLite/WAL sur fixtures et rétention après réouverture
 
-**Date :** 28 octobre 2026. **Statut initial :** protocole et outil PC/CI candidat ; valeurs numériques à reporter depuis le **JSON du dernier workflow vert**. Aucune mesure sur le RK3566 ni aucun effacement de la SQLite personnelle de Kwipi. Autorité : [`plan-action.md`](plan-action.md). Suite de [N3 #131](https://github.com/Jean-Philippe56520/Microduck/pull/131) fusionnée au commit `241acde368d5abc5d456ebbe3d725656735934fa` ; les 22 tables relevées en N3 représentent **le code entier**, pas les tables actives du profil N4.
+**Date :** 28 octobre 2026. **Statut :** outil et mesures PC/fixtures [CI N4 #40749269400 réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40749269400), sur la [PR #132](https://github.com/Jean-Philippe56520/Microduck/pull/132), commit de code `e2552ecf72c45d527783e46082aeedd2ad16b21b`. Dernier commit documentaire et nouvelle CI à vérifier avant fusion. Aucune mesure sur le RK3566 ni aucun effacement de la SQLite personnelle de Kwipi. Autorité : [`plan-action.md`](plan-action.md). Suite de [N3 #131](https://github.com/Jean-Philippe56520/Microduck/pull/131) fusionnée au commit `241acde368d5abc5d456ebbe3d725656735934fa` ; les 22 tables relevées en N3 représentent **le code entier**, pas les tables actives du profil N4.
 
 ## 1. Porte préalable, hypothèses et échec
 
@@ -34,7 +34,25 @@ L'outil **n'accepte aucun argument de chemin vers une base SQLite**. Il utilise 
 
 Le profil n'instancie que les **8 tables pertinentes** (F0:4, F4-A:2, M1-B:2), contrairement au registre statique de 22 tables N3. Les tables F1/F2/EX/F5 et les écritures historiques sont exclues de cette mesure. La **durée de vie des 53 rétractions** est une politique C2 du prototype fermé, non une assurance d'oubli approprié d'un savoir réel.
 
-## 4. Contrôles et décision de nettoyage
+## 4. Mesures réelles Linux CI et provenance de l'artefact
+
+**Source :** workflow Python compagnon [#40749269400](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40749269400), artefact `n4-host-sqlite-wal-fixture` ID `12843466574`, SHA-256 de l'archive `2b74769018e0b8591258a6cf1c8e76372131a1ac31914e2175baf52d1e038a75` (**vérifiée sur les octets téléchargés**). Runtime : Linux, SQLite **3.45.1**, `page_size=4096`. Le JSON a été lu et ses invariants (total DB+WAL+SHM, 53 corrections, retrait d'une hypothèse active, nettoyage temporaire) contrôlés hors moteur.
+
+| Étape de l'échantillon 8 tables | DB (octets) | WAL (octets) | SHM (octets) | Total transitoire |
+| --- | ---: | ---: | ---: | ---: |
+| Initialisation de F0/F4-A/M1-B et activation WAL | 32 768 | 57 712 | 32 768 | 123 248 |
+| 54 propositions, 53 rétractions, 2 signatures synthétiques, **avant fermeture** | 32 768 | **1 013 552** | 32 768 | **1 079 088** |
+| Réouverture, prune à 70 jours fictifs, corrections contrôlées | 86 016 | 12 392 | 32 768 | 131 176 |
+| `wal_checkpoint(TRUNCATE)` sur la **fixture uniquement** | **86 016** | **0** | 32 768 | 118 784 |
+| Dernière connexion fermée | **86 016** | Fichiers temporaires gérés par SQLite | — | DB persistante **86 016 octets** |
+
+**Rétention mesurée :** avant fermeture : **53 marqueurs corrigés + 1 hypothèse active** ; après réouverture : idem ; après `5 × 14 jours` simulés et purge : **53 corrections + 0 active**. Une tentative d'insérer à nouveau la clé fictive rétractée a retourné `None`. **Deux signatures M1-B pour 80 octets de BLOBs**, deux groupes, aucune table M1-A et aucune ligne d'expérience/mouvement ; `PRAGMA quick_check = ok`. Dossier temporaire supprimé après exécution.
+
+**Interprétation critique :** le pic WAL ~**990 Kio** provient notamment des nombreuses petites transactions et du **`wal_autocheckpoint=0` volontaire**. Il ne décrit pas la politique WAL de la version OEM ou l'écriture continue d'un service réel. En WAL actif, `page_count × page_size` peut décrire des pages logiques **déjà présentes dans le WAL** sans être toutes dans le fichier DB : ne pas assimiler `db_bytes` intermédiaires au volume total. Le fichier SHM, utilisé pour la coordination WAL, n'est pas une archive durable de souvenirs. L'écart **80 octets de BLOBs vs 86 016 octets DB** reflète surtout le schéma, les index, les pages SQLite et l'expérience synthétique, **pas le coût par souvenir à l'échelle**.
+
+**Conclusion limitée :** N4 démontre des coûts hôte **sur 8 tables activées** et la conservation de corrections fictives, ni les **22 tables** disponibles dans le code entier ni les budgets flash/RAM/thermie/batterie du RK3566. Aucun réglage de `journal_mode`, `wal_autocheckpoint` ou `wal_checkpoint` n'est proposé sur le robot. Ces chiffres ne prouvent pas de mémoire autonome ni de généralisation Cat-A2b/C3.
+
+## 5. Contrôles et décision de nettoyage
 
 Les tests `tests/test_n4_sqlite_fixture_budget.py` valident la réouverture, l'oubli de l'actif, l'absence de résurrection des corrections, les 80 octets M1-B sans M1-A ni effet physique, le WAL tronqué sur la fixture et le refus d'argument `--database`. Les anciennes suites C2/R2-A/EX restent exécutées dans `python-tests.yml`. La CI publie le **JSON agrégé**, pas le fichier SQLite, le WAL, un BLOB, une image, un son ou un secret.
 
