@@ -19,7 +19,7 @@
 - **Essai actif instrumenté** : `duck-sim drive 0.08 0`, ~8 s ; 32 échantillons pendant les consignes, **31 `walk`, 1 `stand`, zéro limitation de sécurité**, vitesse de consigne appliquée montée à **0,08 m/s**. **Déplacement net XY 3,500 mm**, trajectoire cumulée 4,575 mm. Consigne appliquée ≠ vitesse physique. Locomotion **non démontrée**.
 - Amplitudes en marche, max-min de positions mesurées : hanche yaw G/D 1,36°/2,03° ; roll 0,48°/0,45° ; pitch 2,61°/2,16° ; genou 0,69°/1,28° ; cheville 3,71°/0,64°. Peu de mouvement des jambes ; ne pas conclure que le réseau ONNX est fautif.
 - Capture `robotctl monitor` **au repos** : `stand`, `deadman`, ONNX `alpha_walking/alpha_stand`, 50 Hz, ToF simulé 15 Hz ; écarts commande/mesure visibles, p. ex. hanche gauche roll -0,336 / -0,088 rad et genou gauche -0,181 / +0,024 rad. Valeurs ponctuelles **au repos**, pas preuves pendant la marche.
-- L'opérateur a confirmé la présence de trois fichiers `velstand.onnx`, `alpha_walking.onnx`, `alpha_stand.onnx`, chacun ~776 Kio dans `$DUCK_SIM_STATE/policies/current`. **Leur SHA-256 local n'a pas encore été communiqué**.
+- L'opérateur a confirmé trois fichiers `velstand.onnx`, `alpha_walking.onnx`, `alpha_stand.onnx`, chacun ~776 Kio dans `$DUCK_SIM_STATE/policies/current`. Le **28/10/2026, leurs trois SHA-256 locaux ont été reçus et comparés avec succès à P0h/v8** (tableau en section 4).
 
 ## 3. Comparaison OEM impérative avant tout nouvel essai
 
@@ -27,17 +27,25 @@ L'[audit P0h déjà fusionné](mujoco-p0h-policy-slot-lineage-2026-10-25.md) ét
 
 Le RL officiel `scripts/infer_policy.py` utilise par défaut `bam.mujoco.MujocoController` (actuateur XL330 BAM) ; `sim/body_server.py` de `duck-sim` écrit des cibles dans les actionneurs MJCF et règle leurs gains. Les scènes de vitesse et contact ne sont pas interchangeables. Ce sont des **différences à auditer**, pas des causes établies. La trace passive actuelle **n'expose ni contacts des pieds ni cibles articulaires** ; `robotctl monitor` montre les cibles OEM dans le flux d'état.
 
-## 4. Prochain geste utile : lecture seule, sans moteur
+## 4. Vérification ONNX locale réalisée et diagnostic OEM restant
 
-Dans **Ubuntu** seulement (ne pas exécuter dans PowerShell), relever les empreintes des trois ONNX existants :
+**Preuve rapportée par l'opérateur, 28/10/2026 :** `sha256sum` en lecture seule sur les trois fichiers existants dans `$HOME/.cache/kwipi-visual/policies/current/`. Aucun moteur, politique, service, paramètre ou sous-module modifié.
 
-```bash
-cd ~/Microduck
-export DUCK_SIM_STATE="$HOME/.cache/kwipi-visual"
-sha256sum "$DUCK_SIM_STATE/policies/current/"{velstand,alpha_walking,alpha_stand}.onnx
-```
+| Fichier | SHA-256 local reçu | Comparaison [P0h/v8](mujoco-p0h-policy-slot-lineage-2026-10-25.md) |
+| --- | --- | --- |
+| `velstand.onnx` | `2fc7f8ee6acd7d0d3f66a99927b5d5a56589aeed02ec714de329b252d5ccf492` | Identique |
+| `alpha_walking.onnx` | `e36332d383997d51401897734cd3e79cf5038406feddb18b4d57ecfb141daa6c` | Identique |
+| `alpha_stand.onnx` | `1569268713e40deea795dd2922dba50d3621e15a872855408b6b1b125b1c094b` | Identique |
 
-Comparer aux [trois SHA-256 de l'audit P0h](mujoco-p0h-policy-slot-lineage-2026-10-25.md) sur le bundle v8 ; une empreinte différente exige une analyse de provenance, **pas** un remplacement automatique. Le `robotctl monitor` a déjà été observé, inutile de le redemander sans objectif plus précis. Ne pas lancer d'autre `drive`, `policy load`, entraînement, modification OEM ou réglage de moteur avant d'avoir terminé la comparaison documentaire de base et défini une mesure A/B contrôlée.
+**Portée de la preuve :** les fichiers locaux sont bit à bit identiques à ceux déjà audités par P0h dans le bundle déclaré v8 ; une corruption ou divergence de contenu de ces trois fichiers par rapport à cette référence n'est pas observée. La source/manifeste v8 ne constitue pas une signature du checkpoint d'entraînement. Cette comparaison ne prouve ni le chemin effectivement chargé par `robotd` à chaque tick, ni la justesse des entrées/sorties ONNX en boucle fermée, ni la démarche.
+
+**Lecture des sources constructeur épinglées, sans moteur :**
+- [`robotd-params/src/lib.rs`](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/robotd-params/src/lib.rs) : par défaut `walk=velstand.onnx`, pas de `stand` distinct ; [`scripts/duck-sim`](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/scripts/duck-sim) : paire alpha explicitement configurée. La trace opérateur active annonce `walk` mais pas un SHA de session à chaque tick.
+- [`robotd/src/control.rs`](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/robotd/src/control.rs) : observation, inférence, conversion des 14 actions en cibles de position, échelle et filtres ; l'étape seule ne prouve pas le suivi des cibles par la physique.
+- [`mjlab_microduck.sim.body_server`](https://github.com/pollen-robotics/microduck_rl/blob/b02fdea4902c2b93b7d34a83a6f05da4ececb7d3/src/mjlab_microduck/sim/body_server.py) : `set_targets` écrit dans `data.ctrl` des actionneurs MJCF, `read` renvoie positions/vitesses/tronc mais pas cibles ni contacts. [`infer_policy.py`](https://github.com/pollen-robotics/microduck_rl/blob/b02fdea4902c2b93b7d34a83a6f05da4ececb7d3/scripts/infer_policy.py) emploie par défaut le contrôleur BAM, non interchangeable avec `duck-sim` sans mesure.
+- `robotctl monitor` sait afficher les angles commandés/mesurés par `robotd` ; la seule capture antérieure communiquée était **au repos**. Les 32 observations de `sim_joint_trace` pendant la commande ne comportent **ni cibles ni contacts**. On ne peut donc pas départager sorties ONNX trop faibles, filtres/échelles, suivi des actionneurs ou glissement/contact.
+
+**Décision / étape suivante :** réutiliser P0h, `robotctl monitor`, `sim_joint_trace` et les journaux OEM existants. Examiner les configurations et traces disponibles **en lecture seule**. Si la capture des cibles pendant mouvement exige un nouveau run, concevoir d'abord un protocole séparé avec hypothèses, témoin de durée comparable, critères de stop, synchronisation et contrôle de versions ; ne pas lancer un `drive`, modifier `policy load`, réentraîner, toucher aux moteurs ou attribuer une récompense maintenant. Aucun correctif OEM ni nouveau pilote n'est justifié à ce stade.
 
 Le `robotctl version` local peut afficher `rev unknown` (build non CI), et `installed daemon none` (absence de release installée sur ce PC) : ces chaînes **ne prouvent pas** un défaut des démons vivants ; consulter `health` et l'environnement réel.
 
