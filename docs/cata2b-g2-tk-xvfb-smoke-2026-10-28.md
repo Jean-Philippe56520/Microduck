@@ -1,6 +1,6 @@
 # Cat-A2b-G2 — essai graphique Tk réel sous Xvfb, sans média privé
 
-**28 octobre 2026. PR candidate ; CI à confirmer.** Réutilise l'éditeur graphique Cat-A2b-G #120 et le validateur des revues Cat-A2b-R #118. Aucun capteur, modèle, SQLite, Qwen, réseau privé, sous-module OEM ou moteur n'est impliqué.
+**28 octobre 2026. [PR #122](https://github.com/Jean-Philippe56520/Microduck/pull/122), [CI #40718960461](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40718960461) réussie : 1 571 tests Python (5 ignorés) + 1 test graphique réel Tk/Xvfb. Statut de fusion à vérifier.** Réutilise l'éditeur graphique Cat-A2b-G #120 et le validateur des revues Cat-A2b-R #118. Aucun capteur, modèle, SQLite, Qwen, réseau privé, sous-module OEM ou moteur n'est impliqué.
 
 ## Audit préalable et critère de preuve
 
@@ -36,6 +36,8 @@ Le test fabrique deux JPEG 80×120, dont le premier possède une fausse étiquet
 
 ## Limites et suite
 
-Tests à confirmer par CI ; pas de GUI Windows/WSLg validée, aucun nouveau site, aucune contre-annotation indépendante, aucune mesure caméra à 20–30 cm, aucun gain cognitif C3-B et aucune preuve robot. Avant tout portage : exécuter l'audit OEM et les budgets RK3566 (RSS, CPU/NPU, disque/WAL, thermique, batterie, 50 Hz). La porte Cat-A2b #78 reste ouverte et exige des données réellement indépendantes.
+Tests confirmés dans le Linux CI virtuel ; pas de GUI Windows/WSLg validée, aucun nouveau site, aucune contre-annotation indépendante, aucune mesure caméra à 20–30 cm, aucun gain cognitif C3-B et aucune preuve robot. Avant tout portage : exécuter l'audit OEM et les budgets RK3566 (RSS, CPU/NPU, disque/WAL, thermique, batterie, 50 Hz). La porte Cat-A2b #78 reste ouverte et exige des données réellement indépendantes.
 
 Références : docs/plan-action.md, docs/cata2b-local-blind-editor-2026-10-28.md, docs/hardware-feasibility-audit-2026-10-25.md et docs/community-reference-registry-2026-10-26.md.
+
+**Premier essai rouge, puis correction du test :** les événements synthétiques étaient mal synchronisés avec le dispatch Tk. Le scénario vérifie désormais le Canvas réellement affiché, le passage press/drag/release et les événements immédiats. **La fonction de l'éditeur n'a pas été modifiée** pendant cette correction ; le run #40718960461 a ensuite validé le parcours graphique complet.
