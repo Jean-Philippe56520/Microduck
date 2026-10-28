@@ -49,6 +49,10 @@ def compare_decisions(scene: Scene, memory: ExperienceMemory) -> dict:
     """
     if scene.environment != "simulator" or scene.object_id is not None or scene.person_visible:
         raise SimE1Error("SIM-E1 needs the object-free simulated scene")
+    if (scene.perception_valid is not True or scene.safe_area is not True
+            or scene.floor_clear is not True or scene.battery_pct <= 25
+            or scene.obstacle_m is None or scene.obstacle_m < .35):
+        raise SimE1Error("SIM-E1 refuses stale or unsafe post-trial telemetry")
     with_history = AutonomyBrain(memory).choose(scene).intention
     no_history = AutonomyBrain(_NoSimulatorPreference()).choose(scene).intention
     return {
@@ -70,7 +74,9 @@ def validate_experience(result: WalkTrialResult, memory: ExperienceMemory,
             or result.trials_in_memory != 1
             or result.outcome not in OUTCOMES
             or not math.isclose(result.requested_speed_mps, WALK_SPEED_MPS)
-            or result.preference_before != 0):
+            or result.preference_before != 0
+            or not isinstance(result.policy_diagnostics, dict)
+            or result.policy_diagnostics.get("policy_samples") != WALK_TICKS):
         raise SimE1Error("J2e evidence or fresh-database contract violated")
     if (not isinstance(decisions, dict)
             or decisions.get("same_scene") is not True
