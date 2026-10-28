@@ -97,9 +97,28 @@ class TkVirtualDisplaySmoke(unittest.TestCase):
                     # BlindAnnotationSession API already covered by unit tests.
                     comboboxes[0].set("cat")
                     comboboxes[1].set("partial")
-                    canvas.event_generate("<ButtonPress-1>", x=40, y=60)
-                    canvas.event_generate("<B1-Motion>", x=120, y=180)
-                    canvas.event_generate("<ButtonRelease-1>", x=120, y=180)
+                    window.update_idletasks()
+                    self.assertTrue(canvas.winfo_ismapped())
+                    self.assertTrue(canvas.bind("<ButtonPress-1>"))
+                    hits = []
+                    for event_name, value in (
+                        ("<ButtonPress-1>", "press"),
+                        ("<B1-Motion>", "drag"),
+                        ("<ButtonRelease-1>", "release"),
+                    ):
+                        canvas.bind(
+                            event_name,
+                            lambda event, label=value: hits.append(label),
+                            add="+",
+                        )
+                    for event_name, x, y in (
+                        ("<ButtonPress-1>", 40, 60),
+                        ("<B1-Motion>", 120, 180),
+                        ("<ButtonRelease-1>", 120, 180),
+                    ):
+                        canvas.event_generate(event_name, x=x, y=y, when="now")
+                        window.update_idletasks()
+                    self.assertEqual(["press", "drag", "release"], hits)
                     self.assertEqual(
                         [{
                             "category": "cat",
