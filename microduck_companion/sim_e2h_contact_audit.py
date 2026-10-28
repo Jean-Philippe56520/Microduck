@@ -129,8 +129,27 @@ def summarize_support(trace_path: Path, report_path: Path) -> dict:
     dx, dy = last[0]-first[0], last[1]-first[1]
     observed = math.hypot(dx, dy)
     reference = _number(report.get("net_xy_displacement_m"), "ground-truth translation")
-    if abs(observed - reference) > MAX_SOLVER_POSE_DELTA_M:
+    ref_dx = _number(report.get("forward_x_m"), "ground-truth forward")
+    ref_dy = _number(report.get("lateral_y_m"), "ground-truth lateral")
+    if (abs(observed - reference) > MAX_SOLVER_POSE_DELTA_M
+            or abs(dx - ref_dx) > MAX_SOLVER_POSE_DELTA_M
+            or abs(dy - ref_dy) > MAX_SOLVER_POSE_DELTA_M):
         raise GroundTruthError("independent solver displacement disagrees with E2G")
+    foot_travel = {}
+    for side, points in sites.items():
+        path_xy = sum(
+            math.hypot(b[0]-a[0], b[1]-a[1])
+            for a, b in zip(points, points[1:])
+        )
+        foot_travel[side] = {
+            "site_world_xy_path_m": path_xy,
+            "site_world_xy_net_m": math.hypot(
+                points[-1][0]-points[0][0], points[-1][1]-points[0][1]
+            ),
+            "site_z_min_max_m": [min(p[2] for p in points),
+                                 max(p[2] for p in points)],
+            "meaning": "cached MuJoCo foot site, NOT contact-patch slip",
+        }
     capture_us = sorted(_number(f["capture_us"], "tap capture duration") for f in middle)
     p95 = capture_us[math.ceil(.95*len(capture_us))-1]
     return {
@@ -152,6 +171,9 @@ def summarize_support(trace_path: Path, report_path: Path) -> dict:
             [min(shares), max(shares)] if shares else None
         ),
         "trunk_solver_net_xy_m": observed,
+        "trunk_solver_delta_x_m": dx,
+        "trunk_solver_delta_y_m": dy,
+        "foot_site_movement_not_slip": foot_travel,
         "trunk_e2g_reported_net_xy_m": reference,
         "solver_minus_e2g_distance_m": observed-reference,
         "tap_capture_p95_us": p95,
