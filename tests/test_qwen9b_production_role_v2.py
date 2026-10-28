@@ -70,8 +70,11 @@ class V2RoleTests(unittest.TestCase):
         self.assertFalse(request["think"])
         self.assertNotIn("format", request)
         self.assertEqual(request["options"]["num_ctx"], 4096)
-        self.assertEqual(request["options"]["num_predict"], 180)
+        self.assertEqual(request["options"]["num_predict"], 320)
         self.assertEqual(request["keep_alive"], "0")
+        self.assertEqual(json.loads(make_request(img()))["options"]["num_predict"], 180)
+        self.assertEqual(request["options"]["num_ctx"], 4096)
+        self.assertNotIn("format", request)
 
     def test_unknown_role_rejected_before_network(self):
         with patch("microduck_companion.qwen9b_role_preview.http.client.HTTPConnection") as network:
