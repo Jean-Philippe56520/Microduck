@@ -248,7 +248,10 @@ def run_gui(session: BlindAnnotationSession) -> None:
             "local GUI requires Tk and Pillow on Ubuntu/WSL; no server used"
         ) from exc
 
-    root = tk.Tk()
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:
+        raise RuntimeError("a local graphical desktop (for example WSLg) is required") from exc
     root.title("Kwipi - contre-annotation privee (sans predictions)")
     root.geometry("1100x900")
     root.minsize(700, 570)
