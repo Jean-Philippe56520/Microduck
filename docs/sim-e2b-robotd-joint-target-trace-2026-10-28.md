@@ -125,3 +125,20 @@ Les cibles et positions proviennent de la **même trame `robot.state`** ; le sna
 **Statut :** l'option de diagnostic est **codée, testée CI sur fixtures et essayée avec succès en mode passif sur WSLg/MuJoCo OEM**. Aucun test de marche nouveau, aucune preuve de locomotion ou de sécurité robot réelle. [Journal de preuve #101](https://github.com/Jean-Philippe56520/Microduck/issues/101#issuecomment-6467541251).
 
 **Suite avant nouvel essai actif :** lire uniquement le JSON détaillé **local** déjà acquis, en agrégeant la moyenne **signée** et l'étendue temporelle des écarts cible−mesure, les labels `policy` et `limited_by`. Ne pas poster le JSON intégral ni modifier le modèle, les gains ou le contrôleur. Comparer les résultats à la configuration `chosen_actuator` avant de formuler une expérience A/B contrôlée.
+
+## 6. Analyse signée de la même capture au repos, sans nouvel essai
+
+**Source :** calcul local de l'opérateur sur le JSON de huit trames déjà collectées à 4 Hz, le 28/10/2026 ([preuve dans #101](https://github.com/Jean-Philippe56520/Microduck/issues/101#issuecomment-6467856772)). Les huit labels sont `stand`, les huit listes de limitation contiennent `deadman`. L'absence de commande de marche explique l'état de repos et ne contredit pas l'ancien essai `walk` sans limitation.
+
+| Articulation | Moyenne signée cible − mesure (°) | Min (°) | Max (°) | Étendue (°) |
+| --- | ---: | ---: | ---: | ---: |
+| `left_hip_roll` | −11,64 | −12,39 | −10,94 | 1,45 |
+| `right_hip_roll` | +11,26 | +10,67 | +11,90 | 1,23 |
+| `left_knee` | −10,83 | −11,74 | −10,37 | 1,37 |
+| `right_knee` | +10,10 | +9,54 | +10,81 | 1,27 |
+
+Les quatre écarts ont un **signe constant pendant ce bref relevé** (environ 1,75 s) et des signes opposés pour les jambes gauche et droite, dont la géométrie est en miroir. Ceci caractérise un offset quasi statique **sur cette courte fenêtre**, pas un biais à long terme, un défaut de conversion, une saturation ou une cause de marche démontrée.
+
+**Relecture OEM épinglée (lecture seule) :** `robotd-params/src/lib.rs` définit par défaut `gain=200`, `standing_gain_ratio=0.8`, `standing_action_scale=1.0`; `robotd/src/control.rs` applique normalement un gain debout nominal de 160 si cette configuration est effectivement active. `microduck_rl/src/mjlab_microduck/sim/body_server.py` multiplie les gains de position MJCF par `kp/200`, et `robot_groundcontact.xml` donne à `chosen_actuator` un `kp` de 0.55 et une limite de force ±0.96. Ces mécanismes rendent possible un écart d'asservissement sous charge ; **le JSON stocké ne contient pas le gain actif** et ne relève ni `data.ctrl`, ni contacts, ni couple réel. Aucun correctif constructeur n'est donc justifié sur cette seule preuve.
+
+**Réutiliser / adapter / créer :** réutiliser `sim_joint_trace`, `robotctl` et la configuration constructeur inchangés ; documenter seulement les statistiques locales, sans code ou second pilote. Le prochain essai potentiellement discriminant serait une paire témoin `stand` / commande `walk` à la même scène, au même intervalle et avec cibles + positions synchronisées, un seul départ OEM borné, contrôle des limites et `robot.stop` explicite confirmé. **Cet essai actif reste à autoriser distinctement après un protocole de sécurité complet** ; aucune nouvelle marche, installation, modification de policy, paramètre, moteur, mémoire ni sous-module par ce lot.
