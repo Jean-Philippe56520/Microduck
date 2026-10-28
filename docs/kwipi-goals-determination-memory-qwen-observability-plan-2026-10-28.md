@@ -1,5 +1,8 @@
 # Kwipi — feuille de route des objectifs, de la détermination, du rappel Qwen et de l'observabilité
 
+**QW-GOAL-0 — 28/10/2026, correction du rôle de Qwen, DOCUMENTATION SEULE :** [objectif motivé → question utile → conseil 9B PC facultatif](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md). Le besoin d'information, l'objectif inachevé, la détermination, la curiosité, le jeu, la sociabilité, la prudence et l'exploration peuvent rendre une consultation utile ; **ne pas instaurer une rareté arbitraire**. Une question véritablement différente peut justifier une reconsultation sans nouvelle image. Les quotas actuels F5-C restent dans le code tant que QW-2 ne les a pas adaptés et mesurés ; protections techniques et OEM inchangées.
+
+
 **MEM-2A — premier sous-lot (28/10/2026, [PR #147](https://github.com/Jean-Philippe56520/Microduck/pull/147) fusionnée (`67d6db4b`), [CI Python #40780346663](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40780346663) et [N1/N5/N6 #40780346693](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40780346693) réussies) :** [lecture seule bornée C1/C2 + MEM-1](mem2a-readonly-context-recall-2026-10-28.md) avec compteur F0 séparé des catégories fictives et sans identité d'instance prouvée. L'étape complète MEM-2 (continuité multi-vues indépendante), DET-2 et QW-1/QW-2 restent à développer. Aucune seconde SQLite, Qwen ni commande moteur.
 
 
@@ -81,7 +84,8 @@ La consultation différée devrait proposer un **export manuel local**, expurgé
 | 2 | **MEM-1** | États d'objectifs fictifs persistants et liens vers EX1, sans duplication d'épisodes ; tests réouverture/correction | codé/testé PC-fixtures ; [PR #142](https://github.com/Jean-Philippe56520/Microduck/pull/142) fusionnée |
 | 3a | **DET-1** | Biais de détermination optionnel sur candidats F2 déjà sûrs, uniquement pour objectif fictif non tenté ; tests A/B | codé/testé PC-fixtures ; [PR #143](https://github.com/Jean-Philippe56520/Microduck/pull/143) fusionnée |
 | 3b | **MEM-2** | MEM-2A lecteur en lecture seule livré ; MEM-2B continuité et nouveauté multi-vues encore non prouvées | MEM-2A #147 fusionnée/testée PC-fixtures ; MEM-2B prévu |
-| 4a | **QW-1** | Qwen3.5 9B PC reçoit quelques souvenirs génériques expurgés, strict JSON, consentement/quotas/timeout, aucune écriture ; A/B réel sans/avec mémoire | prévu |
+| 4a | **QW-1** | Qwen3.5 9B PC reçoit un rappel expurgé et **une question utile à un objectif motivé** ; JSON strict, consentement, contrôle de charge F5-C actuel, timeout, aucune écriture ; A/B vrai 9B avec/sans mémoire | prévu |
+| 4a+ | **QW-2** | Reconsultation fondée sur valeur informationnelle et stratégies/questions nouvelles **même sans nouvelle image**, adaptation des bornes arbitraires F5-C uniquement après mesure PC, anti-boucle, consentement et repli | prévu (aucune limite changée) |
 | 4b | **PER-1** | Humeur descriptive avec inertie, coût d'engagement, repos ; aucun double score/ordonnanceur | prévu |
 | 4c | **OBS-2** | Diagnostic direct optionnel + export différé, OEM read-only, événements incomplets signalés ; charge mesurée | prévu |
 | 5 | **EXP-1** | Provenance vraie action début/fin/effet, sinon `indeterminate` ; aucun crédit moteur non prouvé | prévu, bloqué sur capacité de preuve OEM/robot |
