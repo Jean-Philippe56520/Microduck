@@ -22,7 +22,7 @@ from microduck_companion.sim_ipc import DepthReading, HealthReading, StateReadin
 from microduck_companion.sim_motion import SimMotionError
 from microduck_companion.sim_walk_demo import main
 from microduck_companion.sim_walk_trial import (
-    BASELINE_LIMIT_M, WALK_SPEED_MPS, WALK_TICKS, run_walk_trial,
+    BASELINE_LIMIT_M, WALK_SPEED_MPS, ONSET_PROBE_SPEED_MPS, WALK_TICKS, run_walk_trial,
 )
 
 
@@ -249,7 +249,8 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
         return robot
 
     def invoke(self, *, poses=None, readings=None, sensor=None,
-               on_policy_sample=None, policy_stream_cls=FakePolicyStream):
+               on_policy_sample=None, policy_stream_cls=FakePolicyStream,
+               speed_mps=WALK_SPEED_MPS):
         if poses is None:
             poses = [ground(1 + i*.1, .02 + i*.001) for i in range(WALK_TICKS+4)]
         if readings is None:
@@ -266,7 +267,8 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
                     policy_stream_cls),
               patch("microduck_companion.sim_walk_trial.time.sleep")):
             return run_walk_trial(self.root, "/fake/rl", self.db,
-                                  on_policy_sample=on_policy_sample)
+                                  on_policy_sample=on_policy_sample,
+                                  speed_mps=speed_mps)
 
     def test_12_bounded_moves_then_stop_and_memory(self):
         robot = self.start()
@@ -291,6 +293,31 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
         mem = ExperienceMemory(self.db)
         self.addCleanup(mem.close)
         self.assertEqual(1, len(mem.simulated_motion_history()))
+
+    def test_one_030_probe_reuses_same_bounded_stop_protection(self):
+        robot = self.start()
+        result = self.invoke(speed_mps=ONSET_PROBE_SPEED_MPS)
+        self.assertEqual(WALK_TICKS, result.commands_sent)
+        self.assertEqual(ONSET_PROBE_SPEED_MPS, result.requested_speed_mps)
+        self.assertTrue(result.stop_confirmed)
+        self.assertEqual(WALK_TICKS + 1, len(robot.requested))
+        self.assertEqual("robot.stop", robot.requested[-1]["method"])
+        self.assertTrue(all(
+            p["method"] == "robot.move" and
+            p["params"] == {"vx": 0.30, "vy": 0.0, "vyaw": 0.0}
+            for p in robot.requested[:-1]
+        ))
+
+    def test_only_exact_012_or_030_and_official_port_allowed_before_any_io(self):
+        with patch("microduck_companion.sim_walk_trial.read_simulator_telemetry",
+                   side_effect=AssertionError("must not read")):
+            for speed in (0.0, 0.15, 0.26, 0.29, 0.31,
+                          -0.30, float("nan"), True, "0.30", 0):
+                with self.subTest(speed=speed), self.assertRaises(SimMotionError):
+                    self.invoke(speed_mps=speed)
+            with self.assertRaises(SimMotionError):
+                run_walk_trial(self.root, "/fake/rl", self.db, port=17802)
+        self.assertFalse(self.db.exists())
 
     def test_baseline_drift_refuses_before_motor_connect(self):
         poses = [ground(1., .02), ground(1.3, .02+BASELINE_LIMIT_M+.001)]
