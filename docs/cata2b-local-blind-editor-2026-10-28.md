@@ -1,5 +1,7 @@
 # Cat-A2b-G — éditeur de contre-annotations locales en aveugle
 
+**Addendum Cat-A2b-G2 (28/10/2026, [PR #122](https://github.com/Jean-Philippe56520/Microduck/pull/122), [CI](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40718960461)) :** l'éditeur a maintenant été exercé sous un vrai Tk Linux/Xvfb avec des images **synthétiques**, y compris le drag Canvas et l'export relu par le parseur #118. Ne pas confondre ce smoke graphique avec une validation WSLg interactive, une annotation réellement aveugle ou une vérité terrain. [Preuve et limites](cata2b-g2-tk-xvfb-smoke-2026-10-28.md).
+
 28 octobre 2026. **Code fusionné dans main au commit e98295a9 via [PR #120 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/120), [CI finale #40713963667](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40713963667) réussie : 1 571 tests, 5 ignorés, zéro échec. Aucune contre-annotation réelle effectuée, aucune GUI WSLg validée.**
 
 Ce lot fournit une interface manuelle pour générer les deux fichiers de revue attendus par le comparateur Cat-A2b-R #118. Il ne crée pas une vérité terrain indépendante. Les 29 photos privées, 50 boîtes V3 et 12 incertitudes déjà relevées restent des explorations : les revoir après avoir vu YOLOX ne serait pas une contre-annotation aveugle.
