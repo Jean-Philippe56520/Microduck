@@ -1,5 +1,7 @@
 # Feuille de route — Microduck Companion
 
+**Plan objectifs/détermination/observabilité — 28/10/2026 (CADRAGE UNIQUEMENT) :** [feuille de route intégrée](kwipi-goals-determination-memory-qwen-observability-plan-2026-10-28.md) : OBS-1 journal non moteur puis MEM-1 objectifs persistants, DET-1 persévérance, MEM-2 rappel filtré, QW-1 Qwen 9B PC facultatif, PER-1 humeur cohérente, OBS-2 diagnostic direct/différé, EXP/E2E preuves et ablations ; PHY/AUT seulement après audit robot. Une SQLite, un F2, robotd seul moteur. Rien n'est livré ou validé robot par cette documentation.
+
 **CAM-OEM-2 (28/10/2026) — audit optique public sans JPEG :** [résultats et décision](cam-oem2-public-geometry-source-audit-2026-10-28.md), [script lecture seule](../scripts/cam_oem2_public_optics_audit.py), 7 tests locaux. CID-SIMS 12/26 cm mais D455 HFOV calculé **79,242°** ≠ IMX219 familial **62°** ; MuJoCo **72,734°**. TiROD `Low` = lumière, seul `chair` est une classe directement correspondante, hauteur et droits images inconnus. **Aucun benchmark comparatif de Kwipi** : Cat-A2b #78, C3-B et mesures sur robot non résolus.
 
 
