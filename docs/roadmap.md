@@ -1,5 +1,7 @@
 # Feuille de route — Microduck Companion
 
+**B / F5 v3 — correctif de budget candidat rôle v2 (28/10/2026) :** essai réel opérateur sur PC `generation_truncated` **180 tokens / 27,422 s** ; code adapté uniquement pour `num_predict=320` en v2, v1=180 inchangé. Garder le rejet des résultats partiels, sans mémoire, moteurs ou retry ; évaluer sur une nouvelle photo autorisée avant d'annoncer la pertinence du conseiller. Tester la CI et les ressources PC ; aucun déploiement RK3566 ni preuve d'autonomie.
+
 **B / F5 v3 — sens et action possible dans le corps OEM (28/10/2026).** Nouvelle version `kwipi-qwen9b-role-v2-candidate` distincte du rôle v1 : propose jusqu'à deux **expériences conditionnelles** (geste OEM inventorié, conséquences possibles, risques et contrôle d'effet), ou observation/évitement/inaction. Référentiel explicite OEM : marche, assis/debout, coup de pied, `ground_pick`, `roulade` et animations/sons/bec selon inventaire ; **ne pas baptiser `roulade` « salto » ni inventer de contrôle de bouche ou geste non disponible**. Pistes motrices seulement si disponibles/autorisees après inventaire sur robot et contrôle robotd, hors PC. Portes futures : Qwen 9B réel sur photo inédite + politique chargée en contexte simulé, vérification des propositions non disponibles/risquées, traduction bornée de suggestions vers intentions sûres, puis test robot reçu et action/effet indépendamment vérifiés. Aucun test robot ni apprentissage livré. [Contrat](kwipi-qwen9b-role-contract-v2-2026-10-28.md).
 
 
