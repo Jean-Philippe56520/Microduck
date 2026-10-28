@@ -1,5 +1,8 @@
 # PD0 — 16 comportements, personnalité cohérente et consultations Qwen contextuelles
 
+**Addendum QW-GOAL-0 — 28/10/2026, CADRAGE uniquement :** [politique Qwen motivée par objectifs](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md). La finalité n'est **pas** de limiter arbitrairement les appels, mais d'offrir à Kwipi une aide sémantique quand elle peut faire progresser un objectif lié à curiosité/détermination/exploration/jeu/sociabilité/prudence. Une nouvelle question stratégique peut être utile sans nouvelle image ; la motivation seule ne déclenche rien. Les seuils fixes F5-C cités plus bas décrivent le **prototype actuel**, à réviser séparément avec contrôle de charge, opt-in et anti-boucle. PD3 ne transmet actuellement aucune requête, ce plan ne modifie pas le code ni les protections OEM.
+
+
 **Date : 27 octobre 2026. Statut : PLAN D'INTÉGRATION UNIQUEMENT.** Aucun nouveau mouvement, modèle, état actif, consultation Qwen, micro/caméra, appel réseau ni apprentissage causal n'est livré par ce document. Microduck physique absent : **aucune validation embarquée**. Le [plan directeur](plan-action.md) fait foi ; **Cat-A2b, la perception sur vraies prises réellement basses, conserve sa priorité**. PD0 prépare les lots logiciels sans promettre le portage des 16 états.
 
 ## 1. Finalité et vocabulaire
