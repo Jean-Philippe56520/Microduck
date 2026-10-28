@@ -4,8 +4,10 @@ on:
     paths:
       - 'scripts/n1_inventory.py'
       - 'scripts/n1_public_slice.py'
+      - 'scripts/n5_host_wheel.py'
       - 'tests/test_n1_inventory.py'
       - 'tests/test_n1_public_slice.py'
+      - 'tests/test_n5_host_wheel.py'
       - '.github/workflows/n1-wheel-inventory.yml'
       - 'pyproject.toml'
   workflow_dispatch:
@@ -44,3 +46,70 @@ jobs:
             ${{ runner.temp }}/n1-inventory.json
             ${{ runner.temp }}/n1-public-api.json
             ${{ runner.temp }}/n1-public-api.zip
+      - name: N5 allowlist and fail-closed fixture tests
+        run: python -m unittest discover -s tests -p 'test_n5_host_wheel.py' -v
+      - name: Stage reviewed 19-file public API outside the source checkout
+        run: |
+          python -m scripts.n5_host_wheel stage --stage-dir "$RUNNER_TEMP/n5-stage" --report "$RUNNER_TEMP/n5-stage.json"
+      - name: Build a separate REAL host-only wheel (not the normal package)
+        run: |
+          mkdir -p "$RUNNER_TEMP/n5-wheels"
+          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/n5-wheels" "$RUNNER_TEMP/n5-stage"
+      - name: Compare both real wheels, source bytes, METADATA and RECORD
+        run: |
+          python -m scripts.n5_host_wheel inspect \
+            --wheel "$(find "$RUNNER_TEMP/n5-wheels" -maxdepth 1 -name '*.whl' -print -quit)" \
+            --normal-wheel "$(find "$RUNNER_TEMP/n1-wheel" -maxdepth 1 -name '*.whl' -print -quit)" \
+            --report "$RUNNER_TEMP/n5-wheel-inspection.json"
+      - name: Isolated pip-install smoke of candidate wheel on HOST only
+        run: |
+          python -m pip install --disable-pip-version-check --no-index --no-deps --target "$RUNNER_TEMP/n5-installed" "$RUNNER_TEMP"/n5-wheels/*.whl
+          python -I -B - "$RUNNER_TEMP/n5-installed" <<'PY'
+          import importlib.util
+          from pathlib import Path
+          import sys
+          import pkgutil
+          target=Path(sys.argv[1]).resolve()
+          sys.path.insert(0, str(target))
+          import microduck_companion as m
+          assert Path(m.__file__).resolve().is_relative_to(target)
+          assert len(list(pkgutil.iter_modules(m.__path__))) == 18
+          assert not any(k.startswith("microduck_companion.mock_") for k in sys.modules)
+          from microduck_companion.passive_sources import PassiveRead
+          from microduck_companion.perception import PerceptionSnapshot
+          db=m.ExperienceMemory(":memory:")
+          try:
+              journal=m.PassiveObservationJournal(db)
+              brain=m.AutonomyBrain(db)
+              read=PassiveRead("unavailable_or_invalid", PerceptionSnapshot("mock", (), 1.0))
+              intent=brain.propose_balanced_passive(
+                  read, journal=journal, now_monotonic_s=1.0, now_wall_epoch_s=100.0)
+              assert (intent.intention,intent.executed,intent.motor_commands_issued)==("idle",False,0)
+              portrait=brain.describe_behavior(
+                  m.PassiveIntent("idle","no_current_observation"),
+                  journal=journal,now_wall_epoch_s=100.0)
+              assert (portrait.state,portrait.executed,portrait.motor_commands_issued)==("Chill",False,0)
+              assert not any(k.startswith("microduck_companion.mock_") for k in sys.modules)
+              from microduck_companion.mock_social_cues import MockSocialPlan
+              try:
+                  MockSocialPlan("silence","mock_scenario",executed=True)
+                  raise AssertionError("invalid social plan accepted")
+              except ValueError:
+                  pass
+              allowed=MockSocialPlan("silence","mock_scenario")
+              assert brain.describe_behavior(
+                  allowed,journal=journal,now_wall_epoch_s=100.0).state=="Chill"
+          finally:
+              db.close()
+          for banned in ("sim_motion","sim_walk_trial","mock_cycle_demo",
+                         "qwen9b_advisor_v2","visual_photo_baseline"):
+              assert importlib.util.find_spec("microduck_companion."+banned) is None, banned
+          print("N5 candidate wheel HOST import smoke green; NO robot")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: n5-host-only-wheel-NOT-FOR-ROBOT
+          path: |
+            ${{ runner.temp }}/n5-stage.json
+            ${{ runner.temp }}/n5-wheel-inspection.json
+            ${{ runner.temp }}/n5-wheels/*.whl
