@@ -1,5 +1,15 @@
 # Point de reprise — Microduck Companion / Kwipi — 28 octobre 2026
 
+
+## Actualisation prioritaire — MEM-2A fusionné le 28 octobre 2026
+
+**Source de vérité vérifiée :** [`main@67d6db4b4b8b97368d5d3b022ecb942f8b05565d`](https://github.com/Jean-Philippe56520/Microduck/commit/67d6db4b4b8b97368d5d3b022ecb942f8b05565d) après [PR #147 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/147). [Python compagnon #40780346663](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40780346663) et [inventaire N1/N5/N6 #40780346693](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40780346693) verts **sur la tête de PR**, après revue de fusion ; audit SQLite N3/N4 également vert. [CI Python post-fusion sur `main` #40780620386](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40780620386) **réussie**. Revalider `main` et les autres CI à chaque reprise.
+
+**Livré — MEM-2A :** `microduck_companion/memory_recall.py` restitue de manière bornée et sans écriture le compteur F0, l'historique C1/C2 avec corrections et les objectifs MEM-1 fictifs optionnels. Les 100 appels sous une même clé ne prouvent pas 100 rencontres indépendantes ; les rapprochements d'instances M1-B restent **non validés**. Aucune ouverture de seconde SQLite, inférence visuelle, moteur ni Qwen dans ce lot.
+
+**Prochaine priorité :** MEM-2B, continuité et nouveauté multi-vues mesurées **sans identité d'instance supposée**, avec Cat-A2b/C3-B en parallèle ; DET-2 seulement après preuve d'observation ou de stratégie nouvelle ; QW-1/QW-2 ensuite pour Qwen3.5 9B **facultatif PC** avec rappel expurgé, consentement, quotas, validation JSON et absence de commande. Robot absent ; aucune validation RAM/thermie/50 Hz physique ni effet causal OEM. Les paragraphes historiques ci-dessous décrivent le checkpoint **antérieur** à #147 et ne doivent pas être traités comme statut courant.
+
+
 ## Reprise prioritaire — état vérifié le 28 octobre 2026, après les PR #140–#144
 
 **Source de vérité :** [`main`](https://github.com/Jean-Philippe56520/Microduck/tree/main) vérifié au commit `bad05cdfcc72c84fea74988a9950e225f864ebf8` ; [CI Python post-fusion #144](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40778153516) **réussie**. Aucune PR ouverte dans le dépôt Companion au moment du contrôle. Cette photographie est datée : **relire GitHub avant chaque reprise**, ne pas supposer que ce SHA reste le dernier.
