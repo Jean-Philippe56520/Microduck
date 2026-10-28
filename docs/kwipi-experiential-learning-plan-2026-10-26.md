@@ -1,5 +1,8 @@
 # Kwipi — plan d'apprentissage autonome par l'expérience (EX)
 
+**QW-PERF-1 — prérequis de performance (28/10/2026, candidat hôte, CI à confirmer) :** [banc de mesure synthétique 9B](qw-perf1-pc-synthetic-benchmark-2026-10-28.md) sans scènes privées, souvenirs réels, action OEM, SQLite ni boucle automatique. Mesurer la durée et les coûts de réponses v2 et structurées compactes avant les connexions QW-1/QW-2 et l'usage contextuel selon motivations. L'ajout de mémoire **fictive** dans le banc n'est pas un raccordement à `ExperienceMemory`. Expressions curieuses OEM disponibles en idle, posture interrogative ciblée QW-EXPR-1 non codée.
+
+
 **QW-GOAL-1 — clarification acceptée (28/10/2026 ; documentation seule) :** [architecture contexte → Qwen → recherches mémoire autorisées](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md#6-clarification-validée--cadence-contextuelle-et-questions-sans-llm-embarqué). Le nombre de rencontres est un exemple et **non un déclencheur** ; besoins, motivations/personnalité, risques et gain d'information déterminent la demande. Kwipi peut transmettre une question typée sans générer du texte libre ; Qwen peut solliciter une recherche historique via fonctions de lecture **bornées** de la SQLite unique, sans SQL libre, modification de souvenirs ou preuve motrice. À développer et tester dans QW-1/QW-2, aucun nouveau code par ce document.
 
 
