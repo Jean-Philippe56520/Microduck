@@ -79,6 +79,7 @@ def _report():
         },
         "sim_baseline_time_s": .3, "sim_after_stop_time_s": 1.6,
         "simulated_duration_s": 1.3, "net_xy_displacement_m": .095,
+        "forward_x_m": .095, "lateral_y_m": 0.,
     }
 
 
