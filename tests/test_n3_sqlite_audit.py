@@ -59,6 +59,32 @@ class N3SqliteInventoryTests(unittest.TestCase):
             ])
             self.assertEqual(report["destructive_sites"], [])
 
+    def test_existing_simulator_acceptance_reader_is_ro(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            package = example_source(root)
+            (package / "sim_x2c_acceptance.py").write_text(
+                "import sqlite3\n"
+                "def inspect(path):\n"
+                "    return sqlite3.connect(path + '?mode=ro', uri=True)\n",
+                encoding="utf-8")
+            report = scan_tree(root)
+            enforce_non_destructive_boundaries(report)
+            self.assertEqual(len([x for x in report["connection_sites"]
+                                  if x["mode"] == "read_only_uri"]), 2)
+
+    def test_other_readonly_connection_requires_review(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            package = example_source(root)
+            (package / "new_reader.py").write_text(
+                "import sqlite3\n"
+                "def inspect(path):\n"
+                "    return sqlite3.connect(path + '?mode=ro', uri=True)\n",
+                encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "new_reader.py"):
+                enforce_non_destructive_boundaries(scan_tree(root))
+
     def test_second_write_connection_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
