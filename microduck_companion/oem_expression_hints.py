@@ -14,7 +14,7 @@ import math
 from .behavior_personality import (
     BehaviorPortrait, DESCRIPTIVE_ONLY, _AFFECTS, _HABITS,
 )
-from .mock_social_cues import MockSocialContext
+from .social_context import MockSocialContext
 
 MAX_MOCK_CUE_AGE_S = 1.5
 MOCK_OEM_KINDS = frozenset({
