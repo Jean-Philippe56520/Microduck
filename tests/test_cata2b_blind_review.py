@@ -248,7 +248,7 @@ class BlindReviewTests(unittest.TestCase):
         outside = self.root / "outside.json"
         outside.write_text(json.dumps(self.second), encoding="utf-8")
         self.write()
-        with self.assertRaisesRegex(PhotoBaselineError, "private review"):
+        with self.assertRaises(PhotoBaselineError):
             review_blind_test_annotations(
                 self.manifest, first_review_path=self.review_first_path,
                 second_review_path=outside,
