@@ -107,6 +107,8 @@ def run_probe(state_dir: Path, robot_root: Path, rl_root: Path,
         "forward_x_m": trial.measured_forward_x_m,
         "lateral_y_m": trial.measured_lateral_y_m,
         "simulated_duration_s": trial.simulated_duration_s,
+        "sim_baseline_time_s": trial.sim_baseline_time_s,
+        "sim_after_stop_time_s": trial.sim_after_stop_time_s,
         "over_10mm_signal": candidate,
         "verdict": (
             "simulated_translation_above_10mm_not_gait"

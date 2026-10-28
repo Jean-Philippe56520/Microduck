@@ -55,6 +55,11 @@ class WalkTrialResult:
     trials_in_memory: int
     memory_source: str
     policy_diagnostics: dict
+    # Optional read-only MuJoCo clock bounds, for externally sampled solver data.
+    # These are post-baseline/pre-command and post-stop observations, not
+    # synchronized motor-action boundaries; timestamps cannot certify gait.
+    sim_baseline_time_s: float | None = None
+    sim_after_stop_time_s: float | None = None
 
 
 def _read_ground(state: Path, rl_root: Path, port: int) -> FlatGroundTruth:
@@ -259,6 +264,8 @@ def run_walk_trial(
             trials_in_memory=outcome.observed_trials,
             memory_source=outcome.source,
             policy_diagnostics=summarize_policy_samples(policy_samples),
+            sim_baseline_time_s=stable.sim_time_s,
+            sim_after_stop_time_s=after.sim_time_s,
         )
     finally:
         memory.close()

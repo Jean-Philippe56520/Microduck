@@ -86,14 +86,20 @@ if [ "${DUCK_SIM_SIM_E1:-NO}" = YES ]; then
     done
 fi
 
-# SIM-E2G must be mutually exclusive with every other motion experiment.
+# SIM-E2G/E2H must be mutually exclusive with every other motion experiment.
+# E2H is the single exception pairing P0d read-only tap with E2G only.
+if [ "${DUCK_SIM_E2H_CONTACT:-NO}" = YES ] && \
+   { [ "${DUCK_SIM_VX_ONSET:-NO}" != YES ] || \
+     [ "${DUCK_SIM_SOLVER_TRACE:-NO}" != YES ]; }; then
+    printf "SIM-E2H requires both E2G and original solver tap.\n" >&2
+    exit 2
+fi
 # Never permit an arbitrary local caller to combine J2e with the onset probe.
 if [ "${DUCK_SIM_VX_ONSET:-NO}" = YES ]; then
     for incompatible in "${DUCK_SIM_POLICY_PAIR:-NO}" \
                         "${DUCK_SIM_SHORT_MOVE:-NO}" \
                         "${DUCK_SIM_WALK_TRIAL:-NO}" \
                         "${DUCK_SIM_WALK_COMPARE:-NO}" \
-                        "${DUCK_SIM_SOLVER_TRACE:-NO}" \
                         "${DUCK_SIM_ACTUATOR_AUDIT:-NO}" \
                         "${DUCK_SIM_SIM_E1:-NO}" \
                         "${DUCK_SIM_X2C_ACCEPTANCE:-NO}"; do
@@ -142,7 +148,8 @@ esac
 # The startup hook applies solely to the EXACT official body_server process;
 # it writes snapshots to a bounded asynchronous queue after native mj_step.
 if [ "${DUCK_SIM_SOLVER_TRACE:-NO}" = YES ]; then
-    if [ "${DUCK_SIM_WALK_COMPARE:-NO}" != YES ]; then
+    if [ "${DUCK_SIM_WALK_COMPARE:-NO}" != YES ] && \
+       [ "${DUCK_SIM_E2H_CONTACT:-NO}" != YES ]; then
         printf 'P0d requires the verified single P0b trial.\n' >&2
         exit 2
     fi
@@ -295,8 +302,10 @@ if [ "${DUCK_SIM_WALK_COMPARE:-NO}" = YES ]; then
     fi
 fi
 # P0d: analyze the native post-mj_step contact/force/control stream ONLY
-# after the existing bounded trial returned and confirmed robot.stop.
-if [ "${DUCK_SIM_SOLVER_TRACE:-NO}" = YES ]; then
+# after the existing bounded P0b trial returned and confirmed robot.stop.
+# E2H uses its own E2G simulator-clock bracket, never P0b replay.
+if [ "${DUCK_SIM_SOLVER_TRACE:-NO}" = YES ] && \
+   [ "${DUCK_SIM_WALK_COMPARE:-NO}" = YES ]; then
     sleep 0.3 # allow the non-blocking diagnostic writer to drain
     python3 -m microduck_companion.sim_live_solver_analyze \
         --input "$DUCK_SIM_STATE/solver-tap.jsonl" \
@@ -413,6 +422,16 @@ if [ "${DUCK_SIM_VX_ONSET:-NO}" = YES ]; then
         --memory "$DUCK_SIM_STATE/sim-e2g-disposable.sqlite3" \
         --output "$DUCK_SIM_STATE/sim-e2g-report.json" \
         --enable-once
+fi
+
+# E2H: purely passive contact analysis AFTER the E2G stop is confirmed.
+# Original P0d tap already installed before OEM duck-sim boot; no extra motor.
+if [ "${DUCK_SIM_E2H_CONTACT:-NO}" = YES ]; then
+    sleep 0.5
+    python3 -m microduck_companion.sim_e2h_contact_audit \
+        --trace "$DUCK_SIM_STATE/solver-tap.jsonl" \
+        --e2g "$DUCK_SIM_STATE/sim-e2g-report.json" \
+        --output "$DUCK_SIM_STATE/sim-e2h-contact-report.json"
 fi
 
 printf 'Smoke test completed; official simulator is being stopped.\n'
