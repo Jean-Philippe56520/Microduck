@@ -404,11 +404,19 @@ def run_gui(session: BlindAnnotationSession) -> None:
     def confirm():
         sample = session.images[current]
         if not session.boxes(sample.sample_id):
-            if not messagebox.askyesno(
-                "Relecture sans cible",
-                "Aucune boite dessinee : confirmer l'absence de "
-                "toutes les categories cibles dans cette photo ?",
-            ):
+            if session.is_uncertain(sample.sample_id):
+                question = (
+                    "Aucune boite certaine : confirmer une image INDETERMINEE, "
+                    "sans affirmer l'absence de toutes les cibles ?"
+                )
+                title = "Image incertaine"
+            else:
+                question = (
+                    "Aucune boite dessinee : confirmer l'absence de "
+                    "toutes les categories cibles dans cette photo ?"
+                )
+                title = "Relecture sans cible"
+            if not messagebox.askyesno(title, question):
                 return
         session.confirm_image(sample.sample_id, all_targets_reviewed=True)
         if current + 1 < len(session.images):
