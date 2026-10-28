@@ -23,7 +23,6 @@ on:
       - feat/x2c-mujoco-passive-acceptance-20261027
       - feat/sim-e1-active-experience-20261028
       - feat/sim-e2g-one-speed-onset-probe-20261028
-      - feat/sim-e2h-native-foot-load-20261028
     paths:
       - ".github/workflows/mujoco-smoke.yml"
       - "scripts/sim-smoke.sh"
