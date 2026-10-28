@@ -1,6 +1,6 @@
 # Cat-A2b-G — éditeur de contre-annotations locales en aveugle
 
-28 octobre 2026. **Code soumis en [PR #120](https://github.com/Jean-Philippe56520/Microduck/pull/120), [CI #40712977197](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40712977197) réussie : 1 570 tests, 5 ignorés, zéro échec. Aucune contre-annotation réelle effectuée, aucune GUI WSLg validée.**
+28 octobre 2026. **Code fusionné dans main au commit e98295a9 via [PR #120 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/120), [CI finale #40713963667](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40713963667) réussie : 1 571 tests, 5 ignorés, zéro échec. Aucune contre-annotation réelle effectuée, aucune GUI WSLg validée.**
 
 Ce lot fournit une interface manuelle pour générer les deux fichiers de revue attendus par le comparateur Cat-A2b-R #118. Il ne crée pas une vérité terrain indépendante. Les 29 photos privées, 50 boîtes V3 et 12 incertitudes déjà relevées restent des explorations : les revoir après avoir vu YOLOX ne serait pas une contre-annotation aveugle.
 
@@ -66,4 +66,4 @@ Remplacer les deux noms illustratifs par les fichiers réels générés. Ne jama
 - **Simulé OEM / validé robot :** rien. Aucun nouveau modèle, Qwen, robotd, mediad, décision F2 ou mémoire C1 n'est branché.
 - **Portage :** aucune mesure RK3566 RAM/RSS, CPU, NPU, disque/WAL, température, batterie ou timing 50 Hz. scripts/resource-audit.sh et inventaire OEM restent des préconditions physiques.
 
-Vérification : [CI #40712977197](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40712977197) réussie après test de JPEG modifié, lien symbolique et refus d'écraser une revue existante. Les tests ne produisent ni vérité terrain indépendante ni essai sur un robot. Le gain cognitif C3-B reste bloqué tant que les relectures et sites réellement indépendants ne sont pas disponibles.
+Vérification : [CI finale #40713963667](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40713963667) réussie après test de JPEG modifié, lien symbolique et refus d'écraser une revue existante. Les tests ne produisent ni vérité terrain indépendante ni essai sur un robot. Le gain cognitif C3-B reste bloqué tant que les relectures et sites réellement indépendants ne sont pas disponibles.
