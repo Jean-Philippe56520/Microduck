@@ -262,8 +262,19 @@ class SemanticMemoryTests(unittest.TestCase):
         self.assertFalse(self.semantic.retract_hypothesis(
             hid+1,reason="source_retracted"))
         self.semantic.prune(now_wall_epoch_s=WALL+RETENTION_S+1)
-        self.assertEqual(0,self.mem.conn.execute(
-            "SELECT COUNT(*) FROM f4a_property_hypotheses").fetchone()[0])
+        # C2: a retracted hypothesis remains as a compact UNIQUE-key
+        # correction marker, even when its former active TTL has expired.
+        row=self.mem.conn.execute("""
+            SELECT active,correction_reason,proposed_confidence
+            FROM f4a_property_hypotheses WHERE id=?
+        """,(hid,)).fetchone()
+        self.assertEqual((0,"source_retracted",0.),
+                         tuple(row))
+        self.assertIsNone(self.semantic.hypothesize(
+            category="cat",property="texture",value="soft",
+            confidence=.99,now_wall_epoch_s=WALL+RETENTION_S+2))
+        self.assertEqual((),self.semantic.hypotheses(
+            category="cat",now_wall_epoch_s=WALL+RETENTION_S+2))
 
     def test_invalid_limits_and_schemas_fail_closed(self):
         sid=self.record()
