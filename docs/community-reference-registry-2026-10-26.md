@@ -1,5 +1,7 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**F5 v3 / réutiliser-adapter-créer pour rejet `generation_truncated` (28/10/2026) :** **RÉUTILISER** le Qwen3.5 9B local, l'Ollama loopback, le même client et les contrats stricts. **ADAPTER** le budget `num_predict` du seul rôle v2 (180→320) après essai réel tronqué à 180 tokens / 27,422 s ; préserver rôle v1 et les refus. **CRÉER** des tests de non-régression v1/v2/retour tronqué, sans nouveau modèle ni appel moteur, stockage ou développement tiers. Validation en cours sur fixtures ; résultat vrai 9B avec 320 tokens attendu, aucune preuve matérielle.
+
 **F5 v3 / audit actions OEM du rôle conseiller v2 (28/10/2026).** Sources : OEM épinglé `942e58e3aa6dbb28e7037203fff11866122c7567`, `docs/robot/cheatsheet.md` (skills `kick_left`, `roulade`, `ground_pick`, `sit_toggle`, manette bec, idle) et `docs/design/policy-channel-design.md` (slots `walk`, `stand`, `sitstand`, `ground_pick`, `kick_left`, `kick_right`, `roulade`). **RÉUTILISER** ces noms comme références de gestes **documentés, non chargés prouvés** ; **ADAPTER** les hypothèses Qwen pour ne citer que ces capacités et leurs effets/réserves ; **CRÉER** uniquement profil v2 candidat, tests et lanceur PC. `roulade` n'est pas un salto générique ; politiques communautaires et nouveaux mouvements refusés sans audit/accord, OEM #381/#414 inchangés. Pas de pilote moteur concurrent ni sous-module mis à jour. [Contrat](kwipi-qwen9b-role-contract-v2-2026-10-28.md).
 
 
