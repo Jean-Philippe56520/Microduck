@@ -150,9 +150,10 @@ def run_e1(state_dir: Path, rl_root: Path, database: Path, *, port: int = 17801)
     result = run_walk_trial(state_dir, rl_root, database, port=port)
     memory = ExperienceMemory(database)
     try:
-        now = time.monotonic()
         telemetry = read_simulator_telemetry(state_dir, timeout_s=3.0, hz=2)
         ground = read_verified_flat_ground(state_dir, rl_root, port=port, timeout_s=.5)
+        # Ground and ToF must be fresh at the same post-acquisition time.
+        now = time.monotonic()
         snapshot = flat_zone_snapshot(telemetry, ground, now=now)
         scene = snapshot.to_scene(now=now)
         decisions = compare_decisions(scene, memory)
