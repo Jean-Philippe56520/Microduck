@@ -1,6 +1,6 @@
 # MEM-2A — Rappel consolidé, borné, en lecture seule (fixtures PC)
 
-**Date :** 28 octobre 2026. **Statut :** code candidat sur PR, CI à vérifier ; aucun robot, image, Qwen 9B, moteur ou mesure RK3566. **Autorité :** [plan-action.md](plan-action.md). Base de travail `main@bad05cdfcc72c84fea74988a9950e225f864ebf8`; revalider le `main` et les gitlinks avant fusion.
+**Date :** 28 octobre 2026. **Statut :** [PR #147](https://github.com/Jean-Philippe56520/Microduck/pull/147) fusionnée (`67d6db4b`) ; [CI Python #40780346663](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40780346663) et [N1/N5/N6 #40780346693](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40780346693) réussies ; aucun robot, image, Qwen 9B, moteur ou mesure RK3566. **Autorité :** [plan-action.md](plan-action.md). Base de travail `main@bad05cdfcc72c84fea74988a9950e225f864ebf8`; fusion après contrôles verts ; revalider le `main` et les gitlinks avant tout prochain chantier.
 
 ## Porte OEM-first, hypothèse et limites de preuve
 
@@ -50,7 +50,7 @@ python -m unittest discover -s tests -v
 python -m scripts.n3_sqlite_audit --output /tmp/n3-mem2.json
 ```
 
-Couverture : 100 appels identiques, deux clés distinctes, compteur/identité séparés, catégorie C1 et rétraction F2-C, hypothèse C2 rétractée et réouverture SQLite, objectifs MEM-1 corrigés et plafonnés, absence d'écriture pendant le rappel, clé SQL malicieuse refusée, vocabulaire et horloge invalides, DB divergente, zéro requête Qwen ou ordre moteur. La présence de tests **ne garantit pas** leur réussite tant que CI non vérifiée.
+Couverture : 100 appels identiques, deux clés distinctes, compteur/identité séparés, catégorie C1 et rétraction F2-C, hypothèse C2 rétractée et réouverture SQLite, objectifs MEM-1 corrigés et plafonnés, absence d'écriture pendant le rappel, clé SQL malicieuse refusée, vocabulaire et horloge invalides, DB divergente, zéro requête Qwen ou ordre moteur. Les 11 tests ciblés MEM-2A ont été inclus dans la [suite Python #40780346663](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40780346663) **réussie** ; [inventaire N1/N5/N6 #40780346693](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40780346693) **réussi**. N3 et N4 ont également réussi en CI. Tests PC/fixtures uniquement.
 
 **Ressources :** nombre borné de lignes F4-A (256), MEM-1 (32) et F0 un objet par clé ; lecture F1/F2 jointe par C1. Temps CPU, RSS, croissance WAL sur le RK3566 **non mesurés**. Ne pas changer les quotas OEM ni ajouter un accès par tick 50 Hz.
 
@@ -62,4 +62,4 @@ Couverture : 100 appels identiques, deux clés distinctes, compteur/identité s�
 - **QW-2/E2E-1 :** test de seconde consultation vraiment utile après nouvelle observation, et ablations sans/avec mémoire/PC sur scènes indépendantes.
 - **PHY-1 :** mesures RK3566 et preuve des interfaces OEM en lecture seule sur robot, puis essais physiques graduels seulement après validation distincte.
 
-**Statuts explicites :** MEM-2A = **codé, tests à constater en CI** ; MEM-2B/DET-2/QW-1/QW-2 = **prévus**, aucune autonomie perceptive, Qwen intégré ou robot validé.
+**Statuts explicites :** MEM-2A = **codé/testé CI PC-fixtures, PR #147 fusionnée** ; MEM-2B/DET-2/QW-1/QW-2 = **prévus**, aucune autonomie perceptive, Qwen intégré ou robot validé.
