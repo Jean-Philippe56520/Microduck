@@ -1,6 +1,6 @@
 # Kwipi — feuille de route des objectifs, de la détermination, du rappel Qwen et de l'observabilité
 
-**MEM-2A — premier sous-lot candidat (28/10/2026, CI à vérifier) :** [lecture seule bornée C1/C2 + MEM-1](mem2a-readonly-context-recall-2026-10-28.md) avec compteur F0 séparé des catégories fictives et sans identité d'instance prouvée. L'étape complète MEM-2 (continuité multi-vues indépendante), DET-2 et QW-1/QW-2 restent à développer. Aucune seconde SQLite, Qwen ni commande moteur.
+**MEM-2A — premier sous-lot (28/10/2026, [PR #147](https://github.com/Jean-Philippe56520/Microduck/pull/147) fusionnée (`67d6db4b`), [CI Python #40780346663](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40780346663) et [N1/N5/N6 #40780346693](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40780346693) réussies) :** [lecture seule bornée C1/C2 + MEM-1](mem2a-readonly-context-recall-2026-10-28.md) avec compteur F0 séparé des catégories fictives et sans identité d'instance prouvée. L'étape complète MEM-2 (continuité multi-vues indépendante), DET-2 et QW-1/QW-2 restent à développer. Aucune seconde SQLite, Qwen ni commande moteur.
 
 
 **Date :** 28 octobre 2026. **Statut :** plan d'intégration, DOCUMENTATION UNIQUEMENT ; aucune fonction autonome nouvelle, moteur, consultation PC ou migration SQLite livrée par ce document.
@@ -80,7 +80,7 @@ La consultation différée devrait proposer un **export manuel local**, expurgé
 | 1 | **OBS-1** | Diagnostic JSONL fictif borné et lecture seule sur EX1/EX2 ; aucune vraie télémétrie robot | codé/testé PC-fixtures ; [PR #141](https://github.com/Jean-Philippe56520/Microduck/pull/141) fusionnée |
 | 2 | **MEM-1** | États d'objectifs fictifs persistants et liens vers EX1, sans duplication d'épisodes ; tests réouverture/correction | codé/testé PC-fixtures ; [PR #142](https://github.com/Jean-Philippe56520/Microduck/pull/142) fusionnée |
 | 3a | **DET-1** | Biais de détermination optionnel sur candidats F2 déjà sûrs, uniquement pour objectif fictif non tenté ; tests A/B | codé/testé PC-fixtures ; [PR #143](https://github.com/Jean-Philippe56520/Microduck/pull/143) fusionnée |
-| 3b | **MEM-2** | Rappel local pertinence/provenance/contre-exemples, sans Qwen ni doublage de preuves ; multi-sessions | prévu |
+| 3b | **MEM-2** | MEM-2A lecteur en lecture seule livré ; MEM-2B continuité et nouveauté multi-vues encore non prouvées | MEM-2A #147 fusionnée/testée PC-fixtures ; MEM-2B prévu |
 | 4a | **QW-1** | Qwen3.5 9B PC reçoit quelques souvenirs génériques expurgés, strict JSON, consentement/quotas/timeout, aucune écriture ; A/B réel sans/avec mémoire | prévu |
 | 4b | **PER-1** | Humeur descriptive avec inertie, coût d'engagement, repos ; aucun double score/ordonnanceur | prévu |
 | 4c | **OBS-2** | Diagnostic direct optionnel + export différé, OEM read-only, événements incomplets signalés ; charge mesurée | prévu |
