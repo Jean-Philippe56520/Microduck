@@ -1,5 +1,7 @@
 # Kwipi / Qwen3.5 9B — rôle v2, sens, personnalité et expériences (candidat)
 
+**Second essai réel PC du rôle v2 (28/10/2026, rapport opérateur) :** le vrai `qwen3.5:9b` a répondu avec `done_reason=length` : `generation_truncated`, **180/180 tokens**, **27,422 s** mur (**27,390 s** Ollama). Aucun texte incomplet n'est interprété, `status=rejected` et compteurs du pilote `motor_commands_issued=0`, `memory_writes=0`. La cause de ce rejet est désormais identifiée comme une limite de génération, **pas** comme une preuve d'échec de compréhension visuelle. Correctif de **budget v2 seulement** : `num_predict=320` (v1 historique `180` inchangé), sans relance automatique, sans changement de `think=false`, de `num_ctx=4096`, du plafond texte 1 200 caractères, de confidentialité, des règles de rejet, ni du timeout PC 120 s. Coût et qualité réels avec 320 tokens **encore à mesurer sur le PC opérateur** ; une nouvelle troncature demeure rejetée. Aucun déploiement, mémoire ou geste robot.
+
 **28 octobre 2026 — rôle candidat codé pour tests PC, PAS déployé sur Microduck.**
 Source contractuelle : `microduck_companion/qwen9b_production_role_v2.py`,
 `ROLE_VERSION=kwipi-qwen9b-role-v2-candidate`. Le rôle v1 déjà éprouvé sur le
@@ -121,7 +123,7 @@ avec hypothèses de compréhension, d'interaction et d'effets, ainsi que latence
 
 Le nouveau client réutilise le même traitement de photo et les budgets
 antérieurs : source <=2 Mo / 16 Mpx, JPEG <=512 px et 100 Ko sans EXIF,
-`think=false`, contexte `num_ctx=4096`, génération `num_predict=180`,
+`think=false`, contexte `num_ctx=4096`, génération `num_predict=320` (v2 uniquement, v1 conservé à 180),
 `keep_alive=0`, timeout PC 120 s, sortie de 1 200 caractères maximum.
 Le rôle v1 est toujours disponible dans `SIMULER_CONSEILLER_KWIPI.cmd` ; le
 nouveau test v2 est **distinct**, non une réécriture silencieuse.
