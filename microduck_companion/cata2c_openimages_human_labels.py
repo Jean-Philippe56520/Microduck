@@ -285,6 +285,7 @@ def benchmark(*, model_path: Path, class_path: Path,
     predictions: list[bool] = []
     times: list[float] = []
     digests: set[str] = set()
+    ordered_image_hashes: list[str] = []
     start = time.perf_counter()
     for item in cases:
         image = _official_jpeg(item.image_id)
@@ -292,6 +293,7 @@ def benchmark(*, model_path: Path, class_path: Path,
         if sha in digests:
             raise PhotoBaselineError("duplicate public image bytes")
         digests.add(sha)
+        ordered_image_hashes.append(sha)
         model_input = prepare_image(image, mode="original")
         t0 = time.perf_counter()
         raw = session.run(None, {"images": model_input})[0]
@@ -312,6 +314,7 @@ def benchmark(*, model_path: Path, class_path: Path,
             key: sha256(value).hexdigest() for key, value in source_data.items()
         },
         "roster_sha256": sha256(cohort_roster.encode()).hexdigest(),
+        "image_contents_sha256": sha256("|".join(ordered_image_hashes).encode()).hexdigest(),
         "model_sha256": MODEL_SHA256,
         "threshold_unchanged": MIN_SCORE,
         "median_host_inference_ms": round(statistics.median(times), 3),
