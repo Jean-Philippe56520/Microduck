@@ -236,7 +236,7 @@ class MockGoalMemory:
         con = self._memory.conn
         with con:
             goal = con.execute("""
-                SELECT id,state,category,created_at_epoch_s,active
+                SELECT id,state,category,created_at_epoch_s,updated_at_epoch_s,active
                 FROM mem1_mock_goals WHERE goal_id=?
             """, (key,)).fetchone()
             if goal is None or goal["active"] != 1 or goal["state"] != "active":
@@ -256,7 +256,7 @@ class MockGoalMemory:
                     }):
                 raise ValueError("no matching active EX1 mock proposal")
             proposed = float(event["proposed_at_epoch_s"])
-            if (proposed < goal["created_at_epoch_s"]
+            if (proposed < goal["updated_at_epoch_s"]
                     or not proposed <= at <= proposed + MAX_LINK_AGE_S):
                 raise ValueError("stale EX1 proposal or pre-goal event")
             previous = con.execute("""
@@ -335,24 +335,22 @@ class MockGoalMemory:
             raise ValueError("invalid goal query limit")
         if type(include_withdrawn) is not bool:
             raise ValueError("invalid include_withdrawn flag")
-        # SQL has a closed, literal branch; no user-built SQL clauses.
         if include_withdrawn:
-            sql = """
+            rows = self._memory.conn.execute("""
                 SELECT goal_id,kind,category,state,resume_when,
                        created_at_epoch_s,updated_at_epoch_s,revision,source,active
                 FROM mem1_mock_goals WHERE source='mock_fixture_only'
                 ORDER BY created_at_epoch_s DESC,id DESC LIMIT ?
-            """
+            """, (limit,)).fetchall()
         else:
-            sql = """
+            rows = self._memory.conn.execute("""
                 SELECT goal_id,kind,category,state,resume_when,
                        created_at_epoch_s,updated_at_epoch_s,revision,source,active
                 FROM mem1_mock_goals
                 WHERE source='mock_fixture_only' AND active=1
                 ORDER BY created_at_epoch_s DESC,id DESC LIMIT ?
-            """
-        return tuple(self._as_goal(r) for r in
-                     self._memory.conn.execute(sql, (limit,)).fetchall())
+            """, (limit,)).fetchall()
+        return tuple(self._as_goal(row) for row in rows)
 
     def attempts(self, goal_id: str, *,
                  include_withdrawn: bool = False) -> tuple[MockGoalAttempt, ...]:
