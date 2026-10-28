@@ -4,7 +4,7 @@
 
 ## 1. Porte préalable : observation → hypothèse → preuve → arrêt
 
-**Observation (source `main@5c521db90766750f129ea01a99290f694e7d3fad`) :** `ExperienceMemory` ouvre la SQLite principale dans [`episodic_memory.py`](../microduck_companion/episodic_memory.py). Les modules F1/F2/F4/EX/M1/F5-C créent des tables supplémentaires via la **connexion passée** (`memory.conn`). Les propositions et les effets fictifs vivent dans des tables différentes. `kwipi_journal.py` ouvre en plus deux accès `sqlite3.connect(...?mode=ro, uri=True)` en lecture seule avec `PRAGMA query_only` : une connexion de lecture distincte **n'est pas une deuxième autorité d'écriture**.
+**Observation (source `main@5c521db90766750f129ea01a99290f694e7d3fad`) :** `ExperienceMemory` ouvre la SQLite principale dans [`episodic_memory.py`](../microduck_companion/episodic_memory.py). Les modules F1/F2/F4/EX/M1/F5-C créent des tables supplémentaires via la **connexion passée** (`memory.conn`). Les propositions et les effets fictifs vivent dans des tables différentes. `kwipi_journal.py` ouvre en plus **deux** connexions `sqlite3.connect(...?mode=ro, uri=True)` avec `PRAGMA query_only`; `sim_x2c_acceptance.py` ouvre un **troisième lecteur** `mode=ro, uri=True` pour vérifier un fichier de simulation sans le modifier. Une connexion de lecture distincte **n'est pas une deuxième autorité d'écriture**.
 
 **Hypothèses à tester :** (H1) le code source du package conserve un seul **site** d'ouverture écrivable, dans `ExperienceMemory`, et aucun deuxième fichier SQLite autonome créé ailleurs ; (H2) les corrections `f4a_property_hypotheses` ne sont supprimées que si l'hypothèse est encore active ; (H3) M1-A, M1-B et les autres familles ont des propriétaires explicites, à documenter avant toute fusion de tables ; (H4) certains fichiers historiques, comme `mock_cycles.py`, modifient des tables créées ailleurs, mais cela reste une expérience fictive, pas un second cerveau.
 
@@ -24,13 +24,14 @@
 
 ## 3. Tables observées sur les modules ciblés avant CI
 
-**Au moins 21 déclarations de tables distinctes** repérées par lecture ciblée ; **le manifeste CI complet fait foi pour le total du package** :
+**22 tables déclarées** sur **121 modules** dans le rapport complet de la [CI diagnostique #40747029850](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40747029850), artefact JSON N3 téléchargé et vérifié. La première CI était **rouge** parce que le garde n'avait pas encore répertorié le lecteur RO X2-C, et non parce qu'une seconde base écrivable existait :
 
 | Famille | Tables | Provenance et statut |
 | --- | --- | --- |
 | F0 | `objects`, `experiences`, `sim_motion_trials`, `intent_preferences` | Socle `ExperienceMemory` ; `sim_motion_trials` et ses préférences sont **simulation**, pas action robot |
 | F1/F2 | `passive_observation_log`, `passive_learning_events`, `passive_attention_preferences` | Observations et préférences **mock**, corrections distinctes |
 | P2 | `mock_cognitive_cycles` | Résultats scénarisés, jamais exécution moteur autonome |
+| X2-C simulation | `sim_passive_cycles` | Cycles passifs MuJoCo fictifs ; une évolution historique du schéma ajoute trois colonnes par SQL construit sous liste fermée |
 | F4-A | `f4a_mock_behavior_outcomes`, `f4a_semantic_categories`, `f4a_property_hypotheses` | Conséquences simulées / sémantique / hypothèses ; rétractions à préserver |
 | F4-B/C/D | `f4b_mock_spatial_observations`, `f4c_mock_social_proposals`, `f4d_mock_optin_associations` | Repères/échanges/jetons fictifs, aucune localisation ni identité physique |
 | M1-A/B | `m1a_compact_patterns`, `m1b_groups`, `m1b_signatures` | Deux prototypes historiques ; **une seule voie M1-B recommandée en R2**, M1-A témoin |
@@ -39,10 +40,18 @@
 
 **Chevauchement à ne pas confondre avec un doublon de schéma :** `mock_cycles.py` met à jour les colonnes de `objects` et insère `experiences`, bien que ces tables soient créées par `episodic_memory.py`. Cette **écriture intermodule historique** doit rester étiquetée mock ; elle ne doit pas être branchée aux effets réels. `ExperienceMemory.intent_preferences`, `passive_attention_preferences` et `f4a_mock_behavior_outcomes` servent des types de préférences/observations différentes ; les fusionner effacerait leur provenance.
 
+### Bilan machine de l'artefact N3 initial
+
+- **121 modules analysés, 22 tables, 95 occurrences SQL littérales** recensées par les expressions du scanner.
+- **4 ouvertures SQLite directes** : 1 site avec capacité d'écriture dans `episodic_memory.py`, **3 sites `mode=ro, uri=True`** dans `kwipi_journal.py` (2) et `sim_x2c_acceptance.py` (1). Ce sont des **sites de code**, pas le nombre de connexions actives sur une machine.
+- **2 écritures intermodules** dans `mock_cycles.py` vers `objects` et `experiences` ; elles sont des traces fictives P2a, pas des mesures d'effet réel.
+- **4 appels SQL construits dynamiquement** et non résolus par le scanner : `experience_expectations.py` (SELECT avec placeholders de catégories de cues bornées), `kwipi_journal.py` (SELECT par fragments/conditions validées, connexion lecture seule), `passive_learning.py` (SELECT avec clauses `IN` de placeholders), `sim_passive_cycles.py` (**ancien `ALTER TABLE` dynamique** de trois colonnes prévues par dictionnaire fermé en simulation). Ces quatre cas ont été localisés et lus ; **aucun n'est déclaré automatiquement sûr par N3**, toute modification de structure ou de données devra être testée séparément.
+- **Aucun `DROP TABLE`, `ATTACH/DETACH DATABASE` littéral**, aucun schéma critique dupliqué trouvé par cet outil ; les SQL dynamiques, les imports réfléchis et les migrations historiques nécessitent encore une analyse plus profonde avant portage.
+
 ## 4. Outillage et tests N3
 
 - `scripts/n3_sqlite_audit.py` parcourt les sources Python en AST **sans importer le package**. Il reconnaît les SQL **littéraux** de `.execute`, `.executemany` et `.executescript` (CREATE TABLE, INSERT/REPLACE, UPDATE, DELETE), les `sqlite3.connect` directs (y compris alias d'import), les connexions URI lecture seule, et les écritures sur tables créées par un autre module. Les appels à SQL dynamique sont **rapportés comme inconnus**, pas déclarés sûrs.
-- `tests/test_n3_sqlite_audit.py` : **7 tests de fixtures** (un écrivain + lecteur RO, deuxième écrivain refusé, `uri=False` refusé, suppression de correction refusée, DROP refusé, SQL dynamique détecté, source Python invalide refusée).
+- `tests/test_n3_sqlite_audit.py` : **9 tests de fixtures** (un écrivain + lecteur RO, lecteur de simulation existant autorisé, autre lecteur RO inconnu refusé, deuxième écrivain refusé, `uri=False` refusé, suppression de correction refusée, DROP refusé, SQL dynamique détecté, source Python invalide refusée).
 - Le workflow Python existant exécute en plus l'inventaire sur **tout** `microduck_companion/`, refuse les limites destructives et téléverse un rapport **sans image ni souvenir**. Ces contrôles AST ne remplacent **pas** les tests de comportements C2/R2-A/EX, déjà dans la suite et à maintenir.
 
 Commande de vérification sur un clone public du dépôt :
@@ -51,7 +60,7 @@ python -m unittest discover -s tests -p test_n3_sqlite_audit.py -v
 python -m scripts.n3_sqlite_audit --output /tmp/n3-sqlite-audit.json
 ```
 
-**Statut des preuves :** les 7 tests sur fixtures ont été exécutés localement avec succès sur la copie isolée de l'outil, **sans le dépôt complet** ; le résultat de la CI contre le vrai dépôt doit être consulté avant fusion et les chiffres de l'artefact retenus comme référence.
+**Statut des preuves :** les 9 tests sur fixtures ont été exécutés localement avec succès sur la copie isolée de l'outil, **sans le dépôt complet** ; l'inventaire de 121 modules/22 tables est le résultat de la première CI diagnostique. La correction du lecteur X2-C et sa **nouvelle CI** doivent être vérifiées avant fusion.
 
 ## 5. Décision de nettoyage après inventaire
 
