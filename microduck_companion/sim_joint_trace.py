@@ -140,6 +140,7 @@ def _summarize(observations: list[dict], policies: list[PolicySample]) -> dict:
 def collect_joint_trace(
     state_dir: str | Path, rl_root: str | Path, *, port: int = 17801,
     samples: int = 8, hz: int = 5,
+    verified_viewer: bool = False,
 ) -> dict:
     """Bounded passive trace, strictly tied to the pinned official simulator.
 
@@ -147,6 +148,8 @@ def collect_joint_trace(
     before and after the read. No snapshot here is permitted as real-world
     safety or a successful walking-gait certificate.
     """
+    if type(verified_viewer) is not bool:
+        raise ValueError("verified_viewer must be boolean")
     if type(samples) is not int or not 1 <= samples <= MAX_SAMPLES:
         raise ValueError(f"samples must be an integer in [1,{MAX_SAMPLES}]")
     if type(hz) is not int or not 1 <= hz <= 10:
@@ -159,7 +162,11 @@ def collect_joint_trace(
         stream.request("robot.subscribe", hz=hz)
         for _ in range(samples):
             tick_started = time.monotonic()
-            payload, observed_at = read_verified_body_state(state, rl_root, port=port)
+            if verified_viewer:
+                payload, observed_at = read_verified_body_state(
+                    state, rl_root, port=port, allow_viewer=True)
+            else:
+                payload, observed_at = read_verified_body_state(state, rl_root, port=port)
             observation = parse_joint_observation(payload, observed_at)
             if (prior_sim_time is not None
                     and observation["sim_time_s"] <= prior_sim_time):
@@ -175,6 +182,7 @@ def collect_joint_trace(
     return {
         "schema_version": 1,
         "mode": "passive_read_only",
+        "verified_viewer_opt_in": verified_viewer,
         "source": "pinned_official_mujoco_body_and_robotd",
         "rl_commit": RL_COMMIT,
         "flat_scene_git_blob": FLAT_SCENE_BLOB,
@@ -196,6 +204,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--state-dir", type=Path, required=True)
     parser.add_argument("--rl-root", type=Path, required=True)
     parser.add_argument("--port", type=int, default=17801)
+    parser.add_argument("--verified-viewer", action="store_true",
+                        help="read-only trace of the exact OEM GUI launch, never motor authorization")
     parser.add_argument("--samples", type=int, default=8)
     parser.add_argument("--hz", type=int, default=5)
     parser.add_argument("--output", type=Path,
@@ -205,6 +215,7 @@ def main(argv: list[str] | None = None) -> int:
         result = collect_joint_trace(
             args.state_dir, args.rl_root, port=args.port,
             samples=args.samples, hz=args.hz,
+            verified_viewer=args.verified_viewer,
         )
         encoded = json.dumps(result, indent=2, sort_keys=True, allow_nan=False)
         if args.output is not None:
