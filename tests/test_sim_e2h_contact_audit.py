@@ -115,6 +115,25 @@ class OriginalSolverSupportTests(unittest.TestCase):
         self.assertAlmostEqual(.095, x["trunk_e2g_reported_net_xy_m"])
         self.assertLess(abs(x["solver_minus_e2g_distance_m"]), .015)
 
+    def test_deadman_does_not_erase_original_contacts_or_prove_control(self):
+        self.report["sampled_policy"]["limited_by"] = ["deadman"]
+        self.report["control_eligible"] = False
+        self.write()
+        result = summarize_support(self.solver, self.e2g)
+        self.assertEqual(["deadman"], result["control_limited_by_any_sample"])
+        self.assertFalse(result["e2g_control_eligible"])
+        self.assertTrue(result["both_feet_were_unilaterally_loaded_at_different_samples"])
+        self.assertFalse(result["motor_command_caused_displacement_proven"])
+        self.assertFalse(result["gait_validated"])
+
+    def test_slow_capture_explicitly_marked_confounded(self):
+        for row in self.rows[1:]:
+            row["capture_us"] = 2501.
+        self.write()
+        result = summarize_support(self.solver, self.e2g)
+        self.assertTrue(result["observer_cost_confounded"])
+        self.assertFalse(result["gait_validated"])
+
     def test_missing_or_untrusted_stop_policy_and_clock_refused(self):
         invalid = (
             ("stop_confirmed", False),
