@@ -1,5 +1,8 @@
 # Instructions de contribution aux agents — Microduck Companion
 
+**Cat-A2b-G (28/10/2026) :** [PR #120 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/120), commit squash e98295a9, [CI finale #40713963667](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40713963667) réussie (1 571 tests, 5 ignorés, 0 échec). L'éditeur privé Tk/Pillow est **codé/testé sur fixtures**, pas exécuté en GUI WSLg réelle ; aucune des 29 photos privées n'a été contre-annotée dans ce lot, aucune indépendance humaine, hauteur de caméra ou généralisation C3-B prouvée. Les poids, sous-modules OEM et moteurs restent inchangés.
+
+
 **Cat-A2b-R au 28/10/2026 :** la [PR #118](https://github.com/Jean-Philippe56520/Microduck/pull/118) est fusionnée (squash 135b6075 ; CI finale #40708547990 verte). Le code ne compare que des **relectures aveugles déclarées** et teste des JPEG artificiels ; les 29 vraies prises et 50 boîtes V3 n'ont toujours pas de contre-annotation indépendante, ni hauteur mesurée/séances disjointes prouvées. Ne pas réclamer de performance Cat-A2b, C3-B, reconnaissance de personne réelle depuis un écran, Qwen moteur ou causalité. La correction OEM #450 est **ouverte**, SIM-E2 #101 non résolue, robot absent.
 
 
