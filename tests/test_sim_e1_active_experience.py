@@ -39,7 +39,7 @@ def recorded_trial(memory: ExperienceMemory, *, measured=.02, baseline=.0001,
         outcome=outcome.outcome, reward=outcome.reward, preference_before=0.,
         preference_after=outcome.updated_preference,
         next_intention="explore", trials_in_memory=outcome.observed_trials,
-        memory_source=outcome.source, policy_diagnostics={},
+        memory_source=outcome.source, policy_diagnostics={"policy_samples": WALK_TICKS},
     )
 
 
@@ -105,6 +105,7 @@ class EvidenceTests(unittest.TestCase):
             replace(t, reward=1.0),
             replace(t, preference_after=.6),
             replace(t, preference_before=.1),
+            replace(t, policy_diagnostics={"policy_samples": 0}),
         ):
             with self.subTest(fake=fake), self.assertRaises(SimE1Error):
                 validate_experience(fake, self.memory, decisions)
@@ -129,6 +130,14 @@ class EvidenceTests(unittest.TestCase):
             compare_decisions(scene(environment="robot"), self.memory)
         with self.assertRaises(SimE1Error):
             compare_decisions(scene(person_visible=True), self.memory)
+        with self.assertRaises(SimE1Error):
+            compare_decisions(scene(perception_valid=False), self.memory)
+        with self.assertRaises(SimE1Error):
+            compare_decisions(scene(safe_area=False), self.memory)
+        with self.assertRaises(SimE1Error):
+            compare_decisions(scene(floor_clear=False), self.memory)
+        with self.assertRaises(SimE1Error):
+            compare_decisions(scene(battery_pct=10), self.memory)
         before = self.memory.conn.total_changes
         for _ in range(3):
             compare_decisions(scene(), self.memory)
