@@ -1,0 +1,107 @@
+# SIM-E2-B — diagnostic passif des cibles et positions `robotd`
+
+**Date :** 28 octobre 2026. **Nature :** code opt-in et tests
+sur fixtures hôte, **aucun essai moteur nouveau** ni validation robot.
+Suivi : [SIM-E2 #101](https://github.com/Jean-Philippe56520/Microduck/issues/101).
+Plan directeur : [plan-action](plan-action.md).
+
+## 1. Observation, hypothèses, preuve et arrêt
+
+Observations conservées de l'opérateur sous WSLg : trace `duck-sim
+drive 0.08 0`, 32 états dont 31 `walk`, zéro limiteur, consigne appliquée
+0,08 m/s, **3,500 mm** de déplacement XY net, jambes de faible amplitude.
+Les SHA-256 locaux des trois ONNX correspondent **exactement** aux modèles
+référencés P0h/v8, mais l'identité du fichier n'établit pas sa sortie
+effective en boucle fermée.
+
+Hypothèses **non prouvées** à départager par mesures futures :
+amplitude des cibles de jambes faible ; cible variable mais position
+mesurée peu mobile ; différence d'actionnement BAM vs position MJCF ;
+contacts/glissement ; configuration de politique différente.
+Une sélection `walk`, une consigne `applied`, un écart cible/mesure ou
+une proximité temporelle ne démontrent **ni** une démarche, **ni** une cause.
+
+Preuve recherchée d'abord **au repos** : lecture cohérente et horodatée
+d'une paire `robot.state.joints/targets`, sans mouvement demandé.
+Échec/arrêt : révisions ou processus non vérifiés, scène non épinglée,
+nom alpha différent, réseau indisponible, horloge absente/périmée/non
+croissante, trame non finie/mal dimensionnée, état `robotd` impossible.
+Un refus reste un résultat, ne jamais abaisser une garde.
+Risque principal : mauvaise attribution d'un écart à un ONNX.
+Retour arrière : omettre `--joint-tracking` ; compatibilité par défaut
+préservée ; aucune modification de configuration ni de modèle.
+
+## 2. Inventaire OEM, sources épinglées
+
+| Rôle | Source constructeur | Établi / limites |
+| --- | --- | --- |
+| Contrôle/politique | [microduck `942e58e3` / robotd-params](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/robotd-params/src/lib.rs) ; [`robotd/src/control.rs`](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/robotd/src/control.rs) | `robotd` normal : `velstand`, sans `stand` ; `duck-sim` force duo alpha ; contrôle: ONNX, échelle, filtre, cibles |
+| Protocole et contrôle moteur | [`duck-ipc-proto/src/lib.rs`](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/duck-ipc-proto/src/lib.rs) ; [`robotd/src/main.rs`](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/robotd/src/main.rs) | `robot.state` comporte `joints[15]`, `targets[15]`, `t_ns`. `targets` est construit avant `safety.apply` et le traitement d'erreur d'écriture ; ne constitue pas un accusé du servo |
+| Inspecteur existant | [`robotctl/src/monitor.rs`](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/robotctl/src/monitor.rs) | Affiche cibles/mesures sur la même trame ; `robotctl monitor --json` et `robot.subscribe` ont déjà cette source |
+| Physique OEM | [microduck_rl `b02fdea4` / `body_server.py`](https://github.com/pollen-robotics/microduck_rl/blob/b02fdea4902c2b93b7d34a83a6f05da4ececb7d3/src/mjlab_microduck/sim/body_server.py) ; [`infer_policy.py`](https://github.com/pollen-robotics/microduck_rl/blob/b02fdea4902c2b93b7d34a83a6f05da4ececb7d3/scripts/infer_policy.py) | `body_server.read` livre positions, temps simulateur et tronc, **pas** `data.ctrl` ni contacts ; `infer_policy` utilise par défaut BAM, ce n'est pas le même banc |
+
+**Matrice de réutilisation :** réutiliser `ReadOnlyUnixRpc`, les tests
+de provenance du `sim_flat_zone`, `sim_joint_trace`, P0h, `robotctl`
+et la source OEM. **Adapter** `sim_joint_trace` avec option explicite,
+validation stricte des trames et calcul de synthèse sans mémoire.
+**Créer :** tests adversariaux et protocole de mesure ; **aucun**
+pilote, service, IA, moteur, modèle, sous-module ou base supplémentaires.
+Les PR OEM #381/#414 et les projets tiers du [registre C3](community-reference-registry-2026-10-26.md)
+ne livrent pas à notre pin une preuve de contact ou de locomotion ; aucune
+dépendance tierce importée.
+
+## 3. Contrat de capture, sans contrôle moteur
+
+Option `python3 -m microduck_companion.sim_joint_trace --joint-tracking`
+(mode non activé par défaut), éventuellement avec `--verified-viewer`
+si le viewer OEM est déjà démarré. **Un seul abonnement**
+`robot.subscribe` à 1–10 Hz et **uniquement** `body_server hello/read`.
+Traces bornées de 1 à 40 échantillons ; l'outil n'envoie jamais
+`robot.move`, `robot.stop`, `policy load` ou cible articulaire.
+La garde du processus/scene du simulateur épinglé reste obligatoire.
+
+L'accusé `robot.subscribe` doit nommer `alpha_walking.onnx` et
+`alpha_stand.onnx`, sans champ d'indisponibilité ; ce n'est **pas**
+une empreinte du modèle exécuté à chaque tick. Pour chaque état,
+validation stricte de `t_ns` (horloge MONOTONIC), 15 positions mesurées,
+15 cibles finies dans l'ordre OEM, âge de trame, écart à la lecture
+MuJoCo et progression des horloges. La ligne `mouth` non actionnée
+n'entre pas dans les indicateurs des 10 joints de jambes.
+
+**Mesures produites :** amplitudes des cibles et positions mesurées
+par articulation des jambes, maximum de l'écart cible − mesure, qualité
+de synchronisation et noms des politiques attestés par l'abonnement.
+Ce sont des mesures du contrôleur `robotd`, **pas** la mesure indépendante
+de `data.ctrl`, d'un contact ou de l'exécution d'une consigne. Le flux
+`body_server` sert uniquement aux positions/tronc/horloges du simulateur,
+sans prétention de simultanéité stricte avec le tick `robotd`.
+
+Les JSON détaillés sont conservés sur le PC ; si `--output` est fourni,
+seule la synthèse est affichée. Aucune image, voix, identité, image ONNX,
+secret, média ou base SQLite dans le dépôt.
+
+## 4. Séquence autorisée et critères de passage
+
+1. **Fixtures et CI** : cas sain, identité de politique erronée,
+   données absentes/mal formées/non finies, timestamp manquant,
+   périmé/futur/répété, compétence inattendue, lecture hors scène,
+   absence de commande motrice ; suite Python verte avant fusion.
+2. **Contrôle passif au repos sur WSLg**, après mise à jour sûre de
+   la copie locale, en réutilisant le simulateur déjà lancé.
+   Procédure : [SIM-E2 trace graphique](sim-e2-manual-viewer-trace-2026-10-28.md).
+   Une trame valide démontre seulement le bon fonctionnement de
+   la collecte ; aucun nouveau `drive` à cette étape.
+3. **Essai actif distinct, non autorisé par ce lot :** seulement après
+   contrôle `robotctl health/version/policy list`, scène, contact,
+   configuration et synchronisation ; comparer arrêt et mouvement de
+   durée comparable, puis une seule commande OEM bornée avec propriétaire
+   `robotd`, `robot.stop` confirmé, critères d'abandon sur état/horloge/
+   équilibre/sécurité. Ne changer ni ONNX ni actionneur pour « obtenir
+   une marche » avant mesure contrôlée.
+4. Aucune récompense/mise à jour de préférence ou causalité d'objet
+   sur les traces `robot.state` ou sur une translation sans preuve
+   de démarche. Le robot réel reste absent ; Cat-A2b #78 et EX4-C2 #80
+   ne sont pas débloqués.
+
+**Résultat visé du lot :** un outil de diagnostic passif cohérent et
+testé PC-fixtures, **pas** une locomotion MuJoCo validée.

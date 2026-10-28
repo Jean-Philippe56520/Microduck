@@ -49,6 +49,16 @@ Le RL officiel `scripts/infer_policy.py` utilise par défaut `bam.mujoco.MujocoC
 
 Le `robotctl version` local peut afficher `rev unknown` (build non CI), et `installed daemon none` (absence de release installée sur ce PC) : ces chaînes **ne prouvent pas** un défaut des démons vivants ; consulter `health` et l'environnement réel.
 
+### Suite SIM-E2-B : cible/mesure OEM sans moteur
+
+Le schéma `robot.state` expose déjà des paires cibles/mesures avec
+`t_ns`. L'option `--joint-tracking` de `sim_joint_trace` doit être
+validée par ses fixtures et sa CI avant d'être exécutée manuellement **au
+repos**, puis évaluée séparément pour un éventuel essai actif supervisé.
+Les cibles sont pré-`safety.apply` ; ni contact, ni écriture/actionnement
+effectif, ni gait ne sont démontrés. Référence :
+[SIM-E2-B](sim-e2b-robotd-joint-target-trace-2026-10-28.md).
+
 ## 5. Règle opérationnelle de reprise
 
 **Ne pas repartir d'une hypothèse d'assistant** : état GitHub + docs autoritaires + configuration réellement chargée → audit réutiliser/adapter/créer → mesure passive → essai borné si justifié → conclusion mesurée → PR ciblée avec CI → documentation. Ne pas publier médias privés, identité, journaux bruts de l'opérateur ou données de foyer. Résultat de simulation ≠ autonomie physique.
