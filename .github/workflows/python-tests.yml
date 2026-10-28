@@ -30,6 +30,7 @@ jobs:
         run: |
           python -m scripts.n3_sqlite_audit --output "$RUNNER_TEMP/n3-sqlite-audit.json"
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: n3-sqlite-source-inventory
           path: ${{ runner.temp }}/n3-sqlite-audit.json
