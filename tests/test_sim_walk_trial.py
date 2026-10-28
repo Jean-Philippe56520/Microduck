@@ -248,7 +248,8 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
         self.addCleanup(robot.join)
         return robot
 
-    def invoke(self, *, poses=None, readings=None, sensor=None, on_policy_sample=None):
+    def invoke(self, *, poses=None, readings=None, sensor=None,
+               on_policy_sample=None, policy_stream_cls=FakePolicyStream):
         if poses is None:
             poses = [ground(1 + i*.1, .02 + i*.001) for i in range(WALK_TICKS+4)]
         if readings is None:
@@ -262,7 +263,7 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
               patch("microduck_companion.sim_walk_trial.read_simulator_telemetry",
                     return_value=sensor),
               patch("microduck_companion.sim_walk_trial.ReadOnlyUnixRpc",
-                    FakePolicyStream),
+                    policy_stream_cls),
               patch("microduck_companion.sim_walk_trial.time.sleep")):
             return run_walk_trial(self.root, "/fake/rl", self.db,
                                   on_policy_sample=on_policy_sample)
@@ -354,9 +355,7 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
                 note = super().next_notification()
                 note.params["move"]["limited_by"] = ["deadman"]
                 return note
-        with patch("microduck_companion.sim_walk_trial.ReadOnlyUnixRpc",
-                   DeadmanPolicyStream):
-            result = self.invoke()
+        result = self.invoke(policy_stream_cls=DeadmanPolicyStream)
         self.assertTrue(result.stop_confirmed)
         self.assertEqual("inconclusive_control_limit", result.outcome)
         self.assertIsNone(result.reward)
