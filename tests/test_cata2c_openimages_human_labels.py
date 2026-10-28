@@ -5,12 +5,14 @@ import csv
 from io import StringIO
 from collections import Counter
 import json
+from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 
 from microduck_companion.cata2c_openimages_human_labels import (
     CLASS_MAPPING, VerifiedCase, binary_metrics, select_human_verified_cases,
-    main,
+    benchmark, main,
 )
 from microduck_companion.visual_photo_mobilenet_demo import PhotoBaselineError
 
@@ -175,6 +177,23 @@ class OpenImagesHumanLabelTests(unittest.TestCase):
             binary_metrics(cases, tuple([True] * 7))
         with self.assertRaises(PhotoBaselineError):
             binary_metrics(cases, tuple([True] * 7 + [1]))
+
+    def test_changed_source_metadata_rejected_before_runtime_or_download(self):
+        classes, metadata, labels = self.blobs()
+        with tempfile.TemporaryDirectory() as dirname:
+            base = Path(dirname)
+            paths = [base / f"{i}.csv" for i in range(3)]
+            for path, blob in zip(paths, (classes, metadata, labels)):
+                path.write_bytes(blob)
+            with patch(
+                "microduck_companion.cata2c_openimages_human_labels.validate_model_file"
+            ), patch("urllib.request.urlopen", side_effect=AssertionError("no network")):
+                with self.assertRaisesRegex(PhotoBaselineError, "metadata changed"):
+                    benchmark(
+                        model_path=base / "nonexistent.onnx",
+                        class_path=paths[0], metadata_path=paths[1],
+                        labels_path=paths[2],
+                    )
 
     def test_network_requires_explicit_approval(self):
         with patch("sys.stderr"), patch(
