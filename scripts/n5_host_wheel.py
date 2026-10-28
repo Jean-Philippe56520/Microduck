@@ -48,6 +48,7 @@ APPROVED_FILES = frozenset({
     "microduck_companion/passive_rhythm.py",
     "microduck_companion/passive_sources.py",
     "microduck_companion/perception.py",
+    "microduck_companion/social_context.py",
 })
 LAB_EXCEPTIONS = frozenset({
     "microduck_companion/mock_cycles.py",
@@ -148,8 +149,20 @@ def _wheel_modules(path: Path) -> tuple[set[str], int]:
         )
 
 
-def inspect_probe(root: Path, wheel: Path, normal_wheel: Path) -> dict:
-    source, manifest = _checked_paths(root.resolve(), APPROVED_FILES)
+def inspect_probe(root: Path, wheel: Path, normal_wheel: Path, *,
+                  variant: str = "n5") -> dict:
+    """Verify a real N5/N6 wheel; N6 may drop ONLY the two reviewed mock labs."""
+    all_source, manifest = _checked_paths(root.resolve(), APPROVED_FILES)
+    if variant == "n5":
+        source = all_source
+        dist_name, dist_stem = DIST_NAME, DIST_STEM
+    elif variant == "n6":
+        source = {p: data for p, data in all_source.items()
+                  if p not in LAB_EXCEPTIONS}
+        dist_name = "microduck-companion-n6-no-mock-host-probe"
+        dist_stem = "microduck_companion_n6_no_mock_host_probe"
+    else:
+        raise ValueError("Unreviewed candidate variant")
     probe_modules, probe_bytes = _wheel_modules(wheel)
     normal_modules, normal_bytes = _wheel_modules(normal_wheel)
     if probe_modules != set(source):
@@ -170,13 +183,13 @@ def inspect_probe(root: Path, wheel: Path, normal_wheel: Path) -> dict:
         for name, contents in source.items():
             if z.read(name) != contents:
                 raise ValueError("Candidate wheel changes source bytes: " + name)
-        distinfo = DIST_STEM + "-" + VERSION + ".dist-info/"
+        distinfo = dist_stem + "-" + VERSION + ".dist-info/"
         if not (distinfo + "METADATA" in members and
                 distinfo + "WHEEL" in members and
                 distinfo + "RECORD" in members):
             raise ValueError("Wheel metadata missing or wrong distribution")
         metadata = Parser().parsestr(z.read(distinfo + "METADATA").decode("utf-8"))
-        if (metadata.get("Name", "").lower() != DIST_NAME or
+        if (metadata.get("Name", "").lower() != dist_name or
                 metadata.get("Version") != VERSION or
                 metadata.get_all("Requires-Dist")):
             raise ValueError("Invalid/disallowed candidate wheel metadata")
@@ -197,6 +210,8 @@ def inspect_probe(root: Path, wheel: Path, normal_wheel: Path) -> dict:
                 raise ValueError("Wheel RECORD hash or size mismatch: " + filename)
     return {
         "schema": SCHEMA,
+        "variant": variant,
+        "probe_distribution": dist_name,
         "scope": "HOST_ONLY_NON_DEPLOYABLE; pip-install smoke in temporary CI target only",
         "normal_source_python_modules": len(normal_modules),
         "probe_python_modules": len(probe_modules),

@@ -36,9 +36,9 @@ class N5HostWheelTests(TestCase):
     def test_real_public_closure_exactly_reviewed_modules(self):
         inventory = collect(ROOT)
         selection = select_public_closure(inventory)
-        self.assertEqual(inventory["module_count"], 121)
+        self.assertEqual(inventory["module_count"], 122)
         self.assertEqual({x["path"] for x in selection}, n5.APPROVED_FILES)
-        self.assertEqual(len(selection), 19)
+        self.assertEqual(len(selection), 20)
         self.assertEqual(
             {x["path"] for x in selection if x["path"].split("/")[-1].startswith("mock_")},
             n5.LAB_EXCEPTIONS,

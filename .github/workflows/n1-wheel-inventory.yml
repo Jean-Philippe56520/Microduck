@@ -8,6 +8,18 @@ on:
       - 'tests/test_n1_inventory.py'
       - 'tests/test_n1_public_slice.py'
       - 'tests/test_n5_host_wheel.py'
+      - 'scripts/n6_no_mock_wheel.py'
+      - 'tests/test_n6_no_mock_wheel.py'
+      - 'microduck_companion/__init__.py'
+      - 'microduck_companion/behavior_personality.py'
+      - 'microduck_companion/behavioral_memory.py'
+      - 'microduck_companion/oem_expression_hints.py'
+      - 'microduck_companion/social_context.py'
+      - 'microduck_companion/mock_social_cues.py'
+      - 'microduck_companion/mock_cycles.py'
+      - 'docs/n6-no-mock-host-probe-2026-10-28.md'
+      - 'README.md'
+      - 'docs/plan-action.md'
       - '.github/workflows/n1-wheel-inventory.yml'
       - 'pyproject.toml'
   workflow_dispatch:
@@ -73,7 +85,7 @@ jobs:
           sys.path.insert(0, str(target))
           import microduck_companion as m
           assert Path(m.__file__).resolve().is_relative_to(target)
-          assert len(list(pkgutil.iter_modules(m.__path__))) == 18
+          assert len(list(pkgutil.iter_modules(m.__path__))) == 19  # 20 Python files incl. __init__
           assert not any(k.startswith("microduck_companion.mock_") for k in sys.modules)
           from microduck_companion.passive_sources import PassiveRead
           from microduck_companion.perception import PerceptionSnapshot
@@ -113,3 +125,90 @@ jobs:
             ${{ runner.temp }}/n5-stage.json
             ${{ runner.temp }}/n5-wheel-inspection.json
             ${{ runner.temp }}/n5-wheels/*.whl
+      - name: N6 strict mock-free source and regression tests
+        run: python -m unittest discover -s tests -p 'test_n6_no_mock_wheel.py' -v
+      - name: N6 prepare a second reduced HOST-only staging from N5
+        run: |
+          python -m scripts.n6_no_mock_wheel stage --stage-dir "$RUNNER_TEMP/n6-stage" --report "$RUNNER_TEMP/n6-stage.json"
+      - name: N6 build real host-only wheel without either mock engine
+        run: |
+          mkdir -p "$RUNNER_TEMP/n6-wheels"
+          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/n6-wheels" "$RUNNER_TEMP/n6-stage"
+      - name: N6 verify wheel RECORD and actual contents against approved sources
+        run: |
+          python -m scripts.n6_no_mock_wheel inspect \
+            --wheel "$(find "$RUNNER_TEMP/n6-wheels" -maxdepth 1 -name '*.whl' -print -quit)" \
+            --normal-wheel "$(find "$RUNNER_TEMP/n1-wheel" -maxdepth 1 -name '*.whl' -print -quit)" \
+            --report "$RUNNER_TEMP/n6-wheel-inspection.json"
+      - name: N6 isolated host pip-install and negative capability tests
+        run: |
+          python -m pip install --disable-pip-version-check --no-index --no-deps --target "$RUNNER_TEMP/n6-installed" "$RUNNER_TEMP"/n6-wheels/*.whl
+          python -I -B - "$RUNNER_TEMP/n6-installed" <<'PY'
+          import importlib.util
+          from pathlib import Path
+          import pkgutil
+          import sys
+          target = Path(sys.argv[1]).resolve()
+          sys.path.insert(0, str(target))
+          import microduck_companion as m
+          assert Path(m.__file__).resolve().is_relative_to(target)
+          assert len(list(pkgutil.iter_modules(m.__path__))) == 17
+          for banned in ('mock_cycles','mock_social_cues','sim_motion',
+                         'sim_walk_trial','qwen9b_advisor_v2'):
+              assert importlib.util.find_spec('microduck_companion.' + banned) is None, banned
+          from microduck_companion.social_context import MockSocialContext
+          from microduck_companion.oem_expression_hints import (
+              MockOemConditions, describe_oem_expression)
+          from microduck_companion.behavioral_memory import BehavioralMemory
+          from microduck_companion.passive_sources import PassiveRead
+          from microduck_companion.perception import PerceptionSnapshot
+          try:
+              MockSocialContext(operator_opt_in='yes')
+              raise AssertionError('forged boolean context accepted')
+          except ValueError:
+              pass
+          memory = m.ExperienceMemory(':memory:')
+          try:
+              brain = m.AutonomyBrain(memory)
+              journal = m.PassiveObservationJournal(memory)
+              reading = PassiveRead('unavailable_or_invalid',
+                                    PerceptionSnapshot('mock', (), 1.0))
+              selected = brain.propose_balanced_passive(
+                  reading, journal=journal, now_monotonic_s=1.0,
+                  now_wall_epoch_s=100.0)
+              assert (selected.intention,selected.executed,selected.motor_commands_issued) == ('idle',False,0)
+              portrait = brain.describe_behavior(
+                  m.PassiveIntent('idle','no_current_observation'),
+                  journal=journal,now_wall_epoch_s=100.0)
+              assert (portrait.state,portrait.executed,portrait.motor_commands_issued) == ('Chill',False,0)
+              hint = describe_oem_expression(
+                  portrait, cue=None, context=MockSocialContext(),
+                  conditions=MockOemConditions(), now_monotonic_s=100.0)
+              assert (hint.status,hint.reason,hint.motor_commands_issued) == ('silent','no_mock_cue',0)
+              recorder = BehavioralMemory(memory)
+              changes = memory.conn.total_changes
+              try:
+                  recorder.record(runner=object(),sequence=1,now_wall_epoch_s=100.0)
+                  raise AssertionError('missing mock cycle engine accepted')
+              except RuntimeError as exc:
+                  assert 'P2a mock cycle runner unavailable' in str(exc)
+              assert memory.conn.total_changes == changes
+              try:
+                  brain.describe_behavior(object(), journal=journal,
+                                          now_wall_epoch_s=100.0)
+                  raise AssertionError('unsupported social plan accepted')
+              except TypeError as exc:
+                  assert 'mock social plans unavailable' in str(exc)
+              assert memory.conn.total_changes == changes
+          finally:
+              memory.close()
+          assert not any(k.startswith('microduck_companion.mock_') for k in sys.modules)
+          print('N6 host probe: 18 modules, no mock engines, fail closed; no robot')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: n6-host-only-no-mock-wheel-NOT-FOR-ROBOT
+          path: |
+            ${{ runner.temp }}/n6-stage.json
+            ${{ runner.temp }}/n6-wheel-inspection.json
+            ${{ runner.temp }}/n6-wheels/*.whl
