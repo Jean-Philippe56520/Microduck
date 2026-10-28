@@ -1,5 +1,7 @@
 # Cat-A2b — Réelles captures basses : protocole local privé et banc de test
 
+**Extension Cat-A2b-R du 28/10/2026 ([PR #118](https://github.com/Jean-Philippe56520/Microduck/pull/118), [CI #40707844533](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40707844533) réussie) :** le validateur `cata2b_blind_review.py` peut confronter **deux annotations déclarées aveugles distinctes** sur les JPEG TEST du manifeste déjà vérifié. Les compteurs classe/visibilité/IoU50 et négatifs sont agrégés ; rien n'atteste l'indépendance humaine, le masquage effectif des prédictions ou la hauteur de prise. Aucune métrique d'accuracy/AP50 ne devient validée par cet accord. [Usage et schéma privés](cata2b-blind-independent-annotation-gate-2026-10-28.md).
+
 **26 octobre 2026. Statut : code de VALIDATION DES CAPTURES ET d'ÉVALUATION locale, PAS résultats de reconnaissance ni mesures sur Kwipi.** Le robot n'est pas disponible. Aucun corpus privé ni photographie à hauteur de capteur n'est fourni ou publié dans ce lot.
 
 La [PR Cat-A2a](https://github.com/Jean-Philippe56520/Microduck/pull/67) a évalué un **petit corpus d'images publiques COCO dont la hauteur caméra est inconnue** : 24 images, 49 instances, 31 détections justes, 9 FP, 18 FN (IoU50), rappel 63,3 %, AP50 macro 0,486. Ces valeurs ne s'appliquent **pas** à une caméra située 25 cm du sol.
