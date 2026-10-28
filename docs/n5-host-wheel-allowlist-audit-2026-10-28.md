@@ -1,6 +1,6 @@
 # N5 — Véritable wheel candidat hôte avec allowlist stricte (non déployable)
 
-**Date :** 2026-10-28. **Autorité :** [`plan-action.md`](plan-action.md). **Statut initial :** preuve de conditionnement PC/CI en PR, mesures d'archive et tests à confirmer ; **ni installation, ni adaptation de robot**, ni réduction du wheel normal. Point de départ : `main@f9961feea13713c5b80e95a6d9ea00a1283fa682` ([N4 #132 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/132), [CI post-fusion verte](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40749873643)).
+**Date :** 2026-10-28. **Autorité :** [`plan-action.md`](plan-action.md). **Statut mesuré :** preuve hôte sur [CI spécialisée N1/N5 #40751722278](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40751722278) **verte** au SHA de PR initial `4c79184b445e1b91679624b488cdc6fc8e525206`, CI générale et SHA documentaire final à contrôler avant fusion ; **ni installation, ni adaptation de robot**, ni réduction du wheel normal. Point de départ : `main@f9961feea13713c5b80e95a6d9ea00a1283fa682` ([N4 #132 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/132), [CI post-fusion verte](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40749873643)).
 
 ## 1. Porte préalable et question précise
 
@@ -43,6 +43,16 @@ python -m scripts.n5_host_wheel inspect --wheel /tmp/n5-wheels/CANDIDAT.whl --no
 
 Les 8 tests sur fixtures comprennent les refus **allowlist étendue sans revue**, import dynamique, littéral `robot.do`, source symlink, staging dans le checkout ou non vide, contenu de wheel altéré. Rapport JSON et wheel sont déposés sous l'artefact **`n5-host-only-wheel-NOT-FOR-ROBOT`**. Aucun média privé, souvenir, voix, jeton, fichier `.sqlite3`, ONNX ou donnée constructeur n'est inclus.
 
-## 5. Critères de sortie et suite
+## 5. Résultats effectivement mesurés (hôte CI, aucun robot)
+
+- **Source:** [workflow N1/N5 #40751722278](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40751722278) sur le SHA de PR `4c79184b445e1b91679624b488cdc6fc8e525206`. Artefact GitHub `n5-host-only-wheel-NOT-FOR-ROBOT` ID `12842874774`, digest SHA-256 de l'archive **`f7fc08f354322972d2ea439f3cd4bd916800e5df255895e6d954b7af4f483679`**. Téléchargé et vérifié ; les rapports `n5-stage.json` et `n5-wheel-inspection.json` ont été lus, et la roue embarquée dans l'archive a été inspectée indépendamment.
+- **Wheel normal :** `microduck-companion==0.2.0`, **121 modules Python**, **435 167 octets** dans le wheel construit avec le `pyproject.toml` normal **inchangé**.
+- **Wheel candidat expérimental :** `microduck-companion-n5-host-probe==0.0.0`, **19 modules Python**, **66 832 octets**, SHA-256 du wheel **`7adba998a3703c5ac6b10ae013d9a2b7801b2c21994b234e6ab79f35673ee4af`**. **102 modules non inclus dans le candidat**, différence de **368 335 octets (84,6 %)** par rapport au wheel normal, à version et hôte identiques.
+- **Conformité :** source exacte `sha256` pour les 19 fichiers, correspondance `RECORD`/METADATA/WHEEL et contenu ZIP, import en `python -I -B` depuis une cible temporaire après `pip --no-index --no-deps --target`. L'API publique est importable ; sur perception de fixture indisponible, intention `idle` puis portrait `Chill`, `executed=False`, `motor_commands_issued=0`. Les chemins `mock_*` ne sont pas chargés dans ce parcours, mais les **deux fichiers sont bien dans le wheel** pour ne pas casser les branches historiques. Le plan fictif `executed=True` est rejeté. Des modules `sim_*`, démonstrations, Qwen et essais moteurs ne figurent pas dans le candidat.
+- **Vérification locale complémentaire :** installation non réseau du **même wheel archivé** dans une nouvelle cible temporaire sous Python 3.13.5, puis `-I -B` : `idle`/`Chill` et refus d'import de modules exclus confirmés. Ce test sur PC ne remplace pas la CI de PR.
+
+**À ne pas extrapoler :** un fichier compressé plus petit n'est pas une mesure de **RAM/RSS**, **taille décompressée**, occupation SQLite/WAL, stockage Yocto, chauffage, latence, autonomie, ni compatibilité des dépendances Python/Python ABI OEM. Il ne démontre aucune interaction fiable avec `robotd`, `mediad`, `tofd` ou M9. Ce wheel a un **autre nom de distribution mais le même paquet importable** et ne doit pas coexister sur le robot avec la distribution normale.
+
+## 6. Critères de sortie et suite
 
 Consigner après CI : comptage de modules **des deux vraies roues**, tailles réelles, identité sha256 du wheel, éventuels échecs et statut de fusion. Une CI verte **prouve la faisabilité du conditionnement hôte**, pas la possibilité de déployer un cerveau sur 1 Go RAM / 32 Go de stockage. Le prochain chantier d'intégration exigera une **interface OEM active** (version, robotctl health/policy, origine/horloge des observations), un audit de RAM/RSS, disque/WAL, chaleur et deadman, la garantie d'une seule SQLite, et une décision de réduire/retirer explicitement les composants `mock_*` sans perdre les preuves de laboratoire. En attendant, garder `docs/plan-action.md` et Cat-A2b/C3-B comme priorités, et ne pas reprendre les essais moteurs SIM-E2.
