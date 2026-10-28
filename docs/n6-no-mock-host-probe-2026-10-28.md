@@ -1,0 +1,49 @@
+# N6 — Contrat social partagé, deux moteurs fictifs exclus de la roue hôte
+
+**Date :** 28 octobre 2026. **Statut :** branche/PR de consolidation non déployable. **Autorité :** [plan d'action](plan-action.md). Baseline : `main@31f00cd1f3258b90f7129fcdc737413159d2427e`, [N5 #133 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/133), [CI post-fusion #40752287748](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40752287748) verte. Les résultats et tailles **N5 d'origine** (121 modules / 19 candidats) sont historiques à ce SHA ; le nouveau contrat N6 ajoute un `.py` au dépôt, et requiert un nouveau comptage CI.
+
+## 1. Observation, hypothèses, preuve et échec
+
+**Observé dans le code actuel :** N5 a prouvé qu'un wheel Python distinct de 19 modules fonctionnait sur hôte, mais conservait `mock_cycles.py` et `mock_social_cues.py`. Il serait **dangereux de les retrancher uniquement d'après leur nom** : `BehavioralMemory.record()` dépend strictement de `MockCycleRunner`, `behavior_personality._interpret()` peut recevoir un `MockSocialPlan` historique ; surtout, `oem_expression_hints.py` importait au niveau du module `MockSocialContext` **depuis `mock_social_cues`**. Cette structure de six booléens validés n'est ni un moteur de comportements ni une autorisation réelle, mais l'import tirait tout le compositeur fictif dans la clôture statique.
+
+**Hypothèse :** isoler **le même objet de classe `MockSocialContext`** dans `social_context.py`, le réexporter dans le module historique et le consommer depuis la description OEM peut conserver les `isinstance`, les règles de consentement **fictif** et les tests de provenance. Les **deux moteurs fictifs** peuvent alors manquer d'un **candidat hôte d'essai** sans être supprimés du paquet normal. Les méthodes historiques concernées doivent **refuser explicitement** leur usage si leurs modules sont absents, jamais les remplacer par des objets `duck-typed` ou transformer un récit en action.
+
+**Critères vérifiables :** API du dépôt inchangée côté modules historiques ; `MockSocialContext` importé de `mock_social_cues`, `social_context` et `oem_expression_hints` désigne **la même classe** ; indicateurs booléens strictement typés, refus d'un `MockSocialPlan(executed=True)` ; quatre seuls sites AST autorisés (deux sous `TYPE_CHECKING`, deux dans les méthodes historiques `record` et `_interpret`) ; vrai wheel N6 strictement **18 modules**, sans `mock_cycles` et `mock_social_cues` ; RECORD/SHA-256, import isolé et refus d'exécution fictive testés ; suite générale Python et suite N1/N5/N6 vertes au SHA final.
+
+**Critères d'arrêt / retour arrière :** toute nouvelle référence hors quatre sites, erreur d'import de `social_context`, classe de contexte dupliquée, nouvelle autorité moteur/speaker/PC, faux effet enregistré, writer SQLite supplémentaire, CI rouge ou wheel normal modifié hors l'ajout du contrat pur. Si un cas échoue, **ne pas fusionner** ; abandon/revert de la PR (pas de migration, pas de changement OEM).
+
+## 2. Audit OEM-first et réemploi tiers
+
+- Gitlinks **inchangés** : [`pollen-robotics/microduck@942e58e3`](https://github.com/pollen-robotics/microduck/tree/942e58e3aa6dbb28e7037203fff11866122c7567), [`microduck_rl@b02fdea4`](https://github.com/pollen-robotics/microduck_rl/tree/b02fdea4902c2b93b7d34a83a6f05da4ececb7d3). [Architecture `robotd` exclusive](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/docs/design/architecture.md), [roadmap M9](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/docs/project/roadmap.md), [catalogue 16 états historiques](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/docs/ideas/autonomous_behavior.md), [robotctl version/health/monitor](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/docs/robot/cheatsheet.md). `robotd` pilote seul les moteurs à 50 Hz ; N6 ne construit aucun pilote, skill, processus embarqué ou accès direct au socket.
+- **M9 autonome non livré au SHA épinglé** ; PR OEM [#381](https://github.com/pollen-robotics/microduck/pull/381) et [#450](https://github.com/pollen-robotics/microduck/pull/450) **ouvertes et non fusionnées** au contrôle. `IdleHead`/petting OEM restent sous OEM. Ce candidat hôte ne remplace pas un cerveau constructeur ni ne prétend à des réactions physiques.
+- [Registre communautaire C3](community-reference-registry-2026-10-26.md) : QuackNav et autres références n'apportent pas de besoin de dépendance supplémentaire pour **ce refactor de contrat Python**. Aucune licence tierce, poids ou modèle nouveau introduit.
+
+| Réutiliser | Adapter | Créer |
+| --- | --- | --- |
+| `AutonomyBrain`, `ExperienceMemory`, `BehavioralMemory`, `MockSocialPlan`, tests historiques F4-C/P-C, `scripts/n5_host_wheel.py` et CI N1 existante | Réexporter `MockSocialContext` depuis `mock_social_cues.py` ; le consommer directement dans `oem_expression_hints.py`. Maintenir un refus explicite des chemins P2a/F4-C si la roue réduite les omet | **Une** classe déplacée sans changement de champs vers `social_context.py`, un outil N6 *sur hôte* réutilisant la vérification RECORD N5 et une suite de tests fixture |
+
+## 3. Frontière mesurée / proposée
+
+- **Paquet normal (inchangé dans son rôle) :** conserve tous les laboratoires et leurs tests ; `mock_cycles`, `mock_social_cues` et les modèles/CLI de simulation restent **dans GitHub et dans le wheel standard**. Le nouveau petit module `social_context` modifie le nombre total de fichiers de code, **pas le fonctionnement du robot**.
+- **N5 historique :** 19 modules au SHA N5 original, incluant 2 moteurs mock ; après extraction du contrat social, sa clôture N5 devient candidate à **20 modules**, toujours avec 2 moteurs fictifs ; chiffre à vérifier par CI.
+- **N6 candidat hôte :** allowlist dérivée explicitement de celle de N5 **moins exactement les deux moteurs fictifs**, donc **18 modules Python visés** (20 − 2), zéro `mock_*.py`. `social_context.py` y fournit uniquement les six drapeaux typés. Les imports optionnels ne sont admis que dans les quatre contextes AST nommés ; toute dérive refuse la construction, et l'API N5 complète reste disponible dans le dépôt.
+- **Refus en exécution hôte :** `BehavioralMemory.record()` ne peut pas simuler un cycle P2a sans `MockCycleRunner` ; `_interpret` refuse un objet social non vérifié par sa classe réelle. **Aucun effet ni récompense réel ne découle d'une intention fictive.** `describe_oem_expression` demeure une description read-only, `MockSocialContext` **ne prouve aucun consentement réel**.
+
+## 4. Tests et conditions de preuve
+
+```sh
+python -m unittest discover -s tests -p test_n6_no_mock_wheel.py -v
+python -m scripts.n6_no_mock_wheel stage --stage-dir /tmp/n6-stage --report /tmp/n6-stage.json
+# La CI construit le vrai wheel dans /tmp via setuptools déjà installé
+python -m scripts.n6_no_mock_wheel inspect --wheel /tmp/n6-wheels/REEL.whl --normal-wheel /tmp/n1-wheel/NORMAL.whl --report /tmp/n6-inspection.json
+```
+
+**La CI N1 existante** : construit les roues *normale*, *N5* et *N6* ; contrôle strict des sources contre fichiers de wheel, `METADATA`, `WHEEL`, `RECORD` SHA-256 ; effectue un `pip --no-index --no-deps --target` N6 **dans un dossier temporaire sur hôte Linux** ; dans un `python -I -B`, vérifie import réel `microduck_companion`, chemin `social_context`, absence des moteurs mock et modules MuJoCo/Qwen, décision `idle`, portrait `Chill`, expression OEM `silent`, refus de contexte faux, refus des opérations P2a et sociales en l'absence des classes, aucune écriture d'effet. Dépose uniquement le JSON et le wheel **hôte non déployable**. **La CI Python générale** valide tous les tests du dépôt, notamment les anciennes démonstrations P2a/F4-C et le garde SQLite N3.
+
+Les tests `tests/test_n6_no_mock_wheel.py` rejettent les nouveaux sites d'import optionnel, les imports absolus, le retrait non revu d'un site, la copie en dehors d'un dossier temporaire, les contextes mal typés et vérifient le comportement historique dans le **paquet complet**. Les octets d'archive et le SHA de la CI **seront ajoutés après l'analyse de l'artefact**, pas prédits.
+
+## 5. Limites et suite
+
+**Ce travail ne sélectionne pas un vrai périmètre robot.** Il démontre seulement une **frontière d'import logique et un wheel Python testable sur PC**, sans les deux moteurs mock. D'autres modules encore présents dans la tranche portent la mention `mock` dans leurs données, statistiques ou méthodes : ils ne sont pas des effets d'apprentissage réel. Ni ramassement, jeu de balle, évitement, perception fiable, synchronisation temporelle OEM, attribution causale, mémoire autonome réelle, latence ni ressources RK3566 ne sont établis.
+
+Le robot n'est pas disponible : `robotctl version/health/policy list/monitor`, le modèle effectivement chargé, la carte Yocto, la RAM/RSS, le stockage/WAL et les capteurs restent **inconnus**. Avant installation/portage, porter attention à la configuration OEM de base, aux démonstrations d'effets indépendants EX4-C2 et à l'annotation indépendante Cat-A2b/C3. Aucun nouveau service, sous-module, firmware ou chemin moteur ne sera créé sans mandat distinct.
