@@ -21,6 +21,7 @@ from .passive_memory import PassiveObservationJournal, _check_wall
 from .passive_sources import PassiveRead
 from .passive_observations import PASSIVE_KINDS
 from .perception import PerceptionSnapshot
+from .social_context import MockSocialContext  # stable historical re-export
 
 ALLOWED_OBJECT_CUES = frozenset({"cat", "dog", "ball", "toy"})
 ALLOWED_SOUND_CUES = frozenset({"bark", "meow"})
@@ -34,25 +35,6 @@ MAX_SOUNDS_PER_WINDOW = 2
 RETENTION_S = 7 * 24 * 3600
 MAX_LOG_ROWS = 128
 MIN_PLAY_MOTIVATION = .70
-
-
-@dataclass(frozen=True)
-class MockSocialContext:
-    """Claims for test scenarios only, never consent verification hardware."""
-
-    operator_opt_in: bool = False
-    supervised: bool = False
-    privacy_reviewed: bool = False
-    quiet_mode: bool = True
-    brief_audio_opt_in: bool = False
-    play_invitation_opt_in: bool = False
-
-    def __post_init__(self) -> None:
-        if any(type(getattr(self, k)) is not bool for k in (
-            "operator_opt_in", "supervised", "privacy_reviewed",
-            "quiet_mode", "brief_audio_opt_in", "play_invitation_opt_in",
-        )):
-            raise ValueError("mock consent flags must be booleans")
 
 
 @dataclass(frozen=True)
