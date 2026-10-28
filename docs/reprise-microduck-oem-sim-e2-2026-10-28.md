@@ -27,6 +27,12 @@ Le redémarrage OEM a abouti : `robotd status` annonce IMU prête et posture sim
 
 La prochaine opération est **l'analyse locale du JSON existant**, sans commande motrice : labels et limiteurs `robotd` par trame, moyenne **signée** et variation temporelle des écarts, avec avertissement de désynchronisation MuJoCo de 67 ms. Une hypothèse de gain/charge n'est pas une cause démontrée. Le prochain essai actif exige une porte distincte.
 
+### SIM-E2-B — stabilité signée du décalage de repos (28/10/2026)
+
+L'opérateur a ensuite analysé **localement et en lecture seule le même** `$HOME/kwipi-joints-idle.json` (aucune acquisition ni action supplémentaire). **8 `stand`, 8 `deadman`**. Écarts moyens signés `cible−mesure`, en degrés : `left_hip_roll −11,64` [−12,39 ; −10,94], `right_hip_roll +11,26` [+10,67 ; +11,90], `left_knee −10,83` [−11,74 ; −10,37], `right_knee +10,10` [+9,54 ; +10,81]. Les signes restent constants et la fluctuation min–max est de 1,23° à 1,45° pendant ces **huit trames seulement**. `deadman` en inaction/stand n'explique pas la marche antérieure dépourvue de limiteurs. **Aucun défaut d'actionneur ni cause de locomotion ne découle de ce seul écart.**
+
+L'OEM épinglé `robotd-params` configure par défaut `gain=200` et `standing_gain_ratio=0.8`, mais **le gain réellement actif n'est pas présent dans ce JSON**. `body_server.py` (pin RL `b02fdea4`) applique `kp/200` au gain MJCF, où `chosen_actuator` a raideur, friction et limites de force. Une erreur statique sous charge est une hypothèse plausible, **pas démontrée**. Prochaine question discriminante : cibles et positions dans les trames `walk` synchronisées sur une commande OEM **unique, bornée, avec témoin et arrêt explicite**, après un protocole et des critères de stop séparés. Pour le moment : **aucun nouveau `drive`, aucun réglage, aucune récompense**. [Preuve #101](https://github.com/Jean-Philippe56520/Microduck/issues/101#issuecomment-6467856772) ; [protocole](sim-e2b-robotd-joint-target-trace-2026-10-28.md).
+
 ## 3. Comparaison OEM impérative avant tout nouvel essai
 
 L'[audit P0h déjà fusionné](mujoco-p0h-policy-slot-lineage-2026-10-25.md) établit une différence : configuration `robotd` ordinaire OEM **`velstand.onnx` sans `stand` séparé** ; le script officiel `scripts/duck-sim` sélectionne explicitement **`alpha_walking.onnx` + `alpha_stand.onnx`**. Réutiliser les trois fichiers OEM et `robotctl monitor`; ne pas déclarer qu'un seul est défectueux.
