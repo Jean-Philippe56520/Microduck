@@ -25,10 +25,11 @@ def scene(**changes):
 
 
 def recorded_trial(memory: ExperienceMemory, *, measured=.02, baseline=.0001,
-                   healthy=True, safe=True, stop=True):
+                   healthy=True, safe=True, stop=True, limited=False):
     outcome = memory.record_simulated_motion(
         measured_m=measured, baseline_m=baseline, simulated_duration_s=1.2,
         stop_confirmed=stop, healthy_after=healthy, safe_after=safe,
+        control_limited=limited,
     )
     return WalkTrialResult(
         commands_sent=WALK_TICKS, stop_confirmed=stop,
@@ -39,7 +40,9 @@ def recorded_trial(memory: ExperienceMemory, *, measured=.02, baseline=.0001,
         outcome=outcome.outcome, reward=outcome.reward, preference_before=0.,
         preference_after=outcome.updated_preference,
         next_intention="explore", trials_in_memory=outcome.observed_trials,
-        memory_source=outcome.source, policy_diagnostics={"policy_samples": WALK_TICKS},
+        memory_source=outcome.source,
+        policy_diagnostics={"policy_samples": WALK_TICKS,
+                            "limited_by": ["deadman"] if limited else []},
     )
 
 
@@ -82,6 +85,21 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(0, report["simulated_preference_only"])
         self.assertIsNone(report["trial"]["reward"])
 
+    def test_oem_deadman_refuses_credit_even_for_large_translation(self):
+        trial = recorded_trial(self.memory, measured=.024, limited=True)
+        decisions = compare_decisions(scene(), self.memory)
+        report = validate_experience(trial, self.memory, decisions)
+        self.assertEqual("inconclusive_control_limit", trial.outcome)
+        self.assertIsNone(report["trial"]["reward"])
+        self.assertEqual(0, report["simulated_preference_only"])
+        self.assertTrue(report["control_limiter_observed"])
+        self.assertFalse(report["preference_learning_eligible"])
+        self.assertEqual("same-choice-after-one-trial", report["conclusion"])
+        with self.assertRaises(SimE1Error):
+            validate_experience(replace(trial, policy_diagnostics={
+                "policy_samples": WALK_TICKS, "limited_by": []}),
+                self.memory, decisions)
+
     def test_unconfirmed_stop_or_bad_final_safety_cannot_pass(self):
         for kwargs in ({"stop": False}, {"healthy": False}, {"safe": False}):
             with self.subTest(kwargs=kwargs):
@@ -105,7 +123,9 @@ class EvidenceTests(unittest.TestCase):
             replace(t, reward=1.0),
             replace(t, preference_after=.6),
             replace(t, preference_before=.1),
-            replace(t, policy_diagnostics={"policy_samples": 0}),
+            replace(t, policy_diagnostics={"policy_samples": 0, "limited_by": []}),
+            replace(t, policy_diagnostics={"policy_samples": WALK_TICKS,
+                                          "limited_by": ["deadman"]}),
         ):
             with self.subTest(fake=fake), self.assertRaises(SimE1Error):
                 validate_experience(fake, self.memory, decisions)
