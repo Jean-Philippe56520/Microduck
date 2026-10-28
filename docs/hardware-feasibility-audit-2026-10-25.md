@@ -1,5 +1,7 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**B / F5 v2 — mesures hôte, non robot (28/10/2026) :** une prévisualisation manuelle Qwen3.5 9B sur PC Windows/Ollama a rapporté ~30,7 s pour 210 tokens (autre essai ~30,2 s pour 186 tokens) sur une image inspectée et consentie, **sans mesure de RSS GPU/CPU cumulée, consommation/thermie ni benchmark RK3566**. Le 9B reste facultatif sur le PC ; aucun poids n'est embarqué. Le contenu pouvant suggérer des gestes dangereux, aucune sortie libre n'est une autorisation physique. [Compte rendu](kwipi-qwen9b-role-contract-v2-2026-10-28.md).
+
 **SIM-E2-D — audit de capacité constructeur, sans déploiement (28/10/2026) :** aucune API publique du `robotd` épinglé ne livre au même tick `obs[61]` et `raw_actions[14]`. Une future capture OEM opt-in reste **prévue seulement**, avec budget RAM/RSS, CPU, latence, limite 20 ms à 50 Hz et contrôle de confidentialité **à mesurer** ; aucune extrapolation PC vers le RK3566. [Audit](sim-e2d-oem-onnx-tick-observability-2026-10-28.md).
 
 **SIM-E2-C, 28/10/2026 — analyse PC uniquement :** l'archive P0e officielle (SHA-256 vérifiés) a été traitée **hors ligne**, sans mesure RK3566, moteurs, température, RAM robot ni autonomie. Les moyennes de biais debout reproduisent l'ordre de grandeur WSLg, mais **aucune extrapolation de la dynamique BAM/PD à un servo matériel n'est permise**. [Dossier](sim-e2c-offline-onnx-observation-gap-and-original-tracking-2026-10-28.md).

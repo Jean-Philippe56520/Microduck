@@ -1,5 +1,7 @@
 # Kwipi — plan d'apprentissage autonome par l'expérience (EX)
 
+**F5 v2 — Qwen 9B sur PC : conseiller, pas lexique ni contrôleur (28/10/2026) :** une scène autorisée peut produire des hypothèses de catégorie, propriétés, relations, conséquences possibles et **observation future pertinente** ; le pilote est manuel, sans souvenir ni moteur. Une sortie réelle a proposé à tort `ground_pick` vers un chat ; aucune proposition Qwen ne doit devenir une commande sans vérification indépendante des êtres vivants, zone/sol, skills chargés et effet observable. **Aucune mémoire causale** avant acte OEM achevé et effet indépendant confirmé. [Rôle](kwipi-qwen9b-role-contract-v2-2026-10-28.md).
+
 **Addendum SIM-E1 du 28/10/2026 :** une première expérimentation motrice **en simulateur OEM uniquement** est codée sur branche dédiée ; elle réutilise l'unique essai J2e déjà borné et l'unique mémoire SQLite, puis compare l'effet de la préférence `simulator/explore` sur une décision F2, avec contrôle sans préférence. **Pas** d'objets ou d'animaux modélisés, ni causalité physique, ni apprentissage de réseau, ni autonomie validée. Voir [SIM-E1](sim-e1-active-experience-2026-10-28.md) ; priorité Cat-A2b et garde EX4-C2 inchangées.
 
 **Date : 26 octobre 2026. Statut : PLAN PROPOSÉ, DOCUMENTATION UNIQUEMENT.**

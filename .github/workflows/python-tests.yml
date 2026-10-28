@@ -1,6 +1,9 @@
 name: Python companion tests
 on:
+  # Runs once per PR (instead of both push and pull_request on its branch).
+  # Public main keeps its post-merge CI; avoids redundant Actions minutes.
   push:
+    branches: [main]
   pull_request:
 jobs:
   test:
@@ -10,8 +13,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Isolate all Python tests in a temporary virtual environment
+        run: |
+          python -m venv "$RUNNER_TEMP/microduck-companion-venv"
+          echo "$RUNNER_TEMP/microduck-companion-venv/bin" >> "$GITHUB_PATH"
+          echo "VIRTUAL_ENV=$RUNNER_TEMP/microduck-companion-venv" >> "$GITHUB_ENV"
+      - name: Verify virtual environment before installing dependencies
+        run: |
+          python -c 'import sys; assert sys.prefix != sys.base_prefix, "not in a venv"; print("Python virtual environment OK")'
+          # No Qwen download, photo upload, local PC tunnel or remote model access.
+      - name: F5 v2 PC-only image-preprocessing test dependency
+        run: python -m pip install Pillow==11.3.0
       - run: python -m unittest discover -s tests -v
       - run: python -m compileall -q microduck_companion tests
+      - name: F5 v2 launcher PowerShell syntax (parse only; never run Ollama)
+        run: |
+          pwsh -NoProfile -NonInteractive -Command '$tokens=$null; $parseErrors=$null; [System.Management.Automation.Language.Parser]::ParseFile("scripts/kwipi-vision-test.ps1", [ref]$tokens, [ref]$parseErrors) | Out-Null; if ($parseErrors.Count -gt 0) { $parseErrors | ForEach-Object { Write-Host $_.Message }; exit 1 }; Write-Host "PowerShell parser OK; Windows runtime not tested"'
       - run: sh -n scripts/sim-smoke.sh
       - name: P2a two mock-only offline sessions
         run: |
