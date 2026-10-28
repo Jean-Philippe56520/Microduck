@@ -1,5 +1,7 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**C1 — lecture SQLite dérivée (28/10/2026) :** agrégation de maximum 256 lignes F4-A avec jointure vers F1-C/F2-C sur **PC/fixtures**, aucune mutation SQLite ni capture média, import PC Qwen, inférence NPU ou contrôle de moteur. **Pas de mesure RK3566, RAM/RSS, taille réelle SQLite/WAL, chaleur, latence à 50 Hz ou autonomie** ; maintenir scripts/resource-audit.sh et l'audit de montage OEM avant déploiement. [Contrat](c1-conservative-category-recall-2026-10-28.md).
+
 **B / F5 v3 — garde PC de conseil, aucune nouvelle mesure embarquée (28/10/2026) :** pure validation de fixtures Python sans caméra/ToF/servo, sans commande `robotd`, sans écriture SQLite ni entraînement. Aucun profil CPU/RSS ou temps de décision sur RK3566. Même une hypothèse `hypothesis_for_review` n'est **pas une permission physique** ; tout essai robot exige un inventaire OEM actif, les protections et mesures matérielles indépendantes.
 
 **B / F5 v2 — mesures hôte, non robot (28/10/2026) :** une prévisualisation manuelle Qwen3.5 9B sur PC Windows/Ollama a rapporté ~30,7 s pour 210 tokens (autre essai ~30,2 s pour 186 tokens) sur une image inspectée et consentie, **sans mesure de RSS GPU/CPU cumulée, consommation/thermie ni benchmark RK3566**. Le 9B reste facultatif sur le PC ; aucun poids n'est embarqué. Le contenu pouvant suggérer des gestes dangereux, aucune sortie libre n'est une autorisation physique. [Compte rendu](kwipi-qwen9b-role-contract-v2-2026-10-28.md).

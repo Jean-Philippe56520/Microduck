@@ -1,5 +1,7 @@
 # Point de reprise — Microduck Companion / Kwipi — 28 octobre 2026
 
+**Chantier C1 — mémoire prudente (28/10/2026 ; [dossier](c1-conservative-category-recall-2026-10-28.md)) :** ajout d'une API de rappel *lecture seule* qui regroupe catégories historiques F4-A selon F1-C/F2-C encore actifs, compte les sessions fictives (≠ scènes indépendantes), détecte les hypothèses contradictoires, et garde absence d'autorisation motrice. **Une seule SQLite**, aucune nouvelle table, aucun M1-B, Qwen ou EX réécrit ; résultats attendus sur fixtures, aucune validation robot. **Suite C2 : rétention bornée des corrections** (le prune F4-A détruit aujourd'hui des tombstones), puis C3 scènes distinctes avec/sans mémoire ; Cat-A2b #78 reste la porte de perception et SIM-E2 #101 n'est pas résolue.
+
 **Document de continuité après réinitialisation de conversation.** Vérifier GitHub, le SHA de main, les PR et les fichiers effectivement installés **avant** toute affirmation ou modification. Priorité au [plan d'action](plan-action.md), aux [instructions permanentes](microduck-companion-instructions-permanentes-2026-10-28.md) et au [protocole de réutilisation](development-reuse-protocol.md).
 
 ## 1. État GitHub vérifié lors de cette reprise
