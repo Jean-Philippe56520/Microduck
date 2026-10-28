@@ -64,7 +64,9 @@ def _load_report(path: Path) -> dict:
     if (not isinstance(policy, dict)
             or policy.get("policy_samples") != ONSET_PROBE_TICKS
             or policy.get("walk_policy_samples", 0) < ONSET_PROBE_TICKS - 4
-            or policy.get("limited_by") != []
+            or not isinstance(policy.get("limited_by"), list)
+            or not all(isinstance(x, str) and len(x) <= 64
+                       for x in policy["limited_by"])
             or _number(policy.get("max_applied_vx_mps"), "applied") < .25):
         raise GroundTruthError("E2G control stream not eligible")
     start = _number(report.get("sim_baseline_time_s"), "baseline time")
@@ -158,6 +160,12 @@ def summarize_support(trace_path: Path, report_path: Path) -> dict:
         "source_trace_sha256": sha256(trace_path.read_bytes()).hexdigest(),
         "source_e2g_sha256": sha256(report_path.read_bytes()).hexdigest(),
         "complete_original_solver_stream": True,
+        # A limiter observed at ANY sample confounds causal attribution,
+        # but does not erase independent native MuJoCo contact measurements.
+        "control_limited_by_any_sample": report["sampled_policy"]["limited_by"],
+        "e2g_control_eligible": report.get("control_eligible") is True,
+        "motor_command_caused_displacement_proven": False,
+        "archive_is_not_unconfounded_replay": True,
         "alignment": "MuJoCo simulator-clock bracket, not per-command synchronization",
         "frames_in_bracket": len(middle),
         "bracket_sim_duration_s": middle[-1]["sim_time_s"]-middle[0]["sim_time_s"],
