@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**CAM-OEM-2 (28/10/2026) — audit optique public sans JPEG :** [résultats et décision](cam-oem2-public-geometry-source-audit-2026-10-28.md), [script lecture seule](../scripts/cam_oem2_public_optics_audit.py), 7 tests locaux. CID-SIMS 12/26 cm mais D455 HFOV calculé **79,242°** ≠ IMX219 familial **62°** ; MuJoCo **72,734°**. TiROD `Low` = lumière, seul `chair` est une classe directement correspondante, hauteur et droits images inconnus. **Aucun benchmark comparatif de Kwipi** : Cat-A2b #78, C3-B et mesures sur robot non résolus.
+
+
 **CAM-OEM-1 (28/10/2026) :** [contrôle de fidélité caméra](cam-oem1-camera-fidelity-2026-10-28.md) sur métadonnées fictives : variantes Zero3/IMX219 et Beta/GC2093, qualité `mediad` et FOV MuJoCo séparés. Barrière de **revendication de représentativité**, pas calibration/capture réelle ni changement au benchmark privé Cat-A2b. Les preuves humaines Cat-A2b #78, scènes C3-B et validation matérielle restent ouvertes ; [PR #136](https://github.com/Jean-Philippe56520/Microduck/pull/136) **fusionnée** au squash `2aa4419d` ; [CI PR Python #40765577402](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40765577402) et [inventaire N1/N5/N6 #40765577284](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40765577284) verts au SHA final `e12815e7` ; [CI post-fusion `main` #40765763628](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40765763628) verte.
 
 
