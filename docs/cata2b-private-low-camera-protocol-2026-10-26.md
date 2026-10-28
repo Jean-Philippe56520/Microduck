@@ -1,5 +1,7 @@
 # Cat-A2b — Réelles captures basses : protocole local privé et banc de test
 
+**Ajout Cat-A2b-G du 28/10/2026 :** pour créer localement des contre-annotations dans le format du comparateur Cat-A2b-R, l'éditeur cata2b_blind_editor.py affiche les JPEG TEST et permet de tracer manuellement des boîtes, sans montrer les labels V3 ou sorties YOLOX. Il est réservé à des relecteurs **réellement indépendants** n'ayant pas vu ces résultats. Le validateur refuse toujours un corpus dont les scènes et lieux sont mal partitionnés. [Mode d'emploi et limites](cata2b-local-blind-editor-2026-10-28.md).
+
 **Extension Cat-A2b-R du 28/10/2026 ([PR #118](https://github.com/Jean-Philippe56520/Microduck/pull/118), [CI #40707844533](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40707844533) réussie) :** le validateur `cata2b_blind_review.py` peut confronter **deux annotations déclarées aveugles distinctes** sur les JPEG TEST du manifeste déjà vérifié. Les compteurs classe/visibilité/IoU50 et négatifs sont agrégés ; rien n'atteste l'indépendance humaine, le masquage effectif des prédictions ou la hauteur de prise. Aucune métrique d'accuracy/AP50 ne devient validée par cet accord. [Usage et schéma privés](cata2b-blind-independent-annotation-gate-2026-10-28.md).
 
 **26 octobre 2026. Statut : code de VALIDATION DES CAPTURES ET d'ÉVALUATION locale, PAS résultats de reconnaissance ni mesures sur Kwipi.** Le robot n'est pas disponible. Aucun corpus privé ni photographie à hauteur de capteur n'est fourni ou publié dans ce lot.
