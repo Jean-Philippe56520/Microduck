@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from .passive_learning import PassiveLearning
     from .behavioral_memory import BehavioralMemory
     from .experience_expectations import MockAttentionTrends
+    from .mock_goal_memory import MockGoalMemory
 
 
 @dataclass(frozen=True)
@@ -41,9 +42,12 @@ class Motivations:
     play: float = 0.60
     energy: float = 0.80
     caution: float = 0.35
+    # DET-1: optional cognitive persistence; never physical permission.
+    determination: float = 0.55
 
     def clamp(self) -> None:
-        for key in ("curiosity", "sociability", "play", "energy", "caution"):
+        for key in ("curiosity", "sociability", "play", "energy",
+                    "caution", "determination"):
             setattr(self, key, max(0.0, min(1.0, getattr(self, key))))
 
 
@@ -99,7 +103,8 @@ class AutonomyBrain:
                                  now_wall_epoch_s: float,
                                  learning: PassiveLearning | None = None,
                                  behavioral: BehavioralMemory | None = None,
-                                 expectations: MockAttentionTrends | None = None) -> PassiveIntent:
+                                 expectations: MockAttentionTrends | None = None,
+                                 goals: MockGoalMemory | None = None) -> PassiveIntent:
         """F2-B/F2-C: pace non-motor proposals; optional mock-only bias.
 
         Reuses F2-A provenance checking and the same ExperienceMemory journal.
@@ -111,6 +116,13 @@ class AutonomyBrain:
         from .passive_learning import PassiveLearning
         from .behavioral_memory import BehavioralMemory
         from .experience_expectations import MockAttentionTrends
+
+        if goals is not None:
+            from .mock_goal_memory import MockGoalMemory
+            if not isinstance(goals, MockGoalMemory):
+                raise TypeError("DET-1 requires existing MockGoalMemory")
+            if goals._memory is not self.memory:
+                raise ValueError("DET-1 must share the brain SQLite")
 
         if not isinstance(journal, PassiveObservationJournal):
             raise TypeError("a passive journal is required")
@@ -137,7 +149,7 @@ class AutonomyBrain:
             reading, journal=journal, motivations=self.motives,
             now_monotonic_s=now_monotonic_s,
             now_wall_epoch_s=now_wall_epoch_s, learning=learning,
-            behavioral=behavioral, expectations=expectations,
+            behavioral=behavioral, expectations=expectations, goals=goals,
         )
 
     def passive_rhythm_metrics(self) -> PassiveRhythmMetrics:

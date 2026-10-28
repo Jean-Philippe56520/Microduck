@@ -89,7 +89,8 @@ def _valid_motivations(motives: Motivations) -> bool:
     return all(
         _valid_scalar(getattr(motives, name))
         and getattr(motives, name) <= 1.0
-        for name in ("curiosity", "sociability", "play", "energy", "caution")
+        for name in ("curiosity", "sociability", "play", "energy",
+                 "caution", "determination")
     )
 
 

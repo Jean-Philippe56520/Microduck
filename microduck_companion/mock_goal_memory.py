@@ -17,6 +17,8 @@ MAX_GOALS = 32
 MAX_LINKS_PER_GOAL = 8
 MAX_LINKS_TOTAL = 128
 MAX_LINK_AGE_S = 120.0
+# DET-1 reads recent goals only; this is a prototype freshness gate.
+MAX_FOCUS_AGE_S = 14 * 24 * 3600
 GOAL_KINDS = frozenset({"observe_category", "inspect_unknown", "compare_views"})
 STATES = frozenset({"candidate", "active", "suspended", "mock_closed", "abandoned"})
 RESUME_CONDITIONS = frozenset({"new_view", "new_context", "new_evidence", "operator_review"})
@@ -351,6 +353,43 @@ class MockGoalMemory:
                 ORDER BY created_at_epoch_s DESC,id DESC LIMIT ?
             """, (limit,)).fetchall()
         return tuple(self._as_goal(row) for row in rows)
+
+    def attention_focus(self, *, now_wall_epoch_s: float) -> frozenset[tuple[str, str]]:
+        """Read-only DET-1 hints from active, unattempted MOCK goals.
+
+        A linked EX1 proposal blocks the bias regardless of execution,
+        refusal, retraction or expiry. Context labels never prove a new
+        physical circumstance. No target is added to F2's candidate list.
+        """
+        now = _epoch(now_wall_epoch_s)
+        rows = self._memory.conn.execute("""
+            SELECT g.kind,g.category,g.source,g.state,g.active,
+                   g.updated_at_epoch_s
+            FROM mem1_mock_goals g
+            WHERE g.active=1 AND g.state='active'
+              AND g.source='mock_fixture_only'
+              AND g.updated_at_epoch_s BETWEEN ? AND ?
+              AND NOT EXISTS (
+                  SELECT 1 FROM mem1_mock_goal_links l
+                  WHERE l.goal_row_id=g.id
+              )
+            ORDER BY g.id ASC LIMIT ?
+        """, (now - MAX_FOCUS_AGE_S, now, MAX_GOALS + 1)).fetchall()
+        if len(rows) > MAX_GOALS:
+            raise ValueError("MEM-1 goal count exceeds the fixture budget")
+        focus: set[tuple[str, str]] = set()
+        for row in rows:
+            _kind_category(row["kind"], row["category"])
+            if (row["source"] != SOURCE or row["state"] != "active"
+                    or row["active"] != 1):
+                raise ValueError("untrusted DET-1 goal evidence")
+            if row["kind"] == "observe_category":
+                focus.add(("observe", row["category"]))
+            elif row["category"] == "unknown":
+                focus.add(("inspect", "unknown"))
+            # A compare_views goal for a known category does not invent
+            # an "inspect" F2 candidate which the sensor did not permit.
+        return frozenset(focus)
 
     def attempts(self, goal_id: str, *,
                  include_withdrawn: bool = False) -> tuple[MockGoalAttempt, ...]:

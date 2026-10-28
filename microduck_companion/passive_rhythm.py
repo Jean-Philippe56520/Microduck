@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 import math
 import sqlite3
 
@@ -25,8 +26,13 @@ from .experience_expectations import MockAttentionTrends, MAX_ATTENTION_BIAS
 from .passive_observations import summarize_passive
 from .passive_sources import PassiveRead
 
+if TYPE_CHECKING:
+    from .mock_goal_memory import MockGoalMemory
+
 MIN_CYCLE_GAP_S = 0.5
 ATTENTION_COOLDOWN_S = 3.0
+# DET-1 influences only existing fresh passive candidates, never eligibility.
+MAX_DETERMINATION_FOCUS_BIAS = 0.18
 REST_ENTER_ENERGY = 0.22
 REST_EXIT_ENERGY = 0.34
 REST_GAIN_PER_TICK = 0.04
@@ -128,7 +134,8 @@ class PassiveRhythm:
              now_monotonic_s: float, now_wall_epoch_s: float,
              learning: PassiveLearning | None = None,
              behavioral: BehavioralMemory | None = None,
-             expectations: MockAttentionTrends | None = None) -> PassiveIntent:
+             expectations: MockAttentionTrends | None = None,
+             goals: MockGoalMemory | None = None) -> PassiveIntent:
         """One strictly passive, mock-only cognitive cycle.
 
         F2-A validation is called *inside* this module. The caller cannot
@@ -151,6 +158,12 @@ class PassiveRhythm:
                 raise TypeError("existing F4-A BehavioralMemory required")
             if behavioral._memory is not journal._memory:
                 raise ValueError("F4-A memory must share F1/F2 SQLite")
+        if goals is not None:
+            from .mock_goal_memory import MockGoalMemory
+            if not isinstance(goals, MockGoalMemory):
+                raise TypeError("DET-1 requires the existing MockGoalMemory")
+            if goals._memory is not journal._memory:
+                raise ValueError("DET-1 must use the same ExperienceMemory")
         if expectations is not None:
             if not isinstance(expectations, MockAttentionTrends):
                 raise TypeError("EX3 must use the existing mock trend reader")
@@ -267,6 +280,19 @@ class PassiveRhythm:
                 candidates.append(("listen", "sound_label", obs.category,
                                    "fictional_sound_category"))
 
+        # DET-1 is opt-in; never generates an intention from memory alone.
+        # MEM-1 returns only *active, unattempted* fixture goals. A prior
+        # EX1 link blocks persistence even if that EX1 episode was retracted
+        # or later expired: declarations of "new view" are not sensor proof.
+        goal_focus: frozenset[tuple[str, str]] = frozenset()
+        if goals is not None and candidates and motivations.determination > 0:
+            try:
+                goal_focus = goals.attention_focus(
+                    now_wall_epoch_s=now_wall_epoch_s)
+            except (sqlite3.Error, ValueError, OverflowError):
+                return self._record(self._idle("det1_goal_memory_unavailable"),
+                                    motivations=motivations, update_energy=False)
+
         # F4-A stores only explicitly corroborated P2a *fictional* outcomes.
         # The optional bounded summary is an inspection tendency, not a
         # second learned policy or evidence of physical execution. Read once.
@@ -301,6 +327,11 @@ class PassiveRhythm:
                 continue
             score = self._score(intention, category, motivations)
             score += trend_biases.get((intention, category), 0.0)
+            # Apply strictly AFTER existing F2 fresh-source and cooldown
+            # gates. This can only rank proposals F2 already admitted.
+            focused = (intention, category) in goal_focus
+            if focused:
+                score += MAX_DETERMINATION_FOCUS_BIAS * motivations.determination
             if intention == "inspect":
                 score += outcome_bias  # <= +/-0.12, mock-only; no motor effect
             # Explicitly opt-in: F2-B callers keep their original fixed scores.
@@ -320,7 +351,9 @@ class PassiveRhythm:
             if score > best_score:
                 best_score = score
                 best_proposal = PassiveIntent(
-                    intention, reason, kind, category)
+                    intention,
+                    "det1_mock_goal_focus" if focused else reason,
+                    kind, category)
 
         if best_proposal.intention in _ACTIVE:
             key = (best_proposal.intention, best_proposal.target_kind,
