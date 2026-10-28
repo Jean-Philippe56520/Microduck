@@ -107,6 +107,8 @@ class RolePreviewTests(TestCase):
         self.assertEqual(report["motor_commands_issued"], 0)
         self.assertEqual(report["photos_saved_by_companion"], 0)
         self.assertIn("chaise", report["advisor_text"])
+        self.assertEqual("blocked", report["advice_guard"]["machine_use"])
+        self.assertFalse(report["advice_guard"]["physical_actions_authorized"])
         self.assertEqual(report["load_s"], 2.0)
         self.assertEqual(report["image_prompt_s"], 4.0)
         self.assertEqual(report["generation_s"], 8.0)
