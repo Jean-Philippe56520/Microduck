@@ -101,7 +101,14 @@ class BehavioralMemory:
         """
         # The P2a fixture runner is required only for this historical write.
         # F2 reading a behavioral summary must not import the cycle runner.
-        from .mock_cycles import MockCycleRunner
+        try:
+            from .mock_cycles import MockCycleRunner
+        except ModuleNotFoundError as exc:
+            if exc.name != f"{__package__}.mock_cycles":
+                raise
+            # A deliberately reduced HOST probe must fail closed: it cannot
+            # record scripted P2a outcomes without the original fixture runner.
+            raise RuntimeError("P2a mock cycle runner unavailable in reduced host probe") from exc
 
         if not isinstance(runner, MockCycleRunner):
             raise TypeError("requires existing P2a mock runner")
