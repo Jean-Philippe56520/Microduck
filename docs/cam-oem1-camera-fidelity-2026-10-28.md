@@ -1,6 +1,6 @@
 # CAM-OEM-1 — fidélité matérielle des essais visuels (28 octobre 2026)
 
-**Statut : candidat en branche, tests PC/fixtures à vérifier en CI.** Aucune caméra physique, image privée, poids ONNX, SQLite, modèle, sous-module OEM, politique de marche ou moteur touchés. **Un précontrôle des métadonnées n'est pas une validation de la caméra du robot.** Le plan directeur reste [plan-action.md](plan-action.md).
+**Statut : [PR #136](https://github.com/Jean-Philippe56520/Microduck/pull/136) en revue ; [CI N1/N5/N6 #40765215152](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40765215152) et [CI Python #40765215269](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40765215269) vertes au SHA `08d76769`. Dernier SHA/CI et fusion à vérifier avant livraison.** Aucune caméra physique, image privée, poids ONNX, SQLite, modèle, sous-module OEM, politique de marche ou moteur touchés. **Un précontrôle des métadonnées n'est pas une validation de la caméra du robot.** Le plan directeur reste [plan-action.md](plan-action.md).
 
 ## 1. Porte OEM-first : observation, hypothèse et échec
 
@@ -40,10 +40,12 @@ Verdicts :
 
 ## 4. Tests et suites de vérification
 
-**Inventaire d’intégration :** le wheel normal passe de 122 à 123 modules à cause de ce garde pur. Les allowlists N5 (20 modules) et N6 (18 modules) restent inchangées ; seules les deux attentes de compte normal dans leurs tests sont mises à jour après audit. Aucun nouveau module n’est admis dans les roues expérimentales.\n\nTests positifs : constantes OEM épinglées, mode 720p30 livré contre 1920×1080 du capteur, profil Zero3, Beta avec calibration par unité *déclarée*, intervalle optique explicite, rotation. Tests négatifs : variante inconnue, capteur/rotation erronés, GC2093 sans intrinsics, angle nominal incohérent, `NaN`/type booléen, qualité incompatible, image publique/privée même basse, MuJoCo 45°/640×360, source non autorisée. Vérification AST : zéro import capteur/réseau/SQLite/moteur. Tous exécutables sur PC avec `python -m unittest tests.test_camera_fidelity -v`.
+**Inventaire d’intégration :** le wheel normal passe de 122 à 123 modules à cause de ce garde pur. Les allowlists N5 (20 modules) et N6 (18 modules) restent inchangées ; seules les deux attentes de compte normal dans leurs tests sont mises à jour après audit. Aucun nouveau module n’est admis dans les roues expérimentales.
+
+Tests positifs : constantes OEM épinglées, mode 720p30 livré contre 1920×1080 du capteur, profil Zero3, Beta avec calibration par unité *déclarée*, intervalle optique explicite, rotation. Tests négatifs : variante inconnue, capteur/rotation erronés, GC2093 sans intrinsics, angle nominal incohérent, `NaN`/type booléen, qualité incompatible, image publique/privée même basse, MuJoCo 45°/640×360, source non autorisée. Vérification AST : zéro import capteur/réseau/SQLite/moteur. Tous exécutables sur PC avec `python -m unittest tests.test_camera_fidelity -v`.
 
 **Inconnus bloquants** : exemplaire/board réel, `robotctl health`, `/etc/robot/robotd.toml`, `media.video` effectivement reçu, capteur/lentille/montage, calibrage par unité `[media.intrinsics]`, hauteur du centre optique, inclinaison, éclairage, déformations, débit et latences RK3566. Le vrai passage Cat-A2b #78/C3-B demande les deux relectures humaines indépendantes, scènes disjointes, effets de projection TV vs monde réel, et benchmark sur **véritables captures de l'optique concernée**, puis l'audit `scripts/resource-audit.sh` sur matériel. Sans cela, **aucune précision ou fiabilité caméra de Kwipi n'est démontrée**.
 
 ## 5. État de livraison
 
-Renseignement à mettre à jour d'après le SHA final PR et les CI. Le lot n'a pas exécuté Qwen, MuJoCo, YOLOX ni `mediad` ; c'est une porte documentaire et des fixtures, pas une progression de l'autonomie.
+La validation du SHA `08d76769` est référencée ci-dessus ; le code renforce également les deux drapeaux de non-validation physique contre les rapports forgés. Contrôler la CI du dernier SHA de la PR #136 et la CI post-fusion `main`. Le lot n'a pas exécuté Qwen, MuJoCo, YOLOX ni `mediad` ; c'est une porte documentaire et des fixtures, pas une progression de l'autonomie.

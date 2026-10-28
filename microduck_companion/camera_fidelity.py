@@ -90,6 +90,12 @@ class CameraFidelityReport:
     robot_hardware_verified: bool = False
     real_camera_performance_verified: bool = False
 
+    def __post_init__(self) -> None:
+        # Metadata cannot be upgraded to robot validation, even by DTO callers.
+        if (self.robot_hardware_verified is not False
+                or self.real_camera_performance_verified is not False):
+            raise ValueError("camera metadata is not robot hardware proof")
+
 
 def reference_camera(board: str) -> tuple[str, int, float | None]:
     """Exact pinned OEM family defaults, NOT live device configuration."""

@@ -135,6 +135,12 @@ class CameraFidelityTests(unittest.TestCase):
         self.assertNotEqual(verdict.sim_horizontal_fov_deg, 62.0)
         self.assertFalse(verdict.declared_oem_metadata_match)
 
+    def test_metadata_report_cannot_be_forged_into_hardware_proof(self):
+        report = assess_camera_fidelity(zero3(), target_board="zero3")
+        for name in ("robot_hardware_verified", "real_camera_performance_verified"):
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                replace(report, **{name: True})
+
     def test_malformed_numeric_enum_and_provenance_rejected(self):
         for field, bad in (
             ("width", True), ("width", 0), ("height", 0),
@@ -167,7 +173,6 @@ class CameraFidelityTests(unittest.TestCase):
                  for alias in node.names}
         self.assertEqual({"__future__", "dataclasses"}, names)
         self.assertEqual({"math"}, plain)
-        self.assertNotIn("robotd", source.read_text(encoding="utf-8").split("import"))
 
 
 if __name__ == "__main__":
