@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**N4 — budget SQLite/WAL sur données fictives (28/10/2026) :** [protocole et profil PC](docs/n4-host-sqlite-wal-budget-2026-10-28.md) : mesure de l'unique `ExperienceMemory` temporaire (F0/F4-A/M1-B), corrections C2 conservées à la réouverture, M1-B strict, octets réels du fichier et du WAL avant/après checkpoint : **86 016 o de DB finale**, **1 013 552 o de WAL temporaire** sous auto-checkpoint volontairement désactivé, puis WAL 0 ; **53 corrections conservées**. [CI Linux #40749269400](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40749269400) verte pour le code, dernier commit documentaire à revalider. **Pas de DB réelle, migration, photo/son, moteur, modèle, déploiement ni estimation RK3566**. [N3 #131](https://github.com/Jean-Philippe56520/Microduck/pull/131) est fusionnée (CI finale [#40747920227](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40747920227) verte).
+
+
 **Audit SQLite N3 (28/10/2026) :** le socle `ExperienceMemory` reste unique ; **22 tables** recensées sur 121 modules (incluant X2-C simulation) F0/F1/F2/F4/M1/EX/F5, sans prétendre à 21 services actifs. [Rapport et tests N3](docs/n3-sqlite-writer-retention-audit-2026-10-28.md) : repérer déclarations/écrivains, conserver tombstones F4-A et M1-B R2-A, refuser deuxième ouverture SQLite écrivable non revue. Script **statique sur sources**, pas une migration ou installation robot ; [CI générale #40747572022](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40747572022) verte au SHA de la PR et [PR #131](https://github.com/Jean-Philippe56520/Microduck/pull/131) à vérifier pour son état de fusion.
 
 

@@ -34,6 +34,13 @@ jobs:
         with:
           name: n3-sqlite-source-inventory
           path: ${{ runner.temp }}/n3-sqlite-audit.json
+      - name: N4 host-only SQLite/WAL budget and correction retention (scratch DB)
+        run: |
+          python -m scripts.n4_sqlite_fixture_budget --output "$RUNNER_TEMP/n4-sqlite-budget.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: n4-host-sqlite-wal-fixture
+          path: ${{ runner.temp }}/n4-sqlite-budget.json
       - name: Cat-A2b-G real Tk GUI smoke in a virtual Linux display
         run: |
           # Synthetic JPEGs ONLY. Do not fetch/upload any operator images.
