@@ -1,5 +1,15 @@
 # SIM-E1 — première expérience active bornée dans MuJoCo OEM
 
+## Acceptation finale du lot — PR #100 fusionnée
+
+**État réel au 28 octobre 2026 :** [PR #100 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/100), SHA merge `99faad230480502c321cb42db8d70509d3969409`. [CI MuJoCo constructeur du correctif #40652100659](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40652100659) **réussie** au SHA `72b051cc80651a1e7595bcb5c6de0299c26fae16`, **1 408 tests Python, 31 ignorés, 0 échec**. [CI Python après fusion sur `main` #40652673610](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40652673610) réussie.
+
+L'[artefact de CI MuJoCo](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40652100659/artifacts/12799698587) contient : 24 consignes fixes J2e, 24 statuts `robotd` (23 `walk`, 1 `stand`), `robot.stop` confirmé, translation du tronc `0.0015535466 m` (≈ 1,554 mm) et dérive de référence `0.0000481123 m` (≈ 0,048 mm). Le rapport signale `limited_by=["deadman"]`, `outcome="inconclusive_control_limit"`, `reward=null`, préférence `0.0 → 0.0`, même décision `explore` avec/sans préférence, et `motor_commands_from_counterfactual=0`. L'épisode est conservé dans la SQLite de simulation, sans crédit positif ou négatif. La présence agrégée du flag ne prouve pas qu'il était actif pendant tous les ticks ; à détailler en SIM-E2.
+
+**Validé :** refus d'apprentissage sur commande limitée, preuves liées à une simulation OEM épinglée, comparaison cognitive passive et absence de second contrôleur. **Non validé :** démarche efficace, navigation sûre, objet simulé, effet causal, généralisation, multimodal Qwen intégré, tests robot réel ou budget mémoire RK3566. Suivi [SIM-E2 #101](https://github.com/Jean-Philippe56520/Microduck/issues/101). Les limites et les premiers runs pré-correctif sont conservés ci-dessous pour audit.
+
+
+
 ## Résultat du premier run et correction anti-fausse récompense (28/10/2026)
 
 La [première CI MuJoCo réelle #40651133574](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40651133574), sur SHA `099537f7...`, a réussi le banc headless et **1 405 tests Python, 31 ignorés**. Rapport archivé : **24** commandes `robot.move` à 0,12 m/s demandé, **24** états échantillonnés (23 `walk`, 1 `stand`), `robot.stop` accusé, déplacement du tronc **0,001858 m** contre dérive de base **0,000132 m**. Le résultat historique `no_progress_observed`, la récompense négative `-0.5` et la préférence `-0.075` ont été calculés **malgré `limited_by:["deadman"]` dans la télémétrie OEM**. L'intention restait `explore` avec et sans préférence. Cette pénalité **n'est donc pas une preuve d'échec d'apprentissage ou de commande librement exécutée**.
