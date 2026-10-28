@@ -59,7 +59,8 @@ if [ "${DUCK_SIM_X2C_ACCEPTANCE:-NO}" = YES ]; then
     for motion_flag in "${DUCK_SIM_SHORT_MOVE:-NO}" \
                        "${DUCK_SIM_WALK_COMPARE:-NO}" \
                        "${DUCK_SIM_WALK_TRIAL:-NO}" \
-                       "${DUCK_SIM_POLICY_PAIR:-NO}"; do
+                       "${DUCK_SIM_POLICY_PAIR:-NO}" \
+                       "${DUCK_SIM_VX_ONSET:-NO}"; do
         if [ "$motion_flag" = YES ]; then
             printf 'X2-C refuses simultaneous simulated motor experiments.\\n' >&2
             exit 2
@@ -75,10 +76,29 @@ if [ "${DUCK_SIM_SIM_E1:-NO}" = YES ]; then
                         "${DUCK_SIM_WALK_COMPARE:-NO}" \
                         "${DUCK_SIM_WALK_TRIAL:-NO}" \
                         "${DUCK_SIM_POLICY_PAIR:-NO}" \
+                        "${DUCK_SIM_VX_ONSET:-NO}" \
                         "${DUCK_SIM_SOLVER_TRACE:-NO}" \
                         "${DUCK_SIM_ACTUATOR_AUDIT:-NO}"; do
         if [ "$incompatible" = YES ]; then
             printf 'SIM-E1 refuses other simulated experiments.\\n' >&2
+            exit 2
+        fi
+    done
+fi
+
+# SIM-E2G must be mutually exclusive with every other motion experiment.
+# Never permit an arbitrary local caller to combine J2e with the onset probe.
+if [ "${DUCK_SIM_VX_ONSET:-NO}" = YES ]; then
+    for incompatible in "${DUCK_SIM_POLICY_PAIR:-NO}" \
+                        "${DUCK_SIM_SHORT_MOVE:-NO}" \
+                        "${DUCK_SIM_WALK_TRIAL:-NO}" \
+                        "${DUCK_SIM_WALK_COMPARE:-NO}" \
+                        "${DUCK_SIM_SOLVER_TRACE:-NO}" \
+                        "${DUCK_SIM_ACTUATOR_AUDIT:-NO}" \
+                        "${DUCK_SIM_SIM_E1:-NO}" \
+                        "${DUCK_SIM_X2C_ACCEPTANCE:-NO}"; do
+        if [ "$incompatible" = YES ]; then
+            printf "SIM-E2G refuses concurrent simulated motor experiments.\\n" >&2
             exit 2
         fi
     done
@@ -375,4 +395,23 @@ if [ "${DUCK_SIM_POLICY_PAIR:-NO}" = YES ]; then
         --velstand-json "$DUCK_SIM_STATE/p0i-velstand.json" \
         --output "$DUCK_SIM_STATE/p0i-comparison.json"
 fi
+# SIM-E2G: exactly ONE higher-speed on-set trial, using the same 24-tick
+# J2e safety/stop envelope and the original pinned alpha policies. This tests
+# the independent OEM community report of a slow-speed start threshold (#59).
+# No OEM source, model, gain, deadman, policy or physical robot is modified.
+if [ "${DUCK_SIM_VX_ONSET:-NO}" = YES ]; then
+    # Fail if a previous/mutated report could be mistaken for this run.
+    rm -f "$DUCK_SIM_STATE/sim-e2g-report.json" \
+          "$DUCK_SIM_STATE/sim-e2g-disposable.sqlite3" \
+          "$DUCK_SIM_STATE/sim-e2g-disposable.sqlite3-wal" \
+          "$DUCK_SIM_STATE/sim-e2g-disposable.sqlite3-shm"
+    MICRODUCK_SIM_E2G=YES python3 -m microduck_companion.sim_e2g_speed_onset \
+        --state-dir "$DUCK_SIM_STATE" \
+        --robot-root "$ROOT/upstream/microduck" \
+        --rl-root "$DUCK_SIM_RL" \
+        --memory "$DUCK_SIM_STATE/sim-e2g-disposable.sqlite3" \
+        --output "$DUCK_SIM_STATE/sim-e2g-report.json" \
+        --enable-once
+fi
+
 printf 'Smoke test completed; official simulator is being stopped.\n'
