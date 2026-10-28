@@ -1,5 +1,6 @@
 """P0a joint trace: fail-closed parsing and passive-only data collection."""
 import math
+from pathlib import Path
 import time
 import unittest
 from unittest.mock import patch
@@ -8,7 +9,7 @@ from microduck_companion.sim_flat_zone import GroundTruthError
 from microduck_companion.sim_ipc import Notification, TelemetryError
 from microduck_companion.sim_joint_trace import (
     JOINT_COUNT, JOINT_NAMES, MAX_SAMPLES, collect_joint_trace,
-    parse_joint_observation,
+    parse_joint_observation, parse_robotd_joint_tracking,
 )
 
 
@@ -173,6 +174,181 @@ class JointTraceTests(unittest.TestCase):
                     return_value=(body(), time.monotonic())),
               self.assertRaises(TelemetryError)):
             collect_joint_trace("/tmp/fake", "/tmp/pinned", samples=1)
+
+    def test_verified_viewer_passes_explicit_opt_in_only(self):
+        with (patch("microduck_companion.sim_joint_trace.ReadOnlyUnixRpc",
+                    FakeReadOnlyStream),
+              patch("microduck_companion.sim_joint_trace.read_verified_body_state",
+                    return_value=(body(), time.monotonic())) as reader):
+            trace = collect_joint_trace("/tmp/fake", "/tmp/pinned", samples=1,
+                                        verified_viewer=True)
+        self.assertTrue(trace["verified_viewer_opt_in"])
+        reader.assert_called_once_with(Path("/tmp/fake"), "/tmp/pinned", port=17801,
+                                       allow_viewer=True)
+        self.assertEqual(0, trace["commands_sent"])
+
+    def test_non_boolean_viewer_opt_in_is_rejected(self):
+        with self.assertRaises(ValueError):
+            collect_joint_trace("/tmp", "/tmp", verified_viewer="yes")
+
+
+    def _tracking_capture(self, stream_type, states=None):
+        states = states or [body(3.), body(3.2, x=.021)]
+        frames = [(p, time.monotonic()) for p in states]
+        with (patch("microduck_companion.sim_joint_trace.ReadOnlyUnixRpc",
+                    stream_type),
+              patch("microduck_companion.sim_joint_trace.read_verified_body_state",
+                    side_effect=frames) as reader,
+              patch("microduck_companion.sim_joint_trace.time.sleep")):
+            result = collect_joint_trace("/tmp/fake", "/tmp/pinned",
+                                         samples=len(states), joint_tracking=True)
+        self.assertEqual(len(states), reader.call_count)
+        self.assertEqual([("robot.subscribe", 5)], FakeReadOnlyStream.calls)
+        return result
+
+    def test_optional_robotd_target_tracking_same_tick_and_no_motor(self):
+        class TrackingStream(FakeReadOnlyStream):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.count = 0
+
+            def request(self, method, *, hz):
+                super().request(method, hz=hz)
+                return {"accepted": True, "walk": "alpha_walking.onnx",
+                        "stand": "alpha_stand.onnx", "unavailable": None}
+
+            def next_notification(self):
+                note = super().next_notification()
+                self.count += 1
+                measured = [0.] * JOINT_COUNT
+                targets = [0.] * JOINT_COUNT
+                measured[3] = .02 * self.count
+                targets[3] = .10 * self.count
+                now = time.monotonic()
+                payload = dict(note.params, joints=measured, targets=targets,
+                               t_ns=int((now - .01) * 1_000_000_000))
+                return Notification(note.method, payload, now)
+
+        result = self._tracking_capture(TrackingStream)
+        self.assertEqual(2, result["schema_version"])
+        self.assertTrue(result["robotd_controller_targets_available"])
+        self.assertFalse(result["joint_targets_available"])  # body_server has no data.ctrl
+        self.assertEqual(0, result["commands_sent"])
+        self.assertEqual("alpha_walking.onnx",
+                         result["robotd_subscribed_policy_names"]["walk"])
+        first = result["observations"][0]["robotd_joint_tracking"]
+        self.assertAlmostEqual(.08, first["controller_target_minus_measured_rad"][3])
+        self.assertTrue(first["target_before_safety_write_not_motor_effect"])
+        aggregate = result["summary"]["robotd_joint_tracking"]
+        self.assertEqual(2, aggregate["sample_count"])
+        self.assertAlmostEqual(.10, aggregate["leg_target_range_rad"]["left_knee"])
+        self.assertAlmostEqual(.02, aggregate["leg_measured_range_rad"]["left_knee"])
+        self.assertAlmostEqual(.16,
+                               aggregate["leg_peak_abs_target_minus_measured_rad"]["left_knee"])
+        self.assertFalse(aggregate["motor_write_or_contact_verified"])
+        self.assertFalse(aggregate["locomotion_validated"])
+
+    def test_tracking_refuses_wrong_unavailable_or_missing_policy_identity(self):
+        class WrongIdentity(FakeReadOnlyStream):
+            ack = {}
+            def request(self, method, *, hz):
+                super().request(method, hz=hz)
+                return self.ack
+
+        for invalid in (
+            {"accepted": True, "walk": "velstand.onnx",
+             "stand": None, "unavailable": None},
+            {"accepted": True, "walk": "alpha_walking.onnx",
+             "stand": "alpha_stand.onnx", "unavailable": "load error"},
+            {"accepted": True, "walk": "alpha_walking.onnx"},
+            {"accepted": False, "walk": "alpha_walking.onnx",
+             "stand": "alpha_stand.onnx"},
+        ):
+            with self.subTest(invalid=invalid):
+                WrongIdentity.ack = invalid
+                FakeReadOnlyStream.calls = []
+                with (patch("microduck_companion.sim_joint_trace.ReadOnlyUnixRpc",
+                            WrongIdentity),
+                      patch("microduck_companion.sim_joint_trace.read_verified_body_state")
+                           as reader,
+                      self.assertRaisesRegex(TelemetryError, "policy differs")):
+                    collect_joint_trace("/tmp/fake", "/tmp/pinned",
+                                        samples=1, joint_tracking=True)
+                reader.assert_not_called()
+                self.assertEqual([("robot.subscribe", 5)], FakeReadOnlyStream.calls)
+
+    def test_joint_tracking_rejects_corrupt_missing_or_stale_oem_frame(self):
+        now = time.monotonic()
+        valid = Notification("robot.state", {
+            "t_ns": int((now - .01) * 1_000_000_000),
+            "joints": [0.] * JOINT_COUNT,
+            "targets": [.2] * JOINT_COUNT,
+        }, now)
+        self.assertAlmostEqual(.2,
+                               parse_robotd_joint_tracking(valid, now)
+                               ["controller_target_minus_measured_rad"][0])
+        for key, value in (
+            ("t_ns", None), ("t_ns", True),
+            ("t_ns", int((now - 5) * 1_000_000_000)),
+            ("t_ns", int((now + 5) * 1_000_000_000)),
+            ("targets", None), ("targets", [0.] * 14),
+            ("targets", [float("nan")] * JOINT_COUNT),
+            ("joints", [float("inf")] * JOINT_COUNT),
+            ("joints", [True] * JOINT_COUNT),
+        ):
+            with self.subTest(field=key, value=str(value)[:30]):
+                broken = dict(valid.params, **{key: value})
+                with self.assertRaises(TelemetryError):
+                    parse_robotd_joint_tracking(
+                        Notification("robot.state", broken, now), now)
+        with self.assertRaises(TelemetryError):
+            parse_robotd_joint_tracking(
+                Notification("tof.frame", valid.params, now), now)
+        with self.assertRaisesRegex(TelemetryError, "too far apart"):
+            parse_robotd_joint_tracking(valid, now - 1.0)
+
+    def test_tracking_rejects_repeated_tick_and_unknown_skill(self):
+        class DuplicateTick(FakeReadOnlyStream):
+            def __init__(self, *args, **kwargs):
+                self.same_ns = int((time.monotonic() - .02) * 1_000_000_000)
+            label = "walk"
+
+            def request(self, method, *, hz):
+                super().request(method, hz=hz)
+                return {"accepted": True, "walk": "alpha_walking.onnx",
+                        "stand": "alpha_stand.onnx"}
+
+            def next_notification(self):
+                note = super().next_notification()
+                params = dict(note.params, policy=self.label,
+                              t_ns=self.same_ns, joints=[0.] * JOINT_COUNT,
+                              targets=[.1] * JOINT_COUNT)
+                return Notification("robot.state", params, time.monotonic())
+
+        frames = [(body(3.), time.monotonic()),
+                  (body(3.2), time.monotonic())]
+        with (patch("microduck_companion.sim_joint_trace.ReadOnlyUnixRpc",
+                    DuplicateTick),
+              patch("microduck_companion.sim_joint_trace.read_verified_body_state",
+                    side_effect=frames),
+              patch("microduck_companion.sim_joint_trace.time.sleep"),
+              self.assertRaisesRegex(TelemetryError, "did not advance")):
+            collect_joint_trace("/tmp/fake", "/tmp/pinned",
+                                samples=2, joint_tracking=True)
+        DuplicateTick.label = "ground_pick"
+        with (patch("microduck_companion.sim_joint_trace.ReadOnlyUnixRpc",
+                    DuplicateTick),
+              patch("microduck_companion.sim_joint_trace.read_verified_body_state",
+                    return_value=(body(), time.monotonic())),
+              self.assertRaisesRegex(TelemetryError, "unexpected active OEM skill")):
+            collect_joint_trace("/tmp/fake", "/tmp/pinned",
+                                samples=1, joint_tracking=True)
+
+    def test_joint_tracking_opt_in_must_be_boolean(self):
+        for wrong in ("yes", 1, None, []):
+            with self.subTest(wrong=wrong), self.assertRaises(ValueError):
+                collect_joint_trace("/tmp/fake", "/tmp/pinned",
+                                    joint_tracking=wrong)
 
     def test_bounds_prevent_unlimited_trace(self):
         for n in (0, True, -1, MAX_SAMPLES + 1):

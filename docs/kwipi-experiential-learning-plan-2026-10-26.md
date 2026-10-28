@@ -1,5 +1,7 @@
 # Kwipi — plan d'apprentissage autonome par l'expérience (EX)
 
+**Addendum SIM-E1 du 28/10/2026 :** une première expérimentation motrice **en simulateur OEM uniquement** est codée sur branche dédiée ; elle réutilise l'unique essai J2e déjà borné et l'unique mémoire SQLite, puis compare l'effet de la préférence `simulator/explore` sur une décision F2, avec contrôle sans préférence. **Pas** d'objets ou d'animaux modélisés, ni causalité physique, ni apprentissage de réseau, ni autonomie validée. Voir [SIM-E1](sim-e1-active-experience-2026-10-28.md) ; priorité Cat-A2b et garde EX4-C2 inchangées.
+
 **Date : 26 octobre 2026. Statut : PLAN PROPOSÉ, DOCUMENTATION UNIQUEMENT.**
 Aucun modèle, actionneur, service, schéma SQLite ou branchement Qwen n'est livré par ce document. Aucune validation sur le robot physique. Le [plan directeur](plan-action.md) reste l'unique référence pour les priorités et les critères de passage ; **Cat-A2b et la perception par catégories passent avant un déploiement EX**.
 

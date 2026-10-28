@@ -178,13 +178,15 @@ class ExperienceMemory:
         self, *, measured_m: float, baseline_m: float,
         simulated_duration_s: float, stop_confirmed: bool,
         healthy_after: bool, safe_after: bool,
+        control_limited: bool = False,
     ) -> SimulatedMotionExperience:
         """Persist an observed simulator trial and learn *only* when verified.
 
         Measured translation is not proof of walking: contact/gait and motor
         effectiveness are not independently observed here. A large baseline
-        drift makes the result inconclusive. Unknown/unsafe cases are logged
-        but never used as reward. No LLM hypothesis enters this path.
+        drift makes the result inconclusive. Unknown/unsafe cases or an OEM
+        safety limiter (e.g. deadman) are logged but NEVER rewarded or penalized.
+        No LLM hypothesis enters this path.
         """
         for key, value in (
             ("measured_m", measured_m), ("baseline_m", baseline_m),
@@ -195,12 +197,14 @@ class ExperienceMemory:
         if measured_m < 0 or baseline_m < 0 or not 0 < simulated_duration_s <= 10:
             raise ValueError("invalid simulated trial measurements")
         if any(type(x) is not bool for x in
-               (stop_confirmed, healthy_after, safe_after)):
+               (stop_confirmed, healthy_after, safe_after, control_limited)):
             raise ValueError("attestations must be booleans")
         verified = stop_confirmed and healthy_after and safe_after
         reward: float | None = None
         if not verified:
             outcome = "unverified"
+        elif control_limited:
+            outcome = "inconclusive_control_limit"
         elif baseline_m > 0.005:
             outcome = "inconclusive_drift"
         elif measured_m >= max(0.01, 3 * baseline_m + 0.005):
