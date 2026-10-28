@@ -22,7 +22,8 @@ from microduck_companion.sim_ipc import DepthReading, HealthReading, StateReadin
 from microduck_companion.sim_motion import SimMotionError
 from microduck_companion.sim_walk_demo import main
 from microduck_companion.sim_walk_trial import (
-    BASELINE_LIMIT_M, WALK_SPEED_MPS, ONSET_PROBE_SPEED_MPS, WALK_TICKS, run_walk_trial,
+    BASELINE_LIMIT_M, WALK_SPEED_MPS, ONSET_PROBE_SPEED_MPS,
+    ONSET_PROBE_TICKS, WALK_TICKS, run_walk_trial,
 )
 
 
@@ -250,7 +251,7 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
 
     def invoke(self, *, poses=None, readings=None, sensor=None,
                on_policy_sample=None, policy_stream_cls=FakePolicyStream,
-               speed_mps=WALK_SPEED_MPS):
+               speed_mps=WALK_SPEED_MPS, ticks=WALK_TICKS):
         if poses is None:
             poses = [ground(1 + i*.1, .02 + i*.001) for i in range(WALK_TICKS+4)]
         if readings is None:
@@ -268,7 +269,7 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
               patch("microduck_companion.sim_walk_trial.time.sleep")):
             return run_walk_trial(self.root, "/fake/rl", self.db,
                                   on_policy_sample=on_policy_sample,
-                                  speed_mps=speed_mps)
+                                  speed_mps=speed_mps, ticks=ticks)
 
     def test_12_bounded_moves_then_stop_and_memory(self):
         robot = self.start()
@@ -296,11 +297,12 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
 
     def test_one_030_probe_reuses_same_bounded_stop_protection(self):
         robot = self.start()
-        result = self.invoke(speed_mps=ONSET_PROBE_SPEED_MPS)
-        self.assertEqual(WALK_TICKS, result.commands_sent)
+        result = self.invoke(speed_mps=ONSET_PROBE_SPEED_MPS,
+                             ticks=ONSET_PROBE_TICKS)
+        self.assertEqual(ONSET_PROBE_TICKS, result.commands_sent)
         self.assertEqual(ONSET_PROBE_SPEED_MPS, result.requested_speed_mps)
         self.assertTrue(result.stop_confirmed)
-        self.assertEqual(WALK_TICKS + 1, len(robot.requested))
+        self.assertEqual(ONSET_PROBE_TICKS + 1, len(robot.requested))
         self.assertEqual("robot.stop", robot.requested[-1]["method"])
         self.assertTrue(all(
             p["method"] == "robot.move" and
@@ -317,6 +319,11 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
                     self.invoke(speed_mps=speed)
             with self.assertRaises(SimMotionError):
                 run_walk_trial(self.root, "/fake/rl", self.db, port=17802)
+            for wrong_ticks in (0, 1, 10, 16, 36, True, 12.0):
+                with self.subTest(ticks=wrong_ticks), self.assertRaises(SimMotionError):
+                    self.invoke(ticks=wrong_ticks)
+            with self.assertRaises(SimMotionError):
+                self.invoke(speed_mps=ONSET_PROBE_SPEED_MPS, ticks=WALK_TICKS)
         self.assertFalse(self.db.exists())
 
     def test_baseline_drift_refuses_before_motor_connect(self):
