@@ -32,7 +32,7 @@ class N6NoMockWheelTests(unittest.TestCase):
 
     def test_strict_optional_import_sites_are_reviewed(self):
         source, inventory = n5._checked_paths(ROOT, n5.APPROVED_FILES)
-        self.assertEqual(inventory["module_count"], 122)
+        # CAM-OEM-1 adds one standalone module to the normal package only.\n        self.assertEqual(inventory["module_count"], 123)
         self.assertEqual(len(n5.APPROVED_FILES), 20)
         sites = n6.verify_optional_boundary(source)
         self.assertEqual(set(sites), n6.ALLOWED_SITES)
@@ -68,7 +68,7 @@ class N6NoMockWheelTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             output = Path(tmp) / "stage"
             report = n6.stage_probe(ROOT, output)
-            self.assertEqual(report["normal_source_python_modules"], 122)
+            self.assertEqual(report["normal_source_python_modules"], 123)
             self.assertEqual(report["n5_reviewed_closure"], 20)
             self.assertEqual(report["probe_python_modules"], 18)
             self.assertEqual(report["omitted_mock_engines"], sorted(n5.LAB_EXCEPTIONS))
