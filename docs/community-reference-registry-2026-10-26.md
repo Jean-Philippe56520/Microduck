@@ -1,5 +1,7 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**MEM-1 — objectifs fictifs persistants (28/10/2026, code et tests PC-fixtures soumis à PR) :** [rapport et barrières](mem1-mock-persistent-goals-2026-10-28.md) : le nouveau `MockGoalMemory` réutilise l'unique SQLite `ExperienceMemory` et relie les tentatives **sans copier** les épisodes EX1 ; états et reprise déclaratifs, tombstones, quotas stricts et aucun apprentissage causal, Qwen, action OEM ou second cerveau. `mock_closed` ≠ résultat physique validé. Vérifier PR/CI avant toute revendication de fusion ou de déploiement.
+
 **CAM-OEM-2 — références visuelles externes évaluées (28/10/2026) :** [matrice détaillée](cam-oem2-public-geometry-source-audit-2026-10-28.md). CID-SIMS [site+calibration@9e7610ab](https://github.com/CID-SIMS/CID-SIMS.github.io/tree/9e7610abf8320062cf810484dd0fc4fdb58682ae) : perspectives 12/26 cm approximatives, D455 HFOV calculé 79,242°, annotations sémantiques, mais droits image et 5 boîtes COCO évaluables inconnus. TiROD [code@ca74712c](https://github.com/pastifra/TiROD_code/tree/ca74712c857e63956e608626c3ab0967a6373522) : petit rover ESP32-CAM, `High/Low` = éclairage, treize classes dont `chair` et `ball` non équivalent garanti à `sports_ball`, hauteur optique et licence média non établies. **Réutiliser leurs données numériques et leurs noms de classe comme preuves de sélection, pas leurs images ou leur code tiers**, et aucun score/deuxième détecteur introduit.
 
 
