@@ -16,10 +16,9 @@ from .passive_learning import PassiveLearning
 from .behavioral_memory import (
     BehavioralMemory, MAX_STORED, MAX_BIAS, valid_mock_summary,
 )
-from .mock_social_cues import MockSocialPlan
-
 if TYPE_CHECKING:
     from .autonomy import AutonomyBrain
+    from .mock_social_cues import MockSocialPlan
 
 # Exactly the names documented by the OEM historical autonomous prototype.
 # Never silently reinterpret these labels as currently shipped capabilities.
@@ -233,6 +232,11 @@ def _interpret(selected: PassiveIntent | MockSocialPlan) -> tuple[str, str, str,
             affect = "curious"
         return ("LookAround", affect, "passive_attention",
                 selected.target_kind, selected.target_category, selected.intention)
+
+    # Import the F4-C social fixture only when a non-F2 proposal is passed.
+    # Routine F2 personality portraits remain independent of the social lab.
+    from .mock_social_cues import MockSocialPlan
+
     if isinstance(selected, MockSocialPlan):
         plans = {
             "silence": ("Chill", "quiet", "mock_social_silence"),

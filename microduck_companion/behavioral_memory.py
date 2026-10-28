@@ -11,10 +11,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
+from typing import TYPE_CHECKING
 
 from .episodic_memory import ExperienceMemory
-from .mock_cycles import MockCycleRunner
 from .passive_memory import _check_wall
+
+if TYPE_CHECKING:
+    from .mock_cycles import MockCycleRunner
 
 MAX_STORED = 256
 RETENTION_S = 14 * 24 * 3600
@@ -96,6 +99,10 @@ class BehavioralMemory:
         Motion, stale/unverified followups, absent cycles, duplicate cycles,
         and simulator/LLM evidence never qualify. Does not call .step().
         """
+        # The P2a fixture runner is required only for this historical write.
+        # F2 reading a behavioral summary must not import the cycle runner.
+        from .mock_cycles import MockCycleRunner
+
         if not isinstance(runner, MockCycleRunner):
             raise TypeError("requires existing P2a mock runner")
         if runner.memory is not self._memory:
