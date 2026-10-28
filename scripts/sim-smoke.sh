@@ -395,8 +395,9 @@ if [ "${DUCK_SIM_POLICY_PAIR:-NO}" = YES ]; then
         --velstand-json "$DUCK_SIM_STATE/p0i-velstand.json" \
         --output "$DUCK_SIM_STATE/p0i-comparison.json"
 fi
-# SIM-E2G: exactly ONE higher-speed on-set trial, using the same 24-tick
-# J2e safety/stop envelope and the original pinned alpha policies. This tests
+# SIM-E2G: exactly ONE higher-speed on-set trial, using the same J2e
+# preflight/stop envelope, but with 12 (not 24) ticks to preserve clearance.
+# The alpha policies and question derive from
 # the independent OEM community report of a slow-speed start threshold (#59).
 # No OEM source, model, gain, deadman, policy or physical robot is modified.
 if [ "${DUCK_SIM_VX_ONSET:-NO}" = YES ]; then
