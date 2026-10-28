@@ -68,8 +68,8 @@ class OBS1EpisodeDiagnosticsTests(unittest.TestCase):
         self.proposal()
         effects = MockEffectJournal(self.ledger)
         effects.record(MockEffectPair(
-            SESSION, 1, MockCue("still", NOW - .5, .9),
-            MockCue("moving", NOW + 1.2, .9), True, False,
+            SESSION, 1, MockCue("motion", "still", NOW - .5, .9),
+            MockCue("motion", "moving", NOW + 1.2, .9), True, False,
         ))
         (event,) = [json.loads(s) for s in
                     render_episode_diagnostics(self.rows()).splitlines()]
