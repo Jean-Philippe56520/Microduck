@@ -219,14 +219,14 @@ class OriginalSolverSupportTests(unittest.TestCase):
             self.assertEqual(original_trace, snapshot)
             frames = _read_solver_trace(path, snapshot=snapshot)
             with path.open("ab") as sink:
-                sink.write(b'{"kind":"error","message":"late writer"}\\n')
+                sink.write(b'{"kind":"error","message":"late writer"}' + bytes([10]))
             return frames
 
         def append_after_e2g_validation(path, *, snapshot=None):
             self.assertEqual(original_e2g, snapshot)
             report = _load_report(path, snapshot=snapshot)
             with path.open("ab") as sink:
-                sink.write(b'{"invalid":"late report append"}\\n')
+                sink.write(b'{"invalid":"late report append"}' + bytes([10]))
             return report
 
         with patch(
@@ -250,7 +250,7 @@ class OriginalSolverSupportTests(unittest.TestCase):
         self.assertFalse(result["gait_validated"])
 
     def test_unterminated_solver_snapshot_is_rejected(self):
-        self.solver.write_bytes(self.solver.read_bytes().rstrip(b"\\n"))
+        self.solver.write_bytes(self.solver.read_bytes()[:-1])
         with self.assertRaisesRegex(GroundTruthError, "truncated"):
             summarize_support(self.solver, self.e2g)
 
