@@ -135,6 +135,8 @@ class BlindEditorTests(unittest.TestCase):
 
     def test_malformed_bboxes_and_categories_refused(self):
         bad = (
+            {"category": "", "visibility": "full", "xyxy": (1, 2, 3, 4)},
+            {"category": "chair", "visibility": "", "xyxy": (1, 2, 3, 4)},
             {"category": "shoe", "visibility": "full", "xyxy": (1, 2, 3, 4)},
             {"category": "chair", "visibility": "invalid", "xyxy": (1, 2, 3, 4)},
             {"category": "chair", "visibility": "full", "xyxy": (-1, 2, 3, 4)},
