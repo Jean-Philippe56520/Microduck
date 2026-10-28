@@ -1,5 +1,8 @@
 # F5-C — Consultations PC parcimonieuses, quotas et repli local
 
+**Addendum 28/10/2026 — objectif QW-GOAL-0, DOCUMENTATION UNIQUEMENT :** [politique cible de questions utiles motivées](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md). Les limites 60 s / 2 par 600 s / 8 par 24 h ci-dessous sont **bien celles du code F5-C actuel**, conçues pour les essais fictifs, et **non un modèle de personnalité imposant de rares consultations**. Le futur QW-2 devra comparer une admission liée à la valeur attendue d'une question pour l'objectif, révisable même sans nouvelle image, et aux **limites de charge PC réellement mesurées**. Jusqu'à cette preuve, aucune limite actuelle n'est supprimée ni contournée ; consentement, une seule requête en vol, absence de boucle, backoff, confidentialité et `robotd` isolé restent obligatoires. Qwen réel 9B PC avec contexte mémoire reste à livrer dans QW-1/QW-2.
+
+
 **26 octobre 2026 — [PR #43 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/43), logiciel Python testé sur données fictives.** F5-A (#41) et F5-B (#42) sont fusionnées. Aucun Microduck physique, vraie caméra, Ollama ou modèle Qwen 4B/9B n'est utilisé par les tests de cette phase.
 
 ## Contrat et intégration

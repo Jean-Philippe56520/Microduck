@@ -1,5 +1,15 @@
 # Point de reprise — Microduck Companion / Kwipi — 28 octobre 2026
 
+## QW-GOAL-0 — clarification approuvée le 28 octobre 2026 (documentation seulement)
+
+**Décision de conception :** [Qwen guide les objectifs motivés de Kwipi](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md), sans être un dictionnaire ni une ressource artificiellement rare. Une curiosité, détermination, situation de jeu, sociabilité, prudence ou exploration peut justifier une question utile à un objectif. Un objectif suspendu peut être reconsidéré à l'aide d'une **question ou stratégie différente**, même sans nouvelle image, si le gain d'information est crédible. Ne pas confondre utilité et appel obligatoire : l'inaction/repli sont normaux.
+
+**État de code à la rédaction :** F5-C continue d'imposer **60 s / 2 appels par 600 s / 8 appels par jour** (prototypes PC-fixtures) ; PD3 propose seulement une occasion fictive, pas un appel ; Qwen 9B PC réel reste un pilote manuel, sans lecture libre de SQLite ni action moteur. La future adaptation QW-2 devra mesurer les ressources PC et respecter consentement, auth/chiffrement, durée, une requête en vol, confidentialité, anti-boucle et sécurité `robotd`. **Aucune borne ni modèle n'a été modifié dans ce lot documentaire.**
+
+**Base vérifiée avant cette mise à jour :** `main@76b7fbee0105eefc83555792a5cf8ab73c48ff92` avec MEM-2A #147 et synchronisation #148 fusionnés ; [CI post-fusion #148](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40781083857) réussie. Revalider SHA, PR, CI, OEM avant toute reprise de développement.
+
+
+
 
 ## Actualisation prioritaire — MEM-2A fusionné le 28 octobre 2026
 

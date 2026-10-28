@@ -59,7 +59,7 @@ Couverture : 100 appels identiques, deux clés distinctes, compteur/identité s�
 - **MEM-2B / Cat-B/C3-B :** définir et mesurer une *rencontre* multi-vue avec continuité et abstention, sans déclarer l'identité sur un simple fingerprint. Les vrais objets inconnus, plantes incluses, demandent une perception fiable avant regroupement.
 - **DET-2 :** permettre une reprise seulement si contexte/stratégie/provenance apportent une nouvelle information indépendante, sans répétition compulsive.
 - **QW-1 :** assembler un contexte public expurgé pour le vrai Qwen3.5 9B sur PC, avec consentement F5-C, JSON strict et sorties hypothétiques ; ne jamais exporter la SQLite entière.
-- **QW-2/E2E-1 :** test de seconde consultation vraiment utile après nouvelle observation, et ablations sans/avec mémoire/PC sur scènes indépendantes.
+- **QW-2/E2E-1 :** test d'une seconde consultation utile pour un objectif motivé, **après nouvelle observation OU nouvelle question/stratégie réellement pertinente même sans nouvelle image** ; éviter la répétition sans gain attendu ; étudier la levée des plafonds cognitifs arbitraires F5-C avec mesures PC et garde-fous. [Contrat QW-GOAL-0](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md).
 - **PHY-1 :** mesures RK3566 et preuve des interfaces OEM en lecture seule sur robot, puis essais physiques graduels seulement après validation distincte.
 
 **Statuts explicites :** MEM-2A = **codé/testé CI PC-fixtures, PR #147 fusionnée** ; MEM-2B/DET-2/QW-1/QW-2 = **prévus**, aucune autonomie perceptive, Qwen intégré ou robot validé.

@@ -1,5 +1,8 @@
 # PD0 — 16 comportements, personnalité cohérente et consultations Qwen contextuelles
 
+**Addendum QW-GOAL-0 — 28/10/2026, CADRAGE uniquement :** [politique Qwen motivée par objectifs](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md). La finalité n'est **pas** de limiter arbitrairement les appels, mais d'offrir à Kwipi une aide sémantique quand elle peut faire progresser un objectif lié à curiosité/détermination/exploration/jeu/sociabilité/prudence. Une nouvelle question stratégique peut être utile sans nouvelle image ; la motivation seule ne déclenche rien. Les seuils fixes F5-C cités plus bas décrivent le **prototype actuel**, à réviser séparément avec contrôle de charge, opt-in et anti-boucle. PD3 ne transmet actuellement aucune requête, ce plan ne modifie pas le code ni les protections OEM.
+
+
 **Date : 27 octobre 2026. Statut : PLAN D'INTÉGRATION UNIQUEMENT.** Aucun nouveau mouvement, modèle, état actif, consultation Qwen, micro/caméra, appel réseau ni apprentissage causal n'est livré par ce document. Microduck physique absent : **aucune validation embarquée**. Le [plan directeur](plan-action.md) fait foi ; **Cat-A2b, la perception sur vraies prises réellement basses, conserve sa priorité**. PD0 prépare les lots logiciels sans promettre le portage des 16 états.
 
 ## 1. Finalité et vocabulaire
@@ -64,7 +67,7 @@ La décision locale produit un **besoin d'information**, non une directive « la
 6. **Passer par F5-C, sans deuxième quota :** quotas de laboratoire actuels 60 s entre demandes, 2/600 s, 8/24 h, une requête simultanée, backoff après échecs ; *ne pas inventer* une vitesse de service sur robot. Le même `SelectivePCPolicy` décide et réserve de façon atomique. Échec du PC, refus ou temps expiré ⇒ retour local immédiat, pas de commande moteur et pas de nouvelle tentative compulsive.
 7. **Réponse Qwen = hypothèse, jamais preuve :** garder type, source `pc_qwen_unverified`, date et expiration. Vérifier par nouveaux indices locaux ; pas de conversion directe en identité, objet sûr, engagement social, causalité, sol praticable ou permission `robotd`.
 
-**Limitation actuelle substantielle :** F5-A/B n'envoient ni photographies ni caractéristiques discriminantes ; leur prompt de laboratoire impose `unknown`. Il ne faut donc pas annoncer « Kwipi consulte Qwen et sait ce qu'est la trottinette ». Pour aboutir à une **identification multimodale**, il faudra un contrat distinct, revue des droits/consentements, évaluation hors ligne sur vraies scènes, limites de taille/latence, puis essai PC **4B avant 9B** sans extrapolation GPU/NPU. L'analyse du contenu ne doit pas devenir une décision motrice. À défaut de média autorisé, mieux vaut **ne pas envoyer** une requête qui ne peut apporter d'information nouvelle.
+**Limitation actuelle substantielle :** F5-A/B n'envoient ni photographies ni caractéristiques discriminantes ; leur prompt de laboratoire impose `unknown`. Il ne faut donc pas annoncer « Kwipi consulte Qwen et sait ce qu'est la trottinette ». Pour aboutir à une **identification multimodale**, il faudra un contrat distinct, revue des droits/consentements, évaluation hors ligne sur vraies scènes, limites de taille/latence, puis essai du **Qwen3.5 9B PC choisi** (aucun comparatif 4B imposé), sans extrapolation GPU/NPU. L'analyse du contenu ne doit pas devenir une décision motrice. À défaut de média autorisé, mieux vaut **ne pas envoyer** une requête qui ne peut apporter d'information nouvelle.
 
 ## 5. Boucle émotionnelle et comportementale envisagée
 
