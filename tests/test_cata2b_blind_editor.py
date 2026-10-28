@@ -177,10 +177,8 @@ class BlindEditorTests(unittest.TestCase):
         path = self.export()
         row = json.loads(path.read_text("utf-8"))["samples"][0]
         self.assertTrue(row["uncertain"])
-        self.assertFalse(self.editor.is_confirmed(self.sid(0)) is False)
-        self.assertFalse(
-            self.editor.exported if hasattr(self.editor, "exported") else False
-        )
+        self.assertTrue(self.editor.is_confirmed(self.sid(0)))
+        self.assertFalse(self.editor.is_uncertain(self.sid(1)))
 
     def test_never_overwrite_export_or_old_review(self):
         self.confirmed()
