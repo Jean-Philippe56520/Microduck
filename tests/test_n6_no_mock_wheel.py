@@ -61,7 +61,7 @@ class N6NoMockWheelTests(unittest.TestCase):
         source = dict(source)
         filename = "microduck_companion/social_context.py"
         source[filename] += b"\nimport microduck_companion.mock_social_cues\n"
-        with self.assertRaisesRegex(ValueError, "Absolute"):
+        with self.assertRaisesRegex(ValueError, "absolute mock-engine import"):
             n6.verify_optional_boundary(source)
 
     def test_n6_stage_is_exclusively_in_temporary_directory(self):
