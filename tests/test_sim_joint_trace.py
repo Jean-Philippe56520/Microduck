@@ -1,5 +1,6 @@
 """P0a joint trace: fail-closed parsing and passive-only data collection."""
 import math
+from pathlib import Path
 import time
 import unittest
 from unittest.mock import patch
@@ -182,7 +183,7 @@ class JointTraceTests(unittest.TestCase):
             trace = collect_joint_trace("/tmp/fake", "/tmp/pinned", samples=1,
                                         verified_viewer=True)
         self.assertTrue(trace["verified_viewer_opt_in"])
-        reader.assert_called_once_with("/tmp/fake", "/tmp/pinned", port=17801,
+        reader.assert_called_once_with(Path("/tmp/fake"), "/tmp/pinned", port=17801,
                                        allow_viewer=True)
         self.assertEqual(0, trace["commands_sent"])
 
