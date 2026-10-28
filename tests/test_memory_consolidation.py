@@ -222,7 +222,7 @@ class ConsolidationTests(unittest.TestCase):
                 "SELECT name FROM sqlite_master WHERE type='table'")}
         total_before = self.mem.conn.total_changes
         for _ in range(3):
-            recall_category(self.semantic, category="chair",
+            recall_category(self.semantic, category="toy",
                             now_wall_epoch_s=WALL)
         tables_after = {
             row[0] for row in self.mem.conn.execute(
@@ -233,7 +233,7 @@ class ConsolidationTests(unittest.TestCase):
         self.assertNotIn("m1a_compact_patterns", tables_after)
 
     def test_invalid_inputs_and_closed_database_fail_closed(self):
-        for category in ("person/name", "🤖", "not-a-category", None, 7, True):
+        for category in ("person/name", "🤖", "chair", "not-a-category", None, 7, True):
             with self.subTest(category=category), self.assertRaises(ValueError):
                 recall_category(self.semantic, category=category,
                                 now_wall_epoch_s=WALL)

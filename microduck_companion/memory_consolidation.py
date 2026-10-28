@@ -73,7 +73,7 @@ def recall_category(
     if not isinstance(semantics, CategorySemantics):
         raise TypeError("existing F4-A CategorySemantics required")
     if type(category) is not str or category not in OBJECT_CATEGORIES | _SOUND_CATEGORIES:
-        raise ValueError("category outside the OEM-aligned passive vocabulary")
+        raise ValueError("category outside the F1-C passive vocabulary")
     now = _check_wall(now_wall_epoch_s)
     c = semantics._memory.conn
     # Use the same provenance and correction joins as CategorySemantics.recall.

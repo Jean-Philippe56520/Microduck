@@ -34,7 +34,7 @@ La fonction [recall_category()](../microduck_companion/memory_consolidation.py) 
 - **Statut** : historical_mock_only, hypotheses_only ou unknown. Aucun statut n'autorise le moteur, ni une préférence physique. Les indicateurs motor_commands_issued, memory_writes, causal_effects_verified et verified_real_observations restent à zéro.
 - **Budget** : parcourir au maximum 256 sources actives pour une catégorie, et refuser le bilan si une base altérée dépasse cette limite ; ne pas tronquer silencieusement des observations pour créer un faux total.
 
-La fonction **n'écrit rien**, ne réactive pas M1-A, n'ouvre pas de socket robotd et ne déclenche aucun modèle local ou distant. Une catégorie rapportée par les fixtures ne vaut ni validation visuelle basse Cat-A2b, ni connaissance d'un animal réel, ni preuve d'effet.
+La fonction **n'écrit rien**, ne réactive pas M1-A, n'ouvre pas de socket robotd et ne déclenche aucun modèle local ou distant. **Limite de vocabulaire :** le dictionnaire passif F1-C actuel n'inclut pas encore la catégorie chaise (chair), bien que celle-ci soit disponible dans le pilote Qwen PC. C1 refuse cette valeur tant qu'une évolution de perception catégorielle F1 n'est pas étayée, plutôt que l'inventer. Une catégorie rapportée par les fixtures ne vaut ni validation visuelle basse Cat-A2b, ni connaissance d'un animal réel, ni preuve d'effet.
 
 ## 4. Tests et limites
 
