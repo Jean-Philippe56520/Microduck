@@ -1,5 +1,8 @@
 # Point de reprise — Microduck Companion / Kwipi — 28 octobre 2026
 
+**QW-GOAL-1 — validation complémentaire (28/10/2026, documentation uniquement) :** [politique de consultation contextuelle et mémoire contrôlée](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md#6-clarification-validée--cadence-contextuelle-et-questions-sans-llm-embarqué). « Dix rencontres » était seulement un exemple ; **aucune consultation après un nombre fixe de passages**. La pertinence dépend de motivations, personnalité, humeur descriptive, objectifs, contexte, incertitude et bénéfice attendu. F2 formule un **besoin structuré** sans LLM local ; Qwen3.5 9B sur PC peut potentiellement demander des recherches ciblées via un lecteur local en liste blanche sur l'unique SQLite, sans accès direct aux données privées, sans SQL libre et sans écriture. Réutiliser MEM-2A, C1/C2, F5 et PD3 ; extensions QW-1/QW-2 **non codées**. Consentement/charge/timeout/sûreté OEM demeurent obligatoires.
+
+
 ## QW-GOAL-0 — clarification approuvée le 28 octobre 2026 (documentation seulement)
 
 **Décision de conception :** [Qwen guide les objectifs motivés de Kwipi](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md), sans être un dictionnaire ni une ressource artificiellement rare. Une curiosité, détermination, situation de jeu, sociabilité, prudence ou exploration peut justifier une question utile à un objectif. Un objectif suspendu peut être reconsidéré à l'aide d'une **question ou stratégie différente**, même sans nouvelle image, si le gain d'information est crédible. Ne pas confondre utilité et appel obligatoire : l'inaction/repli sont normaux.
