@@ -114,7 +114,11 @@ def select_human_verified_cases(
     try:
         class_rows = csv.reader(StringIO(class_csv.decode("utf-8-sig")), strict=True)
         ids_by_name: dict[str, set[str]] = {}
-        for row in class_rows:
+        for idx, row in enumerate(class_rows):
+            # V7 source may include the official two-column CSV header;
+            # older class description releases omit it.
+            if idx == 0 and row == ["LabelName", "DisplayName"]:
+                continue
             if len(row) != 2 or not row[0].startswith("/m/"):
                 raise PhotoBaselineError("unexpected official MID/name format")
             mid, name = row
