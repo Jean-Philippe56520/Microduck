@@ -17,6 +17,7 @@ import time
 from typing import Any
 
 from .ollama_local_client import OllamaEndpoint
+from .qwen9b_action_guard import screen_preview_text
 from .qwen9b_advisor_v2 import MAX_SOURCE_BYTES, MAX_IMAGE_BYTES, prepare_jpeg
 from .qwen9b_production_role import ROLE_VERSION, SCENARIO_USER_PROMPT, SYSTEM_PROMPT
 from .qwen9b_production_role_v2 import (
@@ -146,6 +147,7 @@ def evaluate_local_image(source: bytes, *, consent: bool, reviewed: bool,
             return {**base, "status": "rejected", "diagnostic": "model_text_size"}
         # A syntactically valid answer is NOT a verified observation.
         return {**base, "status": "unverified", "advisor_text": answer,
+                "advice_guard": screen_preview_text(answer),
                 "elapsed_s": round(time.monotonic() - start, 3),
                 "server_total_s": _positive_nano(envelope, "total_duration"),
                 "load_s": _positive_nano(envelope, "load_duration"),
