@@ -1,6 +1,6 @@
 # DET-1 — Détermination bornée au sein de F2
 
-**Date :** 28 octobre 2026. **Statut :** candidat code/tests PC-fixtures, non validé sur robot. Le [plan directeur](plan-action.md) reste l'autorité. Voir [plan global](kwipi-goals-determination-memory-qwen-observability-plan-2026-10-28.md) et [MEM-1](mem1-mock-persistent-goals-2026-10-28.md).
+**Date :** 28 octobre 2026. **Statut :** [PR #143 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/143) dans `main@deed1858`, code et tests **PC-fixtures** uniquement ; [Python 1 694 tests dont 5 ignorés](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40777508447), [N5/N6](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40777508714), [CI post-fusion](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40777728509) **réussies**. Aucun robot réel validé. Le [plan directeur](plan-action.md) reste l'autorité. Voir [plan global](kwipi-goals-determination-memory-qwen-observability-plan-2026-10-28.md) et [MEM-1](mem1-mock-persistent-goals-2026-10-28.md).
 
 ## 1. Porte OEM-first et hypothèse falsifiable
 
@@ -40,7 +40,7 @@
 
 **Expérience positive attendue :** dans une scène fictive montrant chien et balle, F2 préfère initialement la balle ; si un objectif fictif actif « observer chien » n'a aucune tentative liée, détermination forte peut classer le chien devant. Détermination nulle ou `goals=None` conserve le témoin. Le cas des objets `unknown` est testé séparément, sans reconnaissance prétendue.
 
-**Tests à exécuter :**
+**Commandes effectivement exécutées dans la CI (fixtures et tests hôte uniquement) :**
 `python -m unittest discover -s tests -p test_det1_goal_determination.py -v`
 `python -m unittest discover -s tests -v`
 `python -m scripts.n3_sqlite_audit --output /tmp/n3-det1.json`
