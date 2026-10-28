@@ -30,6 +30,8 @@ MAX_WIRE_BYTES = 180_000
 MAX_RESPONSE_BYTES = 16_384
 MAX_TEXT_CHARS = 1_200
 MAX_TIMEOUT = 180.0
+V1_NUM_PREDICT = 180
+V2_NUM_PREDICT = 320  # Host-only manual v2 preview, not a robot latency guarantee.
 
 
 def _role_prompts(version: str) -> tuple[str, str]:
@@ -48,7 +50,7 @@ def make_request(image: bytes, *, role_version: str = ROLE_VERSION) -> bytes:
     system_prompt, scenario_prompt = _role_prompts(role_version)
     request = {
         "model": MODEL, "stream": False, "think": False, "keep_alive": "0",
-        "options": {"temperature": 0, "num_predict": 180, "num_ctx": 4096},
+        "options": {"temperature": 0, "num_predict": (V2_NUM_PREDICT if role_version == ROLE_VERSION_V2 else V1_NUM_PREDICT), "num_ctx": 4096},
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": scenario_prompt,
