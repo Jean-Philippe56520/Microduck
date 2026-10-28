@@ -24,6 +24,10 @@ from .perception import _SOUND_CATEGORIES
 RETENTION_S = 14 * 24 * 3600
 MAX_SEMANTIC_ROWS = 256
 MAX_HYPOTHESES = 64
+# A finite, public vocabulary makes existing F4-A hypothesis rows sufficient
+# as durable correction markers. Six categories * nine property/value pairs
+# currently fit within the existing 64-row cap. Do not expand the vocabulary
+# beyond the cap without a separate migration and retention audit.
 MAX_QUERY = 50
 PROPERTIES = {
     "texture": frozenset({"soft", "hard", "unknown"}),
@@ -35,6 +39,9 @@ HYPOTHESIS_CATEGORIES = frozenset(
     c for c in OBJECT_CATEGORIES if c not in {"person", "unknown"}
 )
 CORRECTION_REASONS = frozenset({"fixture_annotation_error", "source_retracted"})
+MAX_HYPOTHESIS_KEYS = len(HYPOTHESIS_CATEGORIES) * sum(
+    len(values) for values in PROPERTIES.values()
+)
 
 
 @dataclass(frozen=True)
@@ -169,16 +176,38 @@ class CategorySemantics:
                 ORDER BY recorded_epoch_s DESC,observation_id DESC LIMIT ?
             )
         """,(MAX_SEMANTIC_ROWS,))
+        # C2: preserve explicitly retracted hypotheses as durable markers in
+        # the SAME unique-key table. Only active, unverified proposals expire.
+        # Deleting an inactive row would silently allow a known bad proposal
+        # to be reinserted after the 14-day TTL.
+        if MAX_HYPOTHESIS_KEYS > MAX_HYPOTHESES:
+            raise ValueError(
+                "closed F4-A hypothesis vocabulary exceeds retention cap; "
+                "a reviewed migration is required"
+            )
         con.execute("""
             DELETE FROM f4a_property_hypotheses
-            WHERE proposed_epoch_s < ? OR proposed_epoch_s > ?
+            WHERE active=1 AND
+                  (proposed_epoch_s < ? OR proposed_epoch_s > ?)
         """,(now-RETENTION_S,now+60))
-        con.execute("""
-            DELETE FROM f4a_property_hypotheses WHERE id NOT IN (
-                SELECT id FROM f4a_property_hypotheses
-                ORDER BY proposed_epoch_s DESC,id DESC LIMIT ?
-            )
-        """,(MAX_HYPOTHESES,))
+        # Corrupt or future-expanded stores must fail closed, NEVER evict a
+        # retraction in order to satisfy a row-count quota. The full table is
+        # at most 54 keys in the current controlled vocabulary.
+        rows=con.execute("""
+            SELECT category,property,value,active,correction_reason
+            FROM f4a_property_hypotheses LIMIT ?
+        """,(MAX_HYPOTHESES+1,)).fetchall()
+        if len(rows)>MAX_HYPOTHESES:
+            raise ValueError("hypothesis retention cap exceeded; corrections protected")
+        for row in rows:
+            prop=row["property"]
+            if (row["category"] not in HYPOTHESIS_CATEGORIES
+                    or prop not in PROPERTIES
+                    or row["value"] not in PROPERTIES[prop]):
+                raise ValueError("unsupported persisted hypothesis key")
+            if (row["active"]==0 and row["correction_reason"] not in CORRECTION_REASONS
+                    or row["active"]==1 and row["correction_reason"] is not None):
+                raise ValueError("inconsistent persisted hypothesis correction")
 
     def prune(self, *, now_wall_epoch_s: float) -> None:
         with self._memory.conn:
@@ -237,13 +266,16 @@ class CategorySemantics:
         prob=_confidence(confidence)
         now=_check_wall(now_wall_epoch_s)
         with self._memory.conn:
+            # Expire old ACTIVE entries before INSERT. Retained inactive
+            # markers still occupy their unique (category,property,value)
+            # key and make retries idempotently refuse without resurrection.
+            self._prune(now)
             result=self._memory.conn.execute("""
                 INSERT OR IGNORE INTO f4a_property_hypotheses(
                     category,property,value,proposed_confidence,
                     proposed_epoch_s,source)
                 VALUES (?,?,?,?,?,'fictional_llm_hypothesis_only')
             """,(category,property,value,prob,now))
-            self._prune(now)
             return result.lastrowid if result.rowcount==1 else None
 
     def hypotheses(self, *, category: str, now_wall_epoch_s: float,
@@ -272,6 +304,7 @@ class CategorySemantics:
         with self._memory.conn:
             result=self._memory.conn.execute("""
                 UPDATE f4a_property_hypotheses
-                SET active=0,correction_reason=? WHERE id=? AND active=1
+                SET active=0,correction_reason=?,proposed_confidence=0
+                WHERE id=? AND active=1
             """,(reason,hypothesis_id))
             return result.rowcount==1
