@@ -1,0 +1,64 @@
+# SIM-E2H: Re-evaluate exactly the stopped, immutable OEM MuJoCo artifact.
+# No simulator, robotd, policy, physical device, or motor command is started.
+name: SIM-E2H archived OEM solver contact evidence (offline)
+
+on:
+  push:
+    branches:
+      - feat/sim-e2h-native-foot-load-20261028
+    paths:
+      - .github/workflows/sim-e2h-offline.yml
+      - microduck_companion/sim_e2h_contact_audit.py
+      - tests/test_sim_e2h_contact_audit.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  archived-contact:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          persist-credentials: false
+      - name: Re-run only offline validator fixtures
+        run: |
+          python3 -m unittest discover -s tests -p test_sim_e2h_contact_audit.py -v
+      - name: Download the EXACT stopped OEM MuJoCo run, no simulator
+        uses: actions/download-artifact@v4
+        with:
+          name: mujoco-headless-diagnostics
+          repository: Jean-Philippe56520/Microduck
+          run-id: 40734782145
+          github-token: ${{ github.token }}
+          path: archived
+      - name: Check SHA-256 of both independently captured sources
+        run: |
+          set -eu
+          TRACE=archived/tmp/duck-sim-companion/solver-tap.jsonl
+          E2G=archived/tmp/duck-sim-companion/sim-e2g-report.json
+          test -s "$TRACE"
+          test -s "$E2G"
+          printf '%s  %s\n' \
+            a6cf5effde780eac953caaa18508e28e9c17453b1381e7cadaa5664b5e4aa563 "$TRACE" \
+            1e49a67325688fca2d0dd41abc0c3b36b954a15656bf3a2b0717406a5ed1a090 "$E2G" \
+            | sha256sum -c -
+      - name: Audit original native foot contacts from prior stop-confirmed run
+        run: |
+          set -eu
+          python3 -m microduck_companion.sim_e2h_contact_audit \
+            --trace archived/tmp/duck-sim-companion/solver-tap.jsonl \
+            --e2g archived/tmp/duck-sim-companion/sim-e2g-report.json \
+            --output archived/tmp/duck-sim-companion/sim-e2h-contact-report.json
+      - name: Archive only derived report (no raw motor command or media)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-e2h-offline-summary
+          if-no-files-found: warn
+          retention-days: 7
+          path: archived/tmp/duck-sim-companion/sim-e2h-contact-report.json
