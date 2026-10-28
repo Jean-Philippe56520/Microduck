@@ -49,7 +49,10 @@ CLASS_NAMES_URL = (
     "oidv7-class-descriptions-boxable.csv"
 )
 IMAGE_URL_BASE = "https://open-images-dataset.s3.amazonaws.com/validation/"
-ALLOWED_LICENSE = "https://creativecommons.org/licenses/by/2.0/"
+ALLOWED_LICENSES = frozenset({
+    "https://creativecommons.org/licenses/by/2.0/",
+    "http://creativecommons.org/licenses/by/2.0/",
+})
 SEED = "kwipi-a2c-v1-human-verified-fixed-model-no-tuning"
 # Not all Open Images "Ball" objects are COCO "sports_ball": exclude.
 # These names *must* match the official metadata, not a guess at MIDs.
@@ -104,14 +107,21 @@ def select_human_verified_cases(
     if type(per_label) is not int or not 1 <= per_label <= 6:
         raise PhotoBaselineError("bounded cohort size required")
 
-    ids_by_name: dict[str, set[str]] = {}
-    for row in _csv_rows(
-        class_csv, required=frozenset({"LabelName", "DisplayName"}),
-        cap=CLASS_LIMIT,
-    ):
-        name, mid = row["DisplayName"], row["LabelName"]
-        if name in CLASS_MAPPING.values():
-            ids_by_name.setdefault(name, set()).add(mid)
+    # Official boxable class-descriptions CSV has TWO columns WITHOUT a
+    # header (unlike the image metadata and human labels CSV files).
+    if type(class_csv) is not bytes or not 16 <= len(class_csv) <= CLASS_LIMIT:
+        raise PhotoBaselineError("bounded official class descriptions required")
+    try:
+        class_rows = csv.reader(StringIO(class_csv.decode("utf-8-sig")), strict=True)
+        ids_by_name: dict[str, set[str]] = {}
+        for row in class_rows:
+            if len(row) != 2 or not row[0].startswith("/m/"):
+                raise PhotoBaselineError("unexpected official MID/name format")
+            mid, name = row
+            if name in CLASS_MAPPING.values():
+                ids_by_name.setdefault(name, set()).add(mid)
+    except (UnicodeError, csv.Error, ValueError) as exc:
+        raise PhotoBaselineError("invalid public class metadata") from exc
     mids = {}
     for category, target in CLASS_MAPPING.items():
         entries = ids_by_name.get(target, set())
@@ -134,7 +144,7 @@ def select_human_verified_cases(
             raise PhotoBaselineError("invalid or duplicate public image ID")
         seen_meta.add(image_id)
         if (row["Subset"] != "validation"
-                or row["License"] != ALLOWED_LICENSE
+                or row["License"] not in ALLOWED_LICENSES
                 or row["Rotation"] not in {"0", "0.0"}
                 or not row["OriginalSize"].isdigit()
                 or not 100 <= int(row["OriginalSize"]) <= IMAGE_LIMIT):
@@ -268,8 +278,8 @@ def benchmark(*, model_path: Path, class_path: Path,
         t0 = time.perf_counter()
         raw = session.run(None, {"images": model_input})[0]
         times.append((time.perf_counter() - t0) * 1000)
-        boxes = decode_boxes(raw, width=__image_size(image)[0],
-                             height=__image_size(image)[1])
+        width, height = _image_size(image)
+        boxes = decode_boxes(raw, width=width, height=height)
         predictions.append(any(box.category == item.category for box in boxes))
     cohort_roster = "|".join(
         f"{x.image_id}/{x.category}/{int(x.present)}" for x in cases
@@ -303,7 +313,7 @@ def benchmark(*, model_path: Path, class_path: Path,
     }
 
 
-def __image_size(jpeg: bytes) -> tuple[int, int]:
+def _image_size(jpeg: bytes) -> tuple[int, int]:
     # Consume the same JPEG bytes; a second full decode is avoided by Pillow
     # lazy metadata access. EXIF orientation is irrelevant for image-level
     # presence; boxes and ground-truth rectangles are NOT evaluated here.
