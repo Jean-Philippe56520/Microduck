@@ -173,6 +173,24 @@ class RolePreviewTests(TestCase):
                 if reason == "length":
                     self.assertEqual(result["generated_tokens"], 180)
 
+    def test_v2_truncated_reply_is_rejected_with_only_numeric_telemetry(self):
+        from microduck_companion.qwen9b_production_role_v2 import ROLE_VERSION as V2
+        answer = {"model": MODEL, "done": True, "done_reason": "length",
+                  "message": {"role": "assistant", "content": "private partial answer"},
+                  "eval_count": 320, "total_duration": 36_000_000_000}
+        with patch("microduck_companion.qwen9b_role_preview.http.client.HTTPConnection") as create:
+            create.return_value.getresponse.return_value = Reply(json.dumps(answer).encode())
+            report = evaluate_local_image(_photo(), consent=True, reviewed=True, role_version=V2)
+        sent = json.loads(create.return_value.request.call_args.kwargs["body"])
+        self.assertEqual(sent["options"]["num_predict"], 320)
+        self.assertEqual(report["status"], "rejected")
+        self.assertEqual(report["diagnostic"], "generation_truncated")
+        self.assertEqual(report["generated_tokens"], 320)
+        self.assertNotIn("private partial answer", json.dumps(report))
+        self.assertEqual(create.return_value.request.call_count, 1)
+        self.assertEqual(report["motor_commands_issued"], 0)
+        self.assertEqual(report["memory_writes"], 0)
+
     def test_wrong_model_diagnostic_remains_non_disclosing(self):
         data = {"model": "different:model", "done": True,
                 "message": {"role": "assistant", "content": "sensitive"}}
