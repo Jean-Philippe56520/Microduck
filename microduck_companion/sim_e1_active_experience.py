@@ -24,7 +24,8 @@ from .sim_walk_trial import WALK_SPEED_MPS, WALK_TICKS, WalkTrialResult, run_wal
 
 SOURCE = "mujoco_verified_pose"
 OUTCOMES = frozenset({"translation_observed", "no_progress_observed",
-                       "inconclusive_drift", "unverified"})
+                       "inconclusive_drift", "inconclusive_control_limit",
+                       "unverified"})
 
 
 class SimE1Error(ValueError):
@@ -76,7 +77,10 @@ def validate_experience(result: WalkTrialResult, memory: ExperienceMemory,
             or not math.isclose(result.requested_speed_mps, WALK_SPEED_MPS)
             or result.preference_before != 0
             or not isinstance(result.policy_diagnostics, dict)
-            or result.policy_diagnostics.get("policy_samples") != WALK_TICKS):
+            or result.policy_diagnostics.get("policy_samples") != WALK_TICKS
+            or not isinstance(result.policy_diagnostics.get("limited_by"), list)
+            or any(type(v) is not str or not v for v in
+                   result.policy_diagnostics["limited_by"])):
         raise SimE1Error("J2e evidence or fresh-database contract violated")
     if (not isinstance(decisions, dict)
             or decisions.get("same_scene") is not True
@@ -120,9 +124,13 @@ def validate_experience(result: WalkTrialResult, memory: ExperienceMemory,
     if (not math.isclose(preference, result.preference_after, abs_tol=1e-9)
             or memory.intent_preference("robot", "explore") != 0):
         raise SimE1Error("simulated preference leaked or differs from journal")
-    if (result.outcome == "inconclusive_drift" and
-            (result.reward is not None or preference != 0)):
-        raise SimE1Error("ambiguous movement must not teach a preference")
+    limits = result.policy_diagnostics["limited_by"]
+    confounded = result.outcome in {"inconclusive_drift", "inconclusive_control_limit"}
+    if confounded and (result.reward is not None or preference != 0):
+        raise SimE1Error("confounded movement must not teach a preference")
+    if (limits and result.outcome != "inconclusive_control_limit") or (
+            not limits and result.outcome == "inconclusive_control_limit"):
+        raise SimE1Error("OEM limiter contradicts evidence outcome")
     if (result.outcome in {"translation_observed", "no_progress_observed"}
             and result.reward not in (0.5, -0.5)):
         raise SimE1Error("unexpected simulated preference signal")
@@ -135,6 +143,8 @@ def validate_experience(result: WalkTrialResult, memory: ExperienceMemory,
         "decisions": decisions,
         "sqlite_sim_motion_rows": 1,
         "simulated_preference_only": preference,
+        "control_limiter_observed": bool(limits),
+        "preference_learning_eligible": result.reward is not None,
         "robot_preference": 0.0,
         "motor_commands_from_counterfactual": 0,
         "gait_validated": False,
