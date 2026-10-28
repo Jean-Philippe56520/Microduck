@@ -207,10 +207,14 @@ def run_walk_trial(
         healthy_after = _healthy(final_health)
         safe_after = _safe_ground(after)
 
+        # A deadman or other OEM limiter confounds a translation trial:
+        # do not teach the brain that its curiosity caused a poor outcome.
+        sampled_limits = any(sample.limited_by for sample in policy_samples)
         outcome = memory.record_simulated_motion(
             measured_m=measured, baseline_m=drift,
             simulated_duration_s=duration, stop_confirmed=stopped,
             healthy_after=healthy_after, safe_after=safe_after,
+            control_limited=sampled_limits,
         )
         # Only the next independently verified snapshot may authorize another
         # movement, and this trial has NO loop or automatic second attempt.
