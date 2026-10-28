@@ -1,5 +1,7 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**F5 v3 - filtre de propositions PC (28/10/2026) :** module Python sur fixtures, sans CPU/RAM mesurés sur RK3566, sans interface moteurs, camera, ToF ou nouvelles commandes. Toute scene independante est simulee, les politiques OEM chargees et le sol reel restent inconnus. Aucun resultat de tests PC ne valide le robot. Audit de ressources et tests supervises restent necessaires.
+
 **F5 v3 — second essai PC du role v2, image d'animal (28/10/2026) :** Ollama renvoie une reponse complete en 30,203 s (charge 4,103 s ; image+prompt 11,398 s ; generation 14,671 s ; 186 tokens, ~12,7 tok/s). Aucune mesure GPU, RAM, thermie ni marge embarquee ; aucune extrapolation RK3566. Le texte suggere imprudemment `ground_pick` vers un chat, ce qui confirme la necessite d'un veto logiciel local **independant de la bonne volonte du LLM** avant usage physique. Pilotage et souvenirs desactives en essai PC, robot absent.
 
 **F5 v3 — chronometrage role v2 complet sur PC reel (28/10/2026) :** essai autorise Qwen3.5 9B local, `status=unverified` : **30,719 s total**, Ollama **30,716 s**, **210 tokens**, **3,422 s** chargement, **10,604 s** image/prompt et **16,675 s** generation (~12,6 tok/s). Pas de mesure de placement GPU, RSS combine, thermie, réseau robot-PC ni disponibilite OEM ; aucune extrapolation a RK3566. Budget `num_predict=320` est un plafond du pilote PC v2, pas un objectif de latence robot. Robot absent et securite moteur non evaluee.
