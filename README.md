@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**Nettoyage cognitif N2 (28/10/2026) :** un chemin de décision F2 non moteur reste propriétaire des intentions fictives ; les descriptions P-A/PD ne sont pas des schedulers. [Audit N2](docs/n2-cognitive-lazy-imports-2026-10-28.md) : les imports des outils `mock_cycles` et `mock_social_cues` sont différés jusqu'à l'usage requis ; vérification de non-régression sur PC et CI à confirmer dans la PR. Ce n'est ni un nouveau cerveau M9 ni une réduction du wheel ni une intégration robot.
+
+
 **Nettoyage du projet (28/10/2026) :** [audit #127](https://github.com/Jean-Philippe56520/Microduck/pull/127) et [inventaire du wheel #128](https://github.com/Jean-Philippe56520/Microduck/pull/128) fusionnés ; **121 modules Python** actuellement dans le paquet, dont **54 candidats laboratoire** classés automatiquement, pas 54 suppressions autorisées. [N1b #129](https://github.com/Jean-Philippe56520/Microduck/pull/129) vérifie une **tranche de 19 modules** de l'API publique sur hôte, ZIP expérimental **non destiné au Microduck**. Aucun code moteur constructeur n'est recodé, aucun déploiement ni autonomie M9 livré ; priorités et preuves : [plan directeur](docs/plan-action.md).
 
 
