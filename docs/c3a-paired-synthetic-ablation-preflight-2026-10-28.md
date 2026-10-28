@@ -1,6 +1,6 @@
 # C3-A — banc d'ablation appariée sur fixtures uniquement (28 octobre 2026)
 
-**Statut : code et tests candidats sur branche, CI/PR à vérifier avant fusion.** Ce lot ne démontre pas la généralisation C3 sur scènes inédites. Aucun JPEG, caméra, Qwen réel, mémoire robot, ONNX ou moteur.
+**Statut : code et tests candidats en [PR #116](https://github.com/Jean-Philippe56520/Microduck/pull/116), [CI #40703181909](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40703181909) réussie : 1 535 tests, 5 ignorés, 0 échec. Fusion à confirmer.** Ce lot ne démontre pas la généralisation C3 sur scènes inédites. Aucun JPEG, caméra, Qwen réel, mémoire robot, ONNX ou moteur.
 
 ## 1. Porte OEM-first et preuves recherchées
 
@@ -39,4 +39,4 @@ Ce banc n'exécute pas de véritable ablation de décision F2 avec/sans C1 ; n'a
 
 ## 5. Traçabilité
 
-Sources de vérité : plan-action.md, AGENTS.md, README.md, docs/development-reuse-protocol.md, docs/community-reference-registry-2026-10-26.md, docs/c1-conservative-category-recall-2026-10-28.md et docs/oem-pr450-c3-independent-scenes-gate-2026-10-28.md. Tests dans tests/test_c3_mock_ablation.py ; CI/PR à renseigner après vérification.
+Sources de vérité : plan-action.md, AGENTS.md, README.md, docs/development-reuse-protocol.md, docs/community-reference-registry-2026-10-26.md, docs/c1-conservative-category-recall-2026-10-28.md et docs/oem-pr450-c3-independent-scenes-gate-2026-10-28.md. Tests dans tests/test_c3_mock_ablation.py ; [CI #40703181909](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40703181909) réussie, 1 535 tests dont 5 ignorés, zéro échec. [PR #116](https://github.com/Jean-Philippe56520/Microduck/pull/116) ouverte au moment de ce constat.
