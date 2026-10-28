@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**QW-GOAL-1 — matrice réutiliser/adapter/créer (28/10/2026, documentation seule) :** [Qwen appelé selon besoin, mémoire recherchée via adaptateur local](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md#6-clarification-validée--cadence-contextuelle-et-questions-sans-llm-embarqué) : **réutiliser** F2/DET-1, MEM-1/MEM-2A/C1/C2, PD3, F5, la SQLite unique ; **adapter plus tard** l'évaluation d'opportunité et le transport des demandes structurées ; **créer uniquement si besoin** une façade de recherches nommées, bornées, filtrées, sans SQL libre ni second writer/scheduler ; ne jamais ajouter un seuil fixe « N rencontres ». QW-1/QW-2 restent à développer/tester.
+
+
 **QW-GOAL-0 — réutiliser plutôt que recréer (28/10/2026, documentation seule) :** [matrice objective/motivation/Qwen](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md) : **RÉUTILISER** F2/DET-1, PD2/PD3, MEM-1/MEM-2A/C1/C2 et F5-A/B/C/D/9B PC ; **ADAPTER PLUS TARD** la valeur informationnelle et l'admission F5-C sur preuve mesurée, sans plafond « rareté » comme propriété de la personnalité ; **NE PAS CRÉER** autre cerveau, nouveau scheduler, copie SQLite, accès SQL libre du LLM ou moteur. Comparaison OEM et sources tiers existantes inchangées ; aucun code, modèle ou réseau ajouté.
 
 
