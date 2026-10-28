@@ -39,10 +39,10 @@ L'expérience Cat-A2a sur **24 images COCO2017 validation** avait produit 31 TP,
 
 - Modèle : SHA-256 `c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d` ; seuil **0,25 inchangé**.
 - Sources officielles gelées après la première réussite : noms `1839e0e7e84130ae281f7f67413768601b031581c0c42e7fc17527b8e2a99aa9`, métadonnées `ed93a0e121fe345effdfc7359b848dbc64a1ff6778c8c73563157cb500b33a17`, labels humains `92ddbdfceb3626e044df5e89100b24f6c22a79c1888a4bddd00a6f231d86d56a`.
-- Roster (ID+classe+présence, non publié) : SHA-256 `608aa803df32cff206267fdc40c926a0c64783889dc79861cd0a92625d23627b`. Un digest agrégé des octets JPEG est également calculé par le banc de répétition ; aucune photo ni empreinte individuelle ne sort.
+- Roster (ID+classe+présence, non publié) : SHA-256 `608aa803df32cff206267fdc40c926a0c64783889dc79861cd0a92625d23627b`. **48 JPEG également figés** par une empreinte agrégée de leurs SHA dans l'ordre : `e5ea24c3c9db2b9fd13dd45287b41885ddfb4dd7fe5141f5ebcaa78d473b69e3`. Aucun pixel ni empreinte individuelle ne sort.
 - Ressources **runner PC** : médiane inférence **23,07 ms** ; pic RSS processus **219 892 Kio (~215 Mio)** ; durée totale de l'essai **23,646 s** (téléchargement des 48 JPEG compris, pas les outils/poids), ni énergie ni latence robot.
 
-## 4. Ce que cette expérience démontre et ce qu'elle ne démontre pas
+**Répétabilité :** [deuxième CI de mesure #40723379631](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40723379631) réussie sur le même modèle, la même cohorte (roster SHA identique), les trois fichiers officiels SHA identiques et les **mêmes 48 JPEG SHA agrégés**. Les quatre matrices TP/FN/TN/FP sont rigoureusement identiques ; la médiane CPU varie de 23,070 à **17,226 ms** selon la charge du runner. **Ne pas utiliser une médiane isolée pour prédire le robot.** L'empreinte collective des JPEG a ensuite été rendue obligatoire dans le code avant toute nouvelle publication de score.\n\n## 4. Ce que cette expérience démontre et ce qu'elle ne démontre pas
 
 **Démontré :** des vrais pixels publics ont été inférés par le vrai modèle ONNX et confrontés à 48 étiquettes binaires humaines officielles. Ce n'est pas un résultat de fixtures. Les faux positifs sur animaux et faux négatifs sur chaise sont mesurés dans ce cadre.
 
