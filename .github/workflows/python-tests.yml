@@ -26,6 +26,13 @@ jobs:
         run: python -m pip install Pillow==11.3.0
       - run: python -m unittest discover -s tests -v
       - run: python -m compileall -q microduck_companion tests
+      - name: N3 non-destructive SQLite writer/source audit (no database opened)
+        run: |
+          python -m scripts.n3_sqlite_audit --output "$RUNNER_TEMP/n3-sqlite-audit.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: n3-sqlite-source-inventory
+          path: ${{ runner.temp }}/n3-sqlite-audit.json
       - name: Cat-A2b-G real Tk GUI smoke in a virtual Linux display
         run: |
           # Synthetic JPEGs ONLY. Do not fetch/upload any operator images.
