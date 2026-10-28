@@ -17,7 +17,7 @@ import sqlite3
 import sys
 import time
 
-from .experience_ledger import RETENTION_S
+from .experience_ledger import RETENTION_S, _key
 from .experience_expectations import compute_mock_attention_trend
 from .passive_observations import OBJECT_CATEGORIES
 from .perception import _SOUND_CATEGORIES
@@ -241,6 +241,124 @@ def render_journal(rows: tuple[dict, ...], *, format: str = "jsonl") -> str:
     return output.getvalue()
 
 
+
+# OBS-1: conservative diagnostic projection of the EXISTING read-only EX1/EX2
+# fixture viewer, not a new logger or a real robot execution trace.
+OBS1_SCHEMA_VERSION = 1
+OBS1_REASON_CODES = frozenset({
+    "no_effect_evidence", "proposal_withdrawn", "effect_withdrawn",
+    "unknown_cue_or_category", "low_mock_confidence",
+    "scene_not_correlated", "no_observed_change",
+    "competing_event", "after_mock_resolution",
+})
+OBS1_ASSOCIATIONS = frozenset({
+    "indeterminate", "none", "temporal_only", "confounded",
+})
+OBS1_EFFECTS = frozenset({
+    "not_recorded", "withdrawn", "indeterminate", "unchanged", "changed",
+})
+
+
+def render_episode_diagnostics(rows: tuple[dict, ...]) -> str:
+    """Project EX1/EX2 MOCK read_journal rows as bounded diagnostic JSONL.
+
+    No database, network, camera, motor, Qwen or free-text source is read here.
+    Refuse unsupported, malicious or contradictory rows instead of upgrading a
+    fictional resolution to an actual OEM receipt or measured consequence.
+    """
+    if type(rows) is not tuple or len(rows) > MAX_ROWS:
+        raise ValueError("OBS-1 requires a bounded journal tuple")
+    seen: set[tuple[str, int]] = set()
+    last_time = float("inf")
+    out = io.StringIO()
+    for row in rows:
+        if type(row) is not dict or set(row) != set(FIELDS):
+            raise ValueError("OBS-1 requires exact EX1/EX2 journal fields")
+        key = _key(row["session"], row["sequence"])
+        at = _time(row["time_epoch_s"])
+        if key in seen or at > last_time:
+            raise ValueError("duplicate or unordered OBS-1 episode")
+        seen.add(key)
+        last_time = at
+        if (row["source"] != "mock_fixture_only"
+                or row["causality_established"] is not False
+                or row["verified_on_robot"] is not False
+                or type(row["motor_commands_issued"]) is not int
+                or row["motor_commands_issued"] != 0):
+            raise ValueError("OBS-1 cannot import real execution claims")
+        if (type(row["intention"]) is not str
+                or row["intention"] not in {
+                    "observe", "inspect", "listen", "idle", "rest"
+                }
+                or (row["category"] is not None and
+                    (type(row["category"]) is not str
+                     or row["category"] not in CATEGORIES))):
+            raise ValueError("unsupported OBS-1 fixture target")
+        status, effect = row["status"], row["effect_status"]
+        association, reason = row["association_status"], row["reason_code"]
+        corrected = row["corrected"]
+        if (type(status) is not str
+                or status not in STATUSES | {"withdrawn"}
+                or type(effect) is not str or effect not in OBS1_EFFECTS
+                or type(association) is not str
+                or association not in OBS1_ASSOCIATIONS
+                or type(reason) is not str or reason not in OBS1_REASON_CODES
+                or type(corrected) is not bool):
+            raise ValueError("invalid OBS-1 resolution or reason")
+        if status == "withdrawn":
+            valid = corrected and (effect, association, reason) == (
+                "withdrawn", "indeterminate", "proposal_withdrawn")
+        elif corrected:
+            valid = status == "mock_executed" and (
+                effect, association, reason) == (
+                    "withdrawn", "indeterminate", "effect_withdrawn")
+        elif effect == "not_recorded":
+            valid = association == "indeterminate" and reason == "no_effect_evidence"
+        else:
+            valid = status == "mock_executed" and (
+                (effect == "changed" and (
+                    (association, reason) in {
+                        ("temporal_only", "after_mock_resolution"),
+                        ("confounded", "competing_event"),
+                    }))
+                or (effect == "unchanged" and (
+                    association, reason) == ("none", "no_observed_change"))
+                or (effect == "indeterminate"
+                    and association == "indeterminate"
+                    and reason in {
+                        "unknown_cue_or_category",
+                        "low_mock_confidence", "scene_not_correlated",
+                    }))
+        if not valid:
+            raise ValueError("contradictory OBS-1 fixture lifecycle")
+        # These are assertions about *absence of proof* in the mock viewer,
+        # not statements about any real robot. Never upgrade mock_executed.
+        record = {
+            "schema_version": OBS1_SCHEMA_VERSION,
+            "episode_id": f"{key[0]}:{key[1]}",
+            "proposed_at_epoch_s": at,
+            "intention": row["intention"],
+            "category": row["category"] or "unknown",
+            "fixture_resolution": status,
+            "mock_effect": effect,
+            "mock_association": association,
+            "reason_code": reason,
+            "corrected": corrected,
+            "decision_context": "not_recorded",
+            "qwen_context": "not_recorded",
+            "oem_authorization": "not_attested",
+            "oem_execution": "not_attested",
+            "physical_effect": "not_attested",
+            "causality": "unproven",
+            "source": "mock_fixture_only",
+            "verified_on_robot": False,
+            "motor_commands_issued": 0,
+        }
+        out.write(json.dumps(record, ensure_ascii=True,
+                             separators=(",", ":")) + "\n")
+    return out.getvalue()
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Journal de Kwipi : lecture locale EX1/EX2 et tendances EX3 fictives uniquement"
@@ -253,10 +371,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--status", choices=sorted(STATUSES))
     parser.add_argument("--format", choices=("jsonl", "csv"), default="jsonl")
     parser.add_argument("--include-withdrawn", action="store_true")
+    parser.add_argument("--diagnostic", action="store_true",
+                        help="OBS-1 fictional episode diagnostics as bounded JSONL")
     parser.add_argument("--trend", choices=("observe", "listen"),
                         help="résumé EX3 fictif (nécessite --category)")
     args = parser.parse_args(argv)
     try:
+        if args.diagnostic and (args.trend is not None
+                                or args.format != "jsonl"):
+            raise ValueError("--diagnostic requires JSONL without --trend")
         now = time.time() if args.at is None else args.at
         if args.trend is not None:
             if args.category is None:
@@ -272,7 +395,8 @@ def main(argv: list[str] | None = None) -> int:
                 limit=args.limit, category=args.category,
                 status=args.status, include_withdrawn=args.include_withdrawn,
             )
-            output = render_journal(rows, format=args.format)
+            output = (render_episode_diagnostics(rows) if args.diagnostic
+                      else render_journal(rows, format=args.format))
     except (ValueError, FileNotFoundError, sqlite3.Error, OSError) as exc:
         print("Journal non disponible : " + str(exc), file=sys.stderr)
         return 2
