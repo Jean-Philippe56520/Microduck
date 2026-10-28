@@ -68,6 +68,8 @@ SOURCE_SHA256 = {
     "metadata": "ed93a0e121fe345effdfc7359b848dbc64a1ff6778c8c73563157cb500b33a17",
 }
 COHORT_SHA256 = "608aa803df32cff206267fdc40c926a0c64783889dc79861cd0a92625d23627b"
+# Hash of the 48 JPEG SHA-256 strings in frozen cohort order (no pixels published).
+IMAGE_CONTENTS_SHA256 = "e5ea24c3c9db2b9fd13dd45287b41885ddfb4dd7fe5141f5ebcaa78d473b69e3"
 
 META_LIMIT = 45_000_000
 LABELS_LIMIT = 55_000_000
@@ -306,6 +308,9 @@ def benchmark(*, model_path: Path, class_path: Path,
     )
     if sha256(cohort_roster.encode()).hexdigest() != COHORT_SHA256:
         raise PhotoBaselineError("selected public holdout roster changed")
+    image_contents = sha256("|".join(ordered_image_hashes).encode()).hexdigest()
+    if image_contents != IMAGE_CONTENTS_SHA256:
+        raise PhotoBaselineError("public photo bytes differ from measured cohort")
     return {
         "experiment": "Cat-A2c Open Images V7 human-verified binary holdout",
         "category_results": binary_metrics(cases, tuple(predictions)),
