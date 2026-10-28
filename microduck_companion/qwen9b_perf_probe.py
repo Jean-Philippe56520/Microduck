@@ -43,7 +43,7 @@ _CONTEXT = (
 _SYSTEM = (
     "You are a PC-only diagnostic, not a robot controller. Inspect the "
     "synthetic image. Return an uncertain observation only; never suggest "
-    "a motor command or an identity. The image depicts a red circle on white."
+    "a motor command or an identity. Do not guess when the image is unclear."
 )
 _USER = "Describe the dominant foreground shape and its color."
 
@@ -259,7 +259,8 @@ def run_probe(*, consent: bool, port: int = 11435, timeout_s: float = 120,
         "model_was_previously_loaded": "unknown",
         "rss_and_gpu_placement_measured": False,
         "robot_hardware_validated": False,
-        "qwen_pc_model_measured": True,
+        "model_identity_independently_verified": False,
+        "ollama_model_tag_expected": MODEL,
         "motor_commands_issued": 0,
         "memory_writes": 0,
         "private_images_read": 0,
