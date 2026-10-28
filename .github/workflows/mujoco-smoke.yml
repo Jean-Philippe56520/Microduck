@@ -86,8 +86,8 @@ jobs:
         env:
           DUCK_SIM_SHORT_MOVE: ${{ github.ref_name == 'feat/one-bounded-sim-intent-20261025' && 'YES' || 'NO' }}
           DUCK_SIM_WALK_TRIAL: ${{ github.ref_name == 'feat/measured-sim-walk-learning-v1' && 'YES' || 'NO' }}
-          DUCK_SIM_WALK_COMPARE: ${{ (github.ref_name == 'feat/p0b-stand-walk-comparison-20261025' || github.ref_name == 'feat/p0c-replay-contact-geometry-20261025' || github.ref_name == 'feat/p0d-live-solver-contact-tap-20261025' || github.ref_name == 'feat/p0e-actuator-gain-consistency-20261025' || github.ref_name == 'feat/sim-e2h-native-foot-load-20261028') && 'YES' || 'NO' }}
-          DUCK_SIM_SOLVER_TRACE: ${{ (github.ref_name == 'feat/p0d-live-solver-contact-tap-20261025' || github.ref_name == 'feat/p0e-actuator-gain-consistency-20261025') && 'YES' || 'NO' }}
+          DUCK_SIM_WALK_COMPARE: ${{ (github.ref_name == 'feat/p0b-stand-walk-comparison-20261025' || github.ref_name == 'feat/p0c-replay-contact-geometry-20261025' || github.ref_name == 'feat/p0d-live-solver-contact-tap-20261025' || github.ref_name == 'feat/p0e-actuator-gain-consistency-20261025') && 'YES' || 'NO' }}
+          DUCK_SIM_SOLVER_TRACE: ${{ (github.ref_name == 'feat/p0d-live-solver-contact-tap-20261025' || github.ref_name == 'feat/p0e-actuator-gain-consistency-20261025' || github.ref_name == 'feat/sim-e2h-native-foot-load-20261028') && 'YES' || 'NO' }}
           DUCK_SIM_ACTUATOR_AUDIT: ${{ github.ref_name == 'feat/p0e-actuator-gain-consistency-20261025' && 'YES' || 'NO' }}
           DUCK_SIM_CONTACT_REPLAY: ${{ github.ref_name == 'feat/p0c-replay-contact-geometry-20261025' && 'YES' || 'NO' }}
           DUCK_SIM_POLICY_AUDIT: ${{ github.ref_name == 'feat/p0f-policy-contract-audit-20261025' && 'YES' || 'NO' }}
