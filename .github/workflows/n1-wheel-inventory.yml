@@ -3,7 +3,9 @@ on:
   pull_request:
     paths:
       - 'scripts/n1_inventory.py'
+      - 'scripts/n1_public_slice.py'
       - 'tests/test_n1_inventory.py'
+      - 'tests/test_n1_public_slice.py'
       - '.github/workflows/n1-wheel-inventory.yml'
       - 'pyproject.toml'
   workflow_dispatch:
@@ -27,7 +29,18 @@ jobs:
         run: |
           python scripts/n1_inventory.py --wheel "$(find "$RUNNER_TEMP/n1-wheel" -maxdepth 1 -name '*.whl' -print -quit)" --output "$RUNNER_TEMP/n1-inventory.json"
           python -c 'import json,os; r=json.load(open(os.environ["RUNNER_TEMP"]+"/n1-inventory.json")); w=r["wheel_inspection"]; assert r["module_count"] == w["python_file_count"]; print("modules",r["module_count"],"lab candidates shipped",len(w["lab_candidates_included"]))'
+      - name: Verify N1b source-slice tests (fixture-only)
+        run: python -m unittest discover -s tests -p 'test_n1_public_slice.py' -v
+      - name: Generate isolated public-API ZIP (host-only, no installation)
+        run: |
+          python -m scripts.n1_public_slice --output "$RUNNER_TEMP/n1-public-api.zip" --report "$RUNNER_TEMP/n1-public-api.json"
+      - name: Inspect and import only the isolated public API (no motors, no model)
+        run: |
+          python -I -B -c 'import sys, os, json, zipfile; root=os.environ["RUNNER_TEMP"]; z=root+"/n1-public-api.zip"; r=json.load(open(root+"/n1-public-api.json")); members=zipfile.ZipFile(z).namelist(); assert len(members)==r["selected_python_modules"]; assert not any("/sim_" in m for m in members); assert r["motor_rpc_literals_in_selection"]==0 and r["dynamic_imports_in_selection"]==0; sys.path.insert(0,z); import microduck_companion as p; assert p.AutonomyBrain and p.ExperienceMemory; print("public API isolated on host; modules",len(members),"retained mock dependencies",r["lab_candidates_still_required"])'
       - uses: actions/upload-artifact@v4
         with:
           name: n1-import-wheel-inventory
-          path: ${{ runner.temp }}/n1-inventory.json
+          path: |
+            ${{ runner.temp }}/n1-inventory.json
+            ${{ runner.temp }}/n1-public-api.json
+            ${{ runner.temp }}/n1-public-api.zip
