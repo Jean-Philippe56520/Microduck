@@ -97,7 +97,8 @@ class OriginalSolverSupportTests(unittest.TestCase):
 
     def write(self):
         self.solver.write_text(
-            "\n".join(json.dumps(x) for x in self.rows)+"\n"  # NaN fixture must reach the strict parser)
+            "\n".join(json.dumps(x) for x in self.rows)+"\n")
+        # NaN fixture is deliberately non-standard: validate the strict reader.
         self.e2g.write_text(json.dumps(self.report, allow_nan=False))
 
     def test_real_original_solver_payload_contract_not_a_gait(self):
