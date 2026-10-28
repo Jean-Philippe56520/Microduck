@@ -14,7 +14,7 @@ from unittest.mock import patch
 from microduck_companion.cata2_bbox_eval import Box
 from microduck_companion.cata2b_blind_review import _read_review
 from microduck_companion.cata2b_blind_editor import (
-    BlindAnnotationSession, BlindImage, main,
+    BlindAnnotationSession, BlindImage, empty_box_confirmation_prompt, main,
 )
 from microduck_companion.cata2b_private_low import LowDataset, LowSample
 from microduck_companion.visual_photo_mobilenet_demo import PhotoBaselineError
@@ -112,6 +112,17 @@ class BlindEditorTests(unittest.TestCase):
         with self.assertRaisesRegex(PhotoBaselineError, "individually"):
             self.export()
         self.assertFalse((self.root / "reviews").exists())
+
+    def test_uncertain_image_is_not_a_confirmed_negative_prompt(self):
+        title, question = empty_box_confirmation_prompt(True)
+        self.assertEqual("Image incertaine", title)
+        self.assertIn("INDETERMINEE", question)
+        self.assertNotIn("confirmer l'absence de toutes les categories", question)
+        title2, question2 = empty_box_confirmation_prompt(False)
+        self.assertEqual("Relecture sans cible", title2)
+        self.assertIn("confirmer l'absence de toutes les categories", question2)
+        with self.assertRaises(PhotoBaselineError):
+            empty_box_confirmation_prompt("yes")
 
     def test_negative_requires_explicit_image_confirmation(self):
         with self.assertRaisesRegex(PhotoBaselineError, "complete"):
