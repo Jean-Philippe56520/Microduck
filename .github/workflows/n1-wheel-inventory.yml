@@ -1,0 +1,33 @@
+name: N1 read-only wheel inventory
+on:
+  pull_request:
+    paths:
+      - 'scripts/n1_inventory.py'
+      - 'tests/test_n1_inventory.py'
+      - '.github/workflows/n1-wheel-inventory.yml'
+      - 'pyproject.toml'
+  workflow_dispatch:
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Targeted negative/positive fixture tests
+        run: python -m unittest discover -s tests -p 'test_n1_inventory.py' -v
+      - name: Build wheel from unchanged packaging metadata
+        run: |
+          python -m pip install --disable-pip-version-check 'setuptools>=68' wheel
+          mkdir -p "$RUNNER_TEMP/n1-wheel"
+          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/n1-wheel" .
+      - name: Audit actual wheel without importing code
+        run: |
+          python scripts/n1_inventory.py --wheel "$(find "$RUNNER_TEMP/n1-wheel" -maxdepth 1 -name '*.whl' -print -quit)" --output "$RUNNER_TEMP/n1-inventory.json"
+          python -c 'import json,os; r=json.load(open(os.environ["RUNNER_TEMP"]+"/n1-inventory.json")); w=r["wheel_inspection"]; assert r["module_count"] == w["python_file_count"]; print("modules",r["module_count"],"lab candidates shipped",len(w["lab_candidates_included"]))'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: n1-import-wheel-inventory
+          path: ${{ runner.temp }}/n1-inventory.json
