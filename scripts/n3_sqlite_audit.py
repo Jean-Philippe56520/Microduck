@@ -179,9 +179,12 @@ def enforce_non_destructive_boundaries(report: dict) -> None:
     owners = [x for x in connections if x["mode"] != "read_only_uri"]
     if len(owners) != 1 or owners[0]["module"] != "episodic_memory.py":
         raise ValueError("Unexpected second writable/unknown SQLite connection; review required")
-    if any(x["module"] != "kwipi_journal.py"
-           for x in connections if x["mode"] == "read_only_uri"):
-        raise ValueError("Unexpected read-only SQLite connection location; review required")
+    unexpected_ro = sorted({x["module"] for x in connections
+                            if x["mode"] == "read_only_uri"
+                            and x["module"] != "kwipi_journal.py"})
+    if unexpected_ro:
+        raise ValueError("Unexpected read-only SQLite connection location; review required: "
+                         + ", ".join(unexpected_ro))
     if report["destructive_sites"]:
         raise ValueError("Destructive SQL or deletion of durable corrections; review required")
     table_map = {x["table"]: x for x in report["tables"]}
@@ -205,13 +208,15 @@ def main() -> None:
     p.add_argument("--output", type=Path)
     args = p.parse_args()
     report = scan_tree(args.root)
-    enforce_non_destructive_boundaries(report)
+    # Preserve a source-only diagnostic even when a conservative gate fails.
+    # Never include paths to user databases, SQL arguments or their values.
     serialized = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(serialized, encoding="utf-8")
     else:
         print(serialized)
+    enforce_non_destructive_boundaries(report)
     print("N3 read-only: modules=%d tables=%d read-only-connections=%d cross-writer-sites=%d" % (
         report["modules_scanned"], report["table_count"],
         sum(x["mode"] == "read_only_uri" for x in report["connection_sites"]),
