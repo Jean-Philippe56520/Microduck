@@ -1,6 +1,6 @@
 # Cat-A2b-R — contre-annotation aveugle locale, sans validation automatique
 
-**28/10/2026 · Lot Cat-A2b-R candidat**. Code `microduck_companion/cata2b_blind_review.py` et tests sur images JPEG **entièrement générées**, sans photos privées, vrais annotateurs, caméra robot, inférence de modèle, SQLite, Qwen ou commandes moteurs. [Issue prioritaire #78](https://github.com/Jean-Philippe56520/Microduck/issues/78). [Plan directeur](plan-action.md) et [protocole Cat-A2b](cata2b-private-low-camera-protocol-2026-10-26.md).
+**28/10/2026 · Lot Cat-A2b-R codé et fusionné (PR #118, tests hôte uniquement).** Code `microduck_companion/cata2b_blind_review.py` et tests sur images JPEG **entièrement générées**, sans photos privées, vrais annotateurs, caméra robot, inférence de modèle, SQLite, Qwen ou commandes moteurs. [Issue prioritaire #78](https://github.com/Jean-Philippe56520/Microduck/issues/78). [Plan directeur](plan-action.md) et [protocole Cat-A2b](cata2b-private-low-camera-protocol-2026-10-26.md).
 
 ## 1. Porte : constat, hypothèse, preuve, risque et retour arrière
 
@@ -73,4 +73,4 @@ Le résultat JSON n'indique **que des compteurs agrégés** : images TEST revues
 - **C3-B reste bloqué :** cet outil n'évalue ni un détecteur sur vraies annotations indépendantes ni l'utilité de C1/Qwen. L'étape suivante nécessite deux relectures réellement indépendantes, une résolution externe des divergences et des sites/scènes distincts, sans fuite et hors Git. Ne pas entraîner ni choisir un seuil sur TEST.
 - **Audit confidentialité :** la validation locale existante recharge les JPEG pour vérifier SHA/dimensions, aucune image ou résultat individuel n'est envoyé, stocké ailleurs ou imprimé. Ne jamais lancer de capture réseau locale `mediad` pour cette tâche.
 
-Le protocole complète le dossier [Cat-A2b privé](cata2b-private-host-ort-exploratory-2026-10-27.md) sans effacer les limites des anciennes métriques exploratoires. [PR #118](https://github.com/Jean-Philippe56520/Microduck/pull/118) ouverte à cette rédaction ; [CI Python #40707844533](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40707844533) réussie (1 554 tests, 5 ignorés, zéro échec), dont 19 nouveaux scénarios Cat-A2b-R. Fusion à vérifier.
+Le protocole complète le dossier [Cat-A2b privé](cata2b-private-host-ort-exploratory-2026-10-27.md) sans effacer les limites des anciennes métriques exploratoires. [PR #118](https://github.com/Jean-Philippe56520/Microduck/pull/118) fusionnée (`135b6075`), [CI finale #40708547990](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40708547990) réussie (1 554 tests Python dont 5 ignorés, zéro échec), dont 19 nouveaux scénarios Cat-A2b-R. Test sur fixtures uniquement, sans annotation indépendante réelle.
