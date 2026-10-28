@@ -50,7 +50,11 @@ def _number(value: object, key: str) -> float:
 
 
 def _load_report(path: Path, *, snapshot: bytes | None = None) -> dict:
-    if not path.is_file() or path.is_symlink() or path.stat().st_size > MAX_REPORT_BYTES:
+    if (not path.is_file() or path.is_symlink()
+            or (snapshot is None and path.stat().st_size > MAX_REPORT_BYTES)
+            or (snapshot is not None and
+                (type(snapshot) is not bytes or not snapshot
+                 or len(snapshot) > MAX_REPORT_BYTES))):
         raise GroundTruthError("missing/invalid stopped E2G report")
     try:
         report = json.loads(
