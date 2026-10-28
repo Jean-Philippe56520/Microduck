@@ -5,8 +5,10 @@ robot.subscribe. This tool never sends robot.move, robot.stop or joint targets,
 and it cannot be used to authorize motion on a real robot.
 
 IMPORTANT: The pinned body_server exposes joint positions, velocities and a
-simulated current *proxy*, but NOT contact pairs or joint target commands.
-Missing contacts and targets are recorded as unknown, never inferred.
+simulated current *proxy*, but NOT contact pairs or actuator targets. Optional
+--joint-tracking reuses robotd's OWN single-tick joint/target telemetry, not
+body_server data.ctrl or a proof of a completed motor write. Foot contacts
+and actual actuator targets remain unknown.
 """
 from __future__ import annotations
 
@@ -21,7 +23,7 @@ from .sim_flat_zone import (
     FLAT_SCENE_BLOB, GroundTruthError, JOINT_COUNT, RL_COMMIT,
     parse_flat_frame, read_verified_body_state,
 )
-from .sim_ipc import ReadOnlyUnixRpc, TelemetryError
+from .sim_ipc import Notification, ReadOnlyUnixRpc, TelemetryError
 from .sim_policy_trace import PolicySample, parse_policy_sample, summarize_policy_samples
 
 # The pinned OEM body_server's wire order, including unactuated mouth (index 9).
@@ -35,6 +37,11 @@ assert len(JOINT_NAMES) == JOINT_COUNT
 
 MAX_SAMPLES = 40
 MAX_POLICY_SKEW_S = 0.45
+MAX_ROBOTD_FRAME_AGE_S = 0.35
+MAX_ROBOTD_FUTURE_S = 0.03
+# Exact duck-sim policy selection in OEM 942e58e3; no switching or loading here.
+EXPECTED_DUCK_SIM_POLICY = ("alpha_walking.onnx", "alpha_stand.onnx")
+LEG_INDICES = (0, 1, 2, 3, 4, 10, 11, 12, 13, 14)
 
 
 def _vector(payload: dict, field: str, *, nonnegative: bool = False) -> list[float]:
@@ -105,6 +112,98 @@ def _join_policy(observation: dict, policy: PolicySample) -> None:
     }
 
 
+
+def _verify_alpha_subscription(ack: dict) -> dict:
+    """Confirm policy names from robotd's OEM subscription acknowledgement.
+
+    Names are not file hashes or live inference evidence. Require the known
+    duck-sim alpha slots so an unexpected policy is not silently compared.
+    """
+    if (not isinstance(ack, dict) or ack.get("accepted") is not True
+            or ack.get("walk") != EXPECTED_DUCK_SIM_POLICY[0]
+            or ack.get("stand") != EXPECTED_DUCK_SIM_POLICY[1]
+            or ack.get("unavailable") is not None):
+        raise TelemetryError("robotd subscription policy differs from pinned duck-sim alpha slots")
+    return {"walk": ack["walk"], "stand": ack["stand"],
+            "identity_only_not_model_hash": True}
+
+
+def _robotd_joint_vector(payload: dict, field: str) -> list[float]:
+    values = payload.get(field)
+    if (not isinstance(values, list) or len(values) != JOINT_COUNT
+            or any(type(v) not in (int, float) or not math.isfinite(v)
+                   for v in values)):
+        raise TelemetryError(f"invalid robot.state.{field}: expected 15 finite joint radians")
+    return [float(v) for v in values]
+
+
+def parse_robotd_joint_tracking(note: Notification, body_received_at: float) -> dict:
+    """Pair measured joints and controller targets from ONE OEM robot.state tick.
+
+    The two arrays in robot.state share a tick but targets are from robotd's
+    control calculation BEFORE safety.apply/write confirmation. The independently
+    read MuJoCo body pose is nearby in time, never asserted to be that tick.
+    """
+    if note.method != "robot.state":
+        raise TelemetryError("robotd joint tracking expects robot.state")
+    t_ns = note.params.get("t_ns")
+    if type(t_ns) is not int or t_ns <= 0:
+        raise TelemetryError("missing or invalid robot.state monotonic tick t_ns")
+    tick_s = t_ns / 1_000_000_000
+    if (type(note.received_at) not in (int, float)
+            or not math.isfinite(note.received_at)):
+        raise TelemetryError("invalid robot.state receipt time")
+    age_s = float(note.received_at) - tick_s
+    if not -MAX_ROBOTD_FUTURE_S <= age_s <= MAX_ROBOTD_FRAME_AGE_S:
+        raise TelemetryError("stale or future robot.state tick")
+    if (type(body_received_at) not in (int, float)
+            or not math.isfinite(body_received_at)):
+        raise TelemetryError("invalid MuJoCo body receipt time")
+    skew_s = tick_s - float(body_received_at)
+    if abs(skew_s) > MAX_POLICY_SKEW_S:
+        raise TelemetryError("robot.state tick and MuJoCo body read too far apart")
+    measured = _robotd_joint_vector(note.params, "joints")
+    targets = _robotd_joint_vector(note.params, "targets")
+    return {
+        "robotd_tick_monotonic_ns": t_ns,
+        "robotd_state_receive_age_s": age_s,
+        "robotd_tick_vs_body_read_skew_s": skew_s,
+        "measured_joints_rad": measured,
+        "controller_targets_rad": targets,
+        "controller_target_minus_measured_rad": [
+            target - joint for target, joint in zip(targets, measured)
+        ],
+        "target_before_safety_write_not_motor_effect": True,
+    }
+
+
+def _summarize_robotd_tracking(observations: list[dict]) -> dict:
+    frames = [o["robotd_joint_tracking"] for o in observations]
+    measured = [f["measured_joints_rad"] for f in frames]
+    targets = [f["controller_targets_rad"] for f in frames]
+    errors = [f["controller_target_minus_measured_rad"] for f in frames]
+    return {
+        "sample_count": len(frames),
+        "leg_target_range_rad": {
+            JOINT_NAMES[j]: max(f[j] for f in targets) - min(f[j] for f in targets)
+            for j in LEG_INDICES
+        },
+        "leg_measured_range_rad": {
+            JOINT_NAMES[j]: max(f[j] for f in measured) - min(f[j] for f in measured)
+            for j in LEG_INDICES
+        },
+        "leg_peak_abs_target_minus_measured_rad": {
+            JOINT_NAMES[j]: max(abs(f[j]) for f in errors)
+            for j in LEG_INDICES
+        },
+        "max_state_age_at_receive_s": max(f["robotd_state_receive_age_s"] for f in frames),
+        "max_abs_robotd_tick_vs_body_read_skew_s": max(
+            abs(f["robotd_tick_vs_body_read_skew_s"]) for f in frames
+        ),
+        "motor_write_or_contact_verified": False,
+        "locomotion_validated": False,
+    }
+
 def _summarize(observations: list[dict], policies: list[PolicySample]) -> dict:
     first, last = observations[0], observations[-1]
     positions = [entry["positions_rad"] for entry in observations]
@@ -141,6 +240,7 @@ def collect_joint_trace(
     state_dir: str | Path, rl_root: str | Path, *, port: int = 17801,
     samples: int = 8, hz: int = 5,
     verified_viewer: bool = False,
+    joint_tracking: bool = False,
 ) -> dict:
     """Bounded passive trace, strictly tied to the pinned official simulator.
 
@@ -150,6 +250,8 @@ def collect_joint_trace(
     """
     if type(verified_viewer) is not bool:
         raise ValueError("verified_viewer must be boolean")
+    if type(joint_tracking) is not bool:
+        raise ValueError("joint_tracking must be boolean")
     if type(samples) is not int or not 1 <= samples <= MAX_SAMPLES:
         raise ValueError(f"samples must be an integer in [1,{MAX_SAMPLES}]")
     if type(hz) is not int or not 1 <= hz <= 10:
@@ -158,8 +260,11 @@ def collect_joint_trace(
     observations: list[dict] = []
     policies: list[PolicySample] = []
     prior_sim_time: float | None = None
-    with ReadOnlyUnixRpc(state / "duck-a.sock", timeout_s=0.6) as stream:
-        stream.request("robot.subscribe", hz=hz)
+    prior_robotd_ns: int | None = None
+    with ReadOnlyUnixRpc(state / "duck-a.sock", timeout_s=0.6, role="robotd") as stream:
+        subscription = stream.request("robot.subscribe", hz=hz)
+        policy_identity = (_verify_alpha_subscription(subscription)
+                           if joint_tracking else None)
         for _ in range(samples):
             tick_started = time.monotonic()
             if verified_viewer:
@@ -171,18 +276,34 @@ def collect_joint_trace(
             if (prior_sim_time is not None
                     and observation["sim_time_s"] <= prior_sim_time):
                 raise GroundTruthError("simulator clock did not advance between joint samples")
-            policy = parse_policy_sample(stream.next_notification())
+            note = stream.next_notification()
+            policy = parse_policy_sample(note)
             _join_policy(observation, policy)
+            if joint_tracking:
+                if policy.policy not in ("stand", "walk", "held"):
+                    raise TelemetryError("unexpected active OEM skill in leg tracking")
+                frame = parse_robotd_joint_tracking(
+                    note, observation["observed_monotonic_s"])
+                now_ns = frame["robotd_tick_monotonic_ns"]
+                if prior_robotd_ns is not None and now_ns <= prior_robotd_ns:
+                    raise TelemetryError("robot.state tick clock did not advance")
+                observation["robotd_joint_tracking"] = frame
+                prior_robotd_ns = now_ns
             prior_sim_time = observation["sim_time_s"]
             observations.append(observation)
             policies.append(policy)
             remaining = 1.0 / hz - (time.monotonic() - tick_started)
             if remaining > 0 and len(observations) < samples:
                 time.sleep(remaining)
+    summary = _summarize(observations, policies)
+    if joint_tracking:
+        summary["robotd_joint_tracking"] = _summarize_robotd_tracking(observations)
     return {
-        "schema_version": 1,
+        "schema_version": 2 if joint_tracking else 1,
         "mode": "passive_read_only",
         "verified_viewer_opt_in": verified_viewer,
+        "joint_tracking_opt_in": joint_tracking,
+        "robotd_subscribed_policy_names": policy_identity,
         "source": "pinned_official_mujoco_body_and_robotd",
         "rl_commit": RL_COMMIT,
         "flat_scene_git_blob": FLAT_SCENE_BLOB,
@@ -192,10 +313,11 @@ def collect_joint_trace(
         "commands_sent": 0,
         "foot_contacts_available": False,
         "joint_targets_available": False,
-        "missing_reason": "not_exposed_by_pinned_official_body_server_read_protocol",
+        "robotd_controller_targets_available": joint_tracking,
+        "missing_reason": "body_server_read_does_not_expose_actuator_targets_or_contacts",
         "currents_warning": "OEM simulation proxy: abs(actuator_force) * 100, not calibrated mA",
         "observations": observations,
-        "summary": _summarize(observations, policies),
+        "summary": summary,
     }
 
 
@@ -206,6 +328,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--port", type=int, default=17801)
     parser.add_argument("--verified-viewer", action="store_true",
                         help="read-only trace of the exact OEM GUI launch, never motor authorization")
+    parser.add_argument("--joint-tracking", action="store_true",
+                        help="read same-tick robotd joints/targets; no motor write proof")
     parser.add_argument("--samples", type=int, default=8)
     parser.add_argument("--hz", type=int, default=5)
     parser.add_argument("--output", type=Path,
@@ -216,11 +340,21 @@ def main(argv: list[str] | None = None) -> int:
             args.state_dir, args.rl_root, port=args.port,
             samples=args.samples, hz=args.hz,
             verified_viewer=args.verified_viewer,
+            joint_tracking=args.joint_tracking,
         )
         encoded = json.dumps(result, indent=2, sort_keys=True, allow_nan=False)
         if args.output is not None:
             args.output.write_text(encoded + "\n", encoding="utf-8")
-        print(encoded)
+        if args.joint_tracking and args.output is not None:
+            # Keep detailed pose/target telemetry local, print only aggregate data.
+            print(json.dumps({
+                "output_file": str(args.output),
+                "commands_sent": 0,
+                "robotd_subscribed_policy_names": result["robotd_subscribed_policy_names"],
+                "summary": result["summary"]["robotd_joint_tracking"],
+            }, indent=2, sort_keys=True, allow_nan=False))
+        else:
+            print(encoded)
     except (GroundTruthError, TelemetryError, ValueError, OSError) as exc:
         print(f"P0a read-only trace unavailable: {exc}", file=sys.stderr)
         return 1
