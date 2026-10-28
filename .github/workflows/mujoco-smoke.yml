@@ -61,7 +61,7 @@ jobs:
       - name: Install system build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libudev-dev pkg-config libasound2-dev
+          sudo apt-get install -y libudev-dev pkg-config libasound2-dev python3-pil
 
       - name: Check pinned simulator sources and runtime
         run: |
@@ -72,6 +72,9 @@ jobs:
           uv python install 3.12
           sh -n scripts/sim-smoke.sh
           sh scripts/sim-smoke.sh check
+
+      - name: Require Cat-A/Qwen fixture image tool on the host
+        run: python3 -c 'from PIL import Image; print("Pillow", Image.__version__)'
 
       - name: Run companion unit tests
         run: |
