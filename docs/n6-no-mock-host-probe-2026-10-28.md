@@ -1,6 +1,6 @@
 # N6 — Contrat social partagé, deux moteurs fictifs exclus de la roue hôte
 
-**Date :** 28 octobre 2026. **Statut :** branche/PR de consolidation non déployable. **Autorité :** [plan d'action](plan-action.md). Baseline : `main@31f00cd1f3258b90f7129fcdc737413159d2427e`, [N5 #133 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/133), [CI post-fusion #40752287748](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40752287748) verte. Les résultats et tailles **N5 d'origine** (121 modules / 19 candidats) sont historiques à ce SHA ; le nouveau contrat N6 ajoute un `.py` au dépôt, et requiert un nouveau comptage CI.
+**Date :** 28 octobre 2026. **Statut :** [PR #134](https://github.com/Jean-Philippe56520/Microduck/pull/134) de consolidation non déployable ; [CI spécialisée #40754224746](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40754224746) verte au SHA `e5485cb3986d861d627d8a3e6b23bac1cbd6c625`. **CI générale et CI du dernier commit documentaire à vérifier avant fusion.** **Autorité :** [plan d'action](plan-action.md). Baseline : `main@31f00cd1f3258b90f7129fcdc737413159d2427e`, [N5 #133 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/133), [CI post-fusion #40752287748](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40752287748) verte. Les résultats et tailles **N5 d'origine** (121 modules / 19 candidats) sont historiques à ce SHA ; le nouveau contrat N6 ajoute un `.py` au dépôt, et requiert un nouveau comptage CI.
 
 ## 1. Observation, hypothèses, preuve et échec
 
@@ -42,7 +42,18 @@ python -m scripts.n6_no_mock_wheel inspect --wheel /tmp/n6-wheels/REEL.whl --nor
 
 Les tests `tests/test_n6_no_mock_wheel.py` rejettent les nouveaux sites d'import optionnel, les imports absolus, le retrait non revu d'un site, la copie en dehors d'un dossier temporaire, les contextes mal typés et vérifient le comportement historique dans le **paquet complet**. Les octets d'archive et le SHA de la CI **seront ajoutés après l'analyse de l'artefact**, pas prédits.
 
-## 5. Limites et suite
+## 5. Résultats Linux CI contrôlés sur le vrai wheel
+
+- **Exécution source :** [workflow N1/N5/N6 #40754224746](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40754224746), SHA de branche `e5485cb3986d861d627d8a3e6b23bac1cbd6c625`. **Tests N6 ciblés verts**, et roue N6 construite par setuptools, importée avec `python -I -B` après `pip install --no-index --no-deps --target` en répertoire temporaire CI. Les refus des opérations P2a et F4-C sans leurs moteurs sont testés ; le journal et la description simples ne deviennent pas exécutables.
+- **Artefact :** `n6-host-only-no-mock-wheel-NOT-FOR-ROBOT`, ID GitHub `12844877867` ; archive ZIP SHA-256 **`ab2e268adb15b8999f8a39374686c2a2ac8ec3a8ad9f950efc09403f57c2aa8a`**, vérifiée après téléchargement sur ses octets. Rapports `n6-stage.json` et `n6-wheel-inspection.json` contrôlés. Wheel interne SHA-256 **`1e786325a42a5f9d8a655fbc9b0796ea7d4897dad4376b7a72d3be17cc47be0f`**.
+- **Wheel normal construit sur le même SHA :** **122** fichiers Python, **436 161 octets** compressés ; les laboratoires restent disponibles dans la distribution standard.
+- **Candidat N5 actualisé :** fermeture statique à **20 modules**, incluant encore deux moteurs fictifs, inchangé comme expérience historique mais recalculé après l'ajout du contrat pur.
+- **Candidat N6 :** **18 fichiers Python**, **61 077 octets**, **104 fichiers Python exclus par rapport au wheel normal**. L'inspection réelle du ZIP retrouve exactement les 18 chemins approuvés et **zéro `mock_cycles.py` ou `mock_social_cues.py`**. Le wheel est donc environ **86,0 % plus petit** en octets compressés, **sans aucune conclusion de consommation RSS/CPU ou de sûreté robot**.
+- **Contrats utiles :** `social_context.py` présent ; `MockSocialContext` hérité du code complet est **la même classe**, strictement booléenne ; `BehavioralMemory.record` et les scénarios `MockSocialPlan` impossibles dans le candidat **refusent explicitement** leur exécution en l'absence de la classe historique. Aucun autre type n'est considéré comme un substitut et aucun `robotd`/actionneur n'est invoqué.
+
+Le wheel expérimental partage encore le **nom de paquet importable `microduck_companion`** avec le paquet normal : il est **interdit de les co-installer** dans le même environnement. Les **104 fichiers exclus** sont **toujours conservés** dans Git, le wheel normal et les tests de PC. Cette mesure sur runner ne constitue pas un go pour portage sur RK3566/Yocto.
+
+## 6. Limites et suite
 
 **Ce travail ne sélectionne pas un vrai périmètre robot.** Il démontre seulement une **frontière d'import logique et un wheel Python testable sur PC**, sans les deux moteurs mock. D'autres modules encore présents dans la tranche portent la mention `mock` dans leurs données, statistiques ou méthodes : ils ne sont pas des effets d'apprentissage réel. Ni ramassement, jeu de balle, évitement, perception fiable, synchronisation temporelle OEM, attribution causale, mémoire autonome réelle, latence ni ressources RK3566 ne sont établis.
 
