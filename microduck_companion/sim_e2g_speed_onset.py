@@ -24,7 +24,7 @@ from .sim_policy_pair import (
     PINNED_V8_SHA256, verify_active_arm,
 )
 from .sim_walk_trial import (
-    WALK_TICKS, ONSET_PROBE_SPEED_MPS, run_walk_trial,
+    WALK_TICKS, ONSET_PROBE_TICKS, ONSET_PROBE_SPEED_MPS, run_walk_trial,
 )
 
 TRIAL_THRESHOLD_M = 0.010
@@ -68,19 +68,20 @@ def run_probe(state_dir: Path, robot_root: Path, rl_root: Path,
     trial = run_walk_trial(
         state, rl, memory_path, port=port,
         speed_mps=ONSET_PROBE_SPEED_MPS,
+        ticks=ONSET_PROBE_TICKS,
     )
     if (trial.stop_confirmed is not True
-            or trial.commands_sent != WALK_TICKS
+            or trial.commands_sent != ONSET_PROBE_TICKS
             or trial.requested_speed_mps != ONSET_PROBE_SPEED_MPS):
         raise SimMotionError("incomplete trial/stop or changed speed")
     policy = trial.policy_diagnostics
     if (not isinstance(policy, dict)
-            or policy.get("policy_samples") != WALK_TICKS):
+            or policy.get("policy_samples") != ONSET_PROBE_TICKS):
         raise SimMotionError("incomplete published OEM policy telemetry")
 
     limits = policy.get("limited_by")
     eligible_control = (
-        policy.get("walk_policy_samples", 0) >= WALK_TICKS - 4
+        policy.get("walk_policy_samples", 0) >= ONSET_PROBE_TICKS - 4
         and policy.get("max_applied_vx_mps", 0) >= 0.25
         and isinstance(limits, list) and not limits
     )
@@ -88,7 +89,7 @@ def run_probe(state_dir: Path, robot_root: Path, rl_root: Path,
     candidate = eligible_control and displacement >= TRIAL_THRESHOLD_M
     return {
         "experiment": "SIM-E2G_one_fixed_speed_onset_pinned_OEM_sim_only",
-        "question": "Does a 0.30 m/s from-rest request cause >=10mm measured trunk translation in this pinned empty simulation?",
+        "question": "Does one 12-tick 0.30 m/s request from rest yield >=10mm verified trunk translation in pinned empty MuJoCo?",
         "network_slots_verified_from_live_robotd": True,
         "pinned_v8_sha256": dict(PINNED_V8_SHA256),
         "active_gait": {
