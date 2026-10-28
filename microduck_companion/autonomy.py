@@ -5,6 +5,7 @@ A physical adapter must separately validate safety and supported robotd intents.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import sys
 from typing import TYPE_CHECKING
 from .episodic_memory import ExperienceMemory
 
@@ -17,7 +18,6 @@ if TYPE_CHECKING:
     from .passive_learning import PassiveLearning
     from .behavioral_memory import BehavioralMemory
     from .experience_expectations import MockAttentionTrends
-    from .mock_goal_memory import MockGoalMemory
 
 
 @dataclass(frozen=True)
@@ -57,6 +57,22 @@ class Plan:
     explanation: str
     target: str | None = None
     request_pc_analysis: bool = False
+
+
+def _check_det1_goal_memory(goals: object, memory: ExperienceMemory) -> None:
+    """Check an already-instantiated optional MEM-1 object, without import.
+
+    N5/N6's reviewed mock-free host probe deliberately excludes MEM-1.
+    An optional user-supplied instance already has its defining module
+    loaded. Read the class identity without importing/instantiating the
+    fixture store during the default F2 path.
+    """
+    module = sys.modules.get("microduck_companion.mock_goal_memory")
+    cls = getattr(module, "MockGoalMemory", None)
+    if cls is None or type(goals) is not cls:
+        raise TypeError("DET-1 requires a real MockGoalMemory instance")
+    if goals._memory is not memory:
+        raise ValueError("DET-1 goal memory must share ExperienceMemory")
 
 
 class AutonomyBrain:
@@ -104,7 +120,7 @@ class AutonomyBrain:
                                  learning: PassiveLearning | None = None,
                                  behavioral: BehavioralMemory | None = None,
                                  expectations: MockAttentionTrends | None = None,
-                                 goals: MockGoalMemory | None = None) -> PassiveIntent:
+                                 goals: object | None = None) -> PassiveIntent:
         """F2-B/F2-C: pace non-motor proposals; optional mock-only bias.
 
         Reuses F2-A provenance checking and the same ExperienceMemory journal.
@@ -118,11 +134,7 @@ class AutonomyBrain:
         from .experience_expectations import MockAttentionTrends
 
         if goals is not None:
-            from .mock_goal_memory import MockGoalMemory
-            if not isinstance(goals, MockGoalMemory):
-                raise TypeError("DET-1 requires existing MockGoalMemory")
-            if goals._memory is not self.memory:
-                raise ValueError("DET-1 must share the brain SQLite")
+            _check_det1_goal_memory(goals, self.memory)
 
         if not isinstance(journal, PassiveObservationJournal):
             raise TypeError("a passive journal is required")

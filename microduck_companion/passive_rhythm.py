@@ -12,11 +12,10 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 import math
 import sqlite3
 
-from .autonomy import Motivations
+from .autonomy import Motivations, _check_det1_goal_memory
 from .passive_intentions import (PassiveIntent, propose_passive_intention,
                                  _valid_motivations, _valid_scalar)
 from .passive_memory import PassiveObservationJournal
@@ -25,9 +24,6 @@ from .behavioral_memory import BehavioralMemory, valid_mock_summary
 from .experience_expectations import MockAttentionTrends, MAX_ATTENTION_BIAS
 from .passive_observations import summarize_passive
 from .passive_sources import PassiveRead
-
-if TYPE_CHECKING:
-    from .mock_goal_memory import MockGoalMemory
 
 MIN_CYCLE_GAP_S = 0.5
 ATTENTION_COOLDOWN_S = 3.0
@@ -135,7 +131,7 @@ class PassiveRhythm:
              learning: PassiveLearning | None = None,
              behavioral: BehavioralMemory | None = None,
              expectations: MockAttentionTrends | None = None,
-             goals: MockGoalMemory | None = None) -> PassiveIntent:
+             goals: object | None = None) -> PassiveIntent:
         """One strictly passive, mock-only cognitive cycle.
 
         F2-A validation is called *inside* this module. The caller cannot
@@ -159,11 +155,7 @@ class PassiveRhythm:
             if behavioral._memory is not journal._memory:
                 raise ValueError("F4-A memory must share F1/F2 SQLite")
         if goals is not None:
-            from .mock_goal_memory import MockGoalMemory
-            if not isinstance(goals, MockGoalMemory):
-                raise TypeError("DET-1 requires the existing MockGoalMemory")
-            if goals._memory is not journal._memory:
-                raise ValueError("DET-1 must use the same ExperienceMemory")
+            _check_det1_goal_memory(goals, journal._memory)
         if expectations is not None:
             if not isinstance(expectations, MockAttentionTrends):
                 raise TypeError("EX3 must use the existing mock trend reader")
