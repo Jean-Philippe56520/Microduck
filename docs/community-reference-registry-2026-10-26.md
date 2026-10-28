@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**QW-PERF-1 — décision réutiliser/adapter/créer (28/10/2026, CI à confirmer) :** [audit et protocole](qw-perf1-pc-synthetic-benchmark-2026-10-28.md) : **RÉUTILISER** `qwen9b_role_preview.make_request`, `qwen9b_advisor_v2.prepare_jpeg`, `OllamaEndpoint` et les compteurs de `/api/chat`, l'IdleHead OEM existant ; **ADAPTER** le seul client hôte diagnostic `qwen9b_perf_probe` avec cinq profils synthétiques, opt-in et JSON strict ; **NE PAS CRÉER** nouveau modèle, second pilote moteur, reader SQLite, agent ou dépendance communautaire. Les sources QuackNav/twin/brain restent références et non prérequis à cette mesure.
+
+
 **QW-GOAL-1 — matrice réutiliser/adapter/créer (28/10/2026, documentation seule) :** [Qwen appelé selon besoin, mémoire recherchée via adaptateur local](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md#6-clarification-validée--cadence-contextuelle-et-questions-sans-llm-embarqué) : **réutiliser** F2/DET-1, MEM-1/MEM-2A/C1/C2, PD3, F5, la SQLite unique ; **adapter plus tard** l'évaluation d'opportunité et le transport des demandes structurées ; **créer uniquement si besoin** une façade de recherches nommées, bornées, filtrées, sans SQL libre ni second writer/scheduler ; ne jamais ajouter un seuil fixe « N rencontres ». QW-1/QW-2 restent à développer/tester.
 
 
