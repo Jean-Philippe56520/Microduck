@@ -1,6 +1,6 @@
 # C3-A — banc d'ablation appariée sur fixtures uniquement (28 octobre 2026)
 
-**Statut : code et tests candidats en [PR #116](https://github.com/Jean-Philippe56520/Microduck/pull/116), [CI #40703181909](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40703181909) réussie : 1 535 tests, 5 ignorés, 0 échec. Fusion à confirmer.** Ce lot ne démontre pas la généralisation C3 sur scènes inédites. Aucun JPEG, caméra, Qwen réel, mémoire robot, ONNX ou moteur.
+**Statut : code et tests candidats en [PR #116](https://github.com/Jean-Philippe56520/Microduck/pull/116), [CI #40703181909](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40703181909) réussie : 1 535 tests, 5 ignorés, 0 échec. Fusion confirmée par GitHub (squash 5e94854b) ; aucune généralisation terrain validée.** Ce lot ne démontre pas la généralisation C3 sur scènes inédites. Aucun JPEG, caméra, Qwen réel, mémoire robot, ONNX ou moteur.
 
 ## 1. Porte OEM-first et preuves recherchées
 
