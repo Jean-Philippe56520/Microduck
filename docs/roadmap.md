@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-GOAL-1 — précisions du 28/10/2026 (cadrage validé, pas encore codé) :** [Qwen contextuel et lecteur de mémoire supervisé](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md#6-clarification-validée--cadence-contextuelle-et-questions-sans-llm-embarqué). Le nombre de rencontres n'est **jamais un seuil de consultation** ; motivations/personnalité, but, incertitude, importance de la question, contexte et capacité définissent l'opportunité. QW-1 : envoyer une demande structurée de Kwipi et de courts souvenirs sourcés, Qwen3.5 9B PC réel sur contenu approuvé ; QW-2 : éventuellement permettre au modèle de demander des recherches additionnelles via **opérations autorisées et paramétrées**, exécutées par un lecteur local sans SQL libre ni mémoire brute, et reconsulter selon utilité plutôt que fréquence. QW-1/QW-2 demeurent prévus.
+
+
 **QW-GOAL-0 — correction du cahier des charges (28/10/2026, DOCUMENTATION UNIQUEMENT) :** [stratégie Qwen guidée par objectifs/motivations](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md). Prioriser les **questions apportant une valeur informationnelle à Kwipi**, pas une rareté arbitraire ni un quota de personnalité. Reprise possible d'une question/stratégie différente pour un objectif inachevé même sans nouvelle image, avec consentement, capacité PC mesurée, contexte/risque, déduplication sémantique et repli local. QW-1 = rappel filtré / vrai 9B PC ; QW-2 = adaptation expérimentale des quotas F5-C et reconsultations utiles ; aucune limite n'est modifiée dans le code par ce cadrage.
 
 
