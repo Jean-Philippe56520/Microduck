@@ -138,17 +138,18 @@ def main(argv: list[str] | None = None) -> int:
         print("SIM-E2G refused: explicit isolated simulation opt-in required", file=sys.stderr)
         return 2
     try:
-        report = run_probe(
-            args.state_dir, args.robot_root, args.rl_root,
-            args.memory, port=args.port,
-        )
-        # No file is written on refusal or an unverified OEM stop.
+        # Validate every output path BEFORE entering a motor-controlled trial.
         if args.output.parent.resolve(strict=True) != args.state_dir.resolve(strict=True):
             raise SimMotionError("report must remain inside isolated simulator state")
         if args.output.name != "sim-e2g-report.json":
             raise SimMotionError("report name not in approved allowlist")
         if args.output.exists() or args.output.is_symlink():
             raise SimMotionError("refuse existing/linked diagnostic report")
+        report = run_probe(
+            args.state_dir, args.robot_root, args.rl_root,
+            args.memory, port=args.port,
+        )
+        # No report is written after a refused/incomplete OEM trial.
         args.output.write_text(
             json.dumps(report, sort_keys=True, indent=2, allow_nan=False) + "\n",
             encoding="utf-8",
