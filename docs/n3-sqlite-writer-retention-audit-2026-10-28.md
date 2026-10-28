@@ -1,6 +1,6 @@
 # N3 — Inventaire des tables, écrivains et corrections SQLite (sans migration)
 
-**Date :** 28 octobre 2026. **Statut de cette étape :** audit statique et tests sur fixtures, **pas de nettoyage destructif ni de validation sur Microduck**. Autorité pour les priorités : [plan directeur](plan-action.md). Le lot suit N2 ([PR #130](https://github.com/Jean-Philippe56520/Microduck/pull/130), fusionnée) et ne retarde ni Cat-A2b/C3-B ni le PC Qwen 9B.
+**Date :** 28 octobre 2026. **Statut de cette étape :** [PR N3 #131](https://github.com/Jean-Philippe56520/Microduck/pull/131), [CI complète #40747572022 réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40747572022) au commit `1d4d2732`, audit statique et tests sur fixtures, **pas de nettoyage destructif ni de validation sur Microduck**. Autorité pour les priorités : [plan directeur](plan-action.md). Le lot suit N2 ([PR #130](https://github.com/Jean-Philippe56520/Microduck/pull/130), fusionnée) et ne retarde ni Cat-A2b/C3-B ni le PC Qwen 9B.
 
 ## 1. Porte préalable : observation → hypothèse → preuve → arrêt
 
@@ -60,7 +60,7 @@ python -m unittest discover -s tests -p test_n3_sqlite_audit.py -v
 python -m scripts.n3_sqlite_audit --output /tmp/n3-sqlite-audit.json
 ```
 
-**Statut des preuves :** les 9 tests sur fixtures ont été exécutés localement avec succès sur la copie isolée de l'outil, **sans le dépôt complet** ; l'inventaire de 121 modules/22 tables est le résultat de la première CI diagnostique. La correction du lecteur X2-C et sa **nouvelle CI** doivent être vérifiées avant fusion.
+**Statut des preuves :** les 9 tests sur fixtures ont été exécutés localement avec succès sur la copie isolée de l'outil, **sans le dépôt complet** ; l'inventaire de 121 modules/22 tables est le résultat de la première CI diagnostique. La correction du lecteur X2-C a passé la [CI complète #40747572022](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40747572022) ; **contrôler les tests du dernier commit documentaire avant fusion**.
 
 ## 5. Décision de nettoyage après inventaire
 
