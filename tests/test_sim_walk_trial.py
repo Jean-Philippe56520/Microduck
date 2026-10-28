@@ -100,6 +100,19 @@ class MotionMemoryTests(unittest.TestCase):
         self.assertEqual("rest", brain.choose(safe_scene()).intention)
         self.assertEqual("explore", brain.choose(safe_scene("mock")).intention)
 
+    def test_control_limiter_does_not_create_simulated_reward(self):
+        memory = ExperienceMemory(self.path)
+        self.addCleanup(memory.close)
+        result = memory.record_simulated_motion(
+            measured_m=.035, baseline_m=.0001, simulated_duration_s=1.2,
+            stop_confirmed=True, healthy_after=True, safe_after=True,
+            control_limited=True,
+        )
+        self.assertEqual("inconclusive_control_limit", result.outcome)
+        self.assertIsNone(result.reward)
+        self.assertEqual(0.0, result.updated_preference)
+        self.assertEqual(1, result.observed_trials)
+
     def test_inconclusive_drift_preserves_preferences(self):
         memory = ExperienceMemory(self.path)
         self.addCleanup(memory.close)
@@ -332,6 +345,23 @@ class WalkTrialFakeSocketTests(unittest.TestCase):
         poses[WALK_TICKS+2] = ground(5., .7)
         with self.assertRaisesRegex(SimMotionError, "implausible"):
             self.invoke(poses=poses)
+        self.assertEqual("robot.stop", robot.requested[-1]["method"])
+
+    def test_live_policy_deadman_flag_prevents_learning(self):
+        robot = self.start()
+        class DeadmanPolicyStream(FakePolicyStream):
+            def next_notification(self):
+                note = super().next_notification()
+                note.params["move"]["limited_by"] = ["deadman"]
+                return note
+        with patch("microduck_companion.sim_walk_trial.ReadOnlyUnixRpc",
+                   DeadmanPolicyStream):
+            result = self.invoke()
+        self.assertTrue(result.stop_confirmed)
+        self.assertEqual("inconclusive_control_limit", result.outcome)
+        self.assertIsNone(result.reward)
+        self.assertEqual(0., result.preference_after)
+        self.assertEqual(["deadman"], result.policy_diagnostics["limited_by"])
         self.assertEqual("robot.stop", robot.requested[-1]["method"])
 
     def test_no_progress_is_recorded_without_positive_reward(self):
