@@ -235,7 +235,14 @@ def _interpret(selected: PassiveIntent | MockSocialPlan) -> tuple[str, str, str,
 
     # Import the F4-C social fixture only when a non-F2 proposal is passed.
     # Routine F2 personality portraits remain independent of the social lab.
-    from .mock_social_cues import MockSocialPlan
+    try:
+        from .mock_social_cues import MockSocialPlan
+    except ModuleNotFoundError as exc:
+        if exc.name != f"{__package__}.mock_social_cues":
+            raise
+        # No duck typing or synthetic replacements: an unavailable F4-C
+        # engine cannot be used to launder a social plan into a portrait.
+        raise TypeError("F4-C mock social plans unavailable in reduced host probe") from exc
 
     if isinstance(selected, MockSocialPlan):
         plans = {
