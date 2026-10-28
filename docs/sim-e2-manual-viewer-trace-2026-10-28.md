@@ -34,6 +34,5 @@ graphique ne constituent pas une preuve de locomotion. La télémétrie
 Un futur essai actif manuel doit séparer les fenêtres temporelles
 avant / pendant / après et ne pas convertir la trace en récompense.
 
-**État de validation :** code et tests de fixtures publiés sur branche ;
-CI sur le SHA final à vérifier avant fusion. Aucun essai physique.
+**État de validation (28/10/2026) :** [PR #103 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/103), [CI #40658582383 réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40658582383) (1 410 tests, 31 ignorés). **WSLg utilisateur :** 8 lectures passives au repos puis **32 lectures pendant une commande OEM** de ~8 s à 0,08 m/s, 31 `walk`, aucune limitation, déplacement du tronc net **3,500 mm**. La collecte est validée sur hôte, **pas la locomotion** ; la cause reste inconnue, aucun essai physique. [Dossier de reprise](reprise-microduck-oem-sim-e2-2026-10-28.md).
 Suivi : [SIM-E2 #101](https://github.com/Jean-Philippe56520/Microduck/issues/101).
