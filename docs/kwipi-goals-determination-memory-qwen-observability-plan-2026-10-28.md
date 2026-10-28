@@ -1,5 +1,8 @@
 # Kwipi — feuille de route des objectifs, de la détermination, du rappel Qwen et de l'observabilité
 
+**QW-GOAL-1 — décision complémentaire du 28/10/2026, DOCUMENTATION UNIQUEMENT :** [questions structurées, consultation mémoire à deux étapes](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md#6-clarification-validée--cadence-contextuelle-et-questions-sans-llm-embarqué). Kwipi n'a pas besoin d'un LLM local pour formuler des questions naturelles : F2/DET-1 + mémoire/objectif/contexte transmettent un **besoin typé** à Qwen 9B facultatif. Une éventuelle recherche complémentaire demandée par Qwen passe par un **lecteur SQLite local avec opérations whitelistées et sorties expurgées**, jamais par SQL libre. **Aucune cadence N rencontres** : les motivations, la personnalité/humeur, les besoins et la valeur informationnelle décident si et quand demander de l'aide ; zéro appel peut aussi être le bon choix. Accès Qwen automatique à la mémoire, second tour de rappel, sélection contextuelle et quotas techniques révisés : **prévus**, pas livrés.
+
+
 **QW-GOAL-0 — 28/10/2026, correction du rôle de Qwen, DOCUMENTATION SEULE :** [objectif motivé → question utile → conseil 9B PC facultatif](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md). Le besoin d'information, l'objectif inachevé, la détermination, la curiosité, le jeu, la sociabilité, la prudence et l'exploration peuvent rendre une consultation utile ; **ne pas instaurer une rareté arbitraire**. Une question véritablement différente peut justifier une reconsultation sans nouvelle image. Les quotas actuels F5-C restent dans le code tant que QW-2 ne les a pas adaptés et mesurés ; protections techniques et OEM inchangées.
 
 
