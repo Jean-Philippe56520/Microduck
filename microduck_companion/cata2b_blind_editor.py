@@ -284,8 +284,8 @@ def run_gui(session: BlindAnnotationSession) -> None:
     canvas.pack(pady=6)
     controls = ttk.Frame(root)
     controls.pack(fill="x", padx=10)
-    category = tk.StringVar(value="chair")
-    visibility = tk.StringVar(value="full")
+    category = tk.StringVar(value="")  # no category assumed for an unseen scene
+    visibility = tk.StringVar(value="")  # reviewer must choose explicitly
     uncertain = tk.BooleanVar(value=False)
     model_blind = tk.BooleanVar(value=False)
     manual_independent = tk.BooleanVar(value=False)
@@ -392,6 +392,12 @@ def run_gui(session: BlindAnnotationSession) -> None:
         bx = max(0, min(sample.width, math.ceil(max(x_start, event.x) / scale)))
         by = max(0, min(sample.height, math.ceil(max(y_start, event.y) / scale)))
         if bx <= ax or by <= ay:
+            return
+        if category.get() not in CATEGORIES or visibility.get() not in VISIBILITY:
+            messagebox.showerror(
+                "Choix requis", "Choisir categorie et visibilite avant de tracer."
+            )
+            display()
             return
         try:
             session.add_box(
