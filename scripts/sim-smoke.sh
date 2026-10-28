@@ -86,14 +86,14 @@ if [ "${DUCK_SIM_SIM_E1:-NO}" = YES ]; then
     done
 fi
 
-# SIM-E2G/E2H must be mutually exclusive with every other motion experiment.
-# E2H is the single exception pairing P0d read-only tap with E2G only.
-if [ "${DUCK_SIM_E2H_CONTACT:-NO}" = YES ] && \
-   { [ "${DUCK_SIM_VX_ONSET:-NO}" != YES ] || \
-     [ "${DUCK_SIM_SOLVER_TRACE:-NO}" != YES ]; }; then
-    printf "SIM-E2H requires both E2G and original solver tap.\n" >&2
+# Historical E2H contact evidence is now evaluated only from stopped,
+# SHA-256-pinned archives. A live tap writer is not an immutable source.
+# Refuse BEFORE launching any simulated motion, even on an old branch.
+if [ "${DUCK_SIM_E2H_CONTACT:-NO}" = YES ]; then
+    printf "SIM-E2H live audit retired: use the offline archived evidence workflow.\n" >&2
     exit 2
 fi
+# SIM-E2G must be mutually exclusive with every other motion experiment.
 # Never permit an arbitrary local caller to combine J2e with the onset probe.
 if [ "${DUCK_SIM_VX_ONSET:-NO}" = YES ]; then
     for incompatible in "${DUCK_SIM_POLICY_PAIR:-NO}" \
@@ -422,16 +422,6 @@ if [ "${DUCK_SIM_VX_ONSET:-NO}" = YES ]; then
         --memory "$DUCK_SIM_STATE/sim-e2g-disposable.sqlite3" \
         --output "$DUCK_SIM_STATE/sim-e2g-report.json" \
         --enable-once
-fi
-
-# E2H: purely passive contact analysis AFTER the E2G stop is confirmed.
-# Original P0d tap already installed before OEM duck-sim boot; no extra motor.
-if [ "${DUCK_SIM_E2H_CONTACT:-NO}" = YES ]; then
-    sleep 0.5
-    python3 -m microduck_companion.sim_e2h_contact_audit \
-        --trace "$DUCK_SIM_STATE/solver-tap.jsonl" \
-        --e2g "$DUCK_SIM_STATE/sim-e2g-report.json" \
-        --output "$DUCK_SIM_STATE/sim-e2h-contact-report.json"
 fi
 
 printf 'Smoke test completed; official simulator is being stopped.\n'
