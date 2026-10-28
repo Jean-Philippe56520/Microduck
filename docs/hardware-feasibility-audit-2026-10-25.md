@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**CAM-OEM-2 — calculs optiques des candidats publics (28/10/2026) :** [étude traçable](cam-oem2-public-geometry-source-audit-2026-10-28.md). Au pin OEM IMX219/Zero3, 62° HFOV **nominal**, et pour GC2093/Beta aucun HFOV utilisable. Le fichier [CID-SIMS calibration.yaml](https://github.com/CID-SIMS/CID-SIMS.github.io/blob/9e7610abf8320062cf810484dd0fc4fdb58682ae/calibration/calibration.yaml) donne `fx=386.5219919`, `fy=387.3230043` à 640×480, soit **79,242° horizontal / 63,568° vertical** au modèle pinhole ; caméra RealSense D455 à 12/26 cm environ, **autre optique**. Le twin MuJoCo à 640×360 et 45° vertical donne **72,734° horizontal**. Aucun de ces calculs n'identifie la caméra/hauteur/montage du Microduck individuel, ni une latence, un RSS ou un résultat NPU.
+
+
 **CAM-OEM-1 (28/10/2026) — clarification caméra depuis les gitlinks épinglés :** le code `robotd-params/src/board.rs` et `mediad/src/sensor.rs` au [SHA OEM 942e58e3](https://github.com/pollen-robotics/microduck/tree/942e58e3aa6dbb28e7037203fff11866122c7567) associe Zero3/IMX219 (rotation vidéo annoncée 90°, HFOV nominal/famille 62°) ou Beta/GC2093 (0°, angle inconnu). Les deux profils ont un mode capteur épinglé 1920×1080 ; le `mediad` livré utilise **par défaut 720p30**. La caméra RL épinglée [b02fdea4](https://github.com/pollen-robotics/microduck_rl/tree/b02fdea4902c2b93b7d34a83a6f05da4ececb7d3) rend 640×360/15 fps et MuJoCo annonce fovy 45° : non équivalent optiquement. Aucun de ces paramètres ne fournit la **hauteur/tilt/étalonnage de l'exemplaire**, ni une mesure de performances RK3566. [Dossier et tests de métadonnées non certifiantes](cam-oem1-camera-fidelity-2026-10-28.md) ; modèle, robot, caméra et sous-modules intacts.
 
 
