@@ -67,6 +67,23 @@ if [ "${DUCK_SIM_X2C_ACCEPTANCE:-NO}" = YES ]; then
     done
 fi
 
+# SIM-E1 deliberately reuses exactly one existing J2e bounded motor trial.
+# The physical robot, other motion experiments, and X2-C are all excluded.
+if [ "${DUCK_SIM_SIM_E1:-NO}" = YES ]; then
+    for incompatible in "${DUCK_SIM_X2C_ACCEPTANCE:-NO}" \
+                        "${DUCK_SIM_SHORT_MOVE:-NO}" \
+                        "${DUCK_SIM_WALK_COMPARE:-NO}" \
+                        "${DUCK_SIM_WALK_TRIAL:-NO}" \
+                        "${DUCK_SIM_POLICY_PAIR:-NO}" \
+                        "${DUCK_SIM_SOLVER_TRACE:-NO}" \
+                        "${DUCK_SIM_ACTUATOR_AUDIT:-NO}"; do
+        if [ "$incompatible" = YES ]; then
+            printf 'SIM-E1 refuses other simulated experiments.\\n' >&2
+            exit 2
+        fi
+    done
+fi
+
 git -C "$ROOT" submodule update --init --recursive
 [ -x "$SIM" ] || { printf 'Missing official duck-sim script\n' >&2; exit 2; }
 [ -f "$DUCK_SIM_RL/pyproject.toml" ] || {
@@ -216,6 +233,20 @@ if [ "${DUCK_SIM_GEOMETRY_COMPARE:-NO}" = YES ]; then
     "$DUCK_SIM_RL/.venv/bin/python" -m microduck_companion.sim_geometry_variants \
         --rl-root "$DUCK_SIM_RL" \
         --output "$DUCK_SIM_STATE/compiled-geometry-variants.json"
+fi
+
+# SIM-E1: one and only one existing J2e trial with evidence in the same
+# SQLite and a counterfactual cognitive comparison; no second motor action.
+if [ "${DUCK_SIM_SIM_E1:-NO}" = YES ]; then
+    rm -f "$DUCK_SIM_STATE/sim-e1.sqlite3" \
+          "$DUCK_SIM_STATE/sim-e1.sqlite3-wal" \
+          "$DUCK_SIM_STATE/sim-e1.sqlite3-shm" \
+          "$DUCK_SIM_STATE/sim-e1-report.json"
+    MICRODUCK_SIM_E1=YES python3 -m microduck_companion.sim_e1_active_experience \
+        --state-dir "$DUCK_SIM_STATE" --rl-root "$DUCK_SIM_RL" \
+        --database "$DUCK_SIM_STATE/sim-e1.sqlite3" \
+        --output "$DUCK_SIM_STATE/sim-e1-report.json" \
+        --port "$DUCK_SIM_PORT" --enable-once
 fi
 
 # This double-opt-in is valid ONLY for the verified flat-floor simulator.

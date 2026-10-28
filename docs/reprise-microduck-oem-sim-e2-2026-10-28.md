@@ -1,0 +1,100 @@
+# Point de reprise — Microduck Companion / Kwipi — 28 octobre 2026
+
+**Document de continuité après réinitialisation de conversation.** Vérifier GitHub, le SHA de main, les PR et les fichiers effectivement installés **avant** toute affirmation ou modification. Priorité au [plan d'action](plan-action.md), aux [instructions permanentes](microduck-companion-instructions-permanentes-2026-10-28.md) et au [protocole de réutilisation](development-reuse-protocol.md).
+
+## 1. État GitHub vérifié lors de cette reprise
+
+- PR [#103 SIM-E2-A](https://github.com/Jean-Philippe56520/Microduck/pull/103) **fusionnée** en `main` (squash `079e6fc088327f69776ad5db17030438b746ffbd`) ; [CI #40658582383](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40658582383) **1 410 tests, 31 ignorés, aucun échec**. La trace passive graphique `--verified-viewer` est intégrée.
+- [SIM-E2 #101](https://github.com/Jean-Philippe56520/Microduck/issues/101) **ouverte** : locomotion du simulateur non résolue ; les mesures manuelles anonymisées sont enregistrées dans l'issue.
+- [Cat-A2b #78](https://github.com/Jean-Philippe56520/Microduck/issues/78) **ouverte** : vérité terrain indépendante et reconnaissance basse encore à démontrer.
+- PR [#97](https://github.com/Jean-Philippe56520/Microduck/pull/97) (stratégie Qwen 9B), [#98](https://github.com/Jean-Philippe56520/Microduck/pull/98) (F5 v2) et [#99](https://github.com/Jean-Philippe56520/Microduck/pull/99) (F5 v3) **ouvertes, non fusionnées** lors du contrôle. `docs/kwipi-oem-qwen9b-realistic-plan-2026-10-27.md` est dans la branche de la PR #97, **absent de main** ; ne jamais le présenter comme livré.
+- OEM épinglé : `upstream/microduck` `942e58e3aa6dbb28e7037203fff11866122c7567`; RL `upstream/microduck_rl` `b02fdea4902c2b93b7d34a83a6f05da4ececb7d3`. Ne pas modifier les sous-modules sans accord.
+
+## 2. État des essais WSL2 / MuJoCo déclarés par l'opérateur
+
+- Windows 11, Ubuntu WSL2/WSLg : fenêtre MuJoCo OEM affichée ; boucle `robotd` **50,0/50,0 Hz, 0 tick manqué**, bus OK, IMU prête, robot debout (tronc ~0,116 m) ; simulation à **1,00×** en temps réel. Pas de robot physique.
+- `DUCK_SIM_RL=$HOME/Microduck/upstream/microduck_rl` ; `DUCK_SIM_STATE=$HOME/.cache/kwipi-visual` lors de ces essais ; variables à réexporter dans un nouveau shell Ubuntu. `python3` système 3.14.4, simulateur utilise son venv Python distinct. Ne pas confondre PowerShell Windows et Bash Ubuntu.
+- Premier essai `duck-sim drive 0.05 0` : commande envoyée, pas de déplacement visible ; sans trace active exploitable.
+- Trace passive graphique au repos : 8 échantillons (1,74 s), **8 `stand`, 8 `deadman`**, vitesse appliquée nulle, déplacement net XY **0,595 mm**. `deadman` au repos n'explique pas la marche.
+- **Essai actif instrumenté** : `duck-sim drive 0.08 0`, ~8 s ; 32 échantillons pendant les consignes, **31 `walk`, 1 `stand`, zéro limitation de sécurité**, vitesse de consigne appliquée montée à **0,08 m/s**. **Déplacement net XY 3,500 mm**, trajectoire cumulée 4,575 mm. Consigne appliquée ≠ vitesse physique. Locomotion **non démontrée**.
+- Amplitudes en marche, max-min de positions mesurées : hanche yaw G/D 1,36°/2,03° ; roll 0,48°/0,45° ; pitch 2,61°/2,16° ; genou 0,69°/1,28° ; cheville 3,71°/0,64°. Peu de mouvement des jambes ; ne pas conclure que le réseau ONNX est fautif.
+- Capture `robotctl monitor` **au repos** : `stand`, `deadman`, ONNX `alpha_walking/alpha_stand`, 50 Hz, ToF simulé 15 Hz ; écarts commande/mesure visibles, p. ex. hanche gauche roll -0,336 / -0,088 rad et genou gauche -0,181 / +0,024 rad. Valeurs ponctuelles **au repos**, pas preuves pendant la marche.
+- L'opérateur a confirmé trois fichiers `velstand.onnx`, `alpha_walking.onnx`, `alpha_stand.onnx`, chacun ~776 Kio dans `$DUCK_SIM_STATE/policies/current`. Le **28/10/2026, leurs trois SHA-256 locaux ont été reçus et comparés avec succès à P0h/v8** (tableau en section 4).
+
+### SIM-E2-B — première capture WSLg au repos réussie (28/10/2026)
+
+Le redémarrage OEM a abouti : `robotd status` annonce IMU prête et posture simulée debout (tronc 0,116 m ; gravité Z −1). Après la [PR #106](https://github.com/Jean-Philippe56520/Microduck/pull/106) fusionnée (CI [#40669996928](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40669996928), 1 415 tests, 31 ignorés, aucun échec), **`sim_joint_trace --verified-viewer --joint-tracking --port 7801 --samples 8 --hz 4` a réussi** avec **zéro commande envoyée**, données détaillées conservées exclusivement dans `$HOME/kwipi-joints-idle.json` sur le PC de l'opérateur. Accusé de politique : `alpha_walking.onnx`, `alpha_stand.onnx` (noms uniquement). Âge maximum `robotd` 0,003135 s ; écart temporel maximal avec la lecture MuJoCo 0,067031 s. Pics absolus cible−mesure au repos : hanche roll G 0,216219 rad, D 0,207708 rad ; genou G 0,204887 rad, D 0,188734 rad. Valeurs maximales sur 8 trames, **pas moyennes, seuils de défaut ou preuve d'une cause**. État des écritures moteurs et contacts inconnus, locomotion non validée. [Détails dans #101](https://github.com/Jean-Philippe56520/Microduck/issues/101#issuecomment-6467541251) et [protocole SIM-E2-B](sim-e2b-robotd-joint-target-trace-2026-10-28.md).
+
+La prochaine opération est **l'analyse locale du JSON existant**, sans commande motrice : labels et limiteurs `robotd` par trame, moyenne **signée** et variation temporelle des écarts, avec avertissement de désynchronisation MuJoCo de 67 ms. Une hypothèse de gain/charge n'est pas une cause démontrée. Le prochain essai actif exige une porte distincte.
+
+### SIM-E2-B — stabilité signée du décalage de repos (28/10/2026)
+
+L'opérateur a ensuite analysé **localement et en lecture seule le même** `$HOME/kwipi-joints-idle.json` (aucune acquisition ni action supplémentaire). **8 `stand`, 8 `deadman`**. Écarts moyens signés `cible−mesure`, en degrés : `left_hip_roll −11,64` [−12,39 ; −10,94], `right_hip_roll +11,26` [+10,67 ; +11,90], `left_knee −10,83` [−11,74 ; −10,37], `right_knee +10,10` [+9,54 ; +10,81]. Les signes restent constants et la fluctuation min–max est de 1,23° à 1,45° pendant ces **huit trames seulement**. `deadman` en inaction/stand n'explique pas la marche antérieure dépourvue de limiteurs. **Aucun défaut d'actionneur ni cause de locomotion ne découle de ce seul écart.**
+
+L'OEM épinglé `robotd-params` configure par défaut `gain=200` et `standing_gain_ratio=0.8`, mais **le gain réellement actif n'est pas présent dans ce JSON**. `body_server.py` (pin RL `b02fdea4`) applique `kp/200` au gain MJCF, où `chosen_actuator` a raideur, friction et limites de force. Une erreur statique sous charge est une hypothèse plausible, **pas démontrée**. Prochaine question discriminante : cibles et positions dans les trames `walk` synchronisées sur une commande OEM **unique, bornée, avec témoin et arrêt explicite**, après un protocole et des critères de stop séparés. Pour le moment : **aucun nouveau `drive`, aucun réglage, aucune récompense**. [Preuve #101](https://github.com/Jean-Philippe56520/Microduck/issues/101#issuecomment-6467856772) ; [protocole](sim-e2b-robotd-joint-target-trace-2026-10-28.md).
+
+### SIM-E2-B — gain debout actuel et bilan des essais constructeur déjà menés
+
+**Lecture `ReadOnlyUnixRpc` opérateur, une seule trame après la capture de huit échantillons :** `policy=stand`, `safety.gain=160`, `fallen=false`, `limp=false`, `limited_by=[deadman]`, `walk=alpha_walking.onnx` et `stand=alpha_stand.onnx`. Cela confirme le **gain déclaré** par `robotd` à cet instant (200 × 0,8), **pas** l'effort, le couple ni une vérification sur robot physique.
+
+**Découverte anti-doublon au pin OEM inchangé :** [P0d](mujoco-p0d-live-solver-2026-10-25.md) a mesuré `data.ctrl` et angles **pendant `walk`** ; [P0e](mujoco-p0e-actuator-gains-2026-10-25.md) a vérifié **gain MJCF actif 0,44 N·m/rad en stand 79/79, 0,55 sur 123/127 trames de la fenêtre marche** et **aucun effort écrêté sur 2 884 valeurs examinées** ; [P0j](mujoco-p0j-load-transfer-2026-10-25.md) a montré **deux pieds chargés sur 127/127 instants en marche**, même si la répartition gauche/droite change ; [P0i](mujoco-p0i-controlled-policy-pair-2026-10-25.md) a comparé alpha et VelStand sans progrès suffisant. **Les exécutions CI headless et la session WSLg ne sont pas des répliques parfaites.** Ces résultats ne démontrent ni une cause racine ni que le gain serait adapté, mais **un nouvel essai moteur répétant seulement ces contrôles serait redondant**.
+
+**Prochaine porte OEM-first :** analyse documentaire/offline croisée de P0d/e/f/i/j (différences d'entraînement/contrôle, chronologie des appuis, force d'entraînement signée absente des rapports, effets possibles et contraintes), avant un éventuel protocole actif strictement borné répondant à une seule question manquante. Aucun modèle, gain, contrôleur, capteur ou scène n'est modifié. [Compte rendu issue #101](https://github.com/Jean-Philippe56520/Microduck/issues/101#issuecomment-6468070520).
+
+### SIM-E2-C — analyse source et reprise de l'archive P0e (28/10/2026)
+
+**Sans nouvelle commande moteur**, l'artefact original GitHub Actions P0e [#40193139617](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40193139617) a été récupéré : les **3 empreintes SHA-256** `solver-tap.jsonl`, `solver-analysis.json` et `walk-comparison.json` sont identiques aux valeurs publiées dans le vérificateur P0j. **888** trames de solveur échantillonnées, fenêtres `stand` **79** et `walk` **127** trames ; ces fenêtres reposent sur les labels P0b à 10 Hz, non un label ONNX à chaque tick.
+
+Offsets moyens **signés `data.ctrl−qpos_avant_pas`** en `stand` P0e : roll G **−11,606°**, D **+10,592°** ; genou G **−11,831°**, D **+10,624°**. Les 8 moyennes WSLg `targets−joints` précédemment communiquées étaient −11,64° ; +11,26° ; −10,83° ; +10,10°. Écarts des moyennes d'environ −0,034° / +0,668° / +1,001° / −0,524° (définitions/horloges distinctes). Reproduction descriptive du **type** de biais, **pas** un défaut OEM démontré.
+
+Dans la fenêtre `walk`, cibles `data.ctrl` roll G/D : excursion **6,07°/6,05°** ; angles articulaires **0,99°/0,20°** ; genoux : cible **3,14°/3,01°** versus angle **1,31°/1,51°**. Les deux pieds étaient déjà chargés sur 127/127 échantillons et P0e n'avait constaté aucun écrêtage parmi les 2 884 valeurs d'effort contrôlées. **L'archive ne fournit pas l'observation `robotd` complète à 61 floats ni les 14 sorties brutes ONNX**, et la configuration d'entraînement BAM n'est pas prouvée identique à la dynamique PD de `duck-sim`.
+
+**Réutilisation :** le nouveau script `sim_e2c_offline_joint_tracking` relit exclusivement les 3 fichiers d'origine en réutilisant les validateurs P0j/P0e et refuse les données modifiées. Aucun modèle, scène, gain, sous-module, mémoire ou action moteur changé. Le résultat est **PC/archives**, sans preuve de marche. Voir [dossier SIM-E2-C](sim-e2c-offline-onnx-observation-gap-and-original-tracking-2026-10-28.md) et [#101](https://github.com/Jean-Philippe56520/Microduck/issues/101). L'archive GitHub Actions a une expiration annoncée au **01/11/2026** ; conserver l'empreinte et les statistiques ne rend pas les fichiers source éternellement disponibles.
+
+### SIM-E2-D — aucune API publique du flux ONNX interne au pin OEM (28/10/2026)
+
+Audit ciblé de `duck-ipc-proto::Call/RobotState`, `robotd::Controller::step`, `Policy::infer`, `robotd` publication, `robotctl monitor --json` et `duck-control/examples/policy-rehearsal.rs` au pin OEM `942e58e3`. **Les observations ONNX effectives [61] et les actions brutes [14] ne sont pas sur le flux robot.state.** Le noyau indisponible est `last_action` **14 valeurs brutes précédentes**, plus `body z/roll/pitch` **3 valeurs** non publiées comme entrée effective. Les autres blocs peuvent être directs, dérivés ou conditionnels, mais **les 61/61 et les 14 sorties ne sont pas récupérables au même tick**. La commande et les cibles articulaires publiées peuvent différer de l'entrée effective et des actions ONNX à cause des skills, de la pose, de l'échelle et des filtres. `policy-rehearsal` est un **rejeu hors ligne**, pas une capture. OEM `main` `6cdfdaad` a été consulté mais ne fait pas partie du gitlink, et les PR #381/#414 restent ouvertes.
+
+**Décision réutiliser avant de créer :** ne coder **aucun** pilote ni traceur externe ; ne pas faire de nouveau `drive`, reconstruire un historique fictif ou journaliser à 50 Hz. Une interface opt-in **à l'intérieur de `robotd`** ne serait qu'une proposition de travail ultérieure constructeur/consentement, avec coût de boucle 50 Hz, limites de collecte, auth locale, absence de médias et tests de sûreté. Aucune API ni modèle changés dans SIM-E2-D. [Audit et porte suivante](sim-e2d-oem-onnx-tick-observability-2026-10-28.md) ; [SIM-E2 #101](https://github.com/Jean-Philippe56520/Microduck/issues/101) ouverte.
+
+## 3. Comparaison OEM impérative avant tout nouvel essai
+
+L'[audit P0h déjà fusionné](mujoco-p0h-policy-slot-lineage-2026-10-25.md) établit une différence : configuration `robotd` ordinaire OEM **`velstand.onnx` sans `stand` séparé** ; le script officiel `scripts/duck-sim` sélectionne explicitement **`alpha_walking.onnx` + `alpha_stand.onnx`**. Réutiliser les trois fichiers OEM et `robotctl monitor`; ne pas déclarer qu'un seul est défectueux.
+
+Le RL officiel `scripts/infer_policy.py` utilise par défaut `bam.mujoco.MujocoController` (actuateur XL330 BAM) ; `sim/body_server.py` de `duck-sim` écrit des cibles dans les actionneurs MJCF et règle leurs gains. Les scènes de vitesse et contact ne sont pas interchangeables. Ce sont des **différences à auditer**, pas des causes établies. La trace passive actuelle **n'expose ni contacts des pieds ni cibles articulaires** ; `robotctl monitor` montre les cibles OEM dans le flux d'état.
+
+## 4. Vérification ONNX locale réalisée et diagnostic OEM restant
+
+**Preuve rapportée par l'opérateur, 28/10/2026 :** `sha256sum` en lecture seule sur les trois fichiers existants dans `$HOME/.cache/kwipi-visual/policies/current/`. Aucun moteur, politique, service, paramètre ou sous-module modifié.
+
+| Fichier | SHA-256 local reçu | Comparaison [P0h/v8](mujoco-p0h-policy-slot-lineage-2026-10-25.md) |
+| --- | --- | --- |
+| `velstand.onnx` | `2fc7f8ee6acd7d0d3f66a99927b5d5a56589aeed02ec714de329b252d5ccf492` | Identique |
+| `alpha_walking.onnx` | `e36332d383997d51401897734cd3e79cf5038406feddb18b4d57ecfb141daa6c` | Identique |
+| `alpha_stand.onnx` | `1569268713e40deea795dd2922dba50d3621e15a872855408b6b1b125b1c094b` | Identique |
+
+**Portée de la preuve :** les fichiers locaux sont bit à bit identiques à ceux déjà audités par P0h dans le bundle déclaré v8 ; une corruption ou divergence de contenu de ces trois fichiers par rapport à cette référence n'est pas observée. La source/manifeste v8 ne constitue pas une signature du checkpoint d'entraînement. Cette comparaison ne prouve ni le chemin effectivement chargé par `robotd` à chaque tick, ni la justesse des entrées/sorties ONNX en boucle fermée, ni la démarche.
+
+**Lecture des sources constructeur épinglées, sans moteur :**
+- [`robotd-params/src/lib.rs`](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/robotd-params/src/lib.rs) : par défaut `walk=velstand.onnx`, pas de `stand` distinct ; [`scripts/duck-sim`](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/scripts/duck-sim) : paire alpha explicitement configurée. La trace opérateur active annonce `walk` mais pas un SHA de session à chaque tick.
+- [`robotd/src/control.rs`](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/robotd/src/control.rs) : observation, inférence, conversion des 14 actions en cibles de position, échelle et filtres ; l'étape seule ne prouve pas le suivi des cibles par la physique.
+- [`mjlab_microduck.sim.body_server`](https://github.com/pollen-robotics/microduck_rl/blob/b02fdea4902c2b93b7d34a83a6f05da4ececb7d3/src/mjlab_microduck/sim/body_server.py) : `set_targets` écrit dans `data.ctrl` des actionneurs MJCF, `read` renvoie positions/vitesses/tronc mais pas cibles ni contacts. [`infer_policy.py`](https://github.com/pollen-robotics/microduck_rl/blob/b02fdea4902c2b93b7d34a83a6f05da4ececb7d3/scripts/infer_policy.py) emploie par défaut le contrôleur BAM, non interchangeable avec `duck-sim` sans mesure.
+- `robotctl monitor` sait afficher les angles commandés/mesurés par `robotd` ; la seule capture antérieure communiquée était **au repos**. Les 32 observations de `sim_joint_trace` pendant la commande ne comportent **ni cibles ni contacts**. On ne peut donc pas départager sorties ONNX trop faibles, filtres/échelles, suivi des actionneurs ou glissement/contact.
+
+**Décision / étape suivante :** réutiliser P0h, `robotctl monitor`, `sim_joint_trace` et les journaux OEM existants. Examiner les configurations et traces disponibles **en lecture seule**. Si la capture des cibles pendant mouvement exige un nouveau run, concevoir d'abord un protocole séparé avec hypothèses, témoin de durée comparable, critères de stop, synchronisation et contrôle de versions ; ne pas lancer un `drive`, modifier `policy load`, réentraîner, toucher aux moteurs ou attribuer une récompense maintenant. Aucun correctif OEM ni nouveau pilote n'est justifié à ce stade.
+
+Le `robotctl version` local peut afficher `rev unknown` (build non CI), et `installed daemon none` (absence de release installée sur ce PC) : ces chaînes **ne prouvent pas** un défaut des démons vivants ; consulter `health` et l'environnement réel.
+
+### Suite SIM-E2-B : cible/mesure OEM sans moteur
+
+Le schéma `robot.state` expose déjà des paires cibles/mesures avec
+`t_ns`. L'option `--joint-tracking` de `sim_joint_trace` doit être
+validée par ses fixtures et sa CI avant d'être exécutée manuellement **au
+repos**, puis évaluée séparément pour un éventuel essai actif supervisé.
+Les cibles sont pré-`safety.apply` ; ni contact, ni écriture/actionnement
+effectif, ni gait ne sont démontrés. Référence :
+[SIM-E2-B](sim-e2b-robotd-joint-target-trace-2026-10-28.md).
+
+## 5. Règle opérationnelle de reprise
+
+**Ne pas repartir d'une hypothèse d'assistant** : état GitHub + docs autoritaires + configuration réellement chargée → audit réutiliser/adapter/créer → mesure passive → essai borné si justifié → conclusion mesurée → PR ciblée avec CI → documentation. Ne pas publier médias privés, identité, journaux bruts de l'opérateur ou données de foyer. Résultat de simulation ≠ autonomie physique.

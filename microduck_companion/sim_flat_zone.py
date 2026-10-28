@@ -85,7 +85,8 @@ def verify_flat_scene(rl_root: Path) -> None:
     # the scene's included MJCF files), not on a free-form operator assertion.
 
 
-def verify_body_process(state_dir: Path, rl_root: Path, port: int) -> None:
+def verify_body_process(state_dir: Path, rl_root: Path, port: int, *,
+                        allow_viewer: bool = False) -> None:
     """Linux-only: check the actual body started by official duck-sim."""
     if os.name != "posix" or not Path("/proc/self/cmdline").exists():
         raise GroundTruthError("requires Linux procfs for simulator verification")
@@ -100,11 +101,16 @@ def verify_body_process(state_dir: Path, rl_root: Path, port: int) -> None:
             b"--port", str(port).encode(), b"--ducks", b"1",
             b"--keyframe", b"SIT", b"--headless",
         ]
+        # Viewer mode is a separate opt-in for read-only manual traces.
+        # Exactly one known launch form is accepted, never arbitrary argv.
+        if type(allow_viewer) is not bool:
+            raise GroundTruthError("viewer permission must be boolean")
+        allowed = (expected, expected[:-1]) if allow_viewer else (expected,)
+        if argv[1:] not in allowed:
+            raise GroundTruthError("simulator process is not the pinned headless/viewer scene")
         python = Path(os.fsdecode(argv[0])).resolve()
         if python != (rl_root / ".venv/bin/python").resolve():
             raise GroundTruthError("simulator Python executable mismatch")
-        if argv[1:] != expected:
-            raise GroundTruthError("simulator process is not the pinned headless scene")
         uids = next(
             line.split()[1:] for line in (proc / "status").read_text().splitlines()
             if line.startswith("Uid:")
@@ -183,6 +189,7 @@ def parse_flat_frame(payload: dict, observed_at: float) -> FlatGroundTruth:
 def read_verified_body_state(
     state_dir: str | Path, rl_root: str | Path, *,
     port: int = 17801, timeout_s: float = 0.5,
+    allow_viewer: bool = False,
 ) -> tuple[dict, float]:
     """Read the raw pinned simulator body frame WITHOUT any write operation.
 
@@ -196,9 +203,15 @@ def read_verified_body_state(
         raise ValueError("invalid simulator timeout")
     root, state = Path(rl_root).resolve(), Path(state_dir).resolve()
     verify_flat_scene(root)
-    verify_body_process(state, root, port)
+    if allow_viewer:
+        verify_body_process(state, root, port, allow_viewer=True)
+    else:
+        verify_body_process(state, root, port)
     payload = _read_body(port, float(timeout_s))
-    verify_body_process(state, root, port)
+    if allow_viewer:
+        verify_body_process(state, root, port, allow_viewer=True)
+    else:
+        verify_body_process(state, root, port)
     return payload, time.monotonic()
 
 

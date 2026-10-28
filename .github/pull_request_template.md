@@ -13,6 +13,16 @@ Décrire précisément la fonction livrée : prévu / codé / test logiciel (fix
 
 Voir [le protocole de réutilisation permanent](../docs/development-reuse-protocol.md).
 
+## Porte préalable « constructeur d'abord » (obligatoire)
+
+- [ ] **Baseline OEM épinglée** : manuel, scripts, politiques, scène, actionneurs, configuration normale et tests consultés (ou « sans objet », justifié)
+- [ ] **Installation réellement active** : versions/SHAs, fichiers/poids, paramètres, journaux et état observé comparés à la baseline
+- [ ] **Réutilisation d'abord** : preuve que les outils OEM et les composants Companion existants ne suffisent pas avant toute nouvelle logique
+- [ ] **Observabilité avant action** : diagnostic en lecture seule examiné ; si essai actif, question, témoin, limites, stop, rollback et mesure d'effet explicités
+- [ ] **Conclusion graduée** : observation ≠ hypothèse ≠ cause prouvée ; absence de preuve classée inconnue ; PR ouvertes ≠ fonctions livrées
+
+Le [dossier de reprise SIM-E2](../docs/reprise-microduck-oem-sim-e2-2026-10-28.md) illustre le piège « vitesse OEM appliquée ≠ vitesse physique du robot ». Indiquer explicitement « sans objet » si une case ne s'applique pas au lot documentaire.
+
 ## Sûreté, confidentialité et ressources
 
 - [ ] robotd garde l'autorité motrice, aucune contournement du contrôle 50 Hz et des protections constructeur
