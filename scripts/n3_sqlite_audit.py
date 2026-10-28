@@ -179,9 +179,13 @@ def enforce_non_destructive_boundaries(report: dict) -> None:
     owners = [x for x in connections if x["mode"] != "read_only_uri"]
     if len(owners) != 1 or owners[0]["module"] != "episodic_memory.py":
         raise ValueError("Unexpected second writable/unknown SQLite connection; review required")
+    # The OEM/X2-C simulator acceptance checker verifies an existing file,
+    # and the journal queries past EX entries. Both open mode=ro, uri=True.
+    # New RO consumers still need a review of their permissions and purpose.
+    allowed_readers = {"kwipi_journal.py", "sim_x2c_acceptance.py"}
     unexpected_ro = sorted({x["module"] for x in connections
                             if x["mode"] == "read_only_uri"
-                            and x["module"] != "kwipi_journal.py"})
+                            and x["module"] not in allowed_readers})
     if unexpected_ro:
         raise ValueError("Unexpected read-only SQLite connection location; review required: "
                          + ", ".join(unexpected_ro))
