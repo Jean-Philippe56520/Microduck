@@ -4,6 +4,14 @@
 
 Le projet doit ajouter ce qui manque, sans réinventer les composants du constructeur ou de Companion. La [matrice R0](oem-reuse-audit-2026-10-26.md) et son [inventaire machine](oem-reuse-inventory-2026-10-26.json) recensent les premiers composants et leurs propriétaires. Le [registre C3 par chantier](community-reference-registry-2026-10-26.md) complète R0/R1.5 par une veille **officielle non fusionnée** et communautaire, sans présumer de compatibilité ou de permission de déploiement. Une fonctionnalité mentionnée dans une roadmap, comme le cerveau OEM M9, **n'est pas automatiquement codée ni déployée**.
 
+## Porte préalable : aucun développement ni essai à l'aveugle (28/10/2026)
+
+**Obligation de preuve avant action :** (1) définir problème, faits et hypothèses, (2) lire la recommandation OEM épinglée **et** la configuration constructeur normale, (3) inventorier ce qui tourne réellement (fichiers/empreintes, politique, actionneurs, scène, version, journaux, horloges), (4) rechercher code/tests déjà livrés chez OEM et Companion, (5) préciser critère mesurable, cas négatifs, risque et retour arrière. Si un maillon manque, annoncer « inconnu » et privilégier **une lecture ciblée**, pas une nouvelle commande moteur.
+
+**Contre-exemple SIM-E2 :** `robotd` OEM par défaut = `velstand.onnx` sans `stand` distinct ; `duck-sim` OEM = `alpha_walking.onnx` + `alpha_stand.onnx`. Une étiquette `walk` et `applied_vx=0.08` ne démontrent aucune vitesse physique : WSLg observe seulement **3,500 mm nets** (32 échantillons actifs, 0 limite). Comparer d'abord les poids et la voie de cibles/mesures via outils OEM, sans modifier ONNX ou sûretés. [Audit P0h](mujoco-p0h-policy-slot-lineage-2026-10-25.md), [reprise SIM-E2](reprise-microduck-oem-sim-e2-2026-10-28.md).
+
+**Pour les nouvelles conversations :** relire [instructions permanentes](microduck-companion-instructions-permanentes-2026-10-28.md), [point de reprise](reprise-microduck-oem-sim-e2-2026-10-28.md) et `main`. Ne pas assimiler une PR ouverte, un test PC, une commande admise ou une animation visuelle à une capacité livrée et validée.
+
 ## Vérifications obligatoires avant tout code
 
 1. **Inspecter le dépôt actuel.** Lire README, plan d'action, audit matériel, fichiers et tests concernés. Contrôler les sous-modules Git épinglés upstream/microduck et upstream/microduck_rl. Le code GitHub fait foi ; les anciennes conversations et la roadmap OEM ne prouvent pas qu'une fonction existe.
