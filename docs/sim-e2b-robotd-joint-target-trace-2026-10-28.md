@@ -105,3 +105,23 @@ secret, média ou base SQLite dans le dépôt.
 
 **Résultat visé du lot :** un outil de diagnostic passif cohérent et
 testé PC-fixtures, **pas** une locomotion MuJoCo validée.
+
+## 5. Première capture WSLg réelle au repos — 28/10/2026
+
+**Observation opérateur, pas fixture ni robot physique :** le serveur MuJoCo avait été arrêté (`body.pid` ancien, port 7801 absent) et a été redémarré par `scripts/duck-sim up` dans la configuration OEM épinglée, sans nouvelle consigne de marche. La nouvelle capture `--verified-viewer --joint-tracking` a alors réussi avec `--samples 8 --hz 4`, sauvegardée uniquement sur le PC dans `$HOME/kwipi-joints-idle.json` (fichier non joint au dépôt).
+
+| Contrôle | Valeur rapportée |
+| --- | --- |
+| Posture | Debout, tronc 0,116 m, gravité Z −1 ; IMU prête |
+| Politiques nommées par `robot.subscribe` | `alpha_walking.onnx` et `alpha_stand.onnx` (pas de SHA par tick) |
+| Mesures et commandes | 8 échantillons de repos, **0 commande** émise par la sonde |
+| Âge maximal du tick `robotd` à réception | 0,003134575 s |
+| Écart temporel maximal tick `robotd` / lecture MuJoCo | 0,067031184 s |
+| Pic absolu cible−mesure : hanche roll G / D | 0,216218607 / 0,207708166 rad |
+| Pic absolu cible−mesure : genou G / D | 0,204887088 / 0,188733563 rad |
+
+Les cibles et positions proviennent de la **même trame `robot.state`** ; le snapshot MuJoCo distinct n'est pas simultané. Les valeurs ci-dessus sont les **maxima absolus sur les huit trames**, pas des moyennes, pas des écarts permanents démontrés ni des preuves de panne. La littérature constructeur épinglée emploie un asservissement de position MJCF avec gain mis à l'échelle par `kp/200` et des limites de force ; il peut y avoir de l'écart à l'équilibre sous charge, mais **le rôle causal exact est inconnu**. De plus, `robot.state.targets` est publié avant `safety.apply` et ne certifie pas l'écriture vers `data.ctrl` ou les contacts de pieds.
+
+**Statut :** l'option de diagnostic est **codée, testée CI sur fixtures et essayée avec succès en mode passif sur WSLg/MuJoCo OEM**. Aucun test de marche nouveau, aucune preuve de locomotion ou de sécurité robot réelle. [Journal de preuve #101](https://github.com/Jean-Philippe56520/Microduck/issues/101#issuecomment-6467541251).
+
+**Suite avant nouvel essai actif :** lire uniquement le JSON détaillé **local** déjà acquis, en agrégeant la moyenne **signée** et l'étendue temporelle des écarts cible−mesure, les labels `policy` et `limited_by`. Ne pas poster le JSON intégral ni modifier le modèle, les gains ou le contrôleur. Comparer les résultats à la configuration `chosen_actuator` avant de formuler une expérience A/B contrôlée.
