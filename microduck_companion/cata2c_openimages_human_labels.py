@@ -60,6 +60,15 @@ CLASS_MAPPING = {
     "person": "Person", "cat": "Cat", "dog": "Dog", "chair": "Chair",
 }
 SAMPLES_PER_BINARY_LABEL = 6
+# Digests measured on the FIRST real, successful pilot CI run #40722697441.
+# Freeze official metadata before using this as a reproducible holdout.
+SOURCE_SHA256 = {
+    "class": "1839e0e7e84130ae281f7f67413768601b031581c0c42e7fc17527b8e2a99aa9",
+    "human_labels": "92ddbdfceb3626e044df5e89100b24f6c22a79c1888a4bddd00a6f231d86d56a",
+    "metadata": "ed93a0e121fe345effdfc7359b848dbc64a1ff6778c8c73563157cb500b33a17",
+}
+COHORT_SHA256 = "608aa803df32cff206267fdc40c926a0c64783889dc79861cd0a92625d23627b"
+
 META_LIMIT = 45_000_000
 LABELS_LIMIT = 55_000_000
 CLASS_LIMIT = 150_000
@@ -251,6 +260,11 @@ def benchmark(*, model_path: Path, class_path: Path,
         "class": class_path.read_bytes(), "metadata": metadata_path.read_bytes(),
         "human_labels": labels_path.read_bytes(),
     }
+    actual_digests = {
+        key: sha256(value).hexdigest() for key, value in source_data.items()
+    }
+    if actual_digests != SOURCE_SHA256:
+        raise PhotoBaselineError("official public metadata changed since pilot")
     cases = select_human_verified_cases(
         source_data["class"], source_data["metadata"], source_data["human_labels"],
     )
@@ -288,6 +302,8 @@ def benchmark(*, model_path: Path, class_path: Path,
     cohort_roster = "|".join(
         f"{x.image_id}/{x.category}/{int(x.present)}" for x in cases
     )
+    if sha256(cohort_roster.encode()).hexdigest() != COHORT_SHA256:
+        raise PhotoBaselineError("selected public holdout roster changed")
     return {
         "experiment": "Cat-A2c Open Images V7 human-verified binary holdout",
         "category_results": binary_metrics(cases, tuple(predictions)),
