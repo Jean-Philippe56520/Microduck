@@ -215,6 +215,61 @@ class BlindEditorTests(unittest.TestCase):
                          _read_review(self.dataset, p, "second")[0])
         self.assertFalse(second.role == first.role)
 
+    def test_local_jpeg_integrity_is_rechecked_before_display(self):
+        from dataclasses import replace
+        from PIL import Image
+        buffer = BytesIO()
+        Image.new("RGB", (80, 120), (22, 66, 88)).save(
+            buffer, format="JPEG",
+        )
+        image_blob = buffer.getvalue()
+        path = self.root / "images" / (self.sid() + ".jpg")
+        path.write_bytes(image_blob)
+        with_sha = replace(
+            self.samples[0], image_sha256=sha256(image_blob).hexdigest(),
+        )
+        dataset = LowDataset(self.root, (), (with_sha,), "0" * 64)
+        editor = BlindAnnotationSession(dataset, role="first")
+        self.assertEqual(image_blob, editor.image_bytes(self.sid()))
+        path.write_bytes(image_blob + b"mutated")
+        with self.assertRaisesRegex(PhotoBaselineError, "changed"):
+            editor.image_bytes(self.sid())
+
+    def test_local_image_symlink_is_rejected(self):
+        from dataclasses import replace
+        from PIL import Image
+        buffer = BytesIO()
+        Image.new("RGB", (80, 120), (5, 6, 7)).save(
+            buffer, format="JPEG",
+        )
+        image_blob = buffer.getvalue()
+        original = self.root / "outside.jpg"
+        original.write_bytes(image_blob)
+        linked = self.root / "images" / (self.sid() + ".jpg")
+        linked.symlink_to(original)
+        dataset = LowDataset(
+            self.root, (), (
+                replace(self.samples[0],
+                        image_sha256=sha256(image_blob).hexdigest()),
+            ), "0" * 64,
+        )
+        editor = BlindAnnotationSession(dataset, role="first")
+        with self.assertRaisesRegex(PhotoBaselineError, "linked"):
+            editor.image_bytes(self.sid())
+
+    def test_existing_private_review_name_is_never_overwritten(self):
+        reviews = self.root / "reviews"
+        reviews.mkdir(mode=0o700)
+        old = reviews / ("r-" + "f" * 16 + ".json")
+        old.write_bytes(b"existing private review")
+        self.confirmed()
+        with patch("microduck_companion.cata2b_blind_editor.secrets.token_hex",
+                   return_value="f" * 16):
+            with self.assertRaises(FileExistsError):
+                self.export()
+        self.assertEqual(b"existing private review", old.read_bytes())
+        self.assertEqual(1, len(list(reviews.iterdir())))
+
     def test_no_network_sqlite_ollama_or_motor_path(self):
         self.confirmed()
         with patch("socket.socket", side_effect=AssertionError("network forbidden")), \
