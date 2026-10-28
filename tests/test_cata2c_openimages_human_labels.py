@@ -74,6 +74,14 @@ class OpenImagesHumanLabelTests(unittest.TestCase):
         )
         self.assertFalse(any(c.category == "sports_ball" for c in cases))
 
+    def test_official_v7_class_names_with_header(self):
+        classes, meta, labels = self.blobs()
+        headed = b"LabelName,DisplayName\n" + classes
+        samples = select_human_verified_cases(
+            headed, meta, labels, per_label=1,
+        )
+        self.assertEqual(8, len(samples))
+
     def test_selection_order_not_depends_on_csv_row_order(self):
         a = self.select()
         self.names.reverse()
