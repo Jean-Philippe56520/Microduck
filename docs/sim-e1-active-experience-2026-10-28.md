@@ -1,5 +1,13 @@
 # SIM-E1 — première expérience active bornée dans MuJoCo OEM
 
+## Résultat du premier run et correction anti-fausse récompense (28/10/2026)
+
+La [première CI MuJoCo réelle #40651133574](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40651133574), sur SHA `099537f7...`, a réussi le banc headless et **1 405 tests Python, 31 ignorés**. Rapport archivé : **24** commandes `robot.move` à 0,12 m/s demandé, **24** états échantillonnés (23 `walk`, 1 `stand`), `robot.stop` accusé, déplacement du tronc **0,001858 m** contre dérive de base **0,000132 m**. Le résultat historique `no_progress_observed`, la récompense négative `-0.5` et la préférence `-0.075` ont été calculés **malgré `limited_by:["deadman"]` dans la télémétrie OEM**. L'intention restait `explore` avec et sans préférence. Cette pénalité **n'est donc pas une preuve d'échec d'apprentissage ou de commande librement exécutée**.
+
+**Correction SIM-E1 :** dès qu'un échantillon OEM mentionne un limiteur `limited_by` non vide, la couche J2e mémorise l'épisode comme `inconclusive_control_limit` dans la SQLite **avec `reward=None` et sans changement de préférence**. La présence de limiteur est recoupée avec l'état et la récompense par le validateur SIM-E1 ; la commande, le stop, les sources et le rapport sont conservés. Aucun seuil OEM, vitesse, policy ou arbitrage modifiés. Tests de non-récompense, limites et falsification ajoutés. **Ne pas extrapoler à un robot réel ; ne pas inférer les causes mécaniques du déplacement insuffisant.** La CI du code corrigé doit être rattachée séparément à son dernier SHA avant fusion.
+
+
+
 **28 octobre 2026 — candidat de laboratoire.** Code ajouté sur une branche dédiée.
 Le présent document ne revendique **aucun test réel du robot**, aucune préhension,
 aucun coup de pied sur une balle et aucun entraînement de réseau neuronal.
