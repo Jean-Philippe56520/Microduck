@@ -21,6 +21,8 @@ from microduck_companion.category_semantics import (
 )
 from microduck_companion.episodic_memory import ExperienceMemory
 from microduck_companion.memory_consolidation import recall_category
+from microduck_companion.passive_memory import PassiveObservationJournal
+from microduck_companion.passive_learning import PassiveLearning
 
 WALL = 1_770_000_000.0
 
@@ -32,6 +34,10 @@ class C2DurableCorrectionTests(TestCase):
         self.path = Path(self.tmp.name) / "same-experience.sqlite3"
         self.memory = ExperienceMemory(self.path)
         self.addCleanup(self._close)
+        # C1 must only read a fully initialized, provenance-linked F1-C/F2-C
+        # fixture schema. Do not invent a source event for the C2 tests.
+        self.journal = PassiveObservationJournal(self.memory)
+        self.learning = PassiveLearning(self.memory)
         self.semantics = CategorySemantics(self.memory)
 
     def _close(self):
