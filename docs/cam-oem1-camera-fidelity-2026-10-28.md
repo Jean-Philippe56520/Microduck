@@ -1,6 +1,6 @@
 # CAM-OEM-1 — fidélité matérielle des essais visuels (28 octobre 2026)
 
-**Statut : [PR #136](https://github.com/Jean-Philippe56520/Microduck/pull/136) en revue ; [CI N1/N5/N6 #40765215152](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40765215152) et [CI Python #40765215269](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40765215269) vertes au SHA `08d76769`. Dernier SHA/CI et fusion à vérifier avant livraison.** Aucune caméra physique, image privée, poids ONNX, SQLite, modèle, sous-module OEM, politique de marche ou moteur touchés. **Un précontrôle des métadonnées n'est pas une validation de la caméra du robot.** Le plan directeur reste [plan-action.md](plan-action.md).
+**Statut : [PR #136](https://github.com/Jean-Philippe56520/Microduck/pull/136) **fusionnée** au squash `2aa4419d` ; [CI PR Python #40765577402](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40765577402) et [inventaire N1/N5/N6 #40765577284](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40765577284) verts au SHA final `e12815e7` ; [CI post-fusion `main` #40765763628](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40765763628) verte.** Aucune caméra physique, image privée, poids ONNX, SQLite, modèle, sous-module OEM, politique de marche ou moteur touchés. **Un précontrôle des métadonnées n'est pas une validation de la caméra du robot.** Le plan directeur reste [plan-action.md](plan-action.md).
 
 ## 1. Porte OEM-first : observation, hypothèse et échec
 
@@ -48,4 +48,4 @@ Tests positifs : constantes OEM épinglées, mode 720p30 livré contre 1920×108
 
 ## 5. État de livraison
 
-La validation du SHA `08d76769` est référencée ci-dessus ; le code renforce également les deux drapeaux de non-validation physique contre les rapports forgés. Contrôler la CI du dernier SHA de la PR #136 et la CI post-fusion `main`. Le lot n'a pas exécuté Qwen, MuJoCo, YOLOX ni `mediad` ; c'est une porte documentaire et des fixtures, pas une progression de l'autonomie.
+La PR #136 est fusionnée au commit `2aa4419d`, ses deux CI finales sont vertes et le contrôle post-fusion `main` #40765763628 est réussi. Le code empêche également qu'un rapport déclaratif soit artificiellement présenté comme une validation physique. Le lot n'a pas exécuté Qwen, MuJoCo, YOLOX ni `mediad` ; c'est une porte documentaire et des fixtures, pas une progression de l'autonomie.
