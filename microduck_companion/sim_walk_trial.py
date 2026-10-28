@@ -26,7 +26,8 @@ from .sim_ipc import ReadOnlyUnixRpc, TelemetryError, read_health
 from .sim_policy_trace import PolicySample, parse_policy_sample, summarize_policy_samples
 from .sim_motion import _healthy, _safe_ground, _send_stop, SimMotionError
 
-WALK_SPEED_MPS = 0.12  # Above OEM default standing threshold 0.05 m/s.
+WALK_SPEED_MPS = 0.12  # Historical J2e benchmark, unchanged for all callers.
+ONSET_PROBE_SPEED_MPS = 0.30  # Single bounded higher-speed OEM sim diagnostic.
 WALK_TICKS = 24
 WALK_PERIOD_S = 0.10
 MAX_COMMAND_WINDOW_S = 4.0
@@ -59,11 +60,13 @@ def _read_ground(state: Path, rl_root: Path, port: int) -> FlatGroundTruth:
     return read_verified_flat_ground(state, rl_root, port=port, timeout_s=.5)
 
 
-def _send_forward(sock: socket.socket) -> None:
-    # Fixed command; the caller cannot supply arbitrary velocity/axis values.
+def _send_forward(sock: socket.socket, speed_mps: float = WALK_SPEED_MPS) -> None:
+    # Strictly whitelisted for a SIMULATOR-ONLY one-shot test; never arbitrary.
+    if type(speed_mps) is not float or speed_mps not in (WALK_SPEED_MPS, ONSET_PROBE_SPEED_MPS):
+        raise SimMotionError("unsupported simulated gait probe speed")
     cmd = {
         "jsonrpc": "2.0", "method": "robot.move",
-        "params": {"vx": WALK_SPEED_MPS, "vy": 0.0, "vyaw": 0.0},
+        "params": {"vx": speed_mps, "vy": 0.0, "vyaw": 0.0},
     }
     sock.sendall((json.dumps(cmd, separators=(",", ":")) + "\n").encode("ascii"))
 
@@ -76,6 +79,7 @@ def run_walk_trial(
     state_dir: str | Path, rl_root: str | Path, memory_path: str | Path, *,
     port: int = 17801,
     on_policy_sample: Callable[[PolicySample], None] | None = None,
+    speed_mps: float = WALK_SPEED_MPS,
 ) -> WalkTrialResult:
     """One fixed-velocity trial; no repetition, alternate scenes or hardware.
 
@@ -83,6 +87,10 @@ def run_walk_trial(
     makes the brain choose to remain idle instead of explore, this function
     refuses to send anything, leaving that learned decision intact.
     """
+    if type(speed_mps) is not float or speed_mps not in (WALK_SPEED_MPS, ONSET_PROBE_SPEED_MPS):
+        raise SimMotionError("only pinned simulated speeds 0.12 or 0.30 m/s allowed")
+    if type(port) is not int or port != 17801:
+        raise SimMotionError("only official isolated MuJoCo port 17801 is allowed")
     state, rl, memory_file = Path(state_dir), Path(rl_root), Path(memory_path)
     if str(memory_file) == ":memory:":
         raise ValueError("walk trials require a persistent SQLite file")
@@ -155,7 +163,7 @@ def run_walk_trial(
                             if not _healthy(fresh_health):
                                 raise SimMotionError("robotd health degraded")
                             attempted = True
-                            _send_forward(sock)
+                            _send_forward(sock, speed_mps)
                             count += 1
                             # robot.state is a read-only notification; the
                             # sampled policy can be "stand", "walk" or "held".
@@ -228,7 +236,7 @@ def run_walk_trial(
         )
         return WalkTrialResult(
             commands_sent=count, stop_confirmed=stopped,
-            requested_speed_mps=WALK_SPEED_MPS,
+            requested_speed_mps=speed_mps,
             measured_displacement_m=measured,
             baseline_displacement_m=drift,
             simulated_duration_s=duration,
