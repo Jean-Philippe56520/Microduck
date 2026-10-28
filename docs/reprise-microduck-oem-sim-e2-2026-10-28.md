@@ -41,6 +41,16 @@ L'OEM épinglé `robotd-params` configure par défaut `gain=200` et `standing_ga
 
 **Prochaine porte OEM-first :** analyse documentaire/offline croisée de P0d/e/f/i/j (différences d'entraînement/contrôle, chronologie des appuis, force d'entraînement signée absente des rapports, effets possibles et contraintes), avant un éventuel protocole actif strictement borné répondant à une seule question manquante. Aucun modèle, gain, contrôleur, capteur ou scène n'est modifié. [Compte rendu issue #101](https://github.com/Jean-Philippe56520/Microduck/issues/101#issuecomment-6468070520).
 
+### SIM-E2-C — analyse source et reprise de l'archive P0e (28/10/2026)
+
+**Sans nouvelle commande moteur**, l'artefact original GitHub Actions P0e [#40193139617](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40193139617) a été récupéré : les **3 empreintes SHA-256** `solver-tap.jsonl`, `solver-analysis.json` et `walk-comparison.json` sont identiques aux valeurs publiées dans le vérificateur P0j. **888** trames de solveur échantillonnées, fenêtres `stand` **79** et `walk` **127** trames ; ces fenêtres reposent sur les labels P0b à 10 Hz, non un label ONNX à chaque tick.
+
+Offsets moyens **signés `data.ctrl−qpos_avant_pas`** en `stand` P0e : roll G **−11,606°**, D **+10,592°** ; genou G **−11,831°**, D **+10,624°**. Les 8 moyennes WSLg `targets−joints` précédemment communiquées étaient −11,64° ; +11,26° ; −10,83° ; +10,10°. Écarts des moyennes d'environ −0,034° / +0,668° / +1,001° / −0,524° (définitions/horloges distinctes). Reproduction descriptive du **type** de biais, **pas** un défaut OEM démontré.
+
+Dans la fenêtre `walk`, cibles `data.ctrl` roll G/D : excursion **6,07°/6,05°** ; angles articulaires **0,99°/0,20°** ; genoux : cible **3,14°/3,01°** versus angle **1,31°/1,51°**. Les deux pieds étaient déjà chargés sur 127/127 échantillons et P0e n'avait constaté aucun écrêtage parmi les 2 884 valeurs d'effort contrôlées. **L'archive ne fournit pas l'observation `robotd` complète à 61 floats ni les 14 sorties brutes ONNX**, et la configuration d'entraînement BAM n'est pas prouvée identique à la dynamique PD de `duck-sim`.
+
+**Réutilisation :** le nouveau script `sim_e2c_offline_joint_tracking` relit exclusivement les 3 fichiers d'origine en réutilisant les validateurs P0j/P0e et refuse les données modifiées. Aucun modèle, scène, gain, sous-module, mémoire ou action moteur changé. Le résultat est **PC/archives**, sans preuve de marche. Voir [dossier SIM-E2-C](sim-e2c-offline-onnx-observation-gap-and-original-tracking-2026-10-28.md) et [#101](https://github.com/Jean-Philippe56520/Microduck/issues/101). L'archive GitHub Actions a une expiration annoncée au **01/11/2026** ; conserver l'empreinte et les statistiques ne rend pas les fichiers source éternellement disponibles.
+
 ## 3. Comparaison OEM impérative avant tout nouvel essai
 
 L'[audit P0h déjà fusionné](mujoco-p0h-policy-slot-lineage-2026-10-25.md) établit une différence : configuration `robotd` ordinaire OEM **`velstand.onnx` sans `stand` séparé** ; le script officiel `scripts/duck-sim` sélectionne explicitement **`alpha_walking.onnx` + `alpha_stand.onnx`**. Réutiliser les trois fichiers OEM et `robotctl monitor`; ne pas déclarer qu'un seul est défectueux.
