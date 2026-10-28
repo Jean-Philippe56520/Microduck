@@ -45,6 +45,23 @@ class BlindImage:
     height: int
 
 
+def empty_box_confirmation_prompt(uncertain: bool) -> tuple[str, str]:
+    """Do not misclassify an unresolved image as a verified negative."""
+    if type(uncertain) is not bool:
+        raise PhotoBaselineError("uncertainty must be explicit boolean")
+    if uncertain:
+        return (
+            "Image incertaine",
+            "Aucune boite certaine : confirmer une image INDETERMINEE, "
+            "sans affirmer l'absence de toutes les cibles ?",
+        )
+    return (
+        "Relecture sans cible",
+        "Aucune boite dessinee : confirmer l'absence de "
+        "toutes les categories cibles dans cette photo ?",
+    )
+
+
 class BlindAnnotationSession:
     """In-memory draft from a validated local dataset, one reviewer at a time."""
 
@@ -404,18 +421,9 @@ def run_gui(session: BlindAnnotationSession) -> None:
     def confirm():
         sample = session.images[current]
         if not session.boxes(sample.sample_id):
-            if session.is_uncertain(sample.sample_id):
-                question = (
-                    "Aucune boite certaine : confirmer une image INDETERMINEE, "
-                    "sans affirmer l'absence de toutes les cibles ?"
-                )
-                title = "Image incertaine"
-            else:
-                question = (
-                    "Aucune boite dessinee : confirmer l'absence de "
-                    "toutes les categories cibles dans cette photo ?"
-                )
-                title = "Relecture sans cible"
+            title, question = empty_box_confirmation_prompt(
+                session.is_uncertain(sample.sample_id)
+            )
             if not messagebox.askyesno(title, question):
                 return
         session.confirm_image(sample.sample_id, all_targets_reviewed=True)
