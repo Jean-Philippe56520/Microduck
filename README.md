@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**QW-GOAL-1 — précision acceptée (28/10/2026, DOCUMENTATION SEULE) :** [cadence contextuelle et consultation de mémoire contrôlée](docs/qw-goal0-motivation-driven-qwen-policy-2026-10-28.md#6-clarification-validée--cadence-contextuelle-et-questions-sans-llm-embarqué). « Dix rencontres » n'est qu'un exemple, **jamais un seuil** : un appel Qwen éventuel dépend de la valeur d'information pour l'objectif, du contexte, des motivations/personnalité, de l'incertitude, des souvenirs et des protections techniques. Kwipi transmet un besoin structuré **sans être un LLM** ; Qwen peut demander des compléments mémoire via opérations en liste blanche et lecteur local expurgé en lecture seule, **sans SQL libre ni écriture**. Architecture approuvée mais **non codée** : MEM-2A rappelle déjà des données fictives, aucun accès Qwen autonome à la SQLite ni au robot.
+
+
 **QW-GOAL-0 — conseiller lié aux objectifs de Kwipi (28/10/2026, DOCUMENTATION UNIQUEMENT) :** [politique et critères de preuve](docs/qw-goal0-motivation-driven-qwen-policy-2026-10-28.md). Qwen 9B PC facultatif est sollicitable pour une question utile à la curiosité, détermination, exploration, jeu, sociabilité ou prudence, notamment pour une nouvelle stratégie sur objectif suspendu, **sans nouvelle image obligatoire**. Pas de rareté arbitraire dans la politique cible ; F5-C conserve **actuellement** ses quotas expérimentaux jusqu'aux tests QW-2 (consentement, contrôle de charge, anti-boucle, timeout et sécurité inchangés). Ni code de réinterrogation automatique, ni accès SQLite brut, ni robot validé.
 
 
