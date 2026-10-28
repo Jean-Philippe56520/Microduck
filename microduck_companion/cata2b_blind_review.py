@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 from pathlib import Path
 
 from .cata2_bbox_eval import Box, MATCH_IOU, iou
@@ -41,10 +42,9 @@ SAMPLE_FIELDS = frozenset({
 
 def _read_review(dataset: LowDataset, path: Path, role: str):
     """Strict bounded local-only TEST review. Never expose original labels."""
-    if (type(path) is not Path
+    if (not isinstance(path, Path)
             or path.parent != dataset.root / "reviews"
-            or path.name is None
-            or __import__("re").fullmatch(REVIEW_FILE_RE, path.name) is None
+            or re.fullmatch(REVIEW_FILE_RE, path.name) is None
             or path.parent.is_symlink() or path.is_symlink()
             or not path.parent.is_dir()):
         raise PhotoBaselineError("private review must be an opaque local file")
