@@ -174,6 +174,22 @@ class JointTraceTests(unittest.TestCase):
               self.assertRaises(TelemetryError)):
             collect_joint_trace("/tmp/fake", "/tmp/pinned", samples=1)
 
+    def test_verified_viewer_passes_explicit_opt_in_only(self):
+        with (patch("microduck_companion.sim_joint_trace.ReadOnlyUnixRpc",
+                    FakeReadOnlyStream),
+              patch("microduck_companion.sim_joint_trace.read_verified_body_state",
+                    return_value=(body(), time.monotonic())) as reader):
+            trace = collect_joint_trace("/tmp/fake", "/tmp/pinned", samples=1,
+                                        verified_viewer=True)
+        self.assertTrue(trace["verified_viewer_opt_in"])
+        reader.assert_called_once_with("/tmp/fake", "/tmp/pinned", port=17801,
+                                       allow_viewer=True)
+        self.assertEqual(0, trace["commands_sent"])
+
+    def test_non_boolean_viewer_opt_in_is_rejected(self):
+        with self.assertRaises(ValueError):
+            collect_joint_trace("/tmp", "/tmp", verified_viewer="yes")
+
     def test_bounds_prevent_unlimited_trace(self):
         for n in (0, True, -1, MAX_SAMPLES + 1):
             with self.subTest(samples=n), self.assertRaises(ValueError):
