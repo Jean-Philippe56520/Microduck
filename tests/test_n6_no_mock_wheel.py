@@ -68,7 +68,14 @@ class N6NoMockWheelTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             output = Path(tmp) / "stage"
             report = n6.stage_probe(ROOT, output)
-            self.assertEqual(report["normal_source_python_modules"], 123)
+            # The full package gains new nonmotor modules, but the reviewed
+            # N5/N6 candidate closures must remain exactly bounded.
+            actual_normal = len(list((ROOT / "microduck_companion").glob("*.py")))
+            self.assertEqual(report["normal_source_python_modules"], actual_normal)
+            self.assertGreater(
+                report["normal_source_python_modules"],
+                report["n5_reviewed_closure"],
+            )
             self.assertEqual(report["n5_reviewed_closure"], 20)
             self.assertEqual(report["probe_python_modules"], 18)
             self.assertEqual(report["omitted_mock_engines"], sorted(n5.LAB_EXCEPTIONS))
@@ -77,6 +84,7 @@ class N6NoMockWheelTests(unittest.TestCase):
                 self.assertFalse((output / path).exists())
             staged = {p.relative_to(output).as_posix() for p in output.rglob("*.py")}
             self.assertEqual(staged, n5.APPROVED_FILES - n5.LAB_EXCEPTIONS)
+            self.assertNotIn("microduck_companion/mock_goal_memory.py", staged)
             self.assertIn(n6.DIST_NAME, (output / "pyproject.toml").read_text())
 
     def test_staging_in_checkout_remains_forbidden(self):
