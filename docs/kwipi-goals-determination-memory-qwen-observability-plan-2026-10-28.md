@@ -1,5 +1,8 @@
 # Kwipi — feuille de route des objectifs, de la détermination, du rappel Qwen et de l'observabilité
 
+**MEM-2A — premier sous-lot candidat (28/10/2026, CI à vérifier) :** [lecture seule bornée C1/C2 + MEM-1](mem2a-readonly-context-recall-2026-10-28.md) avec compteur F0 séparé des catégories fictives et sans identité d'instance prouvée. L'étape complète MEM-2 (continuité multi-vues indépendante), DET-2 et QW-1/QW-2 restent à développer. Aucune seconde SQLite, Qwen ni commande moteur.
+
+
 **Date :** 28 octobre 2026. **Statut :** plan d'intégration, DOCUMENTATION UNIQUEMENT ; aucune fonction autonome nouvelle, moteur, consultation PC ou migration SQLite livrée par ce document.
 **Autorité :** [plan directeur](plan-action.md). Cette feuille ajoute des jalons aux chantiers F2/F4/F5/PD/EX/N3/N4 ; elle ne remplace ni leurs critères de preuve ni la priorité Cat-A2b/C3-B, B/C et l'audit robot.
 **Référence auditée :** Companion `cdce37c52260b9036f212656dadae0f8013bbc08`, OEM `upstream/microduck@942e58e3aa6dbb28e7037203fff11866122c7567`, RL `upstream/microduck_rl@b02fdea4902c2b93b7d34a83a6f05da4ececb7d3`. Vérifier à nouveau ces révisions avant le moindre code ou essai.

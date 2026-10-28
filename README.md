@@ -1,5 +1,7 @@
 # Microduck Companion
 
+**MEM-2A — rappel local borné (28/10/2026, PR candidate, CI à vérifier ; PC-fixtures uniquement) :** [protocole et limites](docs/mem2a-readonly-context-recall-2026-10-28.md). Nouveau lecteur `memory_recall.py` sans écriture, fondé sur l'unique `ExperienceMemory`, C1/C2 et MEM-1 facultatif : compteur F0 séparé des catégories historiques et objectifs fictifs, corrections respectées, aucune identité d'instance prouvée. Cent appels F0 identiques ne sont pas cent rencontres indépendantes. Pas de Qwen, d'inférence d'image, de moteur ou de validation robot.
+
 **Reprise rapide — état au 28/10/2026 après #144 :** [checkpoint de reprise prioritaire](docs/reprise-microduck-oem-sim-e2-2026-10-28.md) — `main@bad05cdf`, OBS-1 #141 / MEM-1 #142 / DET-1 #143 **fusionnés, testés sur PC-fixtures uniquement** ; [CI finale #40778153516](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40778153516) verte. **Prochaine étude : MEM-2**, rappel local sourcé et borné (non codé) ; Qwen 9B PC facultatif, aucune autonomie physique. Revalider SHA/PR/CI à la reprise.
 
 
