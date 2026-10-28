@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 from microduck_companion.sim_motion import SimMotionError
 from microduck_companion.sim_walk_trial import (
-    ONSET_PROBE_SPEED_MPS, WALK_TICKS, WalkTrialResult,
+    ONSET_PROBE_SPEED_MPS, ONSET_PROBE_TICKS, WALK_TICKS, WalkTrialResult,
 )
 from microduck_companion.sim_policy_pair import PINNED_V8_SHA256
 from microduck_companion.sim_e2g_speed_onset import main, run_probe
@@ -18,7 +18,7 @@ from microduck_companion.sim_e2g_speed_onset import main, run_probe
 
 def fake_trial(*, m=.075, applied=.30, limits=None):
     return WalkTrialResult(
-        commands_sent=WALK_TICKS, stop_confirmed=True,
+        commands_sent=ONSET_PROBE_TICKS, stop_confirmed=True,
         requested_speed_mps=ONSET_PROBE_SPEED_MPS,
         measured_displacement_m=m, baseline_displacement_m=.0003,
         simulated_duration_s=2.85,
@@ -28,8 +28,8 @@ def fake_trial(*, m=.075, applied=.30, limits=None):
         next_intention="explore", trials_in_memory=1,
         memory_source="mujoco_verified_pose",
         policy_diagnostics={
-            "policy_samples": WALK_TICKS,
-            "walk_policy_samples": WALK_TICKS - 1,
+            "policy_samples": ONSET_PROBE_TICKS,
+            "walk_policy_samples": ONSET_PROBE_TICKS - 1,
             "stand_policy_samples": 1,
             "max_applied_vx_mps": applied,
             "max_requested_vx_mps": .30,
@@ -82,6 +82,7 @@ class SpeedOnsetGateTests(unittest.TestCase):
         data = run_probe(self.state, self.robot, self.rl, self.memory)
         move.assert_called_once()
         self.assertEqual(ONSET_PROBE_SPEED_MPS, move.call_args.kwargs["speed_mps"])
+        self.assertEqual(ONSET_PROBE_TICKS, move.call_args.kwargs["ticks"])
         self.assertEqual(.075, data["net_xy_displacement_m"])
         self.assertEqual(.30, data["sampled_policy"]["max_applied_vx_mps"])
         self.assertEqual("simulated_translation_above_10mm_not_gait", data["verdict"])
@@ -89,7 +90,7 @@ class SpeedOnsetGateTests(unittest.TestCase):
         self.assertFalse(data["gait_validated"])
         self.assertFalse(data["root_cause_proven"])
         self.assertTrue(data["stop_confirmed"])
-        self.assertEqual(WALK_TICKS, data["commands_sent"])
+        self.assertEqual(ONSET_PROBE_TICKS, data["commands_sent"])
         self.assertTrue(data["disposable_memory_only_not_product_experience"])
         self.assertNotIn("reward", data)
         self.assertNotIn("next_intention", data)
@@ -128,7 +129,7 @@ class SpeedOnsetGateTests(unittest.TestCase):
             (fake_trial(m=.001), "no_10mm_translation_observed"),
             (fake_trial(m=.07, applied=.10), "control_inconclusive"),
             (fake_trial(m=.07, limits=["deadman"]), "control_inconclusive"),
-            (replace(fake_trial(), policy_diagnostics={"policy_samples": 24}),
+            (replace(fake_trial(), policy_diagnostics={"policy_samples": ONSET_PROBE_TICKS}),
              "control_inconclusive"),
         ):
             with self.subTest(verdict=verdict):
@@ -178,7 +179,7 @@ class SpeedOnsetGateTests(unittest.TestCase):
                   "net_xy_displacement_m": .001, "forward_x_m": .001,
                   "baseline_drift_m": .0003,
                   "sampled_policy": {
-                      "policy_samples": WALK_TICKS, "walk_policy_samples": 23,
+                      "policy_samples": ONSET_PROBE_TICKS, "walk_policy_samples": ONSET_PROBE_TICKS - 1,
                       "max_applied_vx_mps": .30, "limited_by": [],
                   }, "stop_confirmed": True}
         with patch.dict("os.environ", {"MICRODUCK_SIM_E2G": "YES"}):
