@@ -1,6 +1,6 @@
 # DET-1 — Détermination bornée au sein de F2
 
-**Date :** 28 octobre 2026. **Statut :** candidat code/tests PC-fixtures, non validé sur robot. Le [plan directeur](plan-action.md) reste l'autorité. Voir [plan global](kwipi-goals-determination-memory-qwen-observability-plan-2026-10-28.md) et [MEM-1](mem1-mock-persistent-goals-2026-10-28.md).
+**Date :** 28 octobre 2026. **Statut :** [PR DET-1 #143](https://github.com/Jean-Philippe56520/Microduck/pull/143) fusionnée au commit `deed1858` après CI de PR verte (1 694 tests, 5 ignorés ; [Python #40777508447](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40777508447), [N1/N5/N6 #40777508714](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40777508714)) ; **uniquement PC-fixtures, non validé sur robot**. Le [plan directeur](plan-action.md) reste l'autorité. Voir [plan global](kwipi-goals-determination-memory-qwen-observability-plan-2026-10-28.md) et [MEM-1](mem1-mock-persistent-goals-2026-10-28.md).
 
 ## 1. Porte OEM-first et hypothèse falsifiable
 
@@ -44,7 +44,7 @@
 `python -m unittest discover -s tests -p test_det1_goal_determination.py -v`
 `python -m unittest discover -s tests -v`
 `python -m scripts.n3_sqlite_audit --output /tmp/n3-det1.json`
-La CI valide également N5/N6, présence des exclusions host-only et analyses non motrices. Les différences de score ne constituent **ni apprentissage autonome, ni action, ni effet causal**.
+La CI a validé N5/N6 et la frontière de l'assemblage host-only, après correction d'une première CI rouge : l'import direct de MEM-1 aurait ajouté un module expérimental à la fermeture publique N5. F2 vérifie désormais l'identité d'une **instance MEM-1 déjà fournie**, à travers le module chargé, sans l'importer pendant le chemin par défaut. Le scanner N3 constate **124 modules et 24 tables**, toujours un seul site d'ouverture SQLite écrivable. La CI a validé les suites Python (1 694 tests, 5 ignorés, aucun échec). Les différences de score ne constituent **ni apprentissage autonome, ni action, ni effet causal**.
 
 **Ressources et arrêt :** aucun nouveau schéma, modèle, réseau, média, socket, boucle, seconde SQLite ou journal à 50 Hz. Lecture bornée et optionnelle : coût CPU/temps non encore mesuré sur RK3566. Les quotas MEM-1/EX1 sont des prototypes non dimensionnés. Robot absent = aucune validation physique.
 

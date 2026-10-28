@@ -73,10 +73,10 @@ La consultation différée devrait proposer un **export manuel local**, expurgé
 
 | Ordre | Lot | Livrable/test vérifiable | État au lancement |
 | --- | --- | --- | --- |
-| 0 | **Cadrage présent** | Docs/plan-action, README et roadmap synchronisés ; aucun code/moteur | prévu/documentaire |
-| 1 | **OBS-1** | Schéma de traces dérivées, lecteur RO et export borné sur fixtures EX1/EX2/F2, refus des preuves fausses ; tests confidentialité/volume/ordre | prévu |
-| 2 | **MEM-1** | Objectifs et tentatives corrigibles, persistants après réouverture, réutilisation SQLite sans double écrivain ; tests refus/abandon/TTL/correction | prévu |
-| 3a | **DET-1** | Influence déterministe et bornée de la détermination sur F2, sans moteur ; tests de non-répétition et de récupération | prévu |
+| 0 | **Cadrage présent** | Docs/plan-action, README et roadmap synchronisés ; aucun code/moteur | documenté, [PR #140](https://github.com/Jean-Philippe56520/Microduck/pull/140) fusionnée |
+| 1 | **OBS-1** | Diagnostic JSONL fictif borné et lecture seule sur EX1/EX2 ; aucune vraie télémétrie robot | codé/testé PC-fixtures ; [PR #141](https://github.com/Jean-Philippe56520/Microduck/pull/141) fusionnée |
+| 2 | **MEM-1** | États d'objectifs fictifs persistants et liens vers EX1, sans duplication d'épisodes ; tests réouverture/correction | codé/testé PC-fixtures ; [PR #142](https://github.com/Jean-Philippe56520/Microduck/pull/142) fusionnée |
+| 3a | **DET-1** | Biais de détermination optionnel sur candidats F2 déjà sûrs, uniquement pour objectif fictif non tenté ; tests A/B | codé/testé PC-fixtures ; [PR #143](https://github.com/Jean-Philippe56520/Microduck/pull/143) fusionnée |
 | 3b | **MEM-2** | Rappel local pertinence/provenance/contre-exemples, sans Qwen ni doublage de preuves ; multi-sessions | prévu |
 | 4a | **QW-1** | Qwen3.5 9B PC reçoit quelques souvenirs génériques expurgés, strict JSON, consentement/quotas/timeout, aucune écriture ; A/B réel sans/avec mémoire | prévu |
 | 4b | **PER-1** | Humeur descriptive avec inertie, coût d'engagement, repos ; aucun double score/ordonnanceur | prévu |
@@ -101,4 +101,4 @@ Les quotas initiaux et les seuils de fixtures ne sont ni une performance physiqu
 
 Chaque lot suit [AGENTS](../AGENTS.md), [protocole de réutilisation](development-reuse-protocol.md), [registre C3](community-reference-registry-2026-10-26.md), [audit matériel](hardware-feasibility-audit-2026-10-25.md) et [plan EX](kwipi-experiential-learning-plan-2026-10-26.md) : lire source OEM **épinglée**, version/configuration réellement actives, inspecter tiers pertinents, poser observation/hypothèse/preuve/critère d'échec/risque/retour arrière, tests positifs et négatifs, mesures, PR séparée, CI verte puis revue/fusion. Aucune modification des sous-modules sans accord.
 
-**Premier chantier suivant : OBS-1**, lecture seule et fixtures d'abord, sans nouvelle table ou moteur ; **MEM-1 ensuite en PR distincte**. Établir la capacité de corrélation OEM avant d'enregistrer une exécution comme terminée. Au stade de ce document, tout ce tableau est **prévu**, pas livré.
+**État actualisé après la PR #143 :** OBS-1 (#141), MEM-1 (#142) et DET-1 (#143) sont fusionnés et leurs CI de PR sont vertes, **exclusivement sur fixtures PC**. Les lots MEM-2/QW-1/PER-1/OBS-2/EXP/E2E/PHY/AUT restent à traiter avec leurs propres preuves et critères OEM. La corrélation OEM entre action et effet indépendant n'est pas encore fournie ; **aucune validation robot ni autonomie motrice n'est démontrée**.

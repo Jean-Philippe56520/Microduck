@@ -1,6 +1,6 @@
 # MEM-1 — Objectifs fictifs persistants, sans duplication d'EX1
 
-**Date :** 28 octobre 2026. **Portée :** première implémentation **PC/fixtures** de MEM-1, proposée en PR ; aucun matériel, servomoteur, capteur, LLM, boucle autonome, retour d'effet réel ou stockage sur robot validés. Le [plan directeur](plan-action.md) est l'autorité, et le [plan objectifs/détermination/Qwen/observabilité](kwipi-goals-determination-memory-qwen-observability-plan-2026-10-28.md) reste la feuille d'intégration.
+**Date :** 28 octobre 2026. **Portée :** première implémentation **PC/fixtures** de MEM-1, [PR #142](https://github.com/Jean-Philippe56520/Microduck/pull/142) fusionnée au commit `12dc426b` avec [CI post-fusion #40775879843](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40775879843) réussie ; aucun matériel, servomoteur, capteur, LLM, boucle autonome, retour d'effet réel ou stockage sur robot validés. Le [plan directeur](plan-action.md) est l'autorité, et le [plan objectifs/détermination/Qwen/observabilité](kwipi-goals-determination-memory-qwen-observability-plan-2026-10-28.md) reste la feuille d'intégration.
 
 ## 1. Porte d'entrée : observation → hypothèse → preuve → arrêt / repli
 
@@ -48,7 +48,7 @@ La CI vérifie les tests MEM-1 et la suite Python existante, le scanner N3 doit 
 
 ## 5. Suite et limites
 
-MEM-1 demeure **non branché au choix F2**, à l'humeur, au conseiller Qwen ou à `robotctl`. Le travail suivant, **DET-1**, devra réutiliser ces états, démontrer par ablation que la détermination influe utilement sur les intentions et empêcher les répétitions sans connaissance nouvelle. MEM-2/QW-1 fourniront ensuite un rappel local sélectionné et expurgé, seulement après contrat consentement/quotas. La vérification d'exécution/effet EX4-C2 et les gestes physiques restent bloqués tant que le robot et un signal OEM indépendant ne permettent pas de conclure.
+MEM-1 **n'arbitre aucune intention par lui-même** et ne se branche ni à l'humeur, au conseiller Qwen, ni à `robotctl`. **DET-1**, intégré séparément par [PR #143](https://github.com/Jean-Philippe56520/Microduck/pull/143), donne à F2 une consultation **optionnelle** des objectifs fictifs non encore tentés, sous toutes les protections F2 existantes. Cela ne démontre pas la reprise après un échec ou un mouvement réel. MEM-2/QW-1 fourniront ensuite un rappel local sélectionné et expurgé, seulement après contrat consentement/quotas. La vérification d'exécution/effet EX4-C2 et les gestes physiques restent bloqués tant que le robot et un signal OEM indépendant ne permettent pas de conclure.
 
 **Exécuter en laboratoire (fixtures non privées uniquement) :** `python -m unittest discover -s tests -p test_mem1_mock_goal_memory.py -v` et `python -m scripts.n3_sqlite_audit --output /tmp/n3-mem1.json`, puis la CI de la PR. Pas de moteur, capteur ni modèle dans ces commandes.
 
