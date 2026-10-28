@@ -63,3 +63,11 @@
 **Décision :** arrêter les essais moteurs de ce lot ; statut **SIM-E2H = transférer/alterner les charges en simulation observé, locomotion globale SIM-E2 #101 non résolue**. Pour conclure ensuite à une démarche stable, il faudrait un protocole différent évaluant contacts véritables, stabilité sur plusieurs cycles, éventuel glissement et capacité OEM à rendre `obs[61]` / `raw_actions[14]` sans changer la commande 50 Hz, avec validation et ressources. Pas de correction moteur/gain ni de déploiement.
 
 **Ressources :** valeurs du PC/runner, pas de budget RAM/RSS, CPU, thermie, batterie, disque, latence/fiabilité 50 Hz sur RK3566. `scripts/resource-audit.sh` obligatoire avant tout portage. Les archives GitHub expirent ; cette page conserve les SHAs et les résultats agrégés, pas les médias privés ni une seconde SQLite.
+
+## Correctif de revue a posteriori — PR #126
+
+L'analyse initiale de l'archive est conservée et ses deux SHA-256 externes restent inchangées. La [revue Codex de la PR #125](https://github.com/Jean-Philippe56520/Microduck/pull/125#discussion_r4403980361) a relevé que l'ancien chemin `scripts/sim-smoke.sh` pouvait relire les fichiers encore écrits par `NonBlockingWriter` : les octets vérifiés par le parseur pouvaient différer de ceux employés pour l'empreinte de sortie. C'est un problème de provenance, non une nouvelle démonstration d'un effet moteur.
+
+La [PR #126](https://github.com/Jean-Philippe56520/Microduck/pull/126) corrige ce point en bornant la lecture de chaque fichier, en validant et en hachant **le même snapshot immuable en mémoire**, en refusant un JSONL tronqué et en retirant l'appel d'audit E2H en direct. Un test introduit une écriture tardive après validation puis vérifie que les empreintes continuent de décrire les octets effectivement analysés. Le workflow d'archive revalide aussi les SHA-256 des originaux en CI **sans simuler ni bouger**.
+
+**Portée :** pas de nouveau run MuJoCo ou de résultat numérique, pas de nouvelle commande, aucune preuve `robot.do` terminée, aucune démarche stable, causalité ou validation robot. Les comptes d'appuis décrits plus haut restent limités à l'archive originale et au contrôle `deadman` confondu. La clôture du correctif exige CI Python + réanalyse d'archive vertes ; si l'une échoue, ne pas fusionner.

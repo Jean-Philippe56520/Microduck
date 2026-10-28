@@ -32,18 +32,40 @@ def _finite(x, label: str) -> float:
     return float(x)
 
 
-def _read_solver_trace(path: Path) -> list[dict]:
-    if not path.is_file() or path.stat().st_size > MAX_INPUT_BYTES:
-        raise GroundTruthError("missing or oversized live solver trace")
-    try:
-        with path.open(encoding="utf-8") as fh:
+def _read_solver_trace(path: Path, *, snapshot: bytes | None = None) -> list[dict]:
+    """Validate original solver rows; a supplied byte snapshot is never re-read.
+
+    The snapshot branch is used for forensic E2H audits: parsing and SHA must
+    refer to the EXACT same bytes, even if a live writer appends to the path.
+    The legacy path reader remains unchanged for existing P0d consumers.
+    """
+    if snapshot is None:
+        if not path.is_file() or path.stat().st_size > MAX_INPUT_BYTES:
+            raise GroundTruthError("missing or oversized live solver trace")
+        try:
+            with path.open(encoding="utf-8") as fh:
+                records = [
+                    json.loads(line, parse_constant=lambda _: (
+                        _ for _ in ()).throw(ValueError()))
+                    for line in fh if line.strip()
+                ]
+        except (UnicodeDecodeError, ValueError, OSError) as exc:
+            raise GroundTruthError("invalid or truncated solver JSONL") from exc
+    else:
+        if (type(snapshot) is not bytes or not snapshot
+                or len(snapshot) > MAX_INPUT_BYTES):
+            raise GroundTruthError("missing or oversized solver snapshot")
+        try:
+            if not snapshot.endswith(b"\n"):
+                raise ValueError("unterminated solver snapshot")
             records = [
                 json.loads(line, parse_constant=lambda _: (
                     _ for _ in ()).throw(ValueError()))
-                for line in fh if line.strip()
+                for line in snapshot.decode("utf-8").splitlines()
+                if line.strip()
             ]
-    except (UnicodeDecodeError, ValueError, OSError) as exc:
-        raise GroundTruthError("invalid or truncated solver JSONL") from exc
+        except (UnicodeDecodeError, ValueError) as exc:
+            raise GroundTruthError("invalid or truncated solver JSONL") from exc
     if not (MIN_PHASE_FRAMES * 2 <= len(records) <= MAX_FRAMES + 1):
         raise GroundTruthError("incomplete or excessive solver trace")
     header = records[0]

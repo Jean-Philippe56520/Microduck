@@ -86,7 +86,7 @@ jobs:
           DUCK_SIM_SHORT_MOVE: ${{ github.ref_name == 'feat/one-bounded-sim-intent-20261025' && 'YES' || 'NO' }}
           DUCK_SIM_WALK_TRIAL: ${{ github.ref_name == 'feat/measured-sim-walk-learning-v1' && 'YES' || 'NO' }}
           DUCK_SIM_WALK_COMPARE: ${{ (github.ref_name == 'feat/p0b-stand-walk-comparison-20261025' || github.ref_name == 'feat/p0c-replay-contact-geometry-20261025' || github.ref_name == 'feat/p0d-live-solver-contact-tap-20261025' || github.ref_name == 'feat/p0e-actuator-gain-consistency-20261025') && 'YES' || 'NO' }}
-          DUCK_SIM_SOLVER_TRACE: ${{ (github.ref_name == 'feat/p0d-live-solver-contact-tap-20261025' || github.ref_name == 'feat/p0e-actuator-gain-consistency-20261025' || github.ref_name == 'feat/sim-e2h-native-foot-load-20261028') && 'YES' || 'NO' }}
+          DUCK_SIM_SOLVER_TRACE: ${{ (github.ref_name == 'feat/p0d-live-solver-contact-tap-20261025' || github.ref_name == 'feat/p0e-actuator-gain-consistency-20261025') && 'YES' || 'NO' }}
           DUCK_SIM_ACTUATOR_AUDIT: ${{ github.ref_name == 'feat/p0e-actuator-gain-consistency-20261025' && 'YES' || 'NO' }}
           DUCK_SIM_CONTACT_REPLAY: ${{ github.ref_name == 'feat/p0c-replay-contact-geometry-20261025' && 'YES' || 'NO' }}
           DUCK_SIM_POLICY_AUDIT: ${{ github.ref_name == 'feat/p0f-policy-contract-audit-20261025' && 'YES' || 'NO' }}
@@ -98,9 +98,8 @@ jobs:
           DUCK_SIM_X2C_ACCEPTANCE: ${{ github.ref_name == 'feat/x2c-mujoco-passive-acceptance-20261027' && 'YES' || 'NO' }}
           DUCK_SIM_SIM_E1: ${{ github.ref_name == 'feat/sim-e1-active-experience-20261028' && 'YES' || 'NO' }}
           # SIM-E2G: ONE pinned OEM alpha run at 0.30m/s, never user/robot mode.
-          DUCK_SIM_VX_ONSET: ${{ (github.ref_name == 'feat/sim-e2g-one-speed-onset-probe-20261028' || github.ref_name == 'feat/sim-e2h-native-foot-load-20261028') && 'YES' || 'NO' }}
-          # Strictly one existing 12-tick E2G while native P0d sees contacts.
-          DUCK_SIM_E2H_CONTACT: ${{ github.ref_name == 'feat/sim-e2h-native-foot-load-20261028' && 'YES' || 'NO' }}
+          DUCK_SIM_VX_ONSET: ${{ github.ref_name == 'feat/sim-e2g-one-speed-onset-probe-20261028' && 'YES' || 'NO' }}
+          # No automatic E2H motor run: original contacts are archived and rechecked offline.
         run: |
           set -o pipefail
           timeout --signal=TERM --kill-after=30s 18m             sh scripts/sim-smoke.sh run 2>&1 | tee "${{ runner.temp }}/mujoco-smoke-console.log"

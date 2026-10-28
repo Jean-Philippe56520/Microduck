@@ -16,7 +16,7 @@ import statistics
 import sys
 
 from .sim_flat_zone import GroundTruthError
-from .sim_live_solver_analyze import _read_solver_trace
+from .sim_live_solver_analyze import _read_solver_trace, MAX_INPUT_BYTES
 from .sim_p0j_load_transfer import LOADED_N
 from .sim_policy_pair import PINNED_V8_SHA256
 from .sim_walk_trial import ONSET_PROBE_SPEED_MPS, ONSET_PROBE_TICKS
@@ -29,18 +29,37 @@ MAX_SOLVER_POSE_DELTA_M = 0.015
 MAX_TAP_P95_US = 2000.0
 
 
+def _read_bounded_snapshot(path: Path, limit: int, label: str) -> bytes:
+    """Capture one bounded, immutable view of a source, never read it twice."""
+    if path.is_symlink() or not path.is_file():
+        raise GroundTruthError("missing or untrusted " + label + " source")
+    try:
+        with path.open("rb") as fh:
+            snapshot = fh.read(limit + 1)
+    except OSError as exc:
+        raise GroundTruthError("unreadable " + label + " source") from exc
+    if not snapshot or len(snapshot) > limit:
+        raise GroundTruthError("missing or oversized " + label + " source")
+    return snapshot
+
+
 def _number(value: object, key: str) -> float:
     if type(value) not in (float, int) or not math.isfinite(value):
         raise GroundTruthError("missing/nonfinite " + key)
     return float(value)
 
 
-def _load_report(path: Path) -> dict:
-    if not path.is_file() or path.is_symlink() or path.stat().st_size > MAX_REPORT_BYTES:
+def _load_report(path: Path, *, snapshot: bytes | None = None) -> dict:
+    if (not path.is_file() or path.is_symlink()
+            or (snapshot is None and path.stat().st_size > MAX_REPORT_BYTES)
+            or (snapshot is not None and
+                (type(snapshot) is not bytes or not snapshot
+                 or len(snapshot) > MAX_REPORT_BYTES))):
         raise GroundTruthError("missing/invalid stopped E2G report")
     try:
         report = json.loads(
-            path.read_text(encoding="utf-8"),
+            path.read_text(encoding="utf-8") if snapshot is None
+            else snapshot.decode("utf-8"),
             parse_constant=lambda _: (_ for _ in ()).throw(ValueError()),
         )
     except (ValueError, UnicodeError, OSError) as exc:
@@ -80,8 +99,14 @@ def _load_report(path: Path) -> dict:
 
 def summarize_support(trace_path: Path, report_path: Path) -> dict:
     """No extrapolation beyond a contiguous, source-checked solver bracket."""
-    report = _load_report(report_path)
-    frames = _read_solver_trace(trace_path)  # P0d: verifies ALL rows, gaps, model
+    # Acquire each source ONCE: a live NonBlockingWriter may still append to
+    # the original path while this pure audit runs. Parse and hash snapshots,
+    # never mutable files. Production provenance is the archived SHA-checked
+    # offline workflow, not an assertion that a live writer has stopped.
+    trace_bytes = _read_bounded_snapshot(trace_path, MAX_INPUT_BYTES, "solver")
+    report_bytes = _read_bounded_snapshot(report_path, MAX_REPORT_BYTES, "E2G")
+    report = _load_report(report_path, snapshot=report_bytes)
+    frames = _read_solver_trace(trace_path, snapshot=trace_bytes)
     start = report["sim_baseline_time_s"]
     end = report["sim_after_stop_time_s"]
     if (frames[0]["sim_time_s"] > start + .02
@@ -157,8 +182,8 @@ def summarize_support(trace_path: Path, report_path: Path) -> dict:
     return {
         "experiment": "SIM-E2H_original_solver_support_during_one_E2G_bracket",
         "source": "pinned_oem_original_live_mj_step_50hz_sample",
-        "source_trace_sha256": sha256(trace_path.read_bytes()).hexdigest(),
-        "source_e2g_sha256": sha256(report_path.read_bytes()).hexdigest(),
+        "source_trace_sha256": sha256(trace_bytes).hexdigest(),
+        "source_e2g_sha256": sha256(report_bytes).hexdigest(),
         "complete_original_solver_stream": True,
         # A limiter observed at ANY sample confounds causal attribution,
         # but does not erase independent native MuJoCo contact measurements.

@@ -2,14 +2,16 @@
 from __future__ import annotations
 
 import json
+from hashlib import sha256
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 
 from microduck_companion.sim_e2h_contact_audit import (
-    main, summarize_support,
+    _load_report, main, summarize_support,
 )
+from microduck_companion.sim_live_solver_analyze import _read_solver_trace
 from microduck_companion.sim_flat_zone import (
     FLAT_SCENE_BLOB, GroundTruthError, RL_COMMIT,
 )
@@ -207,6 +209,50 @@ class OriginalSolverSupportTests(unittest.TestCase):
             "--trace", str(self.solver), "--e2g", str(self.e2g),
             "--output", str(self.out),
         ]))
+
+    def test_snapshot_digest_matches_validated_bytes_despite_late_writes(self):
+        """A live writer cannot change which bytes the forensic report hashes."""
+        original_trace = self.solver.read_bytes()
+        original_e2g = self.e2g.read_bytes()
+
+        def append_after_solver_validation(path, *, snapshot=None):
+            self.assertEqual(original_trace, snapshot)
+            frames = _read_solver_trace(path, snapshot=snapshot)
+            with path.open("ab") as sink:
+                sink.write(b'{"kind":"error","message":"late writer"}' + bytes([10]))
+            return frames
+
+        def append_after_e2g_validation(path, *, snapshot=None):
+            self.assertEqual(original_e2g, snapshot)
+            report = _load_report(path, snapshot=snapshot)
+            with path.open("ab") as sink:
+                sink.write(b'{"invalid":"late report append"}' + bytes([10]))
+            return report
+
+        with patch(
+            "microduck_companion.sim_e2h_contact_audit._read_solver_trace",
+            side_effect=append_after_solver_validation,
+        ), patch(
+            "microduck_companion.sim_e2h_contact_audit._load_report",
+            side_effect=append_after_e2g_validation,
+        ):
+            result = summarize_support(self.solver, self.e2g)
+
+        self.assertTrue(result["complete_original_solver_stream"])
+        self.assertEqual(sha256(original_trace).hexdigest(),
+                         result["source_trace_sha256"])
+        self.assertEqual(sha256(original_e2g).hexdigest(),
+                         result["source_e2g_sha256"])
+        self.assertNotEqual(sha256(self.solver.read_bytes()).hexdigest(),
+                            result["source_trace_sha256"])
+        self.assertNotEqual(sha256(self.e2g.read_bytes()).hexdigest(),
+                            result["source_e2g_sha256"])
+        self.assertFalse(result["gait_validated"])
+
+    def test_unterminated_solver_snapshot_is_rejected(self):
+        self.solver.write_bytes(self.solver.read_bytes()[:-1])
+        with self.assertRaisesRegex(GroundTruthError, "truncated"):
+            summarize_support(self.solver, self.e2g)
 
     def test_no_motor_network_or_memory_api_usage(self):
         with patch("socket.create_connection", side_effect=AssertionError("no net")), \

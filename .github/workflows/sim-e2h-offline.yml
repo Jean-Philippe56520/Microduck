@@ -6,9 +6,13 @@ on:
   push:
     branches:
       - feat/sim-e2h-native-foot-load-20261028
+      - fix/sim-e2h-immutable-evidence-20261028
     paths:
       - .github/workflows/sim-e2h-offline.yml
       - microduck_companion/sim_e2h_contact_audit.py
+      - microduck_companion/sim_live_solver_analyze.py
+      - scripts/sim-smoke.sh
+      - .github/workflows/mujoco-smoke.yml
       - tests/test_sim_e2h_contact_audit.py
   workflow_dispatch:
 
