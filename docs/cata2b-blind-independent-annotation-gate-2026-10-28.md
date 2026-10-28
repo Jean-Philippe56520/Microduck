@@ -52,9 +52,9 @@ Exemple **partiel et fictif**, non utilisable seul (il faut tous les TEST, des h
 }
 ```
 
-Le second fichier utilise `role: "second"` et un autre `review_session_id` opaque ; il ne contient **ni identité, prénom, texte, commentaire, chemin, URL, origine GPS, visage extrait ou preuve personnelle**. `boxes: []` signifie qu'aucune des cinq classes cibles n'est annotée ; une scène ambiguë doit avoir `uncertain: true`. Les deux relectures sont des **déclarations**, non des certificats d'indépendance. Ne pas réétiqueter V3 comme première relecture aveugle.
+Pour une personne ou un animal visible uniquement sur une TV, affiche ou photographie, ne pas transformer la détection en présence physique ; marquer \`uncertain: true\` en attendant une annotation de provenance écran/monde réel séparée (issue #95). L'outil ne peut pas certifier ce contexte visuel.\n\nLe second fichier utilise `role: "second"` et un autre `review_session_id` opaque ; il ne contient **ni identité, prénom, texte, commentaire, chemin, URL, origine GPS, visage extrait ou preuve personnelle**. `boxes: []` signifie qu'aucune des cinq classes cibles n'est annotée ; une scène ambiguë doit avoir `uncertain: true`. Les deux relectures sont des **déclarations**, non des certificats d'indépendance. Ne pas réétiqueter V3 comme première relecture aveugle.
 
-Commande locale, lecture seule après revue explicite des droits et du dossier :
+Commande locale **sous Linux/Ubuntu WSL** (les imports des outils Cat-A existants utilisent \`resource\` Unix), lecture seule après revue explicite des droits et du dossier. Le programme n'a pas été testé dans un interpréteur Python Windows natif :
 
 ```bash
 python -m microduck_companion.cata2b_blind_review \
@@ -73,4 +73,4 @@ Le résultat JSON n'indique **que des compteurs agrégés** : images TEST revues
 - **C3-B reste bloqué :** cet outil n'évalue ni un détecteur sur vraies annotations indépendantes ni l'utilité de C1/Qwen. L'étape suivante nécessite deux relectures réellement indépendantes, une résolution externe des divergences et des sites/scènes distincts, sans fuite et hors Git. Ne pas entraîner ni choisir un seuil sur TEST.
 - **Audit confidentialité :** la validation locale existante recharge les JPEG pour vérifier SHA/dimensions, aucune image ou résultat individuel n'est envoyé, stocké ailleurs ou imprimé. Ne jamais lancer de capture réseau locale `mediad` pour cette tâche.
 
-Le protocole complète le dossier [Cat-A2b privé](cata2b-private-host-ort-exploratory-2026-10-27.md) sans effacer les limites des anciennes métriques exploratoires. CI et PR à consigner après exécution réelle.
+Le protocole complète le dossier [Cat-A2b privé](cata2b-private-host-ort-exploratory-2026-10-27.md) sans effacer les limites des anciennes métriques exploratoires. [PR #118](https://github.com/Jean-Philippe56520/Microduck/pull/118) ouverte à cette rédaction ; [CI Python #40707844533](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40707844533) réussie (1 554 tests, 5 ignorés, zéro échec), dont 19 nouveaux scénarios Cat-A2b-R. Fusion à vérifier.
