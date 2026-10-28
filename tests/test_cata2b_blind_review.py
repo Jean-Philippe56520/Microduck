@@ -277,14 +277,12 @@ class BlindReviewTests(unittest.TestCase):
 
     def test_cli_consent_is_mandatory_and_report_is_aggregated(self):
         self.write()
-        with patch("sys.stderr", new_callable=BytesIO):
-            # argparse expects a text stream; replace with mocked write only.
-            with patch("sys.stderr.write", return_value=0):
-                with self.assertRaises(SystemExit) as ex:
-                    main(["--manifest", str(self.manifest),
-                          "--review-first", str(self.review_first_path),
-                          "--review-second", str(self.review_second_path)])
-                self.assertEqual(2, ex.exception.code)
+        with patch("sys.stderr"):
+            with self.assertRaises(SystemExit) as ex:
+                main(["--manifest", str(self.manifest),
+                      "--review-first", str(self.review_first_path),
+                      "--review-second", str(self.review_second_path)])
+            self.assertEqual(2, ex.exception.code)
         with patch("builtins.print") as printer:
             self.assertEqual(0, main([
                 "--manifest", str(self.manifest),
