@@ -85,7 +85,7 @@ jobs:
           sys.path.insert(0, str(target))
           import microduck_companion as m
           assert Path(m.__file__).resolve().is_relative_to(target)
-          assert len(list(pkgutil.iter_modules(m.__path__))) == 18
+          assert len(list(pkgutil.iter_modules(m.__path__))) == 19  # 20 Python files incl. __init__
           assert not any(k.startswith("microduck_companion.mock_") for k in sys.modules)
           from microduck_companion.passive_sources import PassiveRead
           from microduck_companion.perception import PerceptionSnapshot
