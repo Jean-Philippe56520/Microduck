@@ -1,0 +1,67 @@
+# N0 — Audit de nettoyage OEM/M9/Companion (lecture seule)
+
+**Date :** 2026-10-28. **Statut :** audit statique/documentaire, aucune suppression ni modification de code d'exécution, pas une validation robot. **Source de vérité initiale :** `Jean-Philippe56520/Microduck@71a876b69f39ff4f97bca321bff01e9613e7e0d1`. Cette note ne change pas la priorité opérationnelle fixée par [`docs/plan-action.md`](plan-action.md).
+
+## 1. Question, hypothèses et preuve attendue
+
+**Question :** quelles briques conserver, regrouper, cantonner au laboratoire ou éventuellement retirer sans recréer l'autonomie constructeur M9 et sans détruire nos preuves ?
+
+**Hypothèses à vérifier :** duplication possible des couches de décision F2/PD/M9, de plusieurs chemins de mémoire/propriétés/effets, de deux parcours Qwen, et mélange du code de démonstration avec le paquet Python. **Échec de l'audit** si une décision d'effacement repose uniquement sur le nom d'un fichier, si une PR constructeur ouverte est traitée comme livrée, si une intention simulée est qualifiée d'effet physique, ou si l'on suppose que les dépendances ont toutes été inspectées.
+
+**Risque / retour arrière :** aucune commande moteur, aucun modèle ou service installé, aucune migration SQLite, aucune modification des sous-modules. La présente PR est documentaire ; l'abandon de sa branche suffit au retour arrière.
+
+## 2. Révisions et pièces consultées
+
+- Companion `main` : `71a876b69f39ff4f97bca321bff01e9613e7e0d1`. Sous-modules déclarés dans son arbre : [microduck OEM `942e58e3`](https://github.com/pollen-robotics/microduck/tree/942e58e3aa6dbb28e7037203fff11866122c7567), [microduck_rl `b02fdea4`](https://github.com/pollen-robotics/microduck_rl/tree/b02fdea4902c2b93b7d34a83a6f05da4ececb7d3), non modifiés.
+- OEM `main` consulté : `6cdfdaad21bed25e01b450c0dd4e0aee0ae19fde` ; microduck_rl `main` consulté : `1e79c29c97d8b38aee9eefde77a545860ba7658e`. **Ces SHAs récents ne sont pas les gitlinks actifs de Companion.**
+- Guides lus : `AGENTS.md`, `README.md`, `docs/plan-action.md` (autorité), `docs/roadmap.md`, `docs/development-reuse-protocol.md`, `docs/hardware-feasibility-audit-2026-10-25.md`, `docs/community-reference-registry-2026-10-26.md`, `docs/kwipi-experiential-learning-plan-2026-10-26.md` et [audit R1.5](r15-retrospective-reuse-audit-2026-10-26.md).
+- Code lu en lecture seule : `pyproject.toml`, `microduck_companion/__init__.py`, échantillon **ciblé de 46 modules** (F0/F2/PD, mémoires F4/M1/EX, Qwen F5, perception OEM et simulateur), leurs imports, classes, responsabilités et marqueurs d'écriture/commande ; workflow `python-tests.yml`. **Pas de revue exhaustive ligne par ligne des 121 modules, ni d'analyse complète du graphe d'imports, des licences de chaque dépendance ou de la sécurité du paquet.**
+- Références OEM et communautaires : [idées historiques autonomie (16 états)](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/docs/ideas/autonomous_behavior.md), [roadmap OEM M9](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/docs/project/roadmap.md), [PR #381 design de cerveau, **ouverte/non fusionnée**](https://github.com/pollen-robotics/microduck/pull/381), [PR #450 velstand en simulation, **ouverte/non fusionnée**](https://github.com/pollen-robotics/microduck/pull/450), [issue OEM #454, demande utilisateur, non preuve de livraison](https://github.com/pollen-robotics/microduck/issues/454). Comparaison tiers existante dans C3 ; **aucune dépendance communautaire nouvelle sélectionnée.**
+
+## 3. Inventaire mesuré sur le commit de référence
+
+Arbre Git : **366 blobs** suivis, dont **121 `.py` dans `microduck_companion/`**, **107 `.py` dans `tests/`**, **104 `.md` dans `docs/`** et **17 workflows `.yml`**. Parmi les 121 modules, **24 noms contiennent `demo`**, **28 commencent par `sim_`** (catégories qui peuvent se recouper). Ces comptes **n'indiquent ni le nombre de services, ni la RAM, ni l'espace disque embarqué**.
+
+Quatre documents centraux font au total **470 388 octets** : README 116 498 ; plan-action 113 657 ; roadmap 141 351 ; audit matériel 98 882. Leur taille seule n'est pas un défaut, mais les mises à jour historiques répétées compliquent la recherche de la décision en vigueur.
+
+Dernière CI `main` observée : [Python companion tests #40739501226, succès](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40739501226), sur le SHA de référence. **Aucun test local n'a été exécuté dans cet audit.**
+
+## 4. Frontière OEM / M9 : ne pas refaire le constructeur
+
+**Présent dans les sources OEM épinglées** : `robotd` seul pour moteur, ONNX, intents, sécurité et deadman ; `IdleHead`, compétences `sit_toggle`, kicks, `ground_pick` ; `mediad`, `tofd`, `pet-detect`, sons/caresses, politique constructeur et console. Une compétence motrice n'implique ni reconnaissance de cible ni décision autonome sûre.
+
+**Absent du daemon épinglé :** le module historique `autonomous.rs` et le cerveau M9 opérationnel. Les **16 états historiques** sont une description de prototype, pas 16 mouvements livrés. La PR #381 contient **un document de conception seulement** ; ses expériences de simulation rapportées par l'auteur ne constituent pas une validation matérielle. Sa proposition de contrôle direct de certaines articulations de tête/jambes **n'est pas à importer dans Companion** : toute autorité motrice doit demeurer dans `robotd`.
+
+**Conclusion :** il n'y a pas de code M9 réutilisable comme bibliothèque OEM déployée à ce SHA. `AutonomyBrain` et F2/PD ont un **chevauchement d'intention avec le futur M9**, mais leurs sorties inspectées restent des propositions/descriptions de laboratoire sans commande moteur directe. **Aucun deuxième contrôleur moteur embarqué n'a été établi par cet échantillon statique** ; cela n'est pas une preuve exhaustive d'absence.
+
+## 5. Matrice de nettoyage — décisions proposées
+
+| Famille et fichiers concrets | Fait / risque observable | Décision et condition de sortie |
+| --- | --- | --- |
+| **OEM : `robotd`, `mediad`, `tofd`, `pet-detect`, `IdleHead`, compétences ONNX** | Fournissent déjà mouvements, sécurité, I/O et gestes ; les versions actives restent à constater sur le robot | **RÉUTILISER / NE PAS DUPLIQUER.** Aucun pilote, animation de repos ou ordonnanceur moteur Companion |
+| **F0/F2/PD :** `autonomy.py`, `passive_intentions.py`, `passive_rhythm.py`, `behavior_personality.py`, `behavior_continuity.py`, `oem_expression_hints.py` | Plusieurs modules décrivent motivation, cadence et expression des mêmes intentions fictives. M9 pourrait porter certaines responsabilités plus tard | **CONSERVER LAB / GELER EXTENSION DE L'ARBITRE** ; définir un seul contrat de décision non moteur avant portage. Comparer à l'API M9 seulement lorsqu'elle est effectivement livrée |
+| **SQLite F1/F2/F4/EX :** `episodic_memory.py`, `passive_memory.py`, `behavioral_memory.py`, `category_semantics.py`, `experience_ledger.py`, `experience_effects.py`, `experience_expectations.py`, `memory_consolidation.py` | Tables/vues distinctes dans la **même connexion SQLite** ; risque de redondance des préférences et confusion entre fiction, hypothèse et effet réellement mesuré | **CONSERVER**, une seule `ExperienceMemory`. Documenter pour chaque table : propriétaire, origine, TTL, corrections, écriture, lecture, version ; aucune fusion/suppression avant analyse de compatibilité et migration réversible |
+| **M1-A/M1-B :** `compact_multimodal_memory.py`, `multiview_pattern_memory.py` | Réutilisent les mêmes empreintes mais entretiennent respectivement `m1a_compact_patterns` et `m1b_groups`/`m1b_signatures` | **M1-B candidat unique** à la voie future, **M1-A témoin historique** ; vérifier les consommateurs et migrations, sans double écriture ni destruction des corrections |
+| **Qwen v1/v2 :** `pc_hypothesis_contract.py`, `ollama_local_client.py`, `selective_pc_policy.py`, `qwen9b_advisor_v2.py`, `qwen9b_role_preview.py`, `qwen9b_action_guard.py` | Contrat synthétique F5 v1 et pilote réel PC multimodal v2 sont distincts ; plusieurs parcours de préparation de requête et validation | **CONSERVER les garde-fous et le pilote v2**, puis étudier un adaptateur unique PC/Ollama, consentement, quotas, JSON strict ; les réponses libres restent `machine_use=blocked` |
+| **Perception :** `passive_sources.py`, `passive_media_router.py`, `oem_frame_preflight.py`, `oem_passive_fixture.py`, baselines `visual_photo_*.py` | Entrées OEM et fixtures volontairement distinctes ; plusieurs bancs et prétraitements expérimentaux | **RÉUTILISER les contrats OEM** ; garder les baselines et éditeurs de vérité terrain en laboratoire ; un seul prétraitement vérifié avant déploiement, aucun détecteur PC déclaré embarqué |
+| **Locomotion et preuve :** 28 `sim_*.py`, dont `sim_motion.py`, `sim_walk_trial.py`, `sim_e2g_speed_onset.py` ; `scripts/solver-tap/` | Code de commandes **dans la simulation seulement**, importé entre plusieurs bancs ; une copie éventuelle sur le robot augmente le risque opérationnel | **CONSERVER LES PREUVES, ISOLER DU PAQUET ROBOT**. Aucun nouvel essai moteur arbitraire ; conserver stop, provenance et CI hors moteur |
+| **Démonstrations / CI / documents** : 24 `*demo*`, 17 workflows, 104 docs | Plus de surface à maintenir ; certains titres et priorités historiques peuvent paraître actuels | **ARCHIVER/INDEXER, NE PAS EFFACER** les résultats reproductibles. Isoler démonstrations des dépendances embarquées ; conserver les tests positifs et négatifs |
+
+**Découverte de conditionnement :** [`pyproject.toml`](https://github.com/Jean-Philippe56520/Microduck/blob/71a876b69f39ff4f97bca321bff01e9613e7e0d1/pyproject.toml) contient `[tool.setuptools.packages.find] include = ["microduck_companion*"]`. Les nombreux `sim_*.py`, `*_demo.py` et autres fichiers de ce **même package** sont donc inclus par défaut dans une distribution Python classique. Cela **ne les exécute pas**, mais il n'existe pas encore de **paquet robot minimal démontré**. Ne pas confondre `extras` pip et exclusion de code : il faudra définir la frontière de packaging puis vérifier **l'archive construite** et sa clôture d'imports.
+
+**Découverte documentaire précise :** `docs/plan-action.md` contient encore en section 6 « les trois prochains lots de PR » et la mention historique « Qwen 4B puis 9B », malgré le choix actuel de **Qwen3.5 9B facultatif sur PC** et les PR F5 suivantes. Ne pas réécrire les preuves : déplacer ou qualifier explicitement cette section comme historique et garder les priorités au sommet du plan.
+
+## 6. Ordre de nettoyage et portes d'acceptation
+
+1. **N1 — Inventaire machine et paquet.** Produire pour chaque module le graphe d'import *complet*, les points d'entrée, la classification `OEM-adaptateur / coeur cognitif / laboratoire / test`, le contexte d'exécution et l'éventuelle écriture SQLite/commande. Confronter `sdist`/`wheel` construites à une allowlist. **Aucun retrait avant cette cartographie**.
+2. **N2 — Contrat d'intégration unique.** Définir le seul chemin proposé `perception OEM → rappel SQLite → décision sûre (ou inaction) → intention robotd → effet indépendant`. F2/PD sont des modules candidats, pas plusieurs services. Les API et états M9 restent **inconnus** tant que non fusionnés ; pas d'intégration spéculative.
+3. **N3 — Mémoire.** Mesurer nombre de tables et accès/écrivains réels, vérifier M1-B comme voie choisie, verrouiller source/temps/correction/TTL et tests de migration sur copie de fixtures uniquement ; ne pas retirer une table avec souvenirs/corrections possibles.
+4. **N4 — PC/Qwen.** Tracer le chemin exact du 9B sur images approuvées et revoir si les chemins de transport et de prompts peuvent partager validation, quotas et anonymisation. Échec fermé, tests d'injections, de requêtes périmées, de médias refusés et de proposition d'action sur vivant ; aucune action motrice issue du texte.
+5. **N5 — Paquet et laboratoires.** Séparer **sans toucher à `robotd`** modules `sim_`/démonstrations des composants embarquables ; vérifier l'archive construite, la fermeture des imports, les faux démarrages moteur et l'absence de démarrage réseau/PC automatique. Préserver les bancs dans le dépôt/CI.
+6. **N6 — Documentation/CI.** Créer un sommaire de statut unique pointant vers `plan-action.md`, distinguer `actuel` / `historique`, réduire seulement les répétitions non probantes, qualifier les anciennes sections F5/Qwen, et mutualiser les workflows après preuve de couverture équivalente.
+
+**Critères de réussite d'un nettoyage effectif :** CI Python et tests négatifs verts après chaque PR ; aucune régression de SQLite, consentement ou refus moteur ; aucun changement de gitlink OEM ; aucune hypothèse devenue « fonctionnalité robot » ; mesures d'archive (nombre de modules, dépendances et taille) **avant/après** ; tâches de laboratoire toujours reproductibles. Le statut d'une PR **ouverte** n'est jamais un statut « livré ».
+
+## 7. Verdict et limites
+
+**Priorité réelle : N1 puis N2/N3**, pas supprimer des fichiers au hasard. Notre dette principale est la **frontière entre laboratoire et produit**, puis la convergence des chemins cognitifs. Les 121 modules ne sont pas 121 services actifs et M9 n'est pas un code prêt à réutiliser. **Aucune suppression n'est autorisée par ce seul audit**, aucune marche/récompense/effet physique ou capacité RK3566 n'est validée. Un audit de dépendances exhaustif, des tests de packaging sur artefact et l'observation du robot réel restent nécessaires avant portage.
