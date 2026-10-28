@@ -1,6 +1,6 @@
 # QW-PERF-1 — Profilage prudent du vrai Qwen3.5 9B sur PC
 
-**Date :** 28 octobre 2026. **Statut :** banc d'essai PC proposé dans une PR ; tests fictifs CI à vérifier. **Autorité :** [plan-action.md](plan-action.md). Version de référence avant ce lot : `main@c87089d105ddffe36e247709ba27fc561ba377f7`, OEM épinglé `microduck@942e58e3aa6dbb28e7037203fff11866122c7567`, RL `microduck_rl@b02fdea4902c2b93b7d34a83a6f05da4ececb7d3`. Revalider avant exécution et fusion.
+**Date :** 28 octobre 2026. **Statut :** banc PC codé et testé en CI, [PR #151](https://github.com/Jean-Philippe56520/Microduck/pull/151) fusionnée (`cf8bf760`), [CI Python #40786532440](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786532440) et [N1 #40786532406](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786532406) vertes ; vrai 9B non exécuté par la CI. **Autorité :** [plan-action.md](plan-action.md). Version de référence avant ce lot : `main@c87089d105ddffe36e247709ba27fc561ba377f7`, OEM épinglé `microduck@942e58e3aa6dbb28e7037203fff11866122c7567`, RL `microduck_rl@b02fdea4902c2b93b7d34a83a6f05da4ececb7d3`. Revalider avant exécution et fusion.
 
 ## 1. Observation, hypothèses, preuve recherchée et risque
 
@@ -80,4 +80,4 @@ Tests positifs et négatifs : dry-run sans réseau/image, opt-in obligatoire, bo
 3. Décider du `keep_alive` opportun, de la taille optimale du prompt/image et du volume de réponses ; mesurer le coût des recherches mémoire et des allers-retours QW-2.
 4. **QW-EXPR-1**, distinct : arrêt et expressions/idle OEM pendant consultation non bloquante, sur simulation et avec toutes les portes de sûreté. Pas d'essai moteur au hasard.
 
-**Statut honnête :** QW-PERF-1 = **code de mesure PC candidat, tests CI à vérifier**, Qwen réellement exécuté dans ce lot = **non**, posture interrogative synchronisée = **prévue uniquement**, robot = **absent**.
+**Statut honnête :** QW-PERF-1 = **code de mesure PC fusionné, tests CI verts sur fixtures**, Qwen réellement exécuté dans ce lot = **non**, posture interrogative synchronisée = **prévue uniquement**, robot = **absent**.
