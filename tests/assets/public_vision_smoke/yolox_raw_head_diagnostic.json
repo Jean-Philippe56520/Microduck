@@ -1,0 +1,537 @@
+{
+  "status": "diagnostic_existing_yolox_no_training_or_code_change",
+  "baseline_run": "https://github.com/Jean-Philippe56520/Microduck/actions/runs/40950364823",
+  "diagnostic_run": "https://github.com/Jean-Philippe56520/Microduck/actions/runs/40953575507",
+  "base_commit": "7559f88ab202ea0d7b1ad5666745cc744c93b53e",
+  "model": "Megvii YOLOX-Nano COCO (existing baseline)",
+  "model_sha256": "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d",
+  "baseline_threshold": 0.25,
+  "source_image_count": 13,
+  "baseline_class_presence_by_image_label": {
+    "cat": {
+      "total": 4,
+      "expected_category_proposed": 3
+    },
+    "dog": {
+      "total": 2,
+      "expected_category_proposed": 2
+    },
+    "sports_ball": {
+      "total": 3,
+      "expected_category_proposed": 0
+    },
+    "chair": {
+      "total": 1,
+      "expected_category_proposed": 1
+    },
+    "person": {
+      "total": 1,
+      "expected_category_proposed": 1
+    },
+    "unknown": {
+      "total": 2,
+      "expected_category_proposed": 2
+    }
+  },
+  "robot_camera_validated": false,
+  "pretraining_changed": false,
+  "preprocess_changed": false,
+  "manual_bounding_boxes": false,
+  "raw_prediction_probe_per_image": [
+    {
+      "file": "cat_01.jpg",
+      "declared_image_label": "cat",
+      "max_sports_ball_joint": 0.000473,
+      "objectness_at_best_ball_joint": 0.0071767,
+      "sports_ball_conditional_at_best_joint": 0.0659131,
+      "max_any_anchor_objectness": 0.917008,
+      "max_sports_ball_class_conditional_any_anchor": 0.1368766,
+      "top_any_of_80_class_idx": 15,
+      "top_any_of_80_joint": 0.7498528,
+      "top_any_of_80_xyxy": [
+        135.6,
+        34.2,
+        1537,
+        1288.9
+      ],
+      "best_ball_joint_xyxy": [
+        580.9,
+        673.6,
+        767,
+        826.9
+      ],
+      "same_anchor_best_ball_class_index": 74,
+      "best_ball_class_rank_at_anchor": 3,
+      "max_joint_by_requested_category": {
+        "person": 0.000928,
+        "cat": 0.7498528,
+        "dog": 0.012816,
+        "sports_ball": 0.000473,
+        "chair": 0.0067501
+      },
+      "expected_input_dims": [
+        2048,
+        1360
+      ],
+      "baseline_proposed_categories": [
+        "cat"
+      ]
+    },
+    {
+      "file": "cat_02.jpg",
+      "declared_image_label": "cat",
+      "max_sports_ball_joint": 0.0000738,
+      "objectness_at_best_ball_joint": 0.0025421,
+      "sports_ball_conditional_at_best_joint": 0.0290385,
+      "max_any_anchor_objectness": 0.3797109,
+      "max_sports_ball_class_conditional_any_anchor": 0.3664434,
+      "top_any_of_80_class_idx": 15,
+      "top_any_of_80_joint": 0.206998,
+      "top_any_of_80_xyxy": [
+        241.4,
+        380.6,
+        3112.5,
+        2366.2
+      ],
+      "best_ball_joint_xyxy": [
+        3083.5,
+        357.1,
+        3383,
+        525.5
+      ],
+      "same_anchor_best_ball_class_index": 0,
+      "best_ball_class_rank_at_anchor": 4,
+      "max_joint_by_requested_category": {
+        "person": 0.0065768,
+        "cat": 0.206998,
+        "dog": 0.1010094,
+        "sports_ball": 0.0000738,
+        "chair": 0.001925
+      },
+      "expected_input_dims": [
+        3888,
+        2592
+      ],
+      "baseline_proposed_categories": []
+    },
+    {
+      "file": "cat_03.jpg",
+      "declared_image_label": "cat",
+      "max_sports_ball_joint": 0.002534,
+      "objectness_at_best_ball_joint": 0.0080726,
+      "sports_ball_conditional_at_best_joint": 0.3139046,
+      "max_any_anchor_objectness": 0.8295914,
+      "max_sports_ball_class_conditional_any_anchor": 0.3139046,
+      "top_any_of_80_class_idx": 15,
+      "top_any_of_80_joint": 0.6876673,
+      "top_any_of_80_xyxy": [
+        43.7,
+        153,
+        2117.3,
+        1656.1
+      ],
+      "best_ball_joint_xyxy": [
+        852.6,
+        1114.7,
+        1313.1,
+        1619.4
+      ],
+      "same_anchor_best_ball_class_index": 47,
+      "best_ball_class_rank_at_anchor": 2,
+      "max_joint_by_requested_category": {
+        "person": 0.0033052,
+        "cat": 0.6876673,
+        "dog": 0.0303729,
+        "sports_ball": 0.002534,
+        "chair": 0.0057121
+      },
+      "expected_input_dims": [
+        2557,
+        1704
+      ],
+      "baseline_proposed_categories": [
+        "cat"
+      ]
+    },
+    {
+      "file": "cat_04.jpg",
+      "declared_image_label": "cat",
+      "max_sports_ball_joint": 0.0000937,
+      "objectness_at_best_ball_joint": 0.0380781,
+      "sports_ball_conditional_at_best_joint": 0.0024607,
+      "max_any_anchor_objectness": 0.9711577,
+      "max_sports_ball_class_conditional_any_anchor": 0.1554557,
+      "top_any_of_80_class_idx": 15,
+      "top_any_of_80_joint": 0.7874393,
+      "top_any_of_80_xyxy": [
+        68.9,
+        264.7,
+        1365,
+        1898.3
+      ],
+      "best_ball_joint_xyxy": [
+        785,
+        1580.8,
+        1053.4,
+        1958.2
+      ],
+      "same_anchor_best_ball_class_index": 47,
+      "best_ball_class_rank_at_anchor": 11,
+      "max_joint_by_requested_category": {
+        "person": 0.002104,
+        "cat": 0.7874393,
+        "dog": 0.0025148,
+        "sports_ball": 0.0000937,
+        "chair": 0.0783818
+      },
+      "expected_input_dims": [
+        1365,
+        2048
+      ],
+      "baseline_proposed_categories": [
+        "cat"
+      ]
+    },
+    {
+      "file": "dog_01.jpg",
+      "declared_image_label": "dog",
+      "max_sports_ball_joint": 0.0011139,
+      "objectness_at_best_ball_joint": 0.0525679,
+      "sports_ball_conditional_at_best_joint": 0.0211897,
+      "max_any_anchor_objectness": 0.9560938,
+      "max_sports_ball_class_conditional_any_anchor": 0.2322143,
+      "top_any_of_80_class_idx": 58,
+      "top_any_of_80_joint": 0.7778874,
+      "top_any_of_80_xyxy": [
+        57.7,
+        57.2,
+        116.8,
+        133.3
+      ],
+      "best_ball_joint_xyxy": [
+        321.1,
+        86.2,
+        333.6,
+        108.7
+      ],
+      "same_anchor_best_ball_class_index": 39,
+      "best_ball_class_rank_at_anchor": 6,
+      "max_joint_by_requested_category": {
+        "person": 0.0083548,
+        "cat": 0.03436,
+        "dog": 0.6325193,
+        "sports_ball": 0.0011139,
+        "chair": 0.0029943
+      },
+      "expected_input_dims": [
+        500,
+        333
+      ],
+      "baseline_proposed_categories": [
+        "dog"
+      ]
+    },
+    {
+      "file": "dog_02.jpg",
+      "declared_image_label": "dog",
+      "max_sports_ball_joint": 0.0054134,
+      "objectness_at_best_ball_joint": 0.1097133,
+      "sports_ball_conditional_at_best_joint": 0.0493415,
+      "max_any_anchor_objectness": 0.9862231,
+      "max_sports_ball_class_conditional_any_anchor": 0.264228,
+      "top_any_of_80_class_idx": 16,
+      "top_any_of_80_joint": 0.8976893,
+      "top_any_of_80_xyxy": [
+        0,
+        17.8,
+        265.4,
+        222.9
+      ],
+      "best_ball_joint_xyxy": [
+        167.6,
+        180,
+        202,
+        197.9
+      ],
+      "same_anchor_best_ball_class_index": 29,
+      "best_ball_class_rank_at_anchor": 3,
+      "max_joint_by_requested_category": {
+        "person": 0.0183092,
+        "cat": 0.0702368,
+        "dog": 0.8976893,
+        "sports_ball": 0.0054134,
+        "chair": 0.0013838
+      },
+      "expected_input_dims": [
+        300,
+        225
+      ],
+      "baseline_proposed_categories": [
+        "dog"
+      ]
+    },
+    {
+      "file": "ball_01.jpg",
+      "declared_image_label": "sports_ball",
+      "max_sports_ball_joint": 0.0536963,
+      "objectness_at_best_ball_joint": 0.3078923,
+      "sports_ball_conditional_at_best_joint": 0.1743996,
+      "max_any_anchor_objectness": 0.3078923,
+      "max_sports_ball_class_conditional_any_anchor": 0.344954,
+      "top_any_of_80_class_idx": 25,
+      "top_any_of_80_joint": 0.1383191,
+      "top_any_of_80_xyxy": [
+        224.6,
+        557,
+        515.5,
+        856.1
+      ],
+      "best_ball_joint_xyxy": [
+        224.6,
+        557,
+        515.5,
+        856.1
+      ],
+      "same_anchor_best_ball_class_index": 25,
+      "best_ball_class_rank_at_anchor": 3,
+      "max_joint_by_requested_category": {
+        "person": 0.009056,
+        "cat": 0.0050072,
+        "dog": 0.0003784,
+        "sports_ball": 0.0536963,
+        "chair": 0.0081713
+      },
+      "expected_input_dims": [
+        720,
+        1280
+      ],
+      "baseline_proposed_categories": []
+    },
+    {
+      "file": "ball_02.png",
+      "declared_image_label": "sports_ball",
+      "max_sports_ball_joint": 0.0139059,
+      "objectness_at_best_ball_joint": 0.3925579,
+      "sports_ball_conditional_at_best_joint": 0.0354238,
+      "max_any_anchor_objectness": 0.7175838,
+      "max_sports_ball_class_conditional_any_anchor": 0.1869842,
+      "top_any_of_80_class_idx": 49,
+      "top_any_of_80_joint": 0.6693028,
+      "top_any_of_80_xyxy": [
+        59.5,
+        61,
+        141.4,
+        144.3
+      ],
+      "best_ball_joint_xyxy": [
+        58,
+        60.8,
+        140.5,
+        144.8
+      ],
+      "same_anchor_best_ball_class_index": 47,
+      "best_ball_class_rank_at_anchor": 2,
+      "max_joint_by_requested_category": {
+        "person": 0.0002546,
+        "cat": 0.0000174,
+        "dog": 0.0000103,
+        "sports_ball": 0.0139059,
+        "chair": 0.0003032
+      },
+      "expected_input_dims": [
+        200,
+        204
+      ],
+      "baseline_proposed_categories": []
+    },
+    {
+      "file": "ball_03.png",
+      "declared_image_label": "sports_ball",
+      "max_sports_ball_joint": 0.0015993,
+      "objectness_at_best_ball_joint": 0.0310774,
+      "sports_ball_conditional_at_best_joint": 0.0514611,
+      "max_any_anchor_objectness": 0.8024617,
+      "max_sports_ball_class_conditional_any_anchor": 0.1925777,
+      "top_any_of_80_class_idx": 55,
+      "top_any_of_80_joint": 0.6770669,
+      "top_any_of_80_xyxy": [
+        53.3,
+        47.9,
+        148.8,
+        148.8
+      ],
+      "best_ball_joint_xyxy": [
+        52.5,
+        53.5,
+        148.5,
+        118.8
+      ],
+      "same_anchor_best_ball_class_index": 55,
+      "best_ball_class_rank_at_anchor": 5,
+      "max_joint_by_requested_category": {
+        "person": 0.0003332,
+        "cat": 0.0005551,
+        "dog": 0.0001633,
+        "sports_ball": 0.0015993,
+        "chair": 0.0002762
+      },
+      "expected_input_dims": [
+        200,
+        203
+      ],
+      "baseline_proposed_categories": []
+    },
+    {
+      "file": "chair_01.png",
+      "declared_image_label": "chair",
+      "max_sports_ball_joint": 0.0000066,
+      "objectness_at_best_ball_joint": 0.2342553,
+      "sports_ball_conditional_at_best_joint": 0.000028,
+      "max_any_anchor_objectness": 0.9634436,
+      "max_sports_ball_class_conditional_any_anchor": 0.1049811,
+      "top_any_of_80_class_idx": 56,
+      "top_any_of_80_joint": 0.8487929,
+      "top_any_of_80_xyxy": [
+        128.6,
+        35.2,
+        383.7,
+        487.8
+      ],
+      "best_ball_joint_xyxy": [
+        141.8,
+        226.1,
+        375.8,
+        466.7
+      ],
+      "same_anchor_best_ball_class_index": 56,
+      "best_ball_class_rank_at_anchor": 62,
+      "max_joint_by_requested_category": {
+        "person": 0.0008929,
+        "cat": 0.000793,
+        "dog": 0.0002906,
+        "sports_ball": 0.0000066,
+        "chair": 0.8487929
+      },
+      "expected_input_dims": [
+        512,
+        512
+      ],
+      "baseline_proposed_categories": [
+        "chair"
+      ]
+    },
+    {
+      "file": "person_01.jpg",
+      "declared_image_label": "person",
+      "max_sports_ball_joint": 0.0015227,
+      "objectness_at_best_ball_joint": 0.3150335,
+      "sports_ball_conditional_at_best_joint": 0.0048333,
+      "max_any_anchor_objectness": 0.9939988,
+      "max_sports_ball_class_conditional_any_anchor": 0.1811816,
+      "top_any_of_80_class_idx": 0,
+      "top_any_of_80_joint": 0.9017538,
+      "top_any_of_80_xyxy": [
+        131.5,
+        0,
+        800,
+        518.6
+      ],
+      "best_ball_joint_xyxy": [
+        77.5,
+        378.8,
+        131.3,
+        448.2
+      ],
+      "same_anchor_best_ball_class_index": 74,
+      "best_ball_class_rank_at_anchor": 2,
+      "max_joint_by_requested_category": {
+        "person": 0.9017538,
+        "cat": 0.0004932,
+        "dog": 0.0008779,
+        "sports_ball": 0.0015227,
+        "chair": 0.0066363
+      },
+      "expected_input_dims": [
+        800,
+        545
+      ],
+      "baseline_proposed_categories": [
+        "person"
+      ]
+    },
+    {
+      "file": "unknown_01.jpg",
+      "declared_image_label": "unknown",
+      "max_sports_ball_joint": 0.0004536,
+      "objectness_at_best_ball_joint": 0.1292781,
+      "sports_ball_conditional_at_best_joint": 0.0035087,
+      "max_any_anchor_objectness": 0.3862717,
+      "max_sports_ball_class_conditional_any_anchor": 0.3907411,
+      "top_any_of_80_class_idx": 17,
+      "top_any_of_80_joint": 0.2982547,
+      "top_any_of_80_xyxy": [
+        144.6,
+        102.6,
+        700.3,
+        447.5
+      ],
+      "best_ball_joint_xyxy": [
+        151.1,
+        101.4,
+        582.1,
+        430.1
+      ],
+      "same_anchor_best_ball_class_index": 18,
+      "best_ball_class_rank_at_anchor": 7,
+      "max_joint_by_requested_category": {
+        "person": 0.00694,
+        "cat": 0.0293536,
+        "dog": 0.0527426,
+        "sports_ball": 0.0004536,
+        "chair": 0.0006236
+      },
+      "expected_input_dims": [
+        800,
+        533
+      ],
+      "baseline_proposed_categories": []
+    },
+    {
+      "file": "unknown_02.jpg",
+      "declared_image_label": "unknown",
+      "max_sports_ball_joint": 0.0004287,
+      "objectness_at_best_ball_joint": 0.0038083,
+      "sports_ball_conditional_at_best_joint": 0.1125603,
+      "max_any_anchor_objectness": 0.9635227,
+      "max_sports_ball_class_conditional_any_anchor": 0.5957009,
+      "top_any_of_80_class_idx": 74,
+      "top_any_of_80_joint": 0.7389789,
+      "top_any_of_80_xyxy": [
+        311.1,
+        248.5,
+        358.2,
+        298.7
+      ],
+      "best_ball_joint_xyxy": [
+        244.4,
+        329.3,
+        286.1,
+        357.6
+      ],
+      "same_anchor_best_ball_class_index": 74,
+      "best_ball_class_rank_at_anchor": 2,
+      "max_joint_by_requested_category": {
+        "person": 0.0078523,
+        "cat": 0.0015986,
+        "dog": 0.0015974,
+        "sports_ball": 0.0004287,
+        "chair": 0.0002471
+      },
+      "expected_input_dims": [
+        800,
+        600
+      ],
+      "baseline_proposed_categories": []
+    }
+  ]
+}
