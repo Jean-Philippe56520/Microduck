@@ -3,7 +3,7 @@ import unittest
 
 import numpy as np
 
-from experiments.yolox_candidate_regions_sixth_coco import (
+from microduck_companion.yolox_attention_candidates import (
     _iou, decode_candidates,
 )
 
