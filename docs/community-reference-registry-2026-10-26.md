@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**QW-PERF-1B — ressources réellement mesurées, 29/10/2026 :** [rapport PC réel du propriétaire](qw-perf1b-real-windows-9b-baseline-2026-10-29.md). Réutiliser `qwen9b_perf_probe.py`, Ollama et mesures natives ; **ne pas créer** de second banc ou moteur, ne pas forcer de backend GPU ou copier un contournement communautaire sans vérifier GPU/driver Ollama exacts. `100% CPU` observé, issue publique Ollama #14562 Radeon 860M seulement indicative, pas diagnostic local. Aucun sous-module ni modèle modifié.
+
+
 **QW-PERF-1 — décision réutiliser/adapter/créer (28/10/2026, [PR #151](https://github.com/Jean-Philippe56520/Microduck/pull/151) fusionnée (`cf8bf760`), [CI Python #40786532440](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786532440) et [N1 #40786532406](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786532406) vertes) :** [audit et protocole](qw-perf1-pc-synthetic-benchmark-2026-10-28.md) : **RÉUTILISER** `qwen9b_role_preview.make_request`, `qwen9b_advisor_v2.prepare_jpeg`, `OllamaEndpoint` et les compteurs de `/api/chat`, l'IdleHead OEM existant ; **ADAPTER** le seul client hôte diagnostic `qwen9b_perf_probe` avec cinq profils synthétiques, opt-in et JSON strict ; **NE PAS CRÉER** nouveau modèle, second pilote moteur, reader SQLite, agent ou dépendance communautaire. Les sources QuackNav/twin/brain restent références et non prérequis à cette mesure.
 
 

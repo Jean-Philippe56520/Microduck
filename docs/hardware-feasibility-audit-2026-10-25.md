@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**QW-PERF-1B — relevé opérateur PC Windows du 29/10/2026 (non reproduit indépendamment) :** [profilage de cinq appels et CPU 100 %](qw-perf1b-real-windows-9b-baseline-2026-10-29.md). `ollama ps` : `qwen3.5:9b`, `SIZE=6.2 GB`, `PROCESSOR=100% CPU`, `CONTEXT=4096`, `RUNNER=llamacpp`. L'affichage SIZE **n'est pas un RSS mesuré**, ni une mesure RAM sur RK3566. Rôle v2 44,234 s initial / 14,750 s répété, JSON court 7,110 s, JSON avec note synthétique 9,109 s. GPU/driver et version Ollama à vérifier avant toute expérience GPU, aucun gain prouvé.
+
+
 **QW-PERF-1 (28/10/2026 ; [PR #151](https://github.com/Jean-Philippe56520/Microduck/pull/151) fusionnée (`cf8bf760`), [CI Python #40786532440](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786532440) et [N1 #40786532406](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786532406) vertes ; performances réelles PC encore inconnues) :** [profilage facultatif synthétique](qw-perf1-pc-synthetic-benchmark-2026-10-28.md) pour séparer `load`, `prompt_eval`, `eval` et latence du vrai 9B. La mesure opérateur préalable de **30,203 s** (4,103/11,398/14,671 s, 186 tokens) ne suffit pas à prouver une latence p50/p95 ou un placement GPU. Le nouveau banc limite **cinq requêtes**, sans média privé, modèle installé ni changement de politique ; ni VRAM/RSS réel du PC, ni RAM RK3566/thermique 50 Hz validés. `keep_alive=2m` concerne uniquement l'essai ; comparer avec l'ancien pilote `keep_alive=0` sans imposer une durée permanente.
 
 

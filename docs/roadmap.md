@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-PERF-1B — premier relevé PC réel, 29/10/2026 (rapport opérateur) :** [cinq appels, provenance et limites](qw-perf1b-real-windows-9b-baseline-2026-10-29.md) : v2 44,234 s puis 14,750 s identique en cache, texte court 3,703 s, JSON court 7,110 s, JSON + contexte fictif 9,109 s. Les deux JSON reconnaissent le cercle rouge de fixture ; le modèle affiche **100 % CPU** et non GPU. **Prochaine porte : version Ollama + modèle GPU + pilote Windows, en lecture seule**, puis éventuelle comparaison GPU réversible si réellement supporté ; pas de vitesse future ni comportement robot prouvé.
+
+
 **QW-PERF-1 (28/10/2026, [PR #151](https://github.com/Jean-Philippe56520/Microduck/pull/151) fusionnée (`cf8bf760`), [CI Python #40786532440](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786532440) et [N1 #40786532406](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786532406) vertes ; PC-fixtures uniquement) :** [banc Qwen3.5 9B synthétique sans données privées](qw-perf1-pc-synthetic-benchmark-2026-10-28.md) : première/répétition du même rôle v2, réponse texte condensée, JSON bref et JSON + contexte fictif, avec `keep_alive=2m` borné **uniquement au diagnostic**, chiffres Ollama et aucune sortie brute. Tester sur le vrai PC pour mesurer gains et coût du contexte ; aucune promesse de délai. QW-EXPR-1 à venir : réutiliser les gestes `robotd IdleHead` (inclinaison curieuse possible), sans créer de pilote ni bloquer la sécurité pendant Qwen. Aucun vrai 9B, appareil OEM ou geste robot validé par ce banc.
 
 
