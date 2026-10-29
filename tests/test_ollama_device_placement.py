@@ -242,8 +242,8 @@ class DevicePlacementTests(unittest.TestCase):
         launcher = (root / "scripts" / "kwipi-vision-test.ps1").read_text(
             encoding="utf-8")
         self.assertIn("[switch]$ReportPlacement", launcher)
-        self.assertIn("if ($ReportPlacement -and -not $VisionCheck)", launcher)
-        self.assertLess(launcher.index("if ($ReportPlacement -and -not $VisionCheck)"),
+        self.assertIn("if ($ReportPlacement -and -not ($VisionCheck -or $PerfCheck))", launcher)
+        self.assertLess(launcher.index("if ($ReportPlacement -and -not ($VisionCheck -or $PerfCheck))"),
                         launcher.index("Start-Process -FilePath"))
         self.assertIn('if ($ReportPlacement) { $placementArgs = @("--report-placement") }',
                       launcher)
