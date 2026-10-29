@@ -218,6 +218,19 @@ started=1
 "$SIM" realtime
 python3 -m microduck_companion.sim_probe --state-dir "$DUCK_SIM_STATE"
 python3 -m microduck_companion.sim_observer --state-dir "$DUCK_SIM_STATE"
+# SIM-VIS-A1b: direct official MuJoCo FrameServer optical control.
+# Independent of mediad: 1 rendered frame with NO real-time / IPC claim.
+# It is recorded before the OEM media.frame integration check, which must
+# still FAIL if the real mediad does not provide its socket.
+if [ "${DUCK_SIM_VIS_A1:-NO}" = YES ]; then
+    "$DUCK_SIM_RL/.venv/bin/python" -m microduck_companion.sim_visual_direct \
+        --camera-port "$DUCK_SIM_FRAME_PORT" \
+        --scene-path "$DUCK_SIM_RL/src/mjlab_microduck/robot/microduck/apartment.xml" \
+        --model-path "$DUCK_SIM_VIS_MODEL" \
+        --output "$DUCK_SIM_STATE/sim-visual-a1b.json" \
+        --authorize-sim-render-only
+fi
+
 # SIM-VIS-A1: one source-labelled camera/ToF/Yolox diagnostic, no media archived.
 if [ "${DUCK_SIM_VIS_A1:-NO}" = YES ]; then
     "$DUCK_SIM_RL/.venv/bin/python" -m microduck_companion.sim_visual_a1 \
