@@ -91,22 +91,26 @@ jobs:
                   raise SystemExit("public image source digest mismatch: " + name)
               with Image.open(io.BytesIO(source)) as original:
                   picture = ImageOps.exif_transpose(original)
+                  source_width, source_height = picture.size
+                  if original.format not in ("JPEG", "PNG"):
+                      raise SystemExit("unapproved image encoding: " + name)
+                  resized = max(picture.size) > 4096
+                  if resized:
+                      # Respect existing Cat-A 4096px geometry; source stays unchanged.
+                      picture.thumbnail((2048, 2048), Image.Resampling.LANCZOS)
                   width, height = picture.size
-                  if original.format == "JPEG":
+                  converted_png = original.format == "PNG"
+                  if original.format == "JPEG" and not resized:
                       jpeg = source
-                      converted_png = False
-                  elif original.format == "PNG":
-                      # The existing YOLOX helper accepts JPEG: convert PNG in memory.
+                  else:
+                      # Re-encode PNG / oversize JPG IN MEMORY; no new source image.
                       rgba = picture.convert("RGBA")
                       white = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
                       white.alpha_composite(rgba)
                       encoded = io.BytesIO()
-                      white.convert("RGB").save(encoded, format="JPEG", quality=95, subsampling=0)
+                      white.convert("RGB").save(encoded, format="JPEG", quality=88, subsampling=0)
                       jpeg = encoded.getvalue()
-                      converted_png = True
-                  else:
-                      raise SystemExit("unapproved image encoding: " + name)
-              print(f"IMAGE {name}: source_format={original.format} source_size={original.size} oriented_size={(width, height)} preprocessed_bytes={len(jpeg)}", flush=True)
+              print(f"IMAGE {name}: original_size={(source_width, source_height)} input_size={(width, height)} resized={resized} png_converted={converted_png}", flush=True)
               tensor = prepare_image(jpeg, mode="original")
               start = time.perf_counter()
               prediction = session.run(None, {"images": tensor})[0]
@@ -119,6 +123,7 @@ jobs:
                   "file": name, "expected_image_label": expected,
                   "proposed_categories": proposed, "expected_category_proposed": present,
                   "total_boxes": len(boxes), "png_to_jpeg_in_memory": converted_png,
+              "oversize_jpeg_resized_in_memory": resized, "inference_image_dimensions": [width, height],
                   "top_boxes": [
                       {
                           "category": box.category,
