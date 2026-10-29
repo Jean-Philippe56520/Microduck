@@ -35,7 +35,7 @@ Après les appels, l'opérateur a exécuté `ollama ps` et rapporté : **`qwen3.
 
 ```powershell
 # Version / pilote déjà confirmés le 29/10/2026 ; ne pas répéter inutilement.
-$log = Join-Path $env:LOCALAPPDATA "Ollama\\server.log"
+$log = Join-Path $env:LOCALAPPDATA "Ollama\server.log"
 if (Test-Path -LiteralPath $log) {
     Get-Content -LiteralPath $log -Tail 1200 |
         Select-String -Pattern "ggml_vulkan|gfx1152|Vulkan|ROCm|GPU.*discover|GPU.*detect|inference compute|filtering device|total_vram" |
@@ -45,7 +45,7 @@ if (Test-Path -LiteralPath $log) {
 }
 ```
 
-**Précaution journaux :** la commande ci-dessus lit uniquement un fichier local et filtre des lignes GPU. Avant toute transmission, **supprimer chemins personnels, jetons, contenus de requêtes ou données sensibles** si présents. Les lignes sans correspondance ne prouvent pas qu'aucun GPU n'a été examiné ; consulter la rotation `server-#.log` seulement si nécessaire. La documentation officielle localise les journaux Windows dans `%LOCALAPPDATA%\\Ollama\\server.log` ([dépannage Ollama](https://docs.ollama.com/troubleshooting)).
+**Précaution journaux :** la commande ci-dessus lit uniquement un fichier local et filtre des lignes GPU. Avant toute transmission, **supprimer chemins personnels, jetons, contenus de requêtes ou données sensibles** si présents. Les lignes sans correspondance ne prouvent pas qu'aucun GPU n'a été examiné ; consulter la rotation `server-#.log` seulement si nécessaire. La documentation officielle localise les journaux Windows dans `%LOCALAPPDATA%\Ollama\server.log` ([dépannage Ollama](https://docs.ollama.com/troubleshooting)).
 
 Ne pas faire `ollama pull`, `setx`, `stop-process`, `ollama stop`, mise à jour de pilote, remplacement de DLL, surcharge forcée ROCm, allocation VRAM ou second serveur concurrent pour ce diagnostic. **Critères d'échec :** versions non vérifiées, GPU non détecté, accélération sans amélioration de la qualité ou dégradation mémoire/fiabilité, suppression d'un service existant. **Retour arrière :** aucun réglage durable modifié dans ce lot documentaire ; si une expérimentation active est ensuite autorisée, faire un seul changement temporaire mesuré et restaurer l'environnement immédiatement après, avec témoin CPU.
 
