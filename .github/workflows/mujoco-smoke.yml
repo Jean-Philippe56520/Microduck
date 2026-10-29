@@ -44,9 +44,9 @@ jobs:
     env:
       DUCK_SIM_DEP_MODE: runtime
       PYTHONUNBUFFERED: "1"
-      # Do not start a viewer or camera: keep the initial experiment cheap.
+      # Default remains no camera; only SIM-VIS-A1 opts into one simulated eye.
       DUCK_SIM_STATE: /tmp/duck-sim-companion
-      # No MUJOCO_GL override: body-only headless physics opens no GL context.
+      # Visual opt-in sets MUJOCO_GL=osmesa; the default smoke remains blind.
     steps:
       - uses: actions/checkout@v4
         with:
@@ -69,7 +69,10 @@ jobs:
         if: github.ref_name == 'feat/sim-visual-a1-20261029'
         run: |
           set -euo pipefail
-          sudo apt-get install -y libosmesa6 libgl1-mesa-dri
+          # Reuse the official OEM CI dependency set for mediad (Linux GStreamer).
+          sudo apt-get install -y libosmesa6 libgl1-mesa-dri \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            libgstreamer-plugins-bad1.0-dev
           uv python install 3.12
           # Public Apache-2.0 Cat-A YOLOX; fixed content digest and size.
           curl --fail --location --silent --show-error --connect-timeout 10 --max-time 90 \
@@ -123,12 +126,6 @@ jobs:
           DUCK_SIM_VIS_MODEL: ${{ runner.temp }}/yolox-nano-a1.onnx
         run: |
           set -o pipefail
-          if [ "${DUCK_SIM_VIS_A1:-NO}" = YES ]; then
-            # The RL venv is made by sim-smoke.sh; add only when present.
-            # Install visual-only dependencies in a dedicated preflight instead
-            # of modifying OEM policy/model source.
-            :
-          fi
           timeout --signal=TERM --kill-after=30s 18m             sh scripts/sim-smoke.sh run 2>&1 | tee "${{ runner.temp }}/mujoco-smoke-console.log"
 
       - name: Stop any remaining simulated services
