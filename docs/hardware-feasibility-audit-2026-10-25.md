@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**QW-PERF-1I — relevé Windows réel des cinq consultations synthétiques (29/10/2026) :** [rapport QW-PERF-1I](qw-perf1i-real-pc-role-cpu-gpu-2026-10-29.md). Ollama a déclaré `max_reported_vram_bytes=5 614 726 020` (port iGPU temporaire 11435) contre 0 (CPU 11434), avec **113/172** échantillons de modèle et **0 erreur** de sonde. Sommes des cinq latences **50,422/74,937 s**, non-randomisées ; le matériel rapporte des tailles de modèle différentes **5 614 726 020 / 6 187 856 689 octets** malgré le même tag, sans vérification indépendante des poids. **GPU intégré à RAM partagée : ni VRAM indépendante, ni utilisation GPU%, RSS, chauffe, énergie ou stabilité sous charge mesurés**. Sans rapport direct avec l'allocation RAM/CPU/50 Hz du RK3566 ; aucune validation robot ou Yocto.
+
+
 **QW-PERF-1H — instrumentation candidat (29/10/2026 ; seul code PC-fixtures) :** [banc de cinq profils du même 9B avec `/api/ps`](qw-perf1h-pc-role-benchmark-placement-2026-10-29.md) sur Ollama Windows, Radeon 860M. Il ajoute une mesure *déclarative* de `size_vram` à chaque série CPU/GPU, sans mesurer CPU%, GPU%, RSS réel, RAM partagée, température, watts ni pression sur le système. Les 5 profils utilisent `keep_alive=2m` en test seulement et peuvent fausser une interprétation de vitesse sans cache/ordre contrôlés ; aucun modèle embarqué, pilote, Yocto, robotd 50 Hz ou ressource RK3566 n'est modifié ni validé. Aucun nouveau test matériel n'est revendiqué avant sortie opérateur.
 
 

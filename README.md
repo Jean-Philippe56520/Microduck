@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**QW-PERF-1I — vrai banc PC du 29/10/2026, 5 profils Qwen3.5 9B par configuration :** [rapport numérique et réserves](docs/qw-perf1i-real-pc-role-cpu-gpu-2026-10-29.md). Worktree Windows `a037778`, serveur temporaire `11435` avec iGPU/Vulkan demandés et `gpu_memory_reported` (5 614 726 020 octets déclarés), contre témoin `11434` `cpu_memory_reported` (0 octet). Latences murales **50,422 s** pour cinq profils iGPU vs **74,937 s** CPU, différence descriptive de **−32,714 %**, une seule série GPU→CPU non contrebalancée. Les dix statuts `unverified` ont `diagnostic=none`, deux JSON corrects par serveur sur cercle rouge fictif ; **ni compréhension sémantique v2, ni calcul GPU indépendant, ni gain reproductible prouvés**. Aucun média privé, mémoire réelle, pilote ou commande moteur. La CI ne remplace pas cet essai matériel communiqué par l'opérateur.
+
+
 **QW-PERF-1H fusionné sur main (29/10/2026) :** [PR #158](https://github.com/Jean-Philippe56520/Microduck/pull/158) fusionnée au squash `b558007a565f4ca0fb83cef75b3eae3da59c010f` après [CI Python #40857661598](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40857661598) et [inventaire N1 #40857661522](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40857661522) **verts**. Les tests Python, compilation et analyse syntaxique PowerShell ont réussi ; **aucun nouveau test réel du Qwen 9B sur PC ni du GPU n'a été réalisé par la CI**. Le banc, facultatif et borné, mesure cinq profils synthétiques avec relevé `/api/ps` sur 11435 et témoin 11434, sans média privé, mémoire SQLite ni moteur. [Procédure de reprise et limites](docs/qw-perf1h-pc-role-benchmark-placement-2026-10-29.md).
 
 

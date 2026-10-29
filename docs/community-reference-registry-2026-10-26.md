@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**QW-PERF-1I — preuve de réemploi plutôt que duplication (29/10/2026) :** [compte rendu des mesures PC réelles](qw-perf1i-real-pc-role-cpu-gpu-2026-10-29.md). **RÉUTILISÉ** : banc QW-PERF-1H (#158), observateur Ollama #156 et API `/api/ps`, cinq prompts synthétiques, mêmes clients/validateurs JSON ; **ADAPTÉ** : documentation et interprétation d'une seule paire de séries CPU/iGPU déclarées (50,422 s vs 74,937 s, −32,714 % descriptif). **CRÉÉ** : uniquement un rapport de preuves, zéro nouveau modèle, pilote, mémoire, capteur, service M9/QuackNav, contrôleur OEM ou sous-module. **Inconnus** : calcul GPU matériel, répétabilité du gain, sémantique v2, conditions thermiques/RSS.
+
+
 **QW-PERF-1H — audit de réutilisation (29/10/2026) :** [protocole PC Qwen v2/JSON + placement Ollama](qw-perf1h-pc-role-benchmark-placement-2026-10-29.md). **RÉUTILISER** `qwen9b_perf_probe.py` (#151), `ollama_device_placement.py` (#156), `OllamaEndpoint`, `kwipi-vision-test.ps1` et l'API loopback `/api/ps` ; **ADAPTER** un flag opt-in de sondage sur le banc de cinq profils et un lancement PowerShell à autorisation explicite. **NE PAS CRÉER** d'autre benchmark, service autonome, modèle multimodal, contrôleur, SQLite, backend Ollama ou dépendance QuackNav/M9/twin. Tests CI purement simulés ; la vérification de calcul GPU et l'intérêt du conseil sont encore inconnus.
 
 

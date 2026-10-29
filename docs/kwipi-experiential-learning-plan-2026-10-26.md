@@ -1,5 +1,8 @@
 # Kwipi — plan d'apprentissage autonome par l'expérience (EX)
 
+**QW-PERF-1I — coût du conseiller facultatif mesuré sur PC réel (29/10/2026) :** [cinq profils synthétiques CPU/iGPU déclarés](qw-perf1i-real-pc-role-cpu-gpu-2026-10-29.md) ; sommes **50,422 s sur 11435** contre **74,937 s sur 11434**, 5/5 réponses de transport admises de chaque côté, deux JSON conformes à l'image artificielle attendue. Les rôles v2 **n'ont pas été évalués pour leur capacité à proposer des hypothèses, expériences, conséquences ou conseils sûrs**. Les latences, surtout 22,891 s pour le premier appel iGPU, motivent un conseiller **rare, facultatif, asynchrone vis-à-vis du cycle moteur, avec repli hors ligne**, mais **pas une intégration livrée** à `ExperienceMemory`, au robot ni une preuve de politique de consultation. Les 32,714 % restent descriptifs, calcul GPU et ressources indépendantes inconnus.
+
+
 **QW-PERF-1 — prérequis de performance (28/10/2026, [PR #151](https://github.com/Jean-Philippe56520/Microduck/pull/151) fusionnée (`cf8bf760`), [CI Python #40786532440](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786532440) et [N1 #40786532406](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786532406) vertes ; banc hôte uniquement) :** [banc de mesure synthétique 9B](qw-perf1-pc-synthetic-benchmark-2026-10-28.md) sans scènes privées, souvenirs réels, action OEM, SQLite ni boucle automatique. Mesurer la durée et les coûts de réponses v2 et structurées compactes avant les connexions QW-1/QW-2 et l'usage contextuel selon motivations. L'ajout de mémoire **fictive** dans le banc n'est pas un raccordement à `ExperienceMemory`. Expressions curieuses OEM disponibles en idle, posture interrogative ciblée QW-EXPR-1 non codée.
 
 
