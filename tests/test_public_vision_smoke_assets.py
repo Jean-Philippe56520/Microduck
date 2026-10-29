@@ -11,9 +11,9 @@ ALLOWED = {"cat", "dog", "sports_ball", "chair", "person", "unknown"}
 
 def _valid_image(data: bytes, name: str) -> bool:
     if name.endswith(".jpg"):
-        return data.startswith(b"\\xff\\xd8\\xff") and len(data) > 1024
+        return data.startswith(b"\xff\xd8\xff") and len(data) > 1024
     if name.endswith(".png"):
-        return data.startswith(b"\\x89PNG\\r\\n\\x1a\\n") and len(data) > 1024
+        return data.startswith(b"\x89PNG\r\n\x1a\n") and len(data) > 1024
     return False
 
 
@@ -29,11 +29,11 @@ def test_public_images_match_pinned_source_git_blobs():
         assert row["origin_url"].startswith("https://")
         content = (ROOT / name).read_bytes()
         assert _valid_image(content, name)
-        header = f"blob {len(content)}\\0".encode()
+        header = f"blob {len(content)}\0".encode()
         assert hashlib.sha1(header + content).hexdigest() == row["source_git_blob_sha"]
 
 
 def test_public_image_validator_rejects_corruption():
     assert not _valid_image(b"not a jpeg", "cat_01.jpg")
     assert not _valid_image(b"not a png", "ball_02.png")
-    assert not _valid_image(b"\\xff\\xd8\\xff", "cat_01.jpg")
+    assert not _valid_image(b"\xff\xd8\xff", "cat_01.jpg")
