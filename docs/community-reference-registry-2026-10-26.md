@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**QW-QUAL-1D — stratégie de réemploi confirmée après un vrai essai sur `scene_c` (29/10/2026) :** [rapport](qw-qual1d-scene-c-real-qwen-human-review-2026-10-29.md). **RÉUTILISER** `qwen9b_semantic_quality.py`, rôle v2, `screen_preview_text` QW-QUAL-1B et grille QW-QUAL-1A ; les deux avertissements de revue humaine ont été émis, le texte est resté bloqué. **ADAPTER** seulement README, plan, roadmap, registre, audit matériel et preuves Qwen ; **CRÉER** uniquement le rapport. Ni second juge, ni correctif de prompt isolé, ni projet tiers QuackNav/M9/Twin/Quacksat, ni pilotage OEM/SQLite ajouté. La classification de céramique est incertaine et la proposition expérimentale manque de témoin indépendant.
+
+
 **QW-QUAL-1C — réutilisation après preuve PC `scene_a` (29/10/2026) :** [rapport](qw-qual1c-scene-a-real-qwen-human-review-2026-10-29.md). **RÉUTILISER sans changement** les dessins originaux, rôle Qwen v2, client Ollama local, `qwen9b_semantic_quality`, drapeaux humains et blocage `qwen9b_action_guard` ; la sortie 48,109 s / 173 tokens a bien les drapeaux `untrusted_motor_reference` et `unspecified_motor_mention`. **ADAPTER** les preuves de qualité et de causalité dans la documentation ; **CRÉER** uniquement un compte rendu. **NE PAS INTÉGRER** second évaluateur, nouveau prompt/model, QuackNav/M9/Twin/Quacksat, moteur OEM, SQLite, pilote ou dépendance nouvelle sur une seule scène.
 
 
