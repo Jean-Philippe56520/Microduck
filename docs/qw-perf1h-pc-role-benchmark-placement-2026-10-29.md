@@ -1,5 +1,8 @@
 # QW-PERF-1H — Banc PC du rôle Qwen 9B avec placement Ollama observé
 
+**État post-fusion vérifié le 29/10/2026 :** [PR #158 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/158) avec commit squash `b558007a565f4ca0fb83cef75b3eae3da59c010f`, [CI Python #40857661598](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40857661598) et [inventaire N1 #40857661522](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40857661522) verts. Le premier contrôle CI avait relevé une régression du texte d'un garde-fou PowerShell historique ; le correctif maintient le test `if ($VisionCheck -and $Image)` et ajoute un garde-fou séparé pour `PerfCheck`. Les contrôles finaux sont verts. **Aucun Qwen réel, GPU, Mac/Windows PowerShell exécuté ni robot testé par ces CI.** Le protocole initial ci-dessous s'applique maintenant à la version fusionnée et requiert toujours l'accord de l'opérateur.
+
+
 **Date :** 29 octobre 2026. **Autorité :** [plan-action.md](plan-action.md). **Statut initial :** code candidat sur branche dédiée, tests PC-fixtures en CI à vérifier ; **aucun essai réel QW-PERF-1H encore exécuté sur le PC Windows**. Base : main@85b802b43034c1af1f679acc2186ef3607094d43, [PR #157 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/157). OEM épinglé documenté : microduck@942e58e3aa6dbb28e7037203fff11866122c7567 et microduck_rl@b02fdea4902c2b93b7d34a83a6f05da4ececb7d3 ; gitlinks inchangés.
 
 ## 1. Observation → hypothèse → preuve → échec → risque / retour arrière
