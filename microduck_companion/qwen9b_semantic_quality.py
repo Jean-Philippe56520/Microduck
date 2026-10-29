@@ -239,10 +239,11 @@ def main(argv: list[str] | None = None) -> int:
             if (args.case is None or not target.is_absolute() or
                     target.suffix.lower() != ".png"):
                 parser.error("explicit preview needs --case and absolute PNG path")
+            image = make_synthetic_png(args.case)
             try:
                 # Exclusive creation: refuse an existing file or symlink.
                 with target.open("xb") as output:
-                    output.write(make_synthetic_png(args.case))
+                    output.write(image)
             except OSError:
                 parser.error("unable to create new synthetic preview; no overwrite")
             catalog["synthetic_preview_exported_explicitly"] = True
