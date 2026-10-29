@@ -1,5 +1,8 @@
 # QW-GOAL-0 — Qwen guide les objectifs motivés de Kwipi, sans rareté arbitraire
 
+**QW-QUAL-1F — retour du vrai Qwen sur la perception active, 29/10/2026 :** [bilan](qw-qual1f-four-scenes-decision-2026-10-29.md) ; [critère `scene_d` prédéfini et appliqué](qw-qual1f-scene-d-real-qwen-review-2026-10-29.md). Le rôle v2 n'a pas spontanément proposé de rechercher le contour masqué via autre angle sur le seul dessin d'occlusion testé, mais a proposé approche/contact `ground_pick` ; la possibilité QW-GOAL-0 d'interroger le PC depuis une **vraie nouvelle vue distincte reste prévue, non câblée**. Choix recommandé : Kwipi **local** détermine s'il faut un indice nouveau et peut choisir inaction ; Qwen **facultatif** donne du sens à l'indice **sans ordre moteur**, et `category_inspection.py` n'est qu'un prototype mock. Aucun `robot.look` ciblé, marche/contournement OEM ou caméra/sol validé, ni changement de prompt v2 dans ce lot.
+
+
 **QW-QUAL-1E — test préenregistré des questions de point de vue (29/10/2026, avant consultation Qwen) :** [grille `scene_d`](qw-qual1e-scene-d-viewpoint-preregistration-2026-10-29.md). La possibilité QW-GOAL-0 « demander une analyse sous un angle réellement différent » demeure **prévue et non raccordée** : le prompt Qwen v2 actuel n'exige pas explicitement de meilleur angle et ne doit pas être modifié avant l'essai. Vérifier d'abord si le modèle propose **spontanément** quel indice compléter, une autre prise conditionnelle ou une abstention ; si une locomotion ou orientation ciblée est suggérée, la classer comme hypothèse non exécutable sous sûreté OEM inconnue. `IdleHead` non ciblé et `category_inspection.py` fictif ne fournissent pas d'acte de perception active réel.
 
 

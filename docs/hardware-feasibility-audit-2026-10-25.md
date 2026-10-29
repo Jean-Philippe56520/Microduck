@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**QW-QUAL-1F — clôture du premier lot qualitatif PC (29/10/2026) :** [quatre sorties et limites](qw-qual1f-four-scenes-decision-2026-10-29.md), dont `scene_d` **45,546 s / 191 tokens**. Les durées de 37,063 s (`b`), 48,109 s (`a`), 44,140 s (`c`) et 45,546 s (`d`) proviennent de **stimuli et nombres de tokens différents** : ni comparaison CPU/GPU, ni latence typique, ni p50/p95. **CPU%, GPU%, RAM/RSS, chaleur et énergie non mesurés dans ces quatre JSON ; le backend actif n'est pas identifiable**. Les conseils de plusieurs dizaines de secondes restent facultatifs sur PC et hors boucle `robotd` 50 Hz. Aucun indicateur de faisabilité RK3566, de déplacement sûr ou de capteur OEM réel n'en découle, aucune installation/driver/ONNX modifiés.
+
+
 **QW-QUAL-1D — latence réelle du 9B sur troisième dessin synthétique, 29/10/2026 :** [rapport](qw-qual1d-scene-c-real-qwen-human-review-2026-10-29.md), **44,140 s pour 192 tokens** avec `status=unverified`, code 0 ; aucune mesure GPU/RSS/température/énergie, backend et SHA Windows inconnus. Ce chiffre n'est pas comparable en speedup aux 37,063 s/114 tokens (`scene_b`) et 48,109 s/173 tokens (`scene_a`) ; sujets et sorties différents. **Aucun dimensionnement RK3566, exécution embarquée ni interruption/validation de la boucle moteur 50 Hz** ; conseiller PC facultatif seulement.
 
 

@@ -1,5 +1,8 @@
 # Kwipi — plan d'apprentissage autonome par l'expérience (EX)
 
+**QW-QUAL-1F — frontière du conseiller et de l'apprentissage (29/10/2026) :** [synthèse de quatre vrais appels PC](qw-qual1f-four-scenes-decision-2026-10-29.md). Qwen peut évoquer catégories, hypothèses, doute et observation passive ; mais sur les dessins `a/b/c/d`, **effet mesurable indépendant, fin OEM, relation de contenance, meilleure vue et causalité ne sont pas validés**. `scene_d` ne propose pas spontanément de changer de vue pour dévoiler le contour masqué ; une approche `ground_pick` n'est pas une expérience sûreté/effet démontrée. **Le texte reste `machine_use=blocked`, 0 écriture ExperienceMemory, 0 action**. Kwipi local doit décider de demander un indice supplémentaire (les hints de `category_inspection.py` sont fictifs), garder `unknown`, consentement/quotas/repli sans PC, ne créer aucun souvenir causal sans action terminée et effet mesuré indépendamment. Revue humaine aveugle et nouvelles scènes avant toute proposition de rôle v3.
+
+
 **QW-QUAL-1D — la chaîne « sens → hypothèse → effet » reste incomplète (29/10/2026, vrai 9B PC) :** [troisième essai `scene_c`](qw-qual1d-scene-c-real-qwen-human-review-2026-10-29.md), 44,140 s / 192 tokens. Une forme textile possible a été interprétée comme céramique cassée ; Qwen décrit un récipient, mais n'établit pas d'usage conditionnel fiable avec l'objet et imagine un son par simple approche. L'inaction et l'incertitude restent des pistes positives. **Aucun `ground_pick` exécuté, aucun transport, aucune conséquence causale ni souvenir enregistré** : `machine_use=blocked`, mémoire 0, moteur 0. Trois dessins ne suffisent pas à conclure à l'apprentissage ; revue indépendante requise avant intégration QW-1/QW-2.
 
 

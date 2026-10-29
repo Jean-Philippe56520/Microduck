@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**QW-QUAL-1F — décision réutiliser/adapter/créer après quatre sorties réelles (29/10/2026) :** [bilan](qw-qual1f-four-scenes-decision-2026-10-29.md). **RÉUTILISER, baseline gelée** : `qwen9b_production_role_v2.py`, `qwen9b_semantic_quality.py`, garde `screen_preview_text`, `category_inspection.py` sur indices fictifs. **ADAPTER uniquement** le protocole de contre-lecture indépendante, scènes inédites et documents d'autorité ; une variante de rôle v3 reste **envisagée, non livrée**, après critères d'évaluation fixés. **NE PAS CRÉER** de second pilote, validateur autonome à mots clés, deuxième SQLite, service réseau, nouveau modèle, QuackNav/M9/Twin/Quacksat, moteur OEM ou navigation. `scene_d` ne propose pas de meilleure vue spontanée, et le conseil physique `ground_pick`/approche n'autorise rien ; 4/4 sorties du banc `machine_use=blocked`, aucune action ni apprentissage réel.
+
+
 **QW-QUAL-1D — stratégie de réemploi confirmée après un vrai essai sur `scene_c` (29/10/2026) :** [rapport](qw-qual1d-scene-c-real-qwen-human-review-2026-10-29.md). **RÉUTILISER** `qwen9b_semantic_quality.py`, rôle v2, `screen_preview_text` QW-QUAL-1B et grille QW-QUAL-1A ; les deux avertissements de revue humaine ont été émis, le texte est resté bloqué. **ADAPTER** seulement README, plan, roadmap, registre, audit matériel et preuves Qwen ; **CRÉER** uniquement le rapport. Ni second juge, ni correctif de prompt isolé, ni projet tiers QuackNav/M9/Twin/Quacksat, ni pilotage OEM/SQLite ajouté. La classification de céramique est incertaine et la proposition expérimentale manque de témoin indépendant.
 
 
