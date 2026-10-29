@@ -32,6 +32,7 @@ class CandidateRegionTests(unittest.TestCase):
         items = decode_candidates(raw, width=416, height=416,
                                   max_results=5)
         self.assertEqual(len(items), 3)
+        self.assertEqual(decode_candidates(raw, width=416, height=416), items)
         self.assertEqual([r["untrusted_coco_class_index"] for r in items],
                          [49, 0, 32])
         self.assertEqual(items[:1],
