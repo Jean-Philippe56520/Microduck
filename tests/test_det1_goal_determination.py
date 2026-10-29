@@ -40,7 +40,8 @@ class DET1DeterminationTests(unittest.TestCase):
     def setUp(self):
         scratch = tempfile.TemporaryDirectory()
         self.addCleanup(scratch.cleanup)
-        self.memory = ExperienceMemory(Path(scratch.name) / "only.sqlite3")
+        self.path = Path(scratch.name) / "only.sqlite3"
+        self.memory = ExperienceMemory(self.path)
         self.addCleanup(self.memory.close)
         self.journal = PassiveObservationJournal(self.memory)
         self.ledger = MockExperienceLedger(self.memory)
@@ -253,6 +254,281 @@ class DET1DeterminationTests(unittest.TestCase):
             brain.propose_balanced_passive(
                 read("dog", "ball"), journal=self.journal, goals="bad",
                 now_monotonic_s=100.1, now_wall_epoch_s=WALL+1)
+
+
+    def _det2_link_initial_dog(self):
+        self.add_goal()
+        self.ledger.record_proposal(
+            PassiveIntent("observe", "fictional_first", "object_label", "dog"),
+            session=SESSION, sequence=1, proposed_at_epoch_s=WALL+.5)
+        self.goals.link_attempt(
+            goal_id=GOAL_DOG, session=SESSION, sequence=1,
+            strategy="observe_from_distance", context="initial",
+            at_epoch_s=WALL+.75)
+
+    def _det2_brain(self, *, determination=1., curiosity=.75,
+                    caution=.35, energy=.8, play=.6):
+        return AutonomyBrain(self.memory, Motivations(
+            determination=determination, curiosity=curiosity,
+            caution=caution, energy=energy, play=play))
+
+    def _det2_tick(self, brain, frame, *, wall=WALL+1, mono=100.1,
+                   guarded=True, pacing=False):
+        return brain.propose_balanced_passive(
+            frame, journal=self.journal, goals=self.goals,
+            guard_attempted_goals=guarded, personality_pacing=pacing,
+            now_monotonic_s=mono, now_wall_epoch_s=wall)
+
+    def test_det2_paired_attempted_goal_stops_automatic_repetition(self):
+        self._det2_link_initial_dog()
+        control=self._det2_brain()
+        guarded=self._det2_brain()
+        before=self.memory.conn.total_changes
+        a=self._det2_tick(control, read("dog"), guarded=False)
+        b=self._det2_tick(guarded, read("dog"), guarded=True)
+        self.assertEqual(("observe","dog"),
+                         (a.intention,a.target_category))
+        self.assertEqual(("idle",None),
+                         (b.intention,b.target_category))
+        self.assertEqual(before,self.memory.conn.total_changes)
+        self.assertEqual(0,b.motor_commands_issued)
+        self.assertFalse(b.executed)
+        self.assertFalse(b.request_pc_analysis)
+        advice=self.goals.retry_attention(now_wall_epoch_s=WALL+1)
+        self.assertEqual(frozenset({("observe","dog")}),advice.held)
+        self.assertEqual((),advice.resume_once)
+        self.assertFalse(advice.physical_effect_verified)
+        self.assertFalse(advice.independent_new_view_verified)
+        # A different, freshly eligible category must remain available.
+        distinct=self._det2_tick(
+            self._det2_brain(),read("dog","ball"),guarded=True)
+        self.assertEqual(("observe","ball"),
+                         (distinct.intention,distinct.target_category))
+
+    def test_det2_suspended_goal_without_attempt_is_still_on_hold(self):
+        self.add_goal(state="suspended")
+        p=self._det2_tick(self._det2_brain(),read("dog"))
+        self.assertEqual("idle",p.intention)
+        self.assertEqual(frozenset({("observe","dog")}),
+                         self.goals.retry_attention(
+                             now_wall_epoch_s=WALL+1).held)
+
+    def test_det2_explicit_mock_resume_one_proposal_then_hold_until_new_link(self):
+        self._det2_link_initial_dog()
+        self.goals.transition(
+            goal_id=GOAL_DOG,expected_revision=2,next_state="suspended",
+            reason="repeat_blocked",at_epoch_s=WALL+.8)
+        self.assertEqual("idle",self._det2_tick(
+            self._det2_brain(),read("dog")).intention)
+        # This is a declared MOCK context transition, not proof of a new view.
+        self.goals.transition(
+            goal_id=GOAL_DOG,expected_revision=3,next_state="active",
+            reason="new_view",at_epoch_s=WALL+.9)
+        advice=self.goals.retry_attention(now_wall_epoch_s=WALL+1)
+        self.assertEqual((),tuple(advice.held))
+        self.assertEqual((("observe","dog",GOAL_DOG,4),),
+                         advice.resume_once)
+        brain=self._det2_brain()
+        before=self.memory.conn.total_changes
+        one=self._det2_tick(brain,read("dog"))
+        self.assertEqual(("observe","det2_mock_resumed_strategy_unverified"),
+                         (one.intention,one.reason))
+        self.assertEqual(before,self.memory.conn.total_changes)
+        later=self._det2_tick(
+            brain,read("dog",t=104.,seq=2),wall=WALL+5,mono=104.1)
+        self.assertEqual("idle",later.intention)
+        # The other MEM-1 strategy is recorded EXPLICITLY, never by F2.
+        self.ledger.record_proposal(
+            PassiveIntent("observe","fictional_new_strategy",
+                          "object_label","dog"),
+            session=SESSION,sequence=2,proposed_at_epoch_s=WALL+5.5)
+        self.goals.link_attempt(
+            goal_id=GOAL_DOG,session=SESSION,sequence=2,
+            strategy="observe_over_time",context="new_view",
+            at_epoch_s=WALL+5.75)
+        self.goals.transition(
+            goal_id=GOAL_DOG,expected_revision=4,next_state="suspended",
+            reason="repeat_blocked",at_epoch_s=WALL+6)
+        self.goals.transition(
+            goal_id=GOAL_DOG,expected_revision=5,next_state="active",
+            reason="new_view",at_epoch_s=WALL+7)
+        self.assertEqual(frozenset({("observe","dog")}),
+                         self.goals.retry_attention(
+                             now_wall_epoch_s=WALL+8).held)
+        third=self._det2_tick(
+            self._det2_brain(),read("dog",t=108.,seq=3),
+            wall=WALL+8,mono=108.1)
+        self.assertEqual("idle",third.intention)
+
+    def test_det2_retracted_link_cannot_erase_attempt_or_restore_goal_focus(self):
+        self._det2_link_initial_dog()
+        self.ledger.retract(
+            session=SESSION,sequence=1,reason="source_retracted")
+        brain=self._det2_brain()
+        guarded=self._det2_tick(brain,read("dog"))
+        self.assertEqual("idle",guarded.intention)
+        self.assertEqual("unavailable",self.goals.attempts(
+            GOAL_DOG)[0].mock_resolution)
+        # Withdrawing the goal removes its influence rather than reactivating it.
+        self.goals.retract(goal_id=GOAL_DOG,reason="source_retracted")
+        self.assertEqual(frozenset(),self.goals.retry_attention(
+            now_wall_epoch_s=WALL+1).held)
+        new_brain=self._det2_brain()
+        p=self._det2_tick(new_brain,read("dog"))
+        self.assertEqual(("observe","novel_mock_category"),
+                         (p.intention,p.reason))
+        self.assertEqual(0,self.memory.experience_count())
+
+    def test_det2_corrupt_or_future_goal_fails_closed_not_motor(self):
+        self._det2_link_initial_dog()
+        brain=self._det2_brain()
+        energy=brain.motives.energy
+        self.memory.conn.execute("DROP TABLE mem1_mock_goal_links")
+        self.memory.conn.commit()
+        p=self._det2_tick(brain,read("dog"))
+        self.assertEqual(("idle","det2_goal_history_unavailable"),
+                         (p.intention,p.reason))
+        self.assertEqual(energy,brain.motives.energy)
+        self.assertFalse(p.executed)
+        self.assertEqual(0,p.motor_commands_issued)
+
+    def test_det2_bad_flags_and_stale_or_untrusted_reads_fail_closed(self):
+        self.add_goal()
+        for flags in ({"guard_attempted_goals":1},
+                      {"guard_attempted_goals":True,
+                       "personality_pacing":"yes"}):
+            with self.assertRaises(TypeError):
+                AutonomyBrain(self.memory).propose_balanced_passive(
+                    read("dog"),journal=self.journal,goals=self.goals,
+                    now_monotonic_s=100.1,now_wall_epoch_s=WALL+1,**flags)
+        with self.assertRaises(ValueError):
+            AutonomyBrain(self.memory).propose_balanced_passive(
+                read("dog"),journal=self.journal,
+                guard_attempted_goals=True,
+                now_monotonic_s=100.1,now_wall_epoch_s=WALL+1)
+        for frame in (read("dog",source="sensor"),
+                      read("dog",environment="robot"),
+                      read("dog",status="unavailable_or_invalid"),
+                      read("dog",t=98.),read("dog",t=102.)):
+            with self.subTest(frame=frame):
+                brain=self._det2_brain()
+                prior=brain.motives.energy
+                p=self._det2_tick(brain,frame)
+                self.assertEqual("idle",p.intention)
+                self.assertEqual(prior,brain.motives.energy)
+
+    def test_per1_engagement_cost_paired_off_on_and_strong_motivation(self):
+        def brain(curiosity=.6, play=.6,caution=.4):
+            return self._det2_brain(
+                determination=0.,curiosity=curiosity,play=play,
+                caution=caution,energy=.8)
+        plain,low_cost=brain(),brain()
+        empty=read(t=100.,seq=1)
+        self.assertEqual("idle",self._det2_tick(
+            plain,empty,guarded=False,pacing=False).intention)
+        self.assertEqual("idle",self._det2_tick(
+            low_cost,empty,guarded=False,pacing=True).intention)
+        before=self.memory.conn.total_changes
+        next_frame=read("ball",t=101.,seq=2)
+        control=self._det2_tick(
+            plain,next_frame,wall=WALL+2,mono=101.1,
+            guarded=False,pacing=False)
+        paced=self._det2_tick(
+            low_cost,next_frame,wall=WALL+2,mono=101.1,
+            guarded=False,pacing=True)
+        self.assertEqual(("observe","ball"),
+                         (control.intention,control.target_category))
+        self.assertEqual(("idle",None),
+                         (paced.intention,paced.target_category))
+        self.assertEqual(before,self.memory.conn.total_changes)
+        # Reuse existing PD2: post-F2 affect cannot select another action.
+        from microduck_companion.behavior_continuity import MockBehaviorSituation
+        portrait=low_cost.describe_behavior(
+            paced,journal=self.journal,now_wall_epoch_s=WALL+2)
+        disposition=low_cost.describe_behavior_continuity(
+            portrait,situation=MockBehaviorSituation(),
+            now_monotonic_s=101.1)
+        self.assertEqual(("Chill","Chill"),
+                         (portrait.state,disposition.state))
+        self.assertFalse(disposition.physical_execution_authorized)
+        self.assertEqual(0,disposition.motor_commands_issued)
+        strong=brain(curiosity=1.,play=1.,caution=.05)
+        self._det2_tick(strong,empty,guarded=False,pacing=True)
+        strong_choice=self._det2_tick(
+            strong,next_frame,wall=WALL+2,mono=101.1,
+            guarded=False,pacing=True)
+        self.assertEqual("observe",strong_choice.intention)
+
+    def test_per1_rest_and_source_safety_preempt_any_engagement(self):
+        for flag in (False,True):
+            brain=self._det2_brain(energy=.15)
+            prior=self.memory.conn.total_changes
+            p=self._det2_tick(
+                brain,read("ball"),guarded=False,pacing=flag)
+            self.assertEqual("rest",p.intention)
+            self.assertEqual(0,p.motor_commands_issued)
+            self.assertEqual(prior,self.memory.conn.total_changes)
+            bad=self._det2_tick(
+                brain,read("ball",source="sensor",t=101.,seq=2),
+                wall=WALL+2,mono=101.1,guarded=False,pacing=flag)
+            self.assertEqual("idle",bad.intention)
+            self.assertFalse(bad.executed)
+
+
+
+    def test_det2_restart_preserves_attempt_hold_without_second_database(self):
+        self._det2_link_initial_dog()
+        self.memory.close()
+        reopened=ExperienceMemory(self.path)
+        try:
+            journal=PassiveObservationJournal(reopened)
+            store=MockGoalMemory(reopened,MockExperienceLedger(reopened))
+            brain=AutonomyBrain(reopened,Motivations(determination=1.))
+            before=reopened.conn.total_changes
+            proposal=brain.propose_balanced_passive(
+                read("dog"),journal=journal,goals=store,
+                guard_attempted_goals=True,
+                now_monotonic_s=100.1,now_wall_epoch_s=WALL+1)
+            self.assertEqual("idle",proposal.intention)
+            self.assertEqual(before,reopened.conn.total_changes)
+            self.assertEqual(0,proposal.motor_commands_issued)
+            self.assertFalse(proposal.executed)
+        finally:
+            reopened.close()
+
+    def test_det2_resume_grant_is_explicitly_not_durable_after_restart(self):
+        self._det2_link_initial_dog()
+        self.goals.transition(
+            goal_id=GOAL_DOG,expected_revision=2,next_state="suspended",
+            reason="repeat_blocked",at_epoch_s=WALL+.8)
+        self.goals.transition(
+            goal_id=GOAL_DOG,expected_revision=3,next_state="active",
+            reason="new_view",at_epoch_s=WALL+.9)
+        plan=self._det2_tick(self._det2_brain(),read("dog"))
+        self.assertEqual("det2_mock_resumed_strategy_unverified",plan.reason)
+        self.memory.close()
+        reopened=ExperienceMemory(self.path)
+        try:
+            journal=PassiveObservationJournal(reopened)
+            store=MockGoalMemory(reopened,MockExperienceLedger(reopened))
+            brain=AutonomyBrain(reopened,Motivations(determination=1.))
+            before=reopened.conn.total_changes
+            next_plan=brain.propose_balanced_passive(
+                read("dog"),journal=journal,goals=store,
+                guard_attempted_goals=True,
+                now_monotonic_s=100.1,now_wall_epoch_s=WALL+1)
+            # The one-shot guarantee is process-local and MUST NOT be used
+            # as a physical retry budget without an explicit persisted receipt.
+            self.assertEqual("det2_mock_resumed_strategy_unverified",
+                             next_plan.reason)
+            self.assertFalse(next_plan.executed)
+            self.assertEqual(0,next_plan.motor_commands_issued)
+            self.assertEqual(before,reopened.conn.total_changes)
+            self.assertEqual(1,len(store.attempts(GOAL_DOG)))
+            self.assertFalse(store.attempts(GOAL_DOG)[0].physical_effect_verified)
+        finally:
+            reopened.close()
+
 
 
 if __name__ == "__main__":

@@ -29,6 +29,9 @@ MIN_CYCLE_GAP_S = 0.5
 ATTENTION_COOLDOWN_S = 3.0
 # DET-1 influences only existing fresh passive candidates, never eligibility.
 MAX_DETERMINATION_FOCUS_BIAS = 0.18
+# PER-1: optional cognitive friction after a quiet proposal.
+ENGAGEMENT_COST_AFTER_IDLE = 0.12
+MAX_MOCK_RESUMES_PER_PROCESS = 64  # not a persistent or physical retry quota
 REST_ENTER_ENERGY = 0.22
 REST_EXIT_ENERGY = 0.34
 REST_GAIN_PER_TICK = 0.04
@@ -73,6 +76,7 @@ class PassiveRhythm:
                         ("observe", "inspect", "listen", "idle", "rest")}
         self._cooldown_blocks = 0
         self._active_repeats = 0
+        self._det2_resumes_proposed: set[tuple[str, int]] = set()
 
     def metrics(self, motivations: Motivations) -> PassiveRhythmMetrics:
         if not isinstance(motivations, Motivations):
@@ -131,7 +135,9 @@ class PassiveRhythm:
              learning: PassiveLearning | None = None,
              behavioral: BehavioralMemory | None = None,
              expectations: MockAttentionTrends | None = None,
-             goals: object | None = None) -> PassiveIntent:
+             goals: object | None = None,
+             guard_attempted_goals: bool = False,
+             personality_pacing: bool = False) -> PassiveIntent:
         """One strictly passive, mock-only cognitive cycle.
 
         F2-A validation is called *inside* this module. The caller cannot
@@ -144,6 +150,11 @@ class PassiveRhythm:
             raise TypeError("expected F1-C passive journal")
         if not isinstance(motivations, Motivations):
             raise TypeError("expected existing motivations")
+        if (type(guard_attempted_goals) is not bool
+                or type(personality_pacing) is not bool):
+            raise TypeError("DET-2 / PER-1 options require boolean flags")
+        if guard_attempted_goals and goals is None:
+            raise ValueError("DET-2 needs the existing goal memory")
         if learning is not None:
             if not isinstance(learning, PassiveLearning):
                 raise TypeError("expected optional F2-C passive learning")
@@ -241,6 +252,7 @@ class PassiveRhythm:
                       + 0.25 * (1.0 - motivations.energy))
         best_score, best_proposal = idle_score, self._idle(
             "no_high_scoring_passive_attention")
+        best_resume_token: tuple[str, int] | None = None
         candidates: list[tuple[str, str, str, str]] = []
         for obs in observations:
             if obs.kind == "object_label":
@@ -271,6 +283,25 @@ class PassiveRhythm:
             }:
                 candidates.append(("listen", "sound_label", obs.category,
                                    "fictional_sound_category"))
+
+        # DET-2 is separately opt-in. It only withholds already admissible
+        # current F2 candidates or grants one process-local proposal after
+        # an explicit MEM-1 MOCK resumption, not a physical new-view proof.
+        det2_held: frozenset[tuple[str, str]] = frozenset()
+        det2_resume: dict[tuple[str, str], tuple[str, int]] = {}
+        if guard_attempted_goals and candidates:
+            try:
+                advice = goals.retry_attention(
+                    now_wall_epoch_s=now_wall_epoch_s)
+                det2_held = advice.held
+                det2_resume = {
+                    (verb, category): (goal_id, revision)
+                    for verb, category, goal_id, revision in advice.resume_once
+                }
+            except (sqlite3.Error, ValueError, OverflowError):
+                return self._record(self._idle("det2_goal_history_unavailable"),
+                                    motivations=motivations,
+                                    update_energy=False)
 
         # DET-1 is opt-in; never generates an intention from memory alone.
         # MEM-1 returns only *active, unattempted* fixture goals. A prior
@@ -314,6 +345,14 @@ class PassiveRhythm:
             if key in seen:
                 continue
             seen.add(key)
+            attention_key = (intention, category)
+            if attention_key in det2_held:
+                continue
+            resume_token = det2_resume.get(attention_key)
+            if resume_token is not None and (
+                    resume_token in self._det2_resumes_proposed
+                    or len(self._det2_resumes_proposed) >= MAX_MOCK_RESUMES_PER_PROCESS):
+                continue
             if self._cooldown_until.get(key, 0.) > now:
                 self._cooldown_blocks += 1
                 continue
@@ -322,7 +361,7 @@ class PassiveRhythm:
             # Apply strictly AFTER existing F2 fresh-source and cooldown
             # gates. This can only rank proposals F2 already admitted.
             focused = (intention, category) in goal_focus
-            if focused:
+            if focused or resume_token is not None:
                 score += MAX_DETERMINATION_FOCUS_BIAS * motivations.determination
             if intention == "inspect":
                 score += outcome_bias  # <= +/-0.12, mock-only; no motor effect
@@ -340,16 +379,26 @@ class PassiveRhythm:
             # category used the same passive verb on the prior tick.
             if self._recent and self._recent[-1] == intention:
                 score -= 0.02
+            # PER-1 is an optional cost inside the single existing F2 score.
+            # PD2 remains the descriptive mood/inertia AFTER this decision.
+            if (personality_pacing and self._recent
+                    and self._recent[-1] in ("idle", "rest")):
+                score -= ENGAGEMENT_COST_AFTER_IDLE
             if score > best_score:
                 best_score = score
+                best_resume_token = resume_token
                 best_proposal = PassiveIntent(
                     intention,
-                    "det1_mock_goal_focus" if focused else reason,
+                    ("det2_mock_resumed_strategy_unverified"
+                     if resume_token is not None else
+                     "det1_mock_goal_focus" if focused else reason),
                     kind, category)
 
         if best_proposal.intention in _ACTIVE:
             key = (best_proposal.intention, best_proposal.target_kind,
                    best_proposal.target_category)
             self._cooldown_until[key] = now + ATTENTION_COOLDOWN_S
+            if best_resume_token is not None:
+                self._det2_resumes_proposed.add(best_resume_token)
         return self._record(best_proposal, motivations=motivations,
                             update_energy=True)

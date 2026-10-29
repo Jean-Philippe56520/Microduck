@@ -91,6 +91,18 @@ class MockGoalAttempt:
     motor_commands_issued: int = 0
 
 
+@dataclass(frozen=True)
+class MockGoalRetryAdvice:
+    """DET-2 cognitive proposals only; not an OEM execution or identity."""
+
+    held: frozenset[tuple[str, str]]
+    resume_once: tuple[tuple[str, str, str, int], ...]
+    source: str = SOURCE
+    independent_new_view_verified: bool = False
+    physical_effect_verified: bool = False
+    motor_commands_issued: int = 0
+
+
 class MockGoalMemory:
     """Persist goals and EX1 references on the existing mono-writer connection.
 
@@ -430,3 +442,53 @@ class MockGoalMemory:
                           else None),
             ))
         return tuple(result)
+
+    def retry_attention(self, *, now_wall_epoch_s: float) -> MockGoalRetryAdvice:
+        """Read-only DET-2 continuation guard over MEM-1 and EX1 MOCK links.
+
+        Attempt references, including retracted/missing EX1 records, count as
+        having been proposed. A FICTITIOUS suspend/resume revision can nominate
+        one new strategy, but cannot prove new physical observations or execute
+        a gesture. Callers enforce at most one proposal per revision/process.
+        """
+        now = _epoch(now_wall_epoch_s)
+        held: set[tuple[str, str]] = set()
+        resume_candidates: dict[tuple[str, str], list[tuple[str, int]]] = {}
+        for goal in self.recent(limit=MAX_GOALS):
+            if (goal.updated_at_epoch_s > now
+                    or goal.created_at_epoch_s > now):
+                raise ValueError("future or inconsistent mock goal")
+            if now - goal.updated_at_epoch_s > MAX_FOCUS_AGE_S:
+                continue
+            if goal.state not in ("active", "suspended"):
+                continue
+            verb = ("observe" if goal.kind == "observe_category"
+                    else "inspect")
+            key = (verb, goal.category)
+            attempts = self.attempts(goal.goal_id)
+            if not attempts:
+                if goal.state == "suspended":
+                    held.add(key)  # Suspension alone forbids re-engagement.
+                continue  # DET-1 handles only never-attempted ACTIVE goals.
+            seen = {a.strategy for a in attempts}
+            unused = any(v == verb and s not in seen
+                         for s, v in STRATEGIES.items())
+            # The only accepted explicit fixture declaration is a newer
+            # active revision AFTER suspension, strictly AFTER the last link.
+            revised = (goal.state == "active" and goal.revision >= 4
+                       and goal.updated_at_epoch_s > max(
+                           a.linked_at_epoch_s for a in attempts))
+            if unused and revised:
+                resume_candidates.setdefault(key, []).append(
+                    (goal.goal_id, goal.revision))
+            else:
+                held.add(key)
+        resumes = []
+        for key, candidates in sorted(resume_candidates.items()):
+            if key in held or len(candidates) != 1:
+                # Two competing goals cannot both claim one new-view event.
+                held.add(key)
+                continue
+            goal_id, revision = candidates[0]
+            resumes.append((key[0], key[1], goal_id, revision))
+        return MockGoalRetryAdvice(frozenset(held), tuple(resumes))
