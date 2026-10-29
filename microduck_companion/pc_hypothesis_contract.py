@@ -221,17 +221,25 @@ def start_optional_pc_cycle(
     brain: AutonomyBrain, reading: PassiveRead, *,
     journal: PassiveObservationJournal,
     now_monotonic_s: float, now_wall_epoch_s: float,
+    goals: object | None = None,
+    guard_attempted_goals: bool = False,
+    personality_pacing: bool = False,
 ) -> OptionalPCAdvisory:
     """Choose locally first, even if the PC is absent or will hallucinate.
 
     Reuses the F2-B/F2-C-capable AutonomyBrain; there is no second scheduler.
-    Only fictional F1-B observations are eligible. No network I/O occurs.
+    The optional DET-2/PER-1 inputs are forwarded to the SAME F2 tick, not
+    introduced as a separate PC-side decision. The reply cannot change the
+    selected local intent. Only fictional F1-B observations are eligible.
+    No network I/O occurs.
     """
     if not isinstance(brain, AutonomyBrain):
         raise TypeError("existing AutonomyBrain required")
     local = brain.propose_balanced_passive(
         reading, journal=journal, now_monotonic_s=now_monotonic_s,
         now_wall_epoch_s=now_wall_epoch_s,
+        goals=goals, guard_attempted_goals=guard_attempted_goals,
+        personality_pacing=personality_pacing,
     )
     request = _prepare_request(reading, local, now_monotonic_s)
     return OptionalPCAdvisory(
