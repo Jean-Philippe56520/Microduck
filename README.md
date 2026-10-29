@@ -1,5 +1,7 @@
 # Microduck Companion
 
+**PER-OEM-0 — direction perception native validée en architecture (29/10/2026) :** [plan de chantier, critères et arrêts](docs/perception-oem-rknn-2hz-plan-2026-10-29.md). **Cible ferme : mediad/uyvy/duck-detect OEM → RKNN/NPU RK3566 → observations sourcées pour Kwipi ; robotd seul propriétaire des moteurs. Cadence de départ = 2 Hz** (une reconnaissance toutes les 500 ms), non plafond. **Détecteur OEM mono-classe Microduck désactivé par défaut** : choisir la cadence n'active aucune reconnaissance générale. Aucun modèle multicatégorie retenu : YOLOX témoin PC ; Rockchip YOLO11n non adopté après 0/4 balles sur le lot disjoint. **Étapes : GT indépendante à faible hauteur (Cat-A2b #78), sélection d'un modèle existant/licencié seulement si gain prouvé, adaptation OEM minimale sur accord, mesures NPU/RAM/chaleur/batterie/50 Hz sur robot.** Pas de code, nouveau pilote, réglage adaptatif 1/1,5 Hz, modèle ni sous-module modifié dans ce cadrage. B/C et les expériences autonomes sûres progressent en parallèle. **État : planifié, non codé/testé NPU ni validé robot.**
+
 **OEM-first RK-A1 — sélection multicatégorie arrêtée sur preuves (29/10/2026) :** [CI Rockchip YOLO11n/YOLOX](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40930605777), 18 images COCO val2017 publiques à boîtes indépendantes, **48 images des deux anciennes cohortes exclues**. Rockchip YOLO11n RK3566 annoncé, modèle ONNX 10,53 Mo SHA-256 `62a37516...18fc7705`, comparaison CPU inchangée vs Megvii YOLOX-Nano. **YOLO11n : 29 TP, 3 FP, 13 FN, AP50 macro 0,555115, CPU médian 33,985 ms ; YOLOX : 27 TP, 7 FP, 15 FN, AP50 0,546818, CPU 7,377 ms**. Pour **balle : 0/4 TP chacun**, **chaise : 2/7 chacun** ; le critère preregistré de progression (+0,03 AP50 et meilleur TP balle) **échoue**. **Décision STOP : ne remplacer aucun détecteur, ne créer aucun pilote/port RKNN, ne régler aucun seuil sur ce lot**. Code comparateur conservé uniquement sur une branche expérimentale (pas dans `main`), OEM `mediad` et `robotd` inchangés. Les classes COCO ne certifient pas réalité vs écran, ni petites vues basses ; droits de distribution des poids Ultralytics et ressources robot non validés. [Historique sources Rockchip](https://github.com/airockchip/rknn_model_zoo/tree/837db8e992815ff8647eadb709f07067f4bc3a71/examples/yolo11).
 
 
@@ -286,7 +288,7 @@ Sur Windows, le prototype Python peut être exécuté normalement. La simulation
 
 ## Architecture cible
 
-1. **Embarqué (Microduck)** : sécurité, mouvements, motivations, choix d'activités simples et mémoire essentielle.
+1. **Embarqué (Microduck)** : robotd pour moteurs/sûreté ; mediad/uyvy/RKNN-NPU à 2 Hz initiaux pour la perception quand un modèle compatible sera validé ; motivations, activités, mémoire essentielle.
 2. **PC local (facultatif)** : Qwen pour interpréter des images, suggérer des hypothèses et analyser les nouveautés.
 3. **GitHub** : conserver le code et les versions ; GitHub n'exécute pas l'IA.
 
