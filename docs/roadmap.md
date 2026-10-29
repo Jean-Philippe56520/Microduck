@@ -1,5 +1,7 @@
 # Feuille de route — Microduck Companion
 
+**MEM-2B (29/10/2026, candidat) :** [preuve de rappel sans écriture sur fixtures](mem2b-readonly-multiview-candidates-2026-10-29.md). 2 vues positives, 2 négatifs, imposteur identique, conflit, ambiguïté et reprise SQLite. **CI à vérifier**, aucune revendication de généralisation réelle ; ne pas confondre candidat M1-B avec individu ou objet physique prouvé.
+
 **Arbitrage anti-dérive du 29/10/2026 :** la [porte 0](development-reuse-protocol.md) et les [jalons actifs du plan](plan-action.md) sont prioritaires sur les historiques ci-dessous. **PR fusionnée ≠ capacité prouvée ; tests fictifs ≠ perception/action réelle.** QW-QUAL-2A/#169–171 : outil de collecte documenté et codé mais aucune relecture indépendante, désormais **en sommeil sans récupération de JSON supplémentaires** ; cela ne bloque pas MEM-2B, Cat-A2b ni un protocole prospectif sur scènes Qwen inédites. Prochain **lot technique candidat** : mesurer sur scénarios comparables l'apport réel du rappel mémoire versus sans rappel et compter les confusions/abstentions. Aucun changement moteur, ONNX ou modèle par cet arbitrage.
 
 
