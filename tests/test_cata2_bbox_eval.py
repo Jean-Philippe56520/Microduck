@@ -275,6 +275,25 @@ class CocoBoxContracts(unittest.TestCase):
 
     @unittest.skipUnless(
         __import__("importlib").util.find_spec("numpy"),"NumPy optional")
+    def test_boundary_reprojection_is_clamped_after_float_scale(self):
+        import numpy as np
+        # 416 * (417 / 416) may exceed 417 by one floating ULP.
+        raw=np.zeros((1,3549,85),dtype=np.float32)
+        raw[0,0,:4]=[53.,2.,2.,2.]
+        raw[0,0,4]=.95
+        raw[0,0,5+56]=.90
+        pred=decode_boxes(raw,width=417,height=32)
+        self.assertEqual(1,len(pred))
+        self.assertEqual("chair",pred[0].category)
+        self.assertEqual(417.,pred[0].xyxy[2])
+        self.assertTrue(all(0 <= v <= bound for v,bound in zip(
+            pred[0].xyxy,(417,32,417,32))))
+        self.assertEqual(1,evaluate_localization((
+            (sample(10,box("chair",0,0,200,100)),()),
+        ))["fn_iou50"])
+
+    @unittest.skipUnless(
+        __import__("importlib").util.find_spec("numpy"),"NumPy optional")
     def test_letterbox_padding_is_excluded_from_detection(self):
         import numpy as np
         raw=np.zeros((1,3549,85),dtype=np.float32)
