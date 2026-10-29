@@ -154,6 +154,8 @@ class PerfPlacementTests(unittest.TestCase):
             "if ($PerfCheck -and -not $AuthorizeFiveSyntheticCalls)",
             "if ($AuthorizeFiveSyntheticCalls -and -not $PerfCheck)",
             "if ($PerfCheck -and $Port -ne 11435)",
+            "if ($VisionCheck -and $Image)",
+            "if ($PerfCheck -and $Image)",
             "Get-NetTCPConnection -LocalPort $Port -State Listen",
             "--run --authorize-five-synthetic-calls",
             "-m microduck_companion.qwen9b_perf_probe",
