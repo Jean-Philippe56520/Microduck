@@ -57,7 +57,7 @@ La **deuxième commande** n'est à lancer qu'après vérification que le modèle
 
 ## Première mesure QW-1A sur le vrai Qwen3.5 9B — 29 octobre 2026
 
-**Provenance :** sortie JSON et extrait des explications fournis par l'opérateur depuis Windows `C:\Users\Jp\Microduck-QW1A`, sur le code `main@01c38830` après la [PR #178](https://github.com/Jean-Philippe56520/Microduck/pull/178). L'API locale Ollama répondait sur `127.0.0.1:11434` et annonçait le modèle `qwen3.5:9b`. Le port initialement choisi `11435` était inaccessible, d'où un premier échec de **transport** distinct de la mesure exploitable. Le **dry-run** `not_run` avait confirmé `memory_disabled.prior_proposals=[]` et `memory_enabled.prior_proposals=["observe_from_distance"]`.
+**Provenance :** sortie JSON et extrait des explications fournis par l'opérateur depuis une copie locale de Microduck sur Windows, sur le code `main@01c38830` après la [PR #178](https://github.com/Jean-Philippe56520/Microduck/pull/178). L'API locale Ollama répondait sur `127.0.0.1:11434` et annonçait le modèle `qwen3.5:9b`. Le port initialement choisi `11435` était inaccessible, d'où un premier échec de **transport** distinct de la mesure exploitable. Le **dry-run** `not_run` avait confirmé `memory_disabled.prior_proposals=[]` et `memory_enabled.prior_proposals=["observe_from_distance"]`.
 
 | Mesure réelle opérateur — 1 appel par condition | Sans mémoire (A) | Avec mémoire (B) |
 | --- | --- | --- |
