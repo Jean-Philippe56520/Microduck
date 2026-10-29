@@ -110,43 +110,54 @@ def _crop_to_box_mask(box, w, h):
     return result
 
 
-def _max_80_match(raw, imgw, imgh, gt_box):
-    """One fixed 0.25-score pass, 80 pretrained COCO names, no tuned class."""
+MAX_PROPOSALS_PER_IMAGE = 5
+
+def _propose_80(raw, imgw, imgh):
+    """Independent image-to-box proposals before any GT consultation.
+
+    One existing YOLOX raw head, fixed threshold, class-agnostic NMS 0.50,
+    top 5.  The COCO category remains a *hint*, not a verified object label.
+    """
     import numpy as np
     a = np.asarray(raw)
-    if a.shape != (1, 3549, 85) or not np.isfinite(a).all():
+    if a.shape != (1,3549,85) or not np.isfinite(a).all():
         raise ValueError("not the pinned YOLOX head")
-    a = a[0]
-    scores = a[:, 4, None] * a[:, 5:]
-    classes = np.argmax(scores, axis=1)
-    conf = scores[np.arange(len(scores)), classes]
-    selected = np.flatnonzero(conf >= MIN_SCORE)
-    selected = sorted(selected.tolist(), key=lambda k:(-float(conf[k]), k))[:160]
-    grid, stride = _grid()
-    ratio = min(SIZE / imgw, SIZE / imgh)
-    rw, rh = max(1, round(imgw*ratio)), max(1, round(imgh*ratio))
-    best = (0., None)
-    for k in selected:
-        with np.errstate(over="ignore", invalid="ignore"):
-            centre = (a[k, :2]+grid[k]) * stride[k]
-            sz = np.exp(a[k, 2:4]) * stride[k]
-        if not np.isfinite(centre).all() or not np.isfinite(sz).all():
+    a=a[0]
+    joint = a[:,4,None]*a[:,5:]
+    cls=np.argmax(joint,axis=1)
+    confidences=joint[np.arange(len(a)),cls]
+    candidates=np.flatnonzero(confidences>=MIN_SCORE)
+    candidates=sorted(candidates.tolist(),
+                      key=lambda i:(-float(confidences[i]),i))[:160]
+    grid,stride=_grid()
+    ratio=min(SIZE/imgw,SIZE/imgh)
+    rw,rh=max(1,round(imgw*ratio)),max(1,round(imgh*ratio))
+    accepted=[]
+    for k in candidates:
+        with np.errstate(over="ignore",invalid="ignore"):
+            centre=(a[k,:2]+grid[k])*stride[k]
+            size=np.exp(a[k,2:4])*stride[k]
+        if not np.isfinite(centre).all() or not np.isfinite(size).all():
             continue
-        x1 = float(np.clip(centre[0]-sz[0]/2,0,rw)*imgw/rw)
-        y1 = float(np.clip(centre[1]-sz[1]/2,0,rh)*imgh/rh)
-        x2 = float(np.clip(centre[0]+sz[0]/2,0,rw)*imgw/rw)
-        y2 = float(np.clip(centre[1]+sz[1]/2,0,rh)*imgh/rh)
-        if x2 <= x1 or y2 <= y1:
+        xyxy=(
+            float(np.clip(centre[0]-size[0]/2,0,rw)*imgw/rw),
+            float(np.clip(centre[1]-size[1]/2,0,rh)*imgh/rh),
+            float(np.clip(centre[0]+size[0]/2,0,rw)*imgw/rw),
+            float(np.clip(centre[1]+size[1]/2,0,rh)*imgh/rh),
+        )
+        if xyxy[2]-xyxy[0]<9 or xyxy[3]-xyxy[1]<9:
             continue
-        proposal = Box("person",(x1,y1,x2,y2),float(conf[k]))
-        gt = Box("person",tuple(float(v) for v in gt_box))
-        overlap = iou(proposal,gt)
-        if overlap > best[0]:
-            best=(overlap,{"xyxy":[x1,y1,x2,y2],
-                          "score":round(float(conf[k]),5),
-                          "coco_class_index":int(classes[k]),
-                          "iou_bbox":round(overlap,5)})
-    return best[1] if best[1] and best[0] >= .5 else None
+        proposed=Box("person",xyxy,float(confidences[k]))
+        if any(iou(proposed,p[0])>=.50 for p in accepted):
+            continue
+        accepted.append((proposed,int(cls[k])))
+        if len(accepted)>=MAX_PROPOSALS_PER_IMAGE:
+            break
+    return [
+        {"xyxy":list(box.xyxy),"score":round(box.confidence,5),
+         "unverified_coco_class_index":label}
+        for box,label in accepted
+    ]
 
 
 def run(annotation_path: Path, model_path: Path):
@@ -200,9 +211,20 @@ def run(annotation_path: Path, model_path: Path):
             tensor=prepare_image(sample,mode="original")
             raw=session.run(None,{"images":tensor})[0]
             fixed=decode_boxes(raw,width=case.width,height=case.height)
+            candidates=_propose_80(raw,case.width,case.height)
+            candidate_outputs=[]
+            for candidate in candidates:
+                tseg,predicted,_=grabcut_rectangle(rgb,candidate["xyxy"])
+                candidate_outputs.append({
+                    **candidate,
+                    "descriptor":tseg.get("descriptor"),
+                    "status":tseg["status"],
+                    "grabcut_ms_host":tseg.get("grabcut_ms"),
+                })
             frame_info.update({
                 "reference_target_boxes":0,
                 "yolox_supported_target_proposals":len(fixed),
+                "generic_proposals_without_gt_labels":candidate_outputs,
                 "other_coco_objects_may_exist":True,
             })
             records.append(frame_info)
@@ -238,13 +260,32 @@ def run(annotation_path: Path, model_path: Path):
         supported=decode_boxes(raw,width=case.width,height=case.height)
         best_supported=max((iou(b,Box(b.category,gtbox)) for b in supported),
                            default=0.)
-        any_match=_max_80_match(raw,case.width,case.height,gtbox)
-        predicted_descriptor=None
-        predicted_iou=None
-        if any_match is not None:
-            p,pm,_=grabcut_rectangle(rgb,any_match["xyxy"])
-            predicted_descriptor=p.get("descriptor")
-            predicted_iou=(mask_iou(pm,ground) if pm is not None else None)
+        proposals=_propose_80(raw,case.width,case.height)
+        # No GT enters detection, NMS, segmentation, or feature extraction.
+        all_descriptions=[]
+        for proposal in proposals:
+            result,predicted_mask,_=grabcut_rectangle(rgb,proposal["xyxy"])
+            all_descriptions.append({
+                "proposal":proposal,
+                "descriptor":result.get("descriptor"),
+                "status":result["status"],
+                "grabcut_ms_host":result.get("grabcut_ms"),
+                # Scoring only; does NOT choose a region for extraction.
+                "polygon_gt_iou_for_scoring":
+                    round(mask_iou(predicted_mask,ground),4)
+                    if predicted_mask is not None else None,
+                "gt_box_iou_for_scoring":
+                    round(iou(Box("person",tuple(proposal["xyxy"])),
+                              Box("person",gtbox)),4),
+            })
+        best_scored=max(
+            (r for r in all_descriptions if r["gt_box_iou_for_scoring"]>=.5),
+            key=lambda r:r["gt_box_iou_for_scoring"],default=None
+        )
+        any_match=best_scored["proposal"] if best_scored else None
+        predicted_descriptor=best_scored["descriptor"] if best_scored else None
+        predicted_iou=(best_scored["polygon_gt_iou_for_scoring"]
+                       if best_scored else None)
         pred_desc=oracle.get("descriptor")
         colors_ground={z["name"] for z in gt_ref.get("colors",[])[:1]}
         colors_pred={z["name"] for z in pred_desc.get("colors",[])[:1]} if pred_desc else set()
@@ -267,6 +308,8 @@ def run(annotation_path: Path, model_path: Path):
             "grabcut_ms_cpu":oracle.get("grabcut_ms"),
             "yolox_supported_class_bbox_iou_best":round(best_supported,4),
             "any_80_class_box_iou50_match":any_match,
+            "all_80_proposals_without_gt_selection":all_descriptions,
+            "proposals_considered_no_more_than":MAX_PROPOSALS_PER_IMAGE,
             "end_to_end_grabcut_gt_iou_if_matched":
               round(predicted_iou,4) if predicted_iou is not None else None,
             "end_to_end_shape_if_matched":
@@ -316,6 +359,17 @@ def run(annotation_path: Path, model_path: Path):
                                    r["grabcut_shape_approx"]=="round_like" for r in balls),
         "yolox_any_80_class_bbox_matches":sum(bool(r.get("any_80_class_box_iou50_match"))
                                            for r in evaluated),
+        "all_80_candidates_selected_without_gt":True,
+        "max_candidates_per_image":MAX_PROPOSALS_PER_IMAGE,
+        "end_to_end_scored_mask_IoU_median_conditional_on_detected_box":
+            round(statistics.median([
+                r["end_to_end_grabcut_gt_iou_if_matched"] for r in evaluated
+                if r.get("end_to_end_grabcut_gt_iou_if_matched") is not None
+            ]),4)
+            if any(r.get("end_to_end_grabcut_gt_iou_if_matched") is not None
+                   for r in evaluated) else None,
+        "independent_proposal_selection_note":
+            "GT used only after all proposed region descriptors have been computed",
         "yolox_5_target_class_bbox_matches":
             sum((r.get("yolox_supported_class_bbox_iou_best") or 0)>=.5 for r in evaluated),
         "median_grabcut_host_cpu_ms":round(statistics.median(times),3) if times else None,
