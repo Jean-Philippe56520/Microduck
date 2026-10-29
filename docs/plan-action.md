@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**QW-PERF-1C — porte matérielle actualisée (29/10/2026, diagnostic opérateur sans code) :** **Ollama 0.40.12 + AMD Radeon 860M + driver 32.0.22052.3** avec utilisation CPU 100 % lors des cinq essais QW-PERF-1B. La 860M est **absente de la liste ROCm Windows officielle**, sans exclure le chemin Vulkan ; l'issue Ollama #14562 décrit une détection défaillante sur **anciennes** versions et n'établit pas le diagnostic de ce PC. **Prochaine preuve : lire les lignes de détection GPU du `server.log` existant, sans arrêter le serveur ni changer pilote/paramétrage.** [Procédure et source](qw-perf1b-real-windows-9b-baseline-2026-10-29.md). Ensuite seulement, essai GPU unique, borné et réversible si justifié.
+
+
 **QW-PERF-1B — preuve opérateur du 29/10/2026 (PC réel, non reproduite indépendamment) :** [mesures et diagnostic matériel en lecture seule](qw-perf1b-real-windows-9b-baseline-2026-10-29.md). Cinq requêtes sur le vrai `qwen3.5:9b` au port Ollama `11434` ont réussi : **44,234 / 14,750 / 3,703 / 7,110 / 9,109 s** (respectivement v2 initial/répété, texte compact, JSON compact, JSON + contexte fictif). Caches et nombre de tokens expliquent des écarts ; **aucune qualité de conseil validée**. `ollama ps` affiche **100 % CPU** et `SIZE=6,2 GB`, sans identification indépendante GPU/RSS. Avant toute optimisation GPU ou changement Ollama : lire **version Ollama, nom exact GPU, DriverVersion** ; pas de changement de pilote/installation à l'aveugle. QW-1/QW-2 et expression physique restent distincts, protections OEM inchangées.
 
 
