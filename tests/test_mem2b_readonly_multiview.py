@@ -5,6 +5,8 @@ import unittest
 from pathlib import Path
 from microduck_companion.episodic_memory import ExperienceMemory
 from microduck_companion.category_semantics import CategorySemantics
+from microduck_companion.passive_memory import PassiveObservationJournal
+from microduck_companion.passive_learning import PassiveLearning
 from microduck_companion.multiview_pattern_memory import MultiviewPatternMemory, MultiviewLimits
 from microduck_companion.memory_recall import recall_memory
 from microduck_companion.compact_multimodal_memory import image_fingerprint
@@ -28,6 +30,8 @@ class Memory2BTests(unittest.TestCase):
         self.path=Path(self.tmp.name)/"one.sqlite3"
         self.db=ExperienceMemory(self.path)
         self.addCleanup(self.db.close)
+        PassiveObservationJournal(self.db)
+        PassiveLearning(self.db)
         self.sem=CategorySemantics(self.db)
         self.views=MultiviewPatternMemory(self.db)
         self.a=self.views.observe_image(square(),now_wall_epoch_s=NOW,category="object")
@@ -123,6 +127,8 @@ class Memory2BTests(unittest.TestCase):
         self.db.close()
         other=ExperienceMemory(self.path)
         try:
+            PassiveObservationJournal(other)
+            PassiveLearning(other)
             sem=CategorySemantics(other)
             mv=MultiviewPatternMemory(other)
             before=other.conn.total_changes
