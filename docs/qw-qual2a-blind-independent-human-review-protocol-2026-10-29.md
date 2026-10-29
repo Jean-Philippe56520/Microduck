@@ -1,5 +1,7 @@
 # QW-QUAL-2A — Porte de contre-annotation humaine indépendante (préparation uniquement)
 
+**Addendum QW-QUAL-2A-P2 (29/10/2026) :** [capture locale explicite depuis le presse-papiers Windows](qw-qual2a-clipboard-source-capture-2026-10-29.md) pour fournir au paquet P1 les **quatre JSON originaux si l'opérateur les retrouve**, sans interprétation ni relance Qwen. Un champ cohérent ne suffit pas à prouver leur authenticité ; la source reste déclarée par l'opérateur. Le caractère aveugle exige toujours un **relecteur humain extérieur non exposé aux conclusions QW-QUAL-1F**. 2A reste non terminé, 2B ne peut être déclaré commencé.
+
 **Addendum de mise en œuvre QW-QUAL-2A-P1 (29/10/2026 ; relecture réelle toujours EN ATTENTE) :** [procédure de paquet local](qw-qual2a-private-packet-preparation-2026-10-29.md) réutilise le générateur des quatre scènes et exige les **textes intégraux exacts** des JSON opérateur (`model_text_saved_by_probe=false` dans les sorties historiques). Un dossier `REVIEWER_SHARE_ONLY` peut être créé **sur demande explicite** et livré sans la table de correspondance `COORDINATOR_PRIVATE`. Refuser une source manquante, un artefact reconstitué ou un relecteur ayant vu les conclusions. Ce code **ne remplace pas** les quatre grilles d'un véritable tiers. Aucune requête Qwen, aucune note de qualité ou validation robot.
 
 **29 octobre 2026 — PROTOCOLE PRÉPARÉ, AUCUNE ANNOTATION INDÉPENDANTE REÇUE.**
