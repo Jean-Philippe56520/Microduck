@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**QW-PERF-1D — cause démontrée par journal local historique, 29/10/2026 (diagnostic, non essai accéléré) :** [sources et porte GPU supervisée](qw-perf1b-real-windows-9b-baseline-2026-10-29.md#qw-perf-1d--cause-locale-du-repli-cpu-observée-logs-du-2810-reçus-le-2910). Lignes de `server.log` **horodatées 28/10 09:11** : `OLLAMA_VULKAN:true`, `OLLAMA_IGPU_ENABLE:` vide, `Vulkan0 AMD Radeon 860M` **détectée puis écartée comme iGPU** ; ROCm `gfx1152` hors rocBLAS présents ; `inference compute id=cpu`, `total_vram=0`. Causalité du filtrage iGPU **établie pour cette session**, pas de preuve d'accélération une fois autorisé. **Réutiliser** `scripts/kwipi-vision-test.ps1 -VisionCheck` sur serveur `11435` temporaire isolé uniquement après vérification port libre ; arrêter le seul processus créé, observer `ollama ps` pendant l'inférence, ne rien modifier durablement. Un essai de deux images rouge/bleu ne mesure pas la qualité de conseil ni ne remplace les profils QW-PERF-1B appariés.
+
+
 **QW-PERF-1C — porte matérielle actualisée (29/10/2026, diagnostic opérateur sans code) :** **Ollama 0.40.12 + AMD Radeon 860M + driver 32.0.22052.3** avec utilisation CPU 100 % lors des cinq essais QW-PERF-1B. La 860M est **absente de la liste ROCm Windows officielle**, sans exclure le chemin Vulkan ; l'issue Ollama #14562 décrit une détection défaillante sur **anciennes** versions et n'établit pas le diagnostic de ce PC. **Prochaine preuve : lire les lignes de détection GPU du `server.log` existant, sans arrêter le serveur ni changer pilote/paramétrage.** [Procédure et source](qw-perf1b-real-windows-9b-baseline-2026-10-29.md). Ensuite seulement, essai GPU unique, borné et réversible si justifié.
 
 
