@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-PERF-1I — banc du vrai 9B exécuté sur PC par l'opérateur (29/10/2026) :** [tableau et limites](qw-perf1i-real-pc-role-cpu-gpu-2026-10-29.md). Sur cinq profils synthétiques QW-PERF-1H et un seul passage par configuration, temps muraux totalisés **50,422 s (11435 iGPU déclaré, `size_vram=5 614 726 020`)** contre **74,937 s (11434 CPU déclaré, `size_vram=0`)**, baisse descriptive **32,714 %**. Deux JSON corrects par port sur forme/couleur artificielle, mais rôles v2 seulement `unverified`; identité binaire du modèle, activité GPU, charge RSS/chaleur, répétabilité et qualité de stratégies de Kwipi **non validées**. Prochain jalon = qualité de conseil/hypothèses et prudence mesurées indépendamment, pas nouveau pilote, second LLM ou test moteur.
+
+
 **QW-PERF-1H — validation CI et fusion terminées (29/10/2026) :** [PR #158](https://github.com/Jean-Philippe56520/Microduck/pull/158), commit `b558007a`, [tests Python #40857661598](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40857661598), [N1 #40857661522](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40857661522) verts. Étape **codée/testée sur fixtures, non validée sur vrai 9B dans ce lot** : banc synthétique des cinq profils avec relevé mémoire GPU Ollama optionnel et lanceur temporaire 11435 à consentement explicite. Le gain réel CPU/GPU, activité de calcul, pression mémoire et qualité du conseiller pour Kwipi restent inconnus ; [protocole d'essai PC supervisé](qw-perf1h-pc-role-benchmark-placement-2026-10-29.md). Aucun geste/moteur/modèle embarqué ni souvenir modifié.
 
 
