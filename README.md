@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**QW-PERF-1B — mesures opérateur réelles du 29/10/2026, à confirmer indépendamment :** [rapport CPU/Qwen 9B](docs/qw-perf1b-real-windows-9b-baseline-2026-10-29.md). Cinq appels sur image synthétique : rôle v2 44,234 s première requête / 14,750 s répétition cache, texte court 3,703 s, JSON 7,110 s et JSON + contexte fictif 9,109 s. Deux JSON corrects pour **cercle rouge synthétique seulement**. `ollama ps` : **100 % CPU** et 6,2 GB SIZE, pas une mesure RSS indépendante ; GPU/driver/version à identifier avant d'optimiser. Aucun gain GPU mesuré, ni connaissance réelle, ni moteur/SQLite.
+
+
 **QW-PERF-1 — banc d'essai 9B PC fusionné (28/10/2026, [PR #151](https://github.com/Jean-Philippe56520/Microduck/pull/151) fusionnée (`cf8bf760`), [CI Python #40786532440](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786532440) et [N1 #40786532406](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786532406) vertes) :** [protocole, limites et commande](docs/qw-perf1-pc-synthetic-benchmark-2026-10-28.md). Réutilise le pilote Qwen3.5 9B et le JPEG F5 v2, compare cinq profils sur **la même image synthétique créée en RAM** (v2 premier/répété, texte court, JSON court, JSON + contexte fictif), avec métriques natives Ollama, consentement explicite et aucune sortie brute conservée. [CI Python post-fusion sur `main` #40786742674](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786742674) **verte**. La CI ne lance pas le vrai 9B ; p50/p95, VRAM et RSS sur ton PC **restent à mesurer**. Aucun changement moteur/SQLite/F5-C ; l'animation IdleHead OEM existe mais n'est **pas synchronisée à Qwen**.
 
 
