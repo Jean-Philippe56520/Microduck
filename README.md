@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**QW-PERF-1H — banc PC candidat pour comparer le coût du rôle Qwen9B sur CPU et GPU (29/10/2026 ; test réel NON exécuté dans ce lot) :** [protocole et commandes PowerShell explicitement consenties](docs/qw-perf1h-pc-role-benchmark-placement-2026-10-29.md). **Réutilise** les cinq profils synthétiques de QW-PERF-1, étend le sondage `/api/ps` de QW-PERF-1F au banc existant, et ajoute au lanceur PC temporaire `-PerfCheck -AuthorizeFiveSyntheticCalls -ReportPlacement -Port 11435`. Serveur principal 11434 non arrêté, port 11435 refusé s'il est déjà occupé, aucune photo réelle, mémoire SQLite ou moteur. Les durées et l'identité du backend de calcul **restent à mesurer** sur le PC ; les fixtures CI ne calculent aucun token réel du 9B. Fusion/CI à vérifier.
+
+
 **QW-PERF-1G — mesure opérateur CPU/GPU à stimulus identique (29/10/2026 ; PC réel, 2 couleurs synthétiques uniquement) :** [relevé, calculs et limites](docs/qw-perf1g-pc-gpu-cpu-color-comparison-2026-10-29.md). Au port temporaire `11435` (Vulkan et iGPU demandés), `/api/ps` a déclaré **5 614 726 020 octets de mémoire GPU** pour `qwen3.5:9b`, avec rouge/bleu corrects en **8,343/8,891 s** ; au port principal CPU `11434`, `size_vram=0` et couleurs correctes en **10,735/11,343 s**. Écart descriptif moyen **−21,94 %** sur deux paires non randomisées ; **aucune vérification indépendante de calcul GPU, d'accélération reproductible ou de performance de conseil**. Codes retour 0, aucun média privé, SQLite, moteur ou modification du pilote ; PC seulement. La sonde est livrée sur `main` via [PR #156](https://github.com/Jean-Philippe56520/Microduck/pull/156), contrôles CI de la PR verts.
 
 
