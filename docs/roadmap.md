@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-PERF-1D — preuve de filtre iGPU (journaux 28/10, fournis 29/10/2026) :** [diagnostic exact et test réutilisé](qw-perf1b-real-windows-9b-baseline-2026-10-29.md#qw-perf-1d--cause-locale-du-repli-cpu-observée-logs-du-2810-reçus-le-2910). Ollama détecte `Vulkan0 Radeon 860M` mais l'écarte car `OLLAMA_IGPU_ENABLE` non défini. ROCm `gfx1152` non admis par ce build. **Porte suivante :** essai facultatif `kwipi-vision-test.ps1 -VisionCheck` déjà existant, port temporaire libre `11435`, deux images de couleur synthétiques, puis `ollama ps` pendant la requête ; ne pas perturber `11434` ni modifier GPU/driver/Yocto. Accélération réelle, stabilité, RSS, latences/qualité pour objectifs Kwipi **inconnus**.
+
+
 **QW-PERF-1B — premier relevé PC réel, 29/10/2026 (rapport opérateur) :** [cinq appels, provenance et limites](qw-perf1b-real-windows-9b-baseline-2026-10-29.md) : v2 44,234 s puis 14,750 s identique en cache, texte court 3,703 s, JSON court 7,110 s, JSON + contexte fictif 9,109 s. Les deux JSON reconnaissent le cercle rouge de fixture ; le modèle affiche **100 % CPU** et non GPU. **Prochaine porte : version Ollama + modèle GPU + pilote Windows, en lecture seule**, puis éventuelle comparaison GPU réversible si réellement supporté ; pas de vitesse future ni comportement robot prouvé.
 
 
