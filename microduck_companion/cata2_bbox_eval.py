@@ -207,7 +207,7 @@ def select_coco_cases(blob: bytes, *, per_class: int = PER_CLASS,
             or type(per_class) is not int or not 1 <= per_class <= 4
             or type(negatives) is not int or not 1 <= negatives <= 4
             or type(excluded_image_ids) is not frozenset
-            or len(excluded_image_ids) > MAX_SELECTED
+            or len(excluded_image_ids) > 2 * MAX_SELECTED
             or any(type(i) is not int or i < 0
                    for i in excluded_image_ids)):
         raise PhotoBaselineError("invalid bounded COCO annotation input")
