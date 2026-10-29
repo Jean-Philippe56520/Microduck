@@ -120,7 +120,9 @@ class AutonomyBrain:
                                  learning: PassiveLearning | None = None,
                                  behavioral: BehavioralMemory | None = None,
                                  expectations: MockAttentionTrends | None = None,
-                                 goals: object | None = None) -> PassiveIntent:
+                                 goals: object | None = None,
+                                 guard_attempted_goals: bool = False,
+                                 personality_pacing: bool = False) -> PassiveIntent:
         """F2-B/F2-C: pace non-motor proposals; optional mock-only bias.
 
         Reuses F2-A provenance checking and the same ExperienceMemory journal.
@@ -133,6 +135,10 @@ class AutonomyBrain:
         from .behavioral_memory import BehavioralMemory
         from .experience_expectations import MockAttentionTrends
 
+        if type(guard_attempted_goals) is not bool or type(personality_pacing) is not bool:
+            raise TypeError("DET-2 / PER-1 options must be explicit booleans")
+        if guard_attempted_goals and goals is None:
+            raise ValueError("DET-2 requires the existing mock goal memory")
         if goals is not None:
             _check_det1_goal_memory(goals, self.memory)
 
@@ -162,6 +168,8 @@ class AutonomyBrain:
             now_monotonic_s=now_monotonic_s,
             now_wall_epoch_s=now_wall_epoch_s, learning=learning,
             behavioral=behavioral, expectations=expectations, goals=goals,
+            guard_attempted_goals=guard_attempted_goals,
+            personality_pacing=personality_pacing,
         )
 
     def passive_rhythm_metrics(self) -> PassiveRhythmMetrics:
