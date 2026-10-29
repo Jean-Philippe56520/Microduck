@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import secrets
 from typing import Any
@@ -185,6 +186,75 @@ def _write_new(path: Path, data: bytes) -> None:
         stream.write(data)
 
 
+
+def _read_clipboard_text() -> str:
+    """Read user-selected plain text only after explicit CLI opt-in."""
+    try:
+        import tkinter
+    except ImportError as exc:
+        raise ValueError("system clipboard is unavailable") from exc
+    root = None
+    try:
+        root = tkinter.Tk()
+        root.withdraw()
+        value = root.clipboard_get()
+    except tkinter.TclError as exc:
+        raise ValueError("plain text clipboard is unavailable") from exc
+    finally:
+        if root is not None:
+            root.destroy()
+    if type(value) is not str:
+        raise ValueError("clipboard does not contain plain text")
+    return value
+
+
+def capture_clipboard_case(source_dir: Path, case_id: str) -> dict[str, Any]:
+    """Capture ONE unedited JSON the operator deliberately copied locally.
+
+    Neither the clipboard nor a structurally valid JSON proves historical
+    authenticity. This is a convenience for human attestation, not retrieval.
+    No clipboard read happens before validating the destination and case.
+    """
+    if type(case_id) is not str or case_id not in CASE_IDS:
+        raise ValueError("unknown fixed synthetic case")
+    source = _safe_absolute_directory(source_dir, must_exist=False)
+    if source.exists():
+        if not source.is_dir():
+            raise ValueError("private source path is not a directory")
+        extras = {p.name for p in source.glob("*.json")} - {
+            f"{case}.json" for case in CASE_IDS
+        }
+        if extras:
+            raise ValueError("unexpected extra JSON in private source directory")
+    elif not source.parent.is_dir():
+        raise ValueError("private source parent directory missing")
+    target = source / (case_id + ".json")
+    if target.exists() or target.is_symlink():
+        raise ValueError("original case already exists; no overwrite")
+
+    selected = _read_clipboard_text()
+    if type(selected) is not str:
+        raise ValueError("clipboard does not contain plain text")
+    try:
+        raw = selected.encode("utf-8")
+    except UnicodeError as exc:
+        raise ValueError("clipboard is not UTF-8 text") from exc
+    text, _digest = _valid_report(raw, case_id)
+    if not source.exists():
+        source.mkdir(mode=0o700)
+    # Exclusive create: no overwrite. Private permissions are best effort on
+    # Windows, and are not a guarantee of ACL or encrypted-at-rest protection.
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+    fd = os.open(target, flags, 0o600)
+    with os.fdopen(fd, "wb") as stream:
+        stream.write(raw)
+    return {"mode": "operator_clipboard_case_captured",
+            "case_id": case_id, "files_written": 1,
+            "source_authenticity": "operator_asserted_not_verified",
+            "advisor_characters": len(text),
+            "qwen_calls": 0, "motor_commands_issued": 0,
+            "memory_writes": 0}
+
 def make_packet(source_dir: Path, output_root: Path) -> dict[str, Any]:
     """Write one new private folder; caller must distribute reviewer child only."""
     reports = collect_reports(source_dir)
@@ -247,13 +317,23 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--source-dir", type=Path, required=True)
     parser.add_argument("--output-root", type=Path)
     parser.add_argument("--write-private-packet", action="store_true")
+    parser.add_argument("--capture-clipboard-case", choices=CASE_IDS)
+    parser.add_argument("--authorize-private-source-write", action="store_true")
     args = parser.parse_args(argv)
+    if args.capture_clipboard_case is not None:
+        if (not args.authorize_private_source_write or args.write_private_packet
+                or args.output_root is not None):
+            parser.error("clipboard capture requires explicit authorization and no packet flags")
+    elif args.authorize_private_source_write:
+        parser.error("private source authorization requires --capture-clipboard-case")
     if args.write_private_packet and args.output_root is None:
         parser.error("writing requires explicit --output-root")
     if not args.write_private_packet and args.output_root is not None:
         parser.error("--output-root requires explicit --write-private-packet")
     try:
-        if args.write_private_packet:
+        if args.capture_clipboard_case is not None:
+            result = capture_clipboard_case(args.source_dir, args.capture_clipboard_case)
+        elif args.write_private_packet:
             result = make_packet(args.source_dir, args.output_root)
         else:
             reports = collect_reports(args.source_dir)

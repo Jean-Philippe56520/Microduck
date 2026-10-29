@@ -1,5 +1,7 @@
 # QW-QUAL-2A-P1 — Paquet local de relecture aveugle (préparation, sans évaluation réalisée)
 
+**Addendum QW-QUAL-2A-P2 (29/10/2026, porte complémentaire sans essai opérateur réel) :** [guide de copie exacte dans le presse-papiers Windows](qw-qual2a-clipboard-source-capture-2026-10-29.md). Le même module offre désormais un import explicite **une scène à la fois**, validé avant écriture exclusive hors dépôt, pour éviter une ressaisie manuelle des quatre JSON. Le statut reste `independent_human_review_pending` ; l'import ne récupère ni n'authentifie automatiquement les sorties historiques, et aucune nouvelle requête Qwen n'est lancée.
+
 **Date :** 29 octobre 2026. **Autorité :** [plan-action.md](plan-action.md). **Base vérifiée :** `main@2ea26193cc9531ceefa6c276c9756ebab2e8bbab` après [PR #169 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/169) et contrôles Python/N1 réussis. **Statut :** utilitaire PC candidat / tests sur fixtures ; **aucune source privée reçue, aucun paquet réel produit, aucune contre-annotation indépendante**. Voir le [protocole QW-QUAL-2A](qw-qual2a-blind-independent-human-review-protocol-2026-10-29.md) et la [grille vierge](qw-qual2a-independent-review-worksheet-2026-10-29.md).
 
 ## 1. Observation, hypothèses, preuve recherchée et arrêt
