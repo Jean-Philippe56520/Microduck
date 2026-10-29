@@ -1,0 +1,781 @@
+{
+  "study": "sixth_disjoint_coco_val_yolox_candidates_20261029",
+  "status": "candidate_proposals_gate_passed",
+  "gate_passed": true,
+  "criteria": {
+    "top3_at_least_two_more_target_images_than_top1": true,
+    "top3_at_least_one_of_two_balls": true,
+    "top3_unmatched_COCO_annotation_fraction_at_most_0_70": true,
+    "postprocess_p95_host_at_most_15ms": true
+  },
+  "previous_disjoint_cohort_sizes": [
+    24,
+    24,
+    18,
+    12,
+    12
+  ],
+  "sixth_cohort_images": 12,
+  "sixth_COCO_image_IDs": [
+    342367,
+    261061,
+    166277,
+    456292,
+    462728,
+    372819,
+    347930,
+    239537,
+    415194,
+    240250,
+    310622,
+    343315
+  ],
+  "image_selection_independent_of_predictions": true,
+  "target_labels_only_for_scoring": true,
+  "threshold_unchanged": 0.25,
+  "model_sha256": "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d",
+  "annotations_sha256": "e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aeefa635b8c810b6f",
+  "caps": [
+    1,
+    3,
+    5
+  ],
+  "IoU_threshold": 0.5,
+  "metrics": {
+    "k_1": {
+      "matched_target_images": 6,
+      "matched_ball_images": 0,
+      "all_images_with_at_least_one_candidate": 12,
+      "proposals_total": 12,
+      "proposals_matched_to_an_80_class_COCO_annotation": 11,
+      "proposals_not_matched_to_COCO_annotations_not_proved_false": 1,
+      "unmatched_annotation_fraction": 0.0833
+    },
+    "k_3": {
+      "matched_target_images": 8,
+      "matched_ball_images": 2,
+      "all_images_with_at_least_one_candidate": 12,
+      "proposals_total": 29,
+      "proposals_matched_to_an_80_class_COCO_annotation": 23,
+      "proposals_not_matched_to_COCO_annotations_not_proved_false": 6,
+      "unmatched_annotation_fraction": 0.2069
+    },
+    "k_5": {
+      "matched_target_images": 8,
+      "matched_ball_images": 2,
+      "all_images_with_at_least_one_candidate": 12,
+      "proposals_total": 36,
+      "proposals_matched_to_an_80_class_COCO_annotation": 27,
+      "proposals_not_matched_to_COCO_annotations_not_proved_false": 9,
+      "unmatched_annotation_fraction": 0.25
+    }
+  },
+  "extra_target_hits_k3_vs_k1": 2,
+  "inference_host_cpu_ms_median": 23.268,
+  "postprocessing_host_cpu_ms_median": 2.085,
+  "postprocessing_host_cpu_ms_p95": 2.467,
+  "host_peak_rss_kib": 345216,
+  "background_is_not_segmentation": true,
+  "COCO_label_gaps_limit_false_positive_claims": true,
+  "COCO_target_free_images_not_object_free": true,
+  "not_a_category_free_or_unknown_object_detector": true,
+  "no_color_or_shape_extraction_delivered": true,
+  "no_online_learning_or_qwen": true,
+  "no_oem_or_motor_or_robot_action": true,
+  "robot_NPU_not_tested": true,
+  "rows": [
+    {
+      "COCO_image_id": 342367,
+      "expected_target_for_scoring": "person",
+      "original_dimensions": [
+        640,
+        480
+      ],
+      "all_80_class_GT_boxes_count": 6,
+      "expected_target_GT_boxes_count": 3,
+      "source_is_camera_agnostic": true,
+      "proposals": [
+        {
+          "xyxy": [
+            190.5919119027945,
+            124.39807598407452,
+            345.8881436861478,
+            389.01712270883417
+          ],
+          "score": 0.8919,
+          "untrusted_coco_class_index": 0,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.9685,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.9685
+        },
+        {
+          "xyxy": [
+            314.43365243765027,
+            331.6102541410006,
+            470.0713524451623,
+            477.41656376765326
+          ],
+          "score": 0.749504,
+          "untrusted_coco_class_index": 0,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.9468,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.9468
+        },
+        {
+          "xyxy": [
+            401.0021679217999,
+            276.3279254619892,
+            548.7687154916617,
+            421.2721252441406
+          ],
+          "score": 0.639994,
+          "untrusted_coco_class_index": 0,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.8912,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.8912
+        },
+        {
+          "xyxy": [
+            248.41836342444788,
+            215.97639817457934,
+            272.3895072937012,
+            331.16800161508417
+          ],
+          "score": 0.404591,
+          "untrusted_coco_class_index": 27,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.0694,
+          "overlaps_any_COCO_annotation_IoU50": false,
+          "max_IoU_to_expected_category_for_scoring": 0.0694
+        }
+      ],
+      "GT_not_used_for_proposal_selection": true,
+      "target_hit_at_1": true,
+      "target_hit_at_3": true,
+      "target_hit_at_5": true
+    },
+    {
+      "COCO_image_id": 261061,
+      "expected_target_for_scoring": "person",
+      "original_dimensions": [
+        500,
+        334
+      ],
+      "all_80_class_GT_boxes_count": 5,
+      "expected_target_GT_boxes_count": 1,
+      "source_is_camera_agnostic": true,
+      "proposals": [
+        {
+          "xyxy": [
+            255.52408970319306,
+            48.713930857267314,
+            355.54137138219977,
+            333.1675944156784
+          ],
+          "score": 0.898448,
+          "untrusted_coco_class_index": 0,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.8,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.8
+        },
+        {
+          "xyxy": [
+            81.05602860450745,
+            257.9385656349951,
+            140.32985384647662,
+            275.9353502225533
+          ],
+          "score": 0.653861,
+          "untrusted_coco_class_index": 29,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0,
+          "overlaps_any_COCO_annotation_IoU50": false,
+          "max_IoU_to_expected_category_for_scoring": 0
+        },
+        {
+          "xyxy": [
+            76.61420565385085,
+            70.76819196193338,
+            293.97765489724964,
+            149.40172848598564
+          ],
+          "score": 0.631739,
+          "untrusted_coco_class_index": 2,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.1186,
+          "overlaps_any_COCO_annotation_IoU50": false,
+          "max_IoU_to_expected_category_for_scoring": 0.0565
+        }
+      ],
+      "GT_not_used_for_proposal_selection": true,
+      "target_hit_at_1": true,
+      "target_hit_at_3": true,
+      "target_hit_at_5": true
+    },
+    {
+      "COCO_image_id": 166277,
+      "expected_target_for_scoring": "cat",
+      "original_dimensions": [
+        480,
+        640
+      ],
+      "all_80_class_GT_boxes_count": 4,
+      "expected_target_GT_boxes_count": 1,
+      "source_is_camera_agnostic": true,
+      "proposals": [
+        {
+          "xyxy": [
+            0,
+            2.541010929987981,
+            363.8925053523137,
+            571.4758066030649
+          ],
+          "score": 0.789427,
+          "untrusted_coco_class_index": 15,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.8654,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.8654
+        }
+      ],
+      "GT_not_used_for_proposal_selection": true,
+      "target_hit_at_1": true,
+      "target_hit_at_3": true,
+      "target_hit_at_5": true
+    },
+    {
+      "COCO_image_id": 456292,
+      "expected_target_for_scoring": "cat",
+      "original_dimensions": [
+        480,
+        640
+      ],
+      "all_80_class_GT_boxes_count": 2,
+      "expected_target_GT_boxes_count": 1,
+      "source_is_camera_agnostic": true,
+      "proposals": [
+        {
+          "xyxy": [
+            166.7908419095553,
+            332.4879338191106,
+            311.8094341571515,
+            497.26351224459137
+          ],
+          "score": 0.486138,
+          "untrusted_coco_class_index": 15,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.7992,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.7992
+        }
+      ],
+      "GT_not_used_for_proposal_selection": true,
+      "target_hit_at_1": true,
+      "target_hit_at_3": true,
+      "target_hit_at_5": true
+    },
+    {
+      "COCO_image_id": 462728,
+      "expected_target_for_scoring": "dog",
+      "original_dimensions": [
+        640,
+        427
+      ],
+      "all_80_class_GT_boxes_count": 3,
+      "expected_target_GT_boxes_count": 1,
+      "source_is_camera_agnostic": true,
+      "proposals": [
+        {
+          "xyxy": [
+            93.50665605985202,
+            137.42431104783532,
+            122.24844272320088,
+            170.35194608976516
+          ],
+          "score": 0.662236,
+          "untrusted_coco_class_index": 0,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.8663,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0
+        },
+        {
+          "xyxy": [
+            193.23758638822116,
+            199.83118968387302,
+            336.14854079026446,
+            278.4726772445569
+          ],
+          "score": 0.425655,
+          "untrusted_coco_class_index": 37,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.6188,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.2062
+        }
+      ],
+      "GT_not_used_for_proposal_selection": true,
+      "target_hit_at_1": false,
+      "target_hit_at_3": false,
+      "target_hit_at_5": false
+    },
+    {
+      "COCO_image_id": 372819,
+      "expected_target_for_scoring": "dog",
+      "original_dimensions": [
+        640,
+        426
+      ],
+      "all_80_class_GT_boxes_count": 8,
+      "expected_target_GT_boxes_count": 4,
+      "source_is_camera_agnostic": true,
+      "proposals": [
+        {
+          "xyxy": [
+            214.47039384108325,
+            226.2044715743633,
+            279.4065592839168,
+            322.44143087338887
+          ],
+          "score": 0.80544,
+          "untrusted_coco_class_index": 16,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.8689,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.8689
+        },
+        {
+          "xyxy": [
+            546.8275451660156,
+            27.195460956449544,
+            609.0175569974459,
+            168.06624104744262
+          ],
+          "score": 0.804451,
+          "untrusted_coco_class_index": 0,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.8544,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0
+        },
+        {
+          "xyxy": [
+            457.6047369150015,
+            30.934303999807863,
+            528.8417023878832,
+            161.7876564053422
+          ],
+          "score": 0.781303,
+          "untrusted_coco_class_index": 0,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.7607,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0
+        },
+        {
+          "xyxy": [
+            425.93212714562054,
+            197.2738120977629,
+            470.23786984957184,
+            276.0798798020566
+          ],
+          "score": 0.774509,
+          "untrusted_coco_class_index": 16,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.8476,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.8476
+        },
+        {
+          "xyxy": [
+            283.6947822570801,
+            125.88247256502778,
+            315.44654699472284,
+            189.95296200087785
+          ],
+          "score": 0.581429,
+          "untrusted_coco_class_index": 16,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.6531,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.6531
+        }
+      ],
+      "GT_not_used_for_proposal_selection": true,
+      "target_hit_at_1": true,
+      "target_hit_at_3": true,
+      "target_hit_at_5": true
+    },
+    {
+      "COCO_image_id": 347930,
+      "expected_target_for_scoring": "sports_ball",
+      "original_dimensions": [
+        640,
+        480
+      ],
+      "all_80_class_GT_boxes_count": 3,
+      "expected_target_GT_boxes_count": 1,
+      "source_is_camera_agnostic": true,
+      "proposals": [
+        {
+          "xyxy": [
+            183.21804340069113,
+            85.91600858248198,
+            424.5903719388522,
+            450.19107525165265
+          ],
+          "score": 0.790518,
+          "untrusted_coco_class_index": 16,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.8186,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.0216
+        },
+        {
+          "xyxy": [
+            0,
+            56.91258357121394,
+            630.9587918795072,
+            477.68425574669476
+          ],
+          "score": 0.59689,
+          "untrusted_coco_class_index": 59,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.9531,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.0083
+        },
+        {
+          "xyxy": [
+            209.82069308941183,
+            79.78020594670222,
+            257.520568554218,
+            122.76251866267279
+          ],
+          "score": 0.578713,
+          "untrusted_coco_class_index": 32,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.9311,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.9311
+        }
+      ],
+      "GT_not_used_for_proposal_selection": true,
+      "target_hit_at_1": false,
+      "target_hit_at_3": true,
+      "target_hit_at_5": true
+    },
+    {
+      "COCO_image_id": 239537,
+      "expected_target_for_scoring": "sports_ball",
+      "original_dimensions": [
+        640,
+        436
+      ],
+      "all_80_class_GT_boxes_count": 3,
+      "expected_target_GT_boxes_count": 1,
+      "source_is_camera_agnostic": true,
+      "proposals": [
+        {
+          "xyxy": [
+            263.99315467247595,
+            27.139064613584917,
+            527.3936579777644,
+            407.764605087442
+          ],
+          "score": 0.935641,
+          "untrusted_coco_class_index": 0,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.9693,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0
+        },
+        {
+          "xyxy": [
+            208.00522877619818,
+            257.277032501706,
+            229.65116207416241,
+            275.39759706018674
+          ],
+          "score": 0.784259,
+          "untrusted_coco_class_index": 32,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.8264,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.8264
+        },
+        {
+          "xyxy": [
+            270.24451622596155,
+            224.10506652185018,
+            319.7005990835337,
+            311.1591367687859
+          ],
+          "score": 0.731713,
+          "untrusted_coco_class_index": 38,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.8818,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0
+        }
+      ],
+      "GT_not_used_for_proposal_selection": true,
+      "target_hit_at_1": false,
+      "target_hit_at_3": true,
+      "target_hit_at_5": true
+    },
+    {
+      "COCO_image_id": 415194,
+      "expected_target_for_scoring": "chair",
+      "original_dimensions": [
+        640,
+        480
+      ],
+      "all_80_class_GT_boxes_count": 11,
+      "expected_target_GT_boxes_count": 2,
+      "source_is_camera_agnostic": true,
+      "proposals": [
+        {
+          "xyxy": [
+            222.88826575646036,
+            203.16880446213943,
+            340.3834533691406,
+            379.1125018780048
+          ],
+          "score": 0.682102,
+          "untrusted_coco_class_index": 56,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.7939,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.7939
+        },
+        {
+          "xyxy": [
+            1.0624166635366588,
+            136.47703904371997,
+            106.93553631122296,
+            314.5031855656551
+          ],
+          "score": 0.559535,
+          "untrusted_coco_class_index": 72,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.5533,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.0833
+        },
+        {
+          "xyxy": [
+            43.21514423076923,
+            222.74541414701022,
+            248.4466552734375,
+            348.92723083496094
+          ],
+          "score": 0.481455,
+          "untrusted_coco_class_index": 60,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.2556,
+          "overlaps_any_COCO_annotation_IoU50": false,
+          "max_IoU_to_expected_category_for_scoring": 0.0817
+        },
+        {
+          "xyxy": [
+            503.322994525616,
+            196.96182691133941,
+            562.4426680344802,
+            225.45704328096832
+          ],
+          "score": 0.325869,
+          "untrusted_coco_class_index": 45,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.8266,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0
+        },
+        {
+          "xyxy": [
+            225.05928626427286,
+            80.33369797926683,
+            278.8475740872897,
+            288.7696486253005
+          ],
+          "score": 0.32536,
+          "untrusted_coco_class_index": 72,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.1415,
+          "overlaps_any_COCO_annotation_IoU50": false,
+          "max_IoU_to_expected_category_for_scoring": 0.1415
+        }
+      ],
+      "GT_not_used_for_proposal_selection": true,
+      "target_hit_at_1": true,
+      "target_hit_at_3": true,
+      "target_hit_at_5": true
+    },
+    {
+      "COCO_image_id": 240250,
+      "expected_target_for_scoring": "chair",
+      "original_dimensions": [
+        612,
+        612
+      ],
+      "all_80_class_GT_boxes_count": 22,
+      "expected_target_GT_boxes_count": 5,
+      "source_is_camera_agnostic": true,
+      "proposals": [
+        {
+          "xyxy": [
+            193.75033972813534,
+            11.150271342350887,
+            513.532821728633,
+            395.02647003760706
+          ],
+          "score": 0.903531,
+          "untrusted_coco_class_index": 0,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.9495,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.2559
+        },
+        {
+          "xyxy": [
+            0.9508310464712291,
+            339.2194422208346,
+            612,
+            608.3630156883827
+          ],
+          "score": 0.797231,
+          "untrusted_coco_class_index": 60,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.912,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0.0422
+        },
+        {
+          "xyxy": [
+            4.7001452812781706,
+            454.0272402763367,
+            253.21054810744067,
+            610.8707576531631
+          ],
+          "score": 0.756301,
+          "untrusted_coco_class_index": 53,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.9085,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0
+        },
+        {
+          "xyxy": [
+            289.20382558382477,
+            424.7418988301204,
+            594.5511716695933,
+            586.9475425573496
+          ],
+          "score": 0.739972,
+          "untrusted_coco_class_index": 53,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.4362,
+          "overlaps_any_COCO_annotation_IoU50": false,
+          "max_IoU_to_expected_category_for_scoring": 0
+        },
+        {
+          "xyxy": [
+            559.1475224678334,
+            314.0658732560965,
+            612,
+            445.6447432224567
+          ],
+          "score": 0.711605,
+          "untrusted_coco_class_index": 41,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.8388,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0
+        }
+      ],
+      "GT_not_used_for_proposal_selection": true,
+      "target_hit_at_1": false,
+      "target_hit_at_3": false,
+      "target_hit_at_5": false
+    },
+    {
+      "COCO_image_id": 310622,
+      "expected_target_for_scoring": "target_free",
+      "original_dimensions": [
+        640,
+        428
+      ],
+      "all_80_class_GT_boxes_count": 0,
+      "expected_target_GT_boxes_count": 0,
+      "source_is_camera_agnostic": true,
+      "proposals": [
+        {
+          "xyxy": [
+            184.06201289250302,
+            134.54659435903426,
+            251.00240267240085,
+            312.4210868670786
+          ],
+          "score": 0.433646,
+          "untrusted_coco_class_index": 9,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0,
+          "overlaps_any_COCO_annotation_IoU50": false,
+          "max_IoU_to_expected_category_for_scoring": 0
+        },
+        {
+          "xyxy": [
+            155.58410057654748,
+            302.8775062286596,
+            318.62971966083234,
+            425.55571560207886
+          ],
+          "score": 0.312524,
+          "untrusted_coco_class_index": 9,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0,
+          "overlaps_any_COCO_annotation_IoU50": false,
+          "max_IoU_to_expected_category_for_scoring": 0
+        },
+        {
+          "xyxy": [
+            206.11212363609903,
+            191.27203890574063,
+            248.2708109342135,
+            298.31769550790034
+          ],
+          "score": 0.277117,
+          "untrusted_coco_class_index": 9,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0,
+          "overlaps_any_COCO_annotation_IoU50": false,
+          "max_IoU_to_expected_category_for_scoring": 0
+        }
+      ],
+      "GT_not_used_for_proposal_selection": true,
+      "target_hit_at_1": false,
+      "target_hit_at_3": false,
+      "target_hit_at_5": false
+    },
+    {
+      "COCO_image_id": 343315,
+      "expected_target_for_scoring": "target_free",
+      "original_dimensions": [
+        640,
+        478
+      ],
+      "all_80_class_GT_boxes_count": 1,
+      "expected_target_GT_boxes_count": 0,
+      "source_is_camera_agnostic": true,
+      "proposals": [
+        {
+          "xyxy": [
+            519.758162865272,
+            61.96034324130828,
+            587.6703790517954,
+            206.8610914420468
+          ],
+          "score": 0.899617,
+          "untrusted_coco_class_index": 10,
+          "max_IoU_to_any_COCO_annotation_for_scoring": 0.8842,
+          "overlaps_any_COCO_annotation_IoU50": true,
+          "max_IoU_to_expected_category_for_scoring": 0
+        }
+      ],
+      "GT_not_used_for_proposal_selection": true,
+      "target_hit_at_1": false,
+      "target_hit_at_3": false,
+      "target_hit_at_5": false
+    }
+  ],
+  "provenance": {
+    "source_run_url": "https://github.com/Jean-Philippe56520/Microduck/actions/runs/40970050727",
+    "job_id": 123784252000,
+    "tested_commit_sha": "eaacf4ce7e03b95ef4d16578f1f8cfe37194a8c8",
+    "source": "raw JSON from successful GitHub Actions job log",
+    "images_copied_to_microduck": false,
+    "inference_performed_on_robot": false,
+    "source_annotations_coco_val2017_sha256": "e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aeefa635b8c810b6f",
+    "model_Megvii_YOLOX_sha256": "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d"
+  },
+  "technical_decision": {
+    "standalone_host_candidate_passed": true,
+    "attention_candidate_default_count": 3,
+    "actual_implemented_host_decoder_path": "microduck_companion/yolox_attention_candidates.py",
+    "on_device_install_or_NPU_validation": false,
+    "does_not_supply_unknown_object_or_generic_presence_detection": true,
+    "acceptable_for_untrusted_attention_hypotheses_only": true,
+    "do_not_relabel_scores_as_verified_truth": true,
+    "no_integration_into_ExperienceMemory_or_Qwen_yet": true,
+    "COCO_annotation_gaps_prevent_global_false_detection_rate": true
+  }
+}
