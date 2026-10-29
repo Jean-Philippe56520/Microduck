@@ -1,5 +1,41 @@
 # QW-PERF-1B — Premier relevé réel opérateur, PC Windows/Ollama (29/10/2026)
 
+## QW-PERF-1E — Premier test PC sur serveur iGPU autorisé, sans preuve GPU
+
+**Essai opérateur réel du 29/10/2026, résultats reçus en conversation ; mesures non reproduites indépendamment.** Le port `11435` était libre selon `Get-NetTCPConnection`. L'opérateur a exécuté dans un processus PowerShell enfant le **lanceur déjà présent** `scripts/kwipi-vision-test.ps1 -VisionCheck -Port 11435`. Le script source **définit** localement `OLLAMA_VULKAN=1` et `OLLAMA_IGPU_ENABLE=1` avant de lancer son Ollama temporaire si aucun serveur n'écoute sur le port ; **aucun relevé `ollama ps` ou journal de découverte GPU de ce processus temporaire n'a été transmis**.
+
+### Observations du **premier lancement terminé**
+
+| Fixture synthétique | Catégorie attendue | Résultat Qwen | Latence murale rapportée | Statut |
+| --- | --- | --- | ---: | --- |
+| Image couleur rouge | `red` | `red` | **9,079 s** | `unverified` |
+| Image couleur bleue | `blue` | `blue` | **9,031 s** | `unverified` |
+
+Le lanceur affiche `two_colors_distinguished` puis `Serveur Ollama temporaire arrete apres cet essai.` : un **cycle complet de deux appels multimodaux synthétiques** a réussi, sans instruction motrice, écriture mémoire ou lecture de photo privée (`motor_commands_issued=0`, `memory_writes=0`, `private_images_read=0`). Les résultats sont des **annotations de couleur non vérifiées par observation physique**, correspondant aux deux fixtures fabriquées localement.
+
+**Répétition partielle non conclue :** le propriétaire a également commencé une **deuxième invocation identique** et communiqué uniquement les messages initiaux jusqu'à `Acceleration Vulkan demandee, mais utilisation GPU a verifier separement.`. **Aucun résultat de cette deuxième invocation, succès ou échec, n'est disponible dans la preuve reçue**. Ne pas confondre absence de sortie dans un extrait partiel et blocage du modèle ; ne pas ajouter d'essais de répétition sans question nouvelle.
+
+### Ce qui n'est pas établi
+
+- **Vulkan demandé ≠ exécution GPU démontrée.** Le script peut légitimement se replier sur CPU ou échouer lors de la sélection, même quand `-VisionCheck` renvoie deux bonnes couleurs. Un relevé `ollama ps` **pendant l'inférence du serveur 11435** ou des lignes `inference compute` / `library=Vulkan` de **ce processus** sont nécessaires. Après l'arrêt automatique, `ollama ps` vide est normal.
+- **9,0 s ≠ accélération par rapport au CPU.** Les appels CPU QW-PERF-1B utilisaient **des prompts et schémas différents**, et un ordre/cache différents ; aucune comparaison appariée CPU/GPU, ni vitesse de traitement réaliste d'une image avec contexte/SQLite, n'a été faite.
+- Pas de mesure du GPU%, VRAM, RSS, chauffe, qualité de conseil, ni latence p50/p95. Aucun contrôle d'identité ou sécurité motrice prouvé.
+- L'ancien serveur habituel `11434` n'a pas été modifié par les commandes du lanceur décrites. Le retour arrière du serveur **temporaire** a été observé au premier essai ; la fin du **deuxième** est inconnue.
+
+### Question unique avant d'aller plus loin
+
+**Le serveur temporaire sur 11435 a-t-il réellement utilisé Vulkan GPU ?** Si la deuxième session tourne encore, dans une **autre fenêtre PowerShell** seulement :
+
+```powershell
+$env:OLLAMA_HOST = "127.0.0.1:11435"  # seulement cette seconde fenêtre
+ollama ps
+```
+
+Observer une ligne `PROCESSOR` indiquant GPU/Vulkan pendant l'inférence ; un résultat vide **après la fermeture du lanceur** ne répond pas à la question. Si la deuxième session est déjà achevée, transmettre sa fin (sans relancer) et consulter, si nécessaire, les journaux Ollama **filtrés par date et par processus** en supprimant les chemins privés. Les journaux anciens du 28/10 prouvent le **rejet iGPU de l'ancien serveur**, pas l'utilisation GPU du serveur temporaire du 29/10.
+
+**Décision actuelle :** *test de vision synthétique réel sur serveur temporaire exécuté et réussi au moins une fois* ; *accélération GPU, stabilité comparative et réduction des 30 secondes : inconnues*. Les contrôles du lanceur sont **réutilisés**, sans nouvelle API, driver, modèle, quota, sous-module ni programme moteur. Toute nouvelle comparaison de performance nécessite ensuite **le même protocole QW-PERF-1 sur CPU et GPU, avec mesure CPU/GPU/RSS et arrêt/retour arrière borné**, non un score de couleur isolé.
+
+
 
 ## QW-PERF-1D — cause locale du repli CPU observée (logs du 28/10 reçus le 29/10)
 
