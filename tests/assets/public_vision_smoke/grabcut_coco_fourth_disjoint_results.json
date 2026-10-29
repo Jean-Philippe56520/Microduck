@@ -1,0 +1,2146 @@
+{
+  "status": "host_grabcut_predeclared_gate_passed",
+  "gate_passed": true,
+  "study": "fourth_disjoint_coco_polygon_20261029",
+  "annotation_sha256": "e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aeefa635b8c810b6f",
+  "yolox_model_sha256": "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d",
+  "yolox_threshold_unchanged": 0.25,
+  "excluded_previous_cohort_sizes": [
+    24,
+    24,
+    18
+  ],
+  "image_count": 12,
+  "distinct_image_ids": 12,
+  "oracle_bbox_uses_gt_not_robot_detector": true,
+  "polygon_gt_is_independent_of_grabcut": true,
+  "cohort_label_selection_before_inference": true,
+  "GT_polygon_available_cases": 10,
+  "GT_mask_scored_cases": 10,
+  "oracle_iou_median": 0.7144,
+  "oracle_mask_iou_ge_055": 8,
+  "rectangle_baseline_iou_median": 0.4902,
+  "oracle_iou_mean_gain_over_rectangle": 0.1293,
+  "groundtruth_color_cases": 9,
+  "foreground_top_color_matches": 7,
+  "ball_round_matches": 2,
+  "yolox_any_80_class_bbox_matches": 8,
+  "all_80_candidates_selected_without_gt": true,
+  "max_candidates_per_image": 5,
+  "end_to_end_scored_mask_IoU_median_conditional_on_detected_box": 0.753,
+  "independent_proposal_selection_note": "GT used only after all proposed region descriptors have been computed",
+  "yolox_5_target_class_bbox_matches": 8,
+  "median_grabcut_host_cpu_ms": 85.355,
+  "peak_runner_rss_kib": 393004,
+  "previous_runner_rss_kib": 391828,
+  "total_host_elapsed_s": 20.996,
+  "negative_cases_are_target_free_not_object_free": true,
+  "unknown_objects_not_authorized_for_action": true,
+  "robot_or_npu_tested": false,
+  "memory_writes": 0,
+  "qwen_calls": 0,
+  "motor_commands": 0,
+  "new_trained_models": 0,
+  "criteria_fixed": {
+    "min_evaluable_polygon_gt": 8,
+    "at_least_7_masks_IoU_055": true,
+    "min_mean_IoU_gain_over_rectangle": 0.08,
+    "min_color_agreement": 0.6,
+    "min_two_ball_masks_and_one_round_match": true,
+    "max_median_grabcut_ms_on_runner": 250
+  },
+  "cases": [
+    {
+      "coco_image_id": 292908,
+      "filename": "000000292908.jpg",
+      "human_category_for_scoring_only": "person",
+      "image_size": [
+        384,
+        640
+      ],
+      "ground_truth_available": true,
+      "status": "evaluated",
+      "ground_polygon_pixels": 914,
+      "bbox_iou_reference": 0.3218,
+      "grabcut_iou_oracle_box": 0.4289,
+      "grabcut_minus_box_iou": 0.1071,
+      "gt_shape_approx": "unknown",
+      "grabcut_shape_approx": "unknown",
+      "gt_top_color": "orange",
+      "grabcut_top_color": "orange",
+      "top_color_matches_polygon_gt": true,
+      "grabcut_ms_cpu": 12.328,
+      "yolox_supported_class_bbox_iou_best": 0.6358,
+      "any_80_class_box_iou50_match": {
+        "xyxy": [
+          185.313673828125,
+          135.95113020676834,
+          224.293388671875,
+          180.94626500056341
+        ],
+        "score": 0.6809,
+        "unverified_coco_class_index": 0
+      },
+      "all_80_proposals_without_gt_selection": [
+        {
+          "proposal": {
+            "xyxy": [
+              185.313673828125,
+              135.95113020676834,
+              224.293388671875,
+              180.94626500056341
+            ],
+            "score": 0.6809,
+            "unverified_coco_class_index": 0
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "orange",
+                "fraction": 0.686
+              },
+              {
+                "name": "red",
+                "fraction": 0.297
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.865,
+              "circularity": 0.153,
+              "solidity": 0.361,
+              "cut_by_frame": false,
+              "area_pixels": 353
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 7.375,
+          "polygon_gt_iou_for_scoring": 0.3862,
+          "gt_box_iou_for_scoring": 0.6358
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              200.2547109375,
+              167.53506587101862,
+              272.5339453125,
+              183.99902930626502
+            ],
+            "score": 0.34127,
+            "unverified_coco_class_index": 37
+          },
+          "descriptor": null,
+          "status": "indeterminate",
+          "grabcut_ms_host": 6.535,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0.1184
+        }
+      ],
+      "proposals_considered_no_more_than": 5,
+      "end_to_end_grabcut_gt_iou_if_matched": 0.3862,
+      "end_to_end_shape_if_matched": "unknown"
+    },
+    {
+      "coco_image_id": 295316,
+      "filename": "000000295316.jpg",
+      "human_category_for_scoring_only": "person",
+      "image_size": [
+        640,
+        480
+      ],
+      "ground_truth_available": true,
+      "status": "evaluated",
+      "ground_polygon_pixels": 1152,
+      "bbox_iou_reference": 0.4383,
+      "grabcut_iou_oracle_box": 0.5576,
+      "grabcut_minus_box_iou": 0.1194,
+      "gt_shape_approx": "unknown",
+      "grabcut_shape_approx": "unknown",
+      "gt_top_color": "blue",
+      "grabcut_top_color": "blue",
+      "top_color_matches_polygon_gt": true,
+      "grabcut_ms_cpu": 14.033,
+      "yolox_supported_class_bbox_iou_best": 0.7482,
+      "any_80_class_box_iou50_match": {
+        "xyxy": [
+          188.53620235736554,
+          175.16063983623798,
+          225.49277525681717,
+          226.18363600510818
+        ],
+        "score": 0.7492,
+        "unverified_coco_class_index": 0
+      },
+      "all_80_proposals_without_gt_selection": [
+        {
+          "proposal": {
+            "xyxy": [
+              188.53620235736554,
+              175.16063983623798,
+              225.49277525681717,
+              226.18363600510818
+            ],
+            "score": 0.7492,
+            "unverified_coco_class_index": 0
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "blue",
+                "fraction": 0.582
+              },
+              {
+                "name": "black",
+                "fraction": 0.353
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.674,
+              "circularity": 0.219,
+              "solidity": 0.575,
+              "cut_by_frame": false,
+              "area_pixels": 600
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 10.073,
+          "polygon_gt_iou_for_scoring": 0.5156,
+          "gt_box_iou_for_scoring": 0.7482
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              347.79793959397534,
+              171.84845997737006,
+              382.9244819054237,
+              214.4819186283992
+            ],
+            "score": 0.73771,
+            "unverified_coco_class_index": 0
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "blue",
+                "fraction": 0.354
+              },
+              {
+                "name": "black",
+                "fraction": 0.216
+              },
+              {
+                "name": "gray",
+                "fraction": 0.156
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.762,
+              "circularity": 0.566,
+              "solidity": 0.892,
+              "cut_by_frame": false,
+              "area_pixels": 809
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 6.846,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              360.9496307373047,
+              245.14880106999323,
+              434.3343235896184,
+              272.4137834402231
+            ],
+            "score": 0.71652,
+            "unverified_coco_class_index": 0
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "elongated_like",
+            "colors": [
+              {
+                "name": "black",
+                "fraction": 0.677
+              },
+              {
+                "name": "red",
+                "fraction": 0.179
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 2.5,
+              "circularity": 0.245,
+              "solidity": 0.631,
+              "cut_by_frame": false,
+              "area_pixels": 644
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 10.674,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              99.75802201491136,
+              197.9940106318547,
+              131.3298826951247,
+              231.2708913362943
+            ],
+            "score": 0.44852,
+            "unverified_coco_class_index": 0
+          },
+          "descriptor": null,
+          "status": "indeterminate",
+          "grabcut_ms_host": 3.738,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              183.7896053607647,
+              215.24239173302283,
+              225.89784768911508,
+              231.98309091421274
+            ],
+            "score": 0.26899,
+            "unverified_coco_class_index": 37
+          },
+          "descriptor": null,
+          "status": "indeterminate",
+          "grabcut_ms_host": 3.05,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0.2352
+        }
+      ],
+      "proposals_considered_no_more_than": 5,
+      "end_to_end_grabcut_gt_iou_if_matched": 0.5156,
+      "end_to_end_shape_if_matched": "unknown"
+    },
+    {
+      "coco_image_id": 558073,
+      "filename": "000000558073.jpg",
+      "human_category_for_scoring_only": "cat",
+      "image_size": [
+        500,
+        375
+      ],
+      "ground_truth_available": true,
+      "status": "evaluated",
+      "ground_polygon_pixels": 27256,
+      "bbox_iou_reference": 0.5663,
+      "grabcut_iou_oracle_box": 0.8411,
+      "grabcut_minus_box_iou": 0.2748,
+      "gt_shape_approx": "unknown",
+      "grabcut_shape_approx": "unknown",
+      "gt_top_color": "red",
+      "grabcut_top_color": "gray",
+      "top_color_matches_polygon_gt": false,
+      "grabcut_ms_cpu": 228.556,
+      "yolox_supported_class_bbox_iou_best": 0.9487,
+      "any_80_class_box_iou50_match": {
+        "xyxy": [
+          119.67525115379921,
+          104.64224448570839,
+          365.84023328927844,
+          307.82167728130634
+        ],
+        "score": 0.81516,
+        "unverified_coco_class_index": 15
+      },
+      "all_80_proposals_without_gt_selection": [
+        {
+          "proposal": {
+            "xyxy": [
+              119.67525115379921,
+              104.64224448570839,
+              365.84023328927844,
+              307.82167728130634
+            ],
+            "score": 0.81516,
+            "unverified_coco_class_index": 15
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "gray",
+                "fraction": 0.379
+              },
+              {
+                "name": "red",
+                "fraction": 0.302
+              },
+              {
+                "name": "pink",
+                "fraction": 0.18
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 1.244,
+              "circularity": 0.481,
+              "solidity": 0.792,
+              "cut_by_frame": false,
+              "area_pixels": 29770
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 222.744,
+          "polygon_gt_iou_for_scoring": 0.8584,
+          "gt_box_iou_for_scoring": 0.9487
+        }
+      ],
+      "proposals_considered_no_more_than": 5,
+      "end_to_end_grabcut_gt_iou_if_matched": 0.8584,
+      "end_to_end_shape_if_matched": "unknown"
+    },
+    {
+      "coco_image_id": 198641,
+      "filename": "000000198641.jpg",
+      "human_category_for_scoring_only": "cat",
+      "image_size": [
+        640,
+        479
+      ],
+      "ground_truth_available": true,
+      "status": "evaluated",
+      "ground_polygon_pixels": 35960,
+      "bbox_iou_reference": 0.5469,
+      "grabcut_iou_oracle_box": 0.8484,
+      "grabcut_minus_box_iou": 0.3015,
+      "gt_shape_approx": "unknown",
+      "grabcut_shape_approx": "unknown",
+      "gt_top_color": "black",
+      "grabcut_top_color": "black",
+      "top_color_matches_polygon_gt": true,
+      "grabcut_ms_cpu": 688.143,
+      "yolox_supported_class_bbox_iou_best": 0.8658,
+      "any_80_class_box_iou50_match": {
+        "xyxy": [
+          196.9969764122596,
+          194.2654108372532,
+          497.9502516526442,
+          425.6680702626513
+        ],
+        "score": 0.77367,
+        "unverified_coco_class_index": 15
+      },
+      "all_80_proposals_without_gt_selection": [
+        {
+          "proposal": {
+            "xyxy": [
+              82.94176541841946,
+              109.17661410512648,
+              399.0018756573017,
+              323.75964105244236
+            ],
+            "score": 0.86568,
+            "unverified_coco_class_index": 62
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "white",
+                "fraction": 0.488
+              },
+              {
+                "name": "cyan",
+                "fraction": 0.363
+              },
+              {
+                "name": "blue",
+                "fraction": 0.14
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 1.534,
+              "circularity": 0.625,
+              "solidity": 0.959,
+              "cut_by_frame": false,
+              "area_pixels": 46704
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 336.255,
+          "polygon_gt_iou_for_scoring": 0.0001,
+          "gt_box_iou_for_scoring": 0.229
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              2.7644582895132213,
+              349.2777995633926,
+              258.31182626577527,
+              479
+            ],
+            "score": 0.86019,
+            "unverified_coco_class_index": 66
+          },
+          "descriptor": null,
+          "status": "indeterminate",
+          "grabcut_ms_host": 310.738,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0.0286
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              0.10870126577524039,
+              111.733046234229,
+              118.78731360802284,
+              360.4442864077651
+            ],
+            "score": 0.79392,
+            "unverified_coco_class_index": 62
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "white",
+                "fraction": 0.54
+              },
+              {
+                "name": "cyan",
+                "fraction": 0.256
+              },
+              {
+                "name": "blue",
+                "fraction": 0.192
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.562,
+              "circularity": 0.561,
+              "solidity": 0.93,
+              "cut_by_frame": true,
+              "area_pixels": 20021
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 287.755,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              196.9969764122596,
+              194.2654108372532,
+              497.9502516526442,
+              425.6680702626513
+            ],
+            "score": 0.77367,
+            "unverified_coco_class_index": 15
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "black",
+                "fraction": 0.909
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 1.355,
+              "circularity": 0.421,
+              "solidity": 0.855,
+              "cut_by_frame": false,
+              "area_pixels": 39708
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 674.801,
+          "polygon_gt_iou_for_scoring": 0.8072,
+          "gt_box_iou_for_scoring": 0.8658
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              418.0115450345553,
+              180.7790930033497,
+              605.4324340820312,
+              372.9897812846389
+            ],
+            "score": 0.6726,
+            "unverified_coco_class_index": 63
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "compact_like",
+            "colors": [
+              {
+                "name": "black",
+                "fraction": 0.506
+              },
+              {
+                "name": "orange",
+                "fraction": 0.391
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.962,
+              "circularity": 0.646,
+              "solidity": 0.944,
+              "cut_by_frame": false,
+              "area_pixels": 28356
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 175.283,
+          "polygon_gt_iou_for_scoring": 0.1862,
+          "gt_box_iou_for_scoring": 0.1679
+        }
+      ],
+      "proposals_considered_no_more_than": 5,
+      "end_to_end_grabcut_gt_iou_if_matched": 0.8072,
+      "end_to_end_shape_if_matched": "unknown"
+    },
+    {
+      "coco_image_id": 107226,
+      "filename": "000000107226.jpg",
+      "human_category_for_scoring_only": "dog",
+      "image_size": [
+        480,
+        640
+      ],
+      "ground_truth_available": true,
+      "status": "evaluated",
+      "ground_polygon_pixels": 9621,
+      "bbox_iou_reference": 0.4197,
+      "grabcut_iou_oracle_box": 0,
+      "grabcut_minus_box_iou": -0.4197,
+      "gt_shape_approx": "elongated_like",
+      "grabcut_shape_approx": "unknown",
+      "gt_top_color": "gray",
+      "grabcut_top_color": "unknown",
+      "top_color_matches_polygon_gt": null,
+      "grabcut_ms_cpu": 161.185,
+      "yolox_supported_class_bbox_iou_best": 0.0239,
+      "any_80_class_box_iou50_match": null,
+      "all_80_proposals_without_gt_selection": [
+        {
+          "proposal": {
+            "xyxy": [
+              368.380373441256,
+              72.4661137507512,
+              478.95220243013824,
+              401.8839087853065
+            ],
+            "score": 0.76888,
+            "unverified_coco_class_index": 0
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "blue",
+                "fraction": 0.417
+              },
+              {
+                "name": "black",
+                "fraction": 0.309
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.566,
+              "circularity": 0.448,
+              "solidity": 0.865,
+              "cut_by_frame": true,
+              "area_pixels": 16216
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 410.731,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              140.29220581054688,
+              293.8547105055589,
+              252.80328603891226,
+              499.7402601975661
+            ],
+            "score": 0.71721,
+            "unverified_coco_class_index": 18
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "gray",
+                "fraction": 0.639
+              },
+              {
+                "name": "white",
+                "fraction": 0.215
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.743,
+              "circularity": 0.646,
+              "solidity": 0.919,
+              "cut_by_frame": false,
+              "area_pixels": 10835
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 152.744,
+          "polygon_gt_iou_for_scoring": 0.0015,
+          "gt_box_iou_for_scoring": 0.0807
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              2.497265155498798,
+              27.221292349008415,
+              227.20154982346756,
+              105.96859271709735
+            ],
+            "score": 0.67105,
+            "unverified_coco_class_index": 25
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "elongated_like",
+            "colors": [
+              {
+                "name": "red",
+                "fraction": 0.428
+              },
+              {
+                "name": "blue",
+                "fraction": 0.342
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 2.747,
+              "circularity": 0.572,
+              "solidity": 0.974,
+              "cut_by_frame": false,
+              "area_pixels": 10757
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 131.611,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              309.63165283203125,
+              101.99463477501503,
+              409.826167179988,
+              153.86121896597055
+            ],
+            "score": 0.64215,
+            "unverified_coco_class_index": 25
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "elongated_like",
+            "colors": [
+              {
+                "name": "blue",
+                "fraction": 0.751
+              },
+              {
+                "name": "cyan",
+                "fraction": 0.206
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 2.302,
+              "circularity": 0.493,
+              "solidity": 0.899,
+              "cut_by_frame": false,
+              "area_pixels": 2641
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 32.119,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              323.6029683626615,
+              138.64646031306341,
+              357.792905660776,
+              212.5253677368164
+            ],
+            "score": 0.60883,
+            "unverified_coco_class_index": 0
+          },
+          "descriptor": null,
+          "status": "indeterminate",
+          "grabcut_ms_host": 12.308,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        }
+      ],
+      "proposals_considered_no_more_than": 5,
+      "end_to_end_grabcut_gt_iou_if_matched": null,
+      "end_to_end_shape_if_matched": null
+    },
+    {
+      "coco_image_id": 530624,
+      "filename": "000000530624.jpg",
+      "human_category_for_scoring_only": "dog",
+      "image_size": [
+        640,
+        478
+      ],
+      "ground_truth_available": true,
+      "status": "evaluated",
+      "ground_polygon_pixels": 53411,
+      "bbox_iou_reference": 0.5267,
+      "grabcut_iou_oracle_box": 0.9368,
+      "grabcut_minus_box_iou": 0.4101,
+      "gt_shape_approx": "elongated_like",
+      "grabcut_shape_approx": "elongated_like",
+      "gt_top_color": "black",
+      "grabcut_top_color": "black",
+      "top_color_matches_polygon_gt": true,
+      "grabcut_ms_cpu": 556.354,
+      "yolox_supported_class_bbox_iou_best": 0.8632,
+      "any_80_class_box_iou50_match": {
+        "xyxy": [
+          99.37117356520433,
+          96.86721139398801,
+          598.2778930664062,
+          329.23442273891243
+        ],
+        "score": 0.43812,
+        "unverified_coco_class_index": 15
+      },
+      "all_80_proposals_without_gt_selection": [
+        {
+          "proposal": {
+            "xyxy": [
+              0,
+              22.278575050869172,
+              640,
+              471.9032632024342
+            ],
+            "score": 0.7155,
+            "unverified_coco_class_index": 59
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "gray",
+                "fraction": 0.409
+              },
+              {
+                "name": "black",
+                "fraction": 0.292
+              },
+              {
+                "name": "white",
+                "fraction": 0.245
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 1.607,
+              "circularity": 0.547,
+              "solidity": 0.947,
+              "cut_by_frame": true,
+              "area_pixels": 164875
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 8961.615,
+          "polygon_gt_iou_for_scoring": 0.3234,
+          "gt_box_iou_for_scoring": 0.3498
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              99.37117356520433,
+              96.86721139398801,
+              598.2778930664062,
+              329.23442273891243
+            ],
+            "score": 0.43812,
+            "unverified_coco_class_index": 15
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "elongated_like",
+            "colors": [
+              {
+                "name": "black",
+                "fraction": 0.897
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 2.546,
+              "circularity": 0.396,
+              "solidity": 0.852,
+              "cut_by_frame": false,
+              "area_pixels": 53587
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 756.521,
+          "polygon_gt_iou_for_scoring": 0.9342,
+          "gt_box_iou_for_scoring": 0.8087
+        }
+      ],
+      "proposals_considered_no_more_than": 5,
+      "end_to_end_grabcut_gt_iou_if_matched": 0.9342,
+      "end_to_end_shape_if_matched": "elongated_like"
+    },
+    {
+      "coco_image_id": 39551,
+      "filename": "000000039551.jpg",
+      "human_category_for_scoring_only": "sports_ball",
+      "image_size": [
+        640,
+        427
+      ],
+      "ground_truth_available": true,
+      "status": "evaluated",
+      "ground_polygon_pixels": 166,
+      "bbox_iou_reference": 0.7488,
+      "grabcut_iou_oracle_box": 0.7262,
+      "grabcut_minus_box_iou": -0.0226,
+      "gt_shape_approx": "round_like",
+      "grabcut_shape_approx": "round_like",
+      "gt_top_color": "yellow_green",
+      "grabcut_top_color": "yellow",
+      "top_color_matches_polygon_gt": false,
+      "grabcut_ms_cpu": 0.909,
+      "yolox_supported_class_bbox_iou_best": 0.8215,
+      "any_80_class_box_iou50_match": {
+        "xyxy": [
+          586.8850913414589,
+          163.56660275665118,
+          602.592917222243,
+          178.34446797782567
+        ],
+        "score": 0.72736,
+        "unverified_coco_class_index": 32
+      },
+      "all_80_proposals_without_gt_selection": [
+        {
+          "proposal": {
+            "xyxy": [
+              116.62277221679688,
+              51.64623551403018,
+              309.0270174466647,
+              335.575845677218
+            ],
+            "score": 0.9107,
+            "unverified_coco_class_index": 0
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "black",
+                "fraction": 0.391
+              },
+              {
+                "name": "orange",
+                "fraction": 0.329
+              },
+              {
+                "name": "red",
+                "fraction": 0.233
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.615,
+              "circularity": 0.108,
+              "solidity": 0.555,
+              "cut_by_frame": false,
+              "area_pixels": 20450
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 198.18,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              43.0344977745643,
+              104.37825732608493,
+              147.49369107759915,
+              150.39318818840192
+            ],
+            "score": 0.80348,
+            "unverified_coco_class_index": 38
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "elongated_like",
+            "colors": [
+              {
+                "name": "yellow_green",
+                "fraction": 0.559
+              },
+              {
+                "name": "yellow",
+                "fraction": 0.292
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 2,
+              "circularity": 0.477,
+              "solidity": 0.897,
+              "cut_by_frame": false,
+              "area_pixels": 2187
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 21.621,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              586.8850913414589,
+              163.56660275665118,
+              602.592917222243,
+              178.34446797782567
+            ],
+            "score": 0.72736,
+            "unverified_coco_class_index": 32
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "round_like",
+            "colors": [
+              {
+                "name": "yellow",
+                "fraction": 0.38
+              },
+              {
+                "name": "yellow_green",
+                "fraction": 0.372
+              },
+              {
+                "name": "white",
+                "fraction": 0.248
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 1,
+              "circularity": 0.913,
+              "solidity": 0.983,
+              "cut_by_frame": false,
+              "area_pixels": 137
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 1.023,
+          "polygon_gt_iou_for_scoring": 0.8036,
+          "gt_box_iou_for_scoring": 0.8215
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              3.3865884634164662,
+              255.65556615719692,
+              140.47049302321213,
+              288.59620583829263
+            ],
+            "score": 0.42196,
+            "unverified_coco_class_index": 38
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "elongated_like",
+            "colors": [
+              {
+                "name": "yellow_green",
+                "fraction": 0.949
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 5.312,
+              "circularity": 0.3,
+              "solidity": 0.923,
+              "cut_by_frame": false,
+              "area_pixels": 882
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 20.235,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        }
+      ],
+      "proposals_considered_no_more_than": 5,
+      "end_to_end_grabcut_gt_iou_if_matched": 0.8036,
+      "end_to_end_shape_if_matched": "round_like"
+    },
+    {
+      "coco_image_id": 119445,
+      "filename": "000000119445.jpg",
+      "human_category_for_scoring_only": "sports_ball",
+      "image_size": [
+        640,
+        426
+      ],
+      "ground_truth_available": true,
+      "status": "evaluated",
+      "ground_polygon_pixels": 117,
+      "bbox_iou_reference": 0.75,
+      "grabcut_iou_oracle_box": 0.7025,
+      "grabcut_minus_box_iou": -0.0475,
+      "gt_shape_approx": "round_like",
+      "grabcut_shape_approx": "round_like",
+      "gt_top_color": "white",
+      "grabcut_top_color": "white",
+      "top_color_matches_polygon_gt": true,
+      "grabcut_ms_cpu": 0.698,
+      "yolox_supported_class_bbox_iou_best": 0.7965,
+      "any_80_class_box_iou50_match": {
+        "xyxy": [
+          301.121029487023,
+          91.0348991263214,
+          314.18330119206354,
+          103.49530247918966
+        ],
+        "score": 0.56421,
+        "unverified_coco_class_index": 32
+      },
+      "all_80_proposals_without_gt_selection": [
+        {
+          "proposal": {
+            "xyxy": [
+              178.3179708627554,
+              170.95471957099997,
+              346.9866415170523,
+              390.69810100238675
+            ],
+            "score": 0.90312,
+            "unverified_coco_class_index": 0
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "white",
+                "fraction": 0.418
+              },
+              {
+                "name": "gray",
+                "fraction": 0.179
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.954,
+              "circularity": 0.316,
+              "solidity": 0.773,
+              "cut_by_frame": false,
+              "area_pixels": 19509
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 252.849,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              557.9360169630784,
+              227.7746149331654,
+              640,
+              396.22835970441355
+            ],
+            "score": 0.78188,
+            "unverified_coco_class_index": 0
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "white",
+                "fraction": 0.833
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 1.208,
+              "circularity": 0.601,
+              "solidity": 0.88,
+              "cut_by_frame": true,
+              "area_pixels": 2623
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 60.459,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              438.7298818734976,
+              264.02033412671693,
+              571.3550039438101,
+              397.96786140965213
+            ],
+            "score": 0.78155,
+            "unverified_coco_class_index": 0
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "white",
+                "fraction": 0.622
+              },
+              {
+                "name": "blue",
+                "fraction": 0.26
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 1.333,
+              "circularity": 0.426,
+              "solidity": 0.778,
+              "cut_by_frame": false,
+              "area_pixels": 2519
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 107.285,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              301.121029487023,
+              91.0348991263214,
+              314.18330119206354,
+              103.49530247918966
+            ],
+            "score": 0.56421,
+            "unverified_coco_class_index": 32
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "round_like",
+            "colors": [
+              {
+                "name": "white",
+                "fraction": 0.73
+              },
+              {
+                "name": "orange",
+                "fraction": 0.191
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 1,
+              "circularity": 0.908,
+              "solidity": 0.993,
+              "cut_by_frame": false,
+              "area_pixels": 89
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 0.752,
+          "polygon_gt_iou_for_scoring": 0.7025,
+          "gt_box_iou_for_scoring": 0.7965
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              443.5283074012169,
+              133.04299895083432,
+              520.0996222862831,
+              176.81068567764888
+            ],
+            "score": 0.3288,
+            "unverified_coco_class_index": 34
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "gray",
+                "fraction": 0.612
+              },
+              {
+                "name": "white",
+                "fraction": 0.287
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 1.2,
+              "circularity": 0.26,
+              "solidity": 0.639,
+              "cut_by_frame": false,
+              "area_pixels": 428
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 15.62,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        }
+      ],
+      "proposals_considered_no_more_than": 5,
+      "end_to_end_grabcut_gt_iou_if_matched": 0.7025,
+      "end_to_end_shape_if_matched": "round_like"
+    },
+    {
+      "coco_image_id": 448076,
+      "filename": "000000448076.jpg",
+      "human_category_for_scoring_only": "chair",
+      "image_size": [
+        640,
+        480
+      ],
+      "ground_truth_available": true,
+      "status": "evaluated",
+      "ground_polygon_pixels": 4830,
+      "bbox_iou_reference": 0.4453,
+      "grabcut_iou_oracle_box": 0.8561,
+      "grabcut_minus_box_iou": 0.4108,
+      "gt_shape_approx": "unknown",
+      "grabcut_shape_approx": "unknown",
+      "gt_top_color": "white",
+      "grabcut_top_color": "white",
+      "top_color_matches_polygon_gt": true,
+      "grabcut_ms_cpu": 56.032,
+      "yolox_supported_class_bbox_iou_best": 0,
+      "any_80_class_box_iou50_match": null,
+      "all_80_proposals_without_gt_selection": [
+        {
+          "proposal": {
+            "xyxy": [
+              40.57288536658654,
+              168.75774676983173,
+              136.77159236027643,
+              456.58395620492786
+            ],
+            "score": 0.80805,
+            "unverified_coco_class_index": 0
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "elongated_like",
+            "colors": [
+              {
+                "name": "orange",
+                "fraction": 0.341
+              },
+              {
+                "name": "black",
+                "fraction": 0.33
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.312,
+              "circularity": 0.232,
+              "solidity": 0.765,
+              "cut_by_frame": false,
+              "area_pixels": 16622
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 281.18,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              0.6788063049316406,
+              185.25857778695914,
+              33.6385624225323,
+              356.8674645057091
+            ],
+            "score": 0.80346,
+            "unverified_coco_class_index": 0
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "white",
+                "fraction": 0.702
+              },
+              {
+                "name": "gray",
+                "fraction": 0.184
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.577,
+              "circularity": 0.607,
+              "solidity": 0.896,
+              "cut_by_frame": true,
+              "area_pixels": 1009
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 30.315,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              427.103764460637,
+              182.48250521146335,
+              511.570551945613,
+              313.2802933913011
+            ],
+            "score": 0.79893,
+            "unverified_coco_class_index": 58
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "red",
+                "fraction": 0.389
+              },
+              {
+                "name": "gray",
+                "fraction": 0.255
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.631,
+              "circularity": 0.376,
+              "solidity": 0.891,
+              "cut_by_frame": false,
+              "area_pixels": 8144
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 76.436,
+          "polygon_gt_iou_for_scoring": 0.0011,
+          "gt_box_iou_for_scoring": 0.1538
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              309.37536092904895,
+              167.1267348069411,
+              357.6247141911433,
+              351.68279794546277
+            ],
+            "score": 0.77385,
+            "unverified_coco_class_index": 0
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "elongated_like",
+            "colors": [
+              {
+                "name": "black",
+                "fraction": 0.627
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.256,
+              "circularity": 0.29,
+              "solidity": 0.836,
+              "cut_by_frame": false,
+              "area_pixels": 5494
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 89.792,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              116.89588106595554,
+              172.58347731370193,
+              193.27959500826321,
+              397.90780874399036
+            ],
+            "score": 0.76043,
+            "unverified_coco_class_index": 0
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "elongated_like",
+            "colors": [
+              {
+                "name": "pink",
+                "fraction": 0.386
+              },
+              {
+                "name": "gray",
+                "fraction": 0.219
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.503,
+              "circularity": 0.463,
+              "solidity": 0.86,
+              "cut_by_frame": false,
+              "area_pixels": 7579
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 150.664,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        }
+      ],
+      "proposals_considered_no_more_than": 5,
+      "end_to_end_grabcut_gt_iou_if_matched": null,
+      "end_to_end_shape_if_matched": null
+    },
+    {
+      "coco_image_id": 313130,
+      "filename": "000000313130.jpg",
+      "human_category_for_scoring_only": "chair",
+      "image_size": [
+        640,
+        480
+      ],
+      "ground_truth_available": true,
+      "status": "evaluated",
+      "ground_polygon_pixels": 5664,
+      "bbox_iou_reference": 0.4537,
+      "grabcut_iou_oracle_box": 0.6124,
+      "grabcut_minus_box_iou": 0.1587,
+      "gt_shape_approx": "elongated_like",
+      "grabcut_shape_approx": "elongated_like",
+      "gt_top_color": "orange",
+      "grabcut_top_color": "orange",
+      "top_color_matches_polygon_gt": true,
+      "grabcut_ms_cpu": 114.677,
+      "yolox_supported_class_bbox_iou_best": 0.9529,
+      "any_80_class_box_iou50_match": {
+        "xyxy": [
+          48.87493133544922,
+          124.06504704402043,
+          129.89985832801233,
+          276.5969027005709
+        ],
+        "score": 0.85568,
+        "unverified_coco_class_index": 56
+      },
+      "all_80_proposals_without_gt_selection": [
+        {
+          "proposal": {
+            "xyxy": [
+              124.55972524789664,
+              67.04110952524039,
+              388.534663273738,
+              475.76331505408655
+            ],
+            "score": 0.96446,
+            "unverified_coco_class_index": 72
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "blue",
+                "fraction": 0.36
+              },
+              {
+                "name": "gray",
+                "fraction": 0.271
+              },
+              {
+                "name": "black",
+                "fraction": 0.219
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.636,
+              "circularity": 0.56,
+              "solidity": 0.931,
+              "cut_by_frame": false,
+              "area_pixels": 86339
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 681.689,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0.0041
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              388.16700275127704,
+              131.62151923546423,
+              520.2689948448768,
+              229.4261257465069
+            ],
+            "score": 0.86798,
+            "unverified_coco_class_index": 68
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "gray",
+                "fraction": 0.487
+              },
+              {
+                "name": "white",
+                "fraction": 0.292
+              },
+              {
+                "name": "blue",
+                "fraction": 0.148
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 1.451,
+              "circularity": 0.701,
+              "solidity": 0.961,
+              "cut_by_frame": false,
+              "area_pixels": 10721
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 39.814,
+          "polygon_gt_iou_for_scoring": 0,
+          "gt_box_iou_for_scoring": 0
+        },
+        {
+          "proposal": {
+            "xyxy": [
+              48.87493133544922,
+              124.06504704402043,
+              129.89985832801233,
+              276.5969027005709
+            ],
+            "score": 0.85568,
+            "unverified_coco_class_index": 56
+          },
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "elongated_like",
+            "colors": [
+              {
+                "name": "orange",
+                "fraction": 0.579
+              },
+              {
+                "name": "red",
+                "fraction": 0.338
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.418,
+              "circularity": 0.507,
+              "solidity": 0.906,
+              "cut_by_frame": false,
+              "area_pixels": 6863
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 109.923,
+          "polygon_gt_iou_for_scoring": 0.6011,
+          "gt_box_iou_for_scoring": 0.9529
+        }
+      ],
+      "proposals_considered_no_more_than": 5,
+      "end_to_end_grabcut_gt_iou_if_matched": 0.6011,
+      "end_to_end_shape_if_matched": "elongated_like"
+    },
+    {
+      "coco_image_id": 23781,
+      "filename": "000000023781.jpg",
+      "human_category_for_scoring_only": "target_free",
+      "image_size": [
+        640,
+        427
+      ],
+      "ground_truth_available": false,
+      "reference_target_boxes": 0,
+      "yolox_supported_target_proposals": 0,
+      "generic_proposals_without_gt_labels": [
+        {
+          "xyxy": [
+            81.69262225811298,
+            112.54716287242422,
+            328.0224844125601,
+            250.31378098357496
+          ],
+          "score": 0.5651,
+          "unverified_coco_class_index": 50,
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "yellow_green",
+                "fraction": 0.316
+              },
+              {
+                "name": "black",
+                "fraction": 0.191
+              },
+              {
+                "name": "green",
+                "fraction": 0.153
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 1.508,
+              "circularity": 0.387,
+              "solidity": 0.838,
+              "cut_by_frame": false,
+              "area_pixels": 13394
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 508.674
+        },
+        {
+          "xyxy": [
+            0,
+            204.23227129051153,
+            154.5765099158654,
+            424.3967167422068
+          ],
+          "score": 0.43027,
+          "unverified_coco_class_index": 45,
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "red",
+                "fraction": 0.478
+              },
+              {
+                "name": "black",
+                "fraction": 0.298
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.805,
+              "circularity": 0.625,
+              "solidity": 0.918,
+              "cut_by_frame": true,
+              "area_pixels": 21751
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 387.314
+        },
+        {
+          "xyxy": [
+            477.2779787503756,
+            342.353691348069,
+            582.7382659912109,
+            426.9144898833131
+          ],
+          "score": 0.34515,
+          "unverified_coco_class_index": 51,
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "compact_like",
+            "colors": [
+              {
+                "name": "red",
+                "fraction": 0.895
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 1.012,
+              "circularity": 0.62,
+              "solidity": 0.948,
+              "cut_by_frame": false,
+              "area_pixels": 3480
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 75.017
+        },
+        {
+          "xyxy": [
+            521.0752311119667,
+            186.33806943550385,
+            581.0247538639949,
+            242.2480570978398
+          ],
+          "score": 0.33841,
+          "unverified_coco_class_index": 47,
+          "descriptor": null,
+          "status": "indeterminate",
+          "grabcut_ms_host": 14.554
+        },
+        {
+          "xyxy": [
+            149.37217125525842,
+            224.2276935440173,
+            363.27825692983777,
+            426.9157789216625
+          ],
+          "score": 0.31267,
+          "unverified_coco_class_index": 46,
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "unknown",
+            "colors": [
+              {
+                "name": "yellow_green",
+                "fraction": 0.367
+              },
+              {
+                "name": "white",
+                "fraction": 0.267
+              },
+              {
+                "name": "black",
+                "fraction": 0.167
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 1.059,
+              "circularity": 0.593,
+              "solidity": 0.924,
+              "cut_by_frame": true,
+              "area_pixels": 33906
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 350.274
+        }
+      ],
+      "other_coco_objects_may_exist": true
+    },
+    {
+      "coco_image_id": 547144,
+      "filename": "000000547144.jpg",
+      "human_category_for_scoring_only": "target_free",
+      "image_size": [
+        640,
+        480
+      ],
+      "ground_truth_available": false,
+      "reference_target_boxes": 0,
+      "yolox_supported_target_proposals": 0,
+      "generic_proposals_without_gt_labels": [
+        {
+          "xyxy": [
+            23.3148193359375,
+            219.65876652644232,
+            157.373293363131,
+            356.42061673677887
+          ],
+          "score": 0.91936,
+          "unverified_coco_class_index": 63,
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "round_like",
+            "colors": [
+              {
+                "name": "blue",
+                "fraction": 0.919
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 0.969,
+              "circularity": 0.707,
+              "solidity": 0.956,
+              "cut_by_frame": false,
+              "area_pixels": 13331
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 81.407
+        },
+        {
+          "xyxy": [
+            452.3158733661358,
+            253.87469658484827,
+            601.2897080641526,
+            301.8412927480844
+          ],
+          "score": 0.85109,
+          "unverified_coco_class_index": 66,
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "elongated_like",
+            "colors": [
+              {
+                "name": "gray",
+                "fraction": 0.571
+              },
+              {
+                "name": "white",
+                "fraction": 0.405
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 3.043,
+              "circularity": 0.464,
+              "solidity": 0.961,
+              "cut_by_frame": false,
+              "area_pixels": 4074
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 29.791
+        },
+        {
+          "xyxy": [
+            159.98382568359375,
+            283.93773298997144,
+            329.751469538762,
+            342.4222241915189
+          ],
+          "score": 0.84774,
+          "unverified_coco_class_index": 66,
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "elongated_like",
+            "colors": [
+              {
+                "name": "white",
+                "fraction": 0.873
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 2.862,
+              "circularity": 0.53,
+              "solidity": 0.973,
+              "cut_by_frame": false,
+              "area_pixels": 7054
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 34.386
+        },
+        {
+          "xyxy": [
+            157.8485811673678,
+            161.29913330078125,
+            302.7350088266226,
+            288.91768235426684
+          ],
+          "score": 0.53842,
+          "unverified_coco_class_index": 62,
+          "descriptor": {
+            "status": "candidate_only",
+            "shape": "round_like",
+            "colors": [
+              {
+                "name": "blue",
+                "fraction": 0.951
+              }
+            ],
+            "geometry": {
+              "aspect_ratio": 1.271,
+              "circularity": 0.756,
+              "solidity": 0.984,
+              "cut_by_frame": false,
+              "area_pixels": 8480
+            },
+            "not_an_object_identity_or_category": true
+          },
+          "status": "candidate",
+          "grabcut_ms_host": 57.948
+        },
+        {
+          "xyxy": [
+            588.1388209416316,
+            261.0301898075984,
+            617.23753122183,
+            280.7349469111516
+          ],
+          "score": 0.49289,
+          "unverified_coco_class_index": 64,
+          "descriptor": null,
+          "status": "indeterminate",
+          "grabcut_ms_host": 2.481
+        }
+      ],
+      "other_coco_objects_may_exist": true
+    }
+  ],
+  "technical_provenance": {
+    "exact_successful_run": "https://github.com/Jean-Philippe56520/Microduck/actions/runs/40959987215",
+    "actual_git_sha": "3223aa1627b010d91117a275e3d38fe644d8df27",
+    "actual_job_id": 123749932809,
+    "filename": "grabcut_coco_fourth_disjoint_results.json",
+    "source": "successfully executed GitHub Actions stdout",
+    "rederived_metrics_computed_after_first_run": true
+  },
+  "interpretation_after_experiment": {
+    "oracle_segmentation_quality_gate": true,
+    "practical_2hz_descriptive_pipeline_ready": false,
+    "reason": "Running GrabCut on up to 5 GT-independent candidate regions exceeded the 500ms recognition period on a GitHub Linux host: 532.681ms median and 9718.142ms maximum per frame in this sample; RK3566 unknown.",
+    "gt_independent_regions_selected_before_scoring": true,
+    "gt_polygon_used_only_as_evaluation_reference": true,
+    "spatially_matching_region_with_all_80_pretrained_classes": "8/10 evaluated objects",
+    "shape_from_predicted_boxes": "2/2 annotated sports balls returned round_like in the retrospectively matched predictions",
+    "region_proposal_count_per_frame_limit": 5,
+    "segmentation_cost_over_all_proposals_per_frame_ms": {
+      "median": 532.676,
+      "nearest_rank_p95": 9718.136,
+      "max": 9718.136,
+      "measured_runner_only_not_robot": true,
+      "per_image": [
+        {
+          "coco_image_id": 292908,
+          "category_for_scoring_only": "person",
+          "proposals": 2,
+          "total_ms": 13.91
+        },
+        {
+          "coco_image_id": 295316,
+          "category_for_scoring_only": "person",
+          "proposals": 5,
+          "total_ms": 34.381
+        },
+        {
+          "coco_image_id": 558073,
+          "category_for_scoring_only": "cat",
+          "proposals": 1,
+          "total_ms": 222.744
+        },
+        {
+          "coco_image_id": 198641,
+          "category_for_scoring_only": "cat",
+          "proposals": 5,
+          "total_ms": 1784.832
+        },
+        {
+          "coco_image_id": 107226,
+          "category_for_scoring_only": "dog",
+          "proposals": 5,
+          "total_ms": 739.513
+        },
+        {
+          "coco_image_id": 530624,
+          "category_for_scoring_only": "dog",
+          "proposals": 2,
+          "total_ms": 9718.136
+        },
+        {
+          "coco_image_id": 39551,
+          "category_for_scoring_only": "sports_ball",
+          "proposals": 4,
+          "total_ms": 241.059
+        },
+        {
+          "coco_image_id": 119445,
+          "category_for_scoring_only": "sports_ball",
+          "proposals": 5,
+          "total_ms": 436.965
+        },
+        {
+          "coco_image_id": 448076,
+          "category_for_scoring_only": "chair",
+          "proposals": 5,
+          "total_ms": 628.387
+        },
+        {
+          "coco_image_id": 313130,
+          "category_for_scoring_only": "chair",
+          "proposals": 3,
+          "total_ms": 831.426
+        },
+        {
+          "coco_image_id": 23781,
+          "category_for_scoring_only": "target_free",
+          "proposals": 5,
+          "total_ms": 1335.833
+        },
+        {
+          "coco_image_id": 547144,
+          "category_for_scoring_only": "target_free",
+          "proposals": 5,
+          "total_ms": 206.013
+        }
+      ]
+    },
+    "negative_images_have_non_target_objects": true,
+    "no_generic_false_positive_rate_possible_from_target_free_cases": true,
+    "end_to_end_recognition_claimed": false,
+    "robot_runtime_not_measured": true,
+    "outcome": "DO_NOT_DEPLOY_IN_OEM_OR_RUNNING_KWIPI; preserve numerical report and reject host prototype for runtime"
+  }
+}
