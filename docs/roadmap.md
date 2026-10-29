@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-PERF-1H — banc de comparaison PC du rôle 9B (29/10/2026, candidat PC-fixtures) :** [protocole](qw-perf1h-pc-role-benchmark-placement-2026-10-29.md). Suite aux deux couleurs QW-PERF-1G, adapter le banc existant QW-PERF-1 pour observer la résidence mémoire pendant les cinq profils v2/texte/JSON synthétiques, avec lancement Vulkan/iGPU isolé sur 11435 et témoin 11434 ; le nouveau commutateur PowerShell nécessite une autorisation explicite de cinq appels et refuse un port déjà occupé. **Pas de nouveau modèle ni de nouveau conseiller** ; effectivité du calcul GPU, vitesse du rôle, généralisation et qualité demeurent non validées sur le PC et sur le robot. Préférer mesures réelles contrôlées puis QW-1/QW-2 après protections et mémoire filtrée.
+
+
 **QW-PERF-1G — comparaison exploratoire CPU/GPU opérateur (29/10/2026, PC réel) :** [rapport](qw-perf1g-pc-gpu-cpu-color-comparison-2026-10-29.md) ; sur deux paires couleur synthétiques de mêmes scripts/paramètres, Qwen9B a répondu en 8,343/8,891 s sur 11435 (`gpu_memory_reported`, ~5,615 Go déclarés) contre 10,735/11,343 s sur 11434 (`cpu_memory_reported`, 0 octet). Moyenne 8,617 s vs 11,039 s, écart descriptif −21,94 %. **Calcul GPU/efficacité réelle non vérifiés indépendamment ; absence de randomisation, d'échantillon statistique, de contrôle mémoire/cache/thermie et de validation sémantique.** L'étape suivante est une comparaison appariée bornée de vrais prompts de conseiller Qwen sur images artificielles, mesures CPU/GPU/RSS, sans nouvelle commande motrice ni installation.
 
 
