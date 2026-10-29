@@ -68,8 +68,12 @@ if ($PerfCheck -and $Port -ne 11435) {
     Write-Host "Le benchmark temporaire n'utilise que le port 11435, pas le serveur habituel."
     exit 2
 }
-if (($VisionCheck -or $PerfCheck) -and $Image) {
+if ($VisionCheck -and $Image) {
     Write-Host "Autotest synthetique : ne pas fournir d'image privee."
+    exit 2
+}
+if ($PerfCheck -and $Image) {
+    Write-Host "Benchmark synthetique : ne pas fournir d'image privee."
     exit 2
 }
 if ($RoleV2 -and -not $RolePreview) {
