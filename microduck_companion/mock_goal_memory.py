@@ -467,7 +467,9 @@ class MockGoalMemory:
             key = (verb, goal.category)
             attempts = self.attempts(goal.goal_id)
             if not attempts:
-                continue  # DET-1 handles the never-attempted active goal.
+                if goal.state == "suspended":
+                    held.add(key)  # Suspension alone forbids re-engagement.
+                continue  # DET-1 handles only never-attempted ACTIVE goals.
             seen = {a.strategy for a in attempts}
             unused = any(v == verb and s not in seen
                          for s, v in STRATEGIES.items())
