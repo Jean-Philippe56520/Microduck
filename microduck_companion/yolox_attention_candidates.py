@@ -23,7 +23,7 @@ def _iou(a, b):
     return overlap/union if union > 0 else 0.
 
 
-def decode_candidates(raw, *, width, height, max_results=5):
+def decode_candidates(raw, *, width, height, max_results=3):
     """Fixed .25 YOLOX joint score and existing 0.50 class-agnostic NMS.
 
     These candidates are hypotheses amongst the 80 pretrained COCO classes,
