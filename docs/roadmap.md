@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-PERF-1F — preuve de placement en cours (29/10/2026, PC-fixtures candidat) :** [observateur `/api/ps` opt-in](qw-perf1f-ollama-placement-sampling-2026-10-29.md) pendant l'autotest vision synthétique existant sur Ollama local `11435`, sans nouveaux moteurs/modèles ou stockage. La dernière lecture du fichier `server.log` comptait **20 lignes du 29/10**, **aucune trace de sélection GPU**, et les journaux du 28/10 sont historiques ; garder **GPU réel inconnu** jusqu'au rapport `ollama_placement`. Si `size_vram` positif, confirmer ensuite le backend et la qualité/latence CPU/GPU à stimuli identiques ; aucune réduction de délai acquise.
+
+
 **QW-PERF-1E — preuve PC du 29/10/2026 :** [test de deux images synthétiques avec iGPU demandé](qw-perf1b-real-windows-9b-baseline-2026-10-29.md) ; `-VisionCheck -Port 11435` a renvoyé rouge et bleu corrects avec **9,079/9,031 s**, serveur temporaire arrêté normalement. **GPU réellement chargé inconnu** ; second lancement visible mais sans sortie finale fournie. Vérifier la sélection matérielle du serveur temporaire par `ollama ps` pendant l'appel ou journaux pertinents, puis benchmark CPU/GPU sur mêmes prompts et images. Ne pas comparer directement ces couleurs au rôle Qwen v2 ni déclarer Kwipi accéléré, autonome ou validé.
 
 
