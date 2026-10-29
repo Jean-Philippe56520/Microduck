@@ -148,6 +148,11 @@ def decode_boxes(raw: object, *, width: int, height: int) -> tuple[Box, ...]:
     x2 = np.clip(center[:, 0] + size[:, 0] / 2, 0, rw) * sx
     y1 = np.clip(center[:, 1] - size[:, 1] / 2, 0, rh) * sy
     y2 = np.clip(center[:, 1] + size[:, 1] / 2, 0, rh) * sy
+    # The final multiply can overshoot the integer original boundary by one
+    # float ULP (e.g. 416 * (417/416) > 417). Clip AFTER rescaling too.
+    # This affects only boundary rounding, not scores/NMS/COCO labels.
+    x1, x2 = np.clip(x1, 0, width), np.clip(x2, 0, width)
+    y1, y2 = np.clip(y1, 0, height), np.clip(y2, 0, height)
     valid = (x2 > x1 + 1e-6) & (y2 > y1 + 1e-6)
     detections: list[Box] = []
     for name, coco_index in CATEGORIES.items():
@@ -187,7 +192,9 @@ def _finite_number(x: object) -> bool:
 
 
 def select_coco_cases(blob: bytes, *, per_class: int = PER_CLASS,
-                      negatives: int = NEGATIVES) -> tuple[CocoCase, ...]:
+                      negatives: int = NEGATIVES,
+                      excluded_image_ids: frozenset[int] = frozenset()
+                      ) -> tuple[CocoCase, ...]:
     """Small fixed selection from COCO 2017 VAL, never from training imagery.
 
     Select only image records declaring Flickr CC BY, check box geometry and
@@ -198,7 +205,11 @@ def select_coco_cases(blob: bytes, *, per_class: int = PER_CLASS,
     if (type(blob) is not bytes
             or not 128 <= len(blob) <= MAX_COCO_JSON_BYTES
             or type(per_class) is not int or not 1 <= per_class <= 4
-            or type(negatives) is not int or not 1 <= negatives <= 4):
+            or type(negatives) is not int or not 1 <= negatives <= 4
+            or type(excluded_image_ids) is not frozenset
+            or len(excluded_image_ids) > MAX_SELECTED
+            or any(type(i) is not int or i < 0
+                   for i in excluded_image_ids)):
         raise PhotoBaselineError("invalid bounded COCO annotation input")
     try:
         data = json.loads(blob, object_pairs_hook=_pair_unique,
@@ -281,7 +292,7 @@ def select_coco_cases(blob: bytes, *, per_class: int = PER_CLASS,
         truth[image_id].append(Box(
             classes_by_id[cat_id], (x1, y1, x2, y2)
         ))
-    eligible = set(candidates) - invalid_ids
+    eligible = set(candidates) - invalid_ids - excluded_image_ids
     def random_order(ids):
         return sorted(ids, key=lambda i: (
             hashlib.sha256(f"{SEED}:{i}".encode()).digest(), i
@@ -442,12 +453,15 @@ def _official_jpeg(case: CocoCase) -> bytes:
     return raw
 
 
-def benchmark(*, model_path: Path, annotations_path: Path) -> dict:
+def benchmark(*, model_path: Path, annotations_path: Path,
+              cohort: str = "baseline") -> dict:
     """Real, non-low-height COCO bbox benchmark on 24 licensed val photos.
 
     File hashes are checked before reading or opening ONNX; never allow an
     unreviewed model/annotation or a train split into the evaluated cohort.
     """
+    if type(cohort) is not str or cohort not in ("baseline", "disjoint_followup"):
+        raise PhotoBaselineError("unapproved COCO evaluation cohort")
     validate_model_file(model_path)
     if (not isinstance(annotations_path, Path)
             or annotations_path.is_symlink()
@@ -458,7 +472,11 @@ def benchmark(*, model_path: Path, annotations_path: Path) -> dict:
     annotation_digest = hashlib.sha256(blob).hexdigest()
     if annotation_digest != ANNOTATIONS_SHA256:
         raise PhotoBaselineError("COCO annotations SHA256 mismatch")
-    cases = select_coco_cases(blob)
+    original = select_coco_cases(blob) if cohort == "disjoint_followup" else ()
+    excluded_ids = frozenset(case.image_id for case in original)
+    cases = select_coco_cases(blob, excluded_image_ids=excluded_ids)
+    if excluded_ids.intersection(case.image_id for case in cases):
+        raise PhotoBaselineError("COCO followup leaked original images")
     import onnxruntime as ort
     options = ort.SessionOptions()
     options.intra_op_num_threads = 1
@@ -502,6 +520,13 @@ def benchmark(*, model_path: Path, annotations_path: Path) -> dict:
         "photo_rights_independently_verified": False,
         "source_split": "COCO2017_val_not_train",
         "cohort_policy": f"{PER_CLASS} per class, {NEGATIVES} negatives, SHA-order fixed",
+        "cohort": cohort,
+        "excluded_original_images": len(excluded_ids),
+        "original_cohort_overlap": len(excluded_ids.intersection(
+            case.image_id for case in cases)),
+        "image_ids_disjoint_not_scene_or_camera_independence": True,
+        "no_gt_target_not_proven_empty_room": True,
+        "independent_low_camera_annotations_available": False,
         "selected_image_ids": [case.image_id for case in cases],
         "image_sha256": digests,
         "categories": list(CATEGORIES),
@@ -533,11 +558,14 @@ def main(argv=None) -> int:
     parser.add_argument("--model-path", type=Path, required=True)
     parser.add_argument("--annotations-path", type=Path, required=True)
     parser.add_argument("--approved-public-media", action="store_true")
+    parser.add_argument("--cohort", choices=("baseline", "disjoint_followup"),
+                        default="baseline")
     args = parser.parse_args(argv)
     if not args.approved_public_media:
         parser.error("public-media and source-license review opt-in required")
     print(json.dumps(
-        benchmark(model_path=args.model_path, annotations_path=args.annotations_path),
+        benchmark(model_path=args.model_path, annotations_path=args.annotations_path,
+                  cohort=args.cohort),
         allow_nan=False, sort_keys=True,
     ))
     return 0
