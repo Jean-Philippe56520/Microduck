@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-PERF-1H — validation CI et fusion terminées (29/10/2026) :** [PR #158](https://github.com/Jean-Philippe56520/Microduck/pull/158), commit `b558007a`, [tests Python #40857661598](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40857661598), [N1 #40857661522](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40857661522) verts. Étape **codée/testée sur fixtures, non validée sur vrai 9B dans ce lot** : banc synthétique des cinq profils avec relevé mémoire GPU Ollama optionnel et lanceur temporaire 11435 à consentement explicite. Le gain réel CPU/GPU, activité de calcul, pression mémoire et qualité du conseiller pour Kwipi restent inconnus ; [protocole d'essai PC supervisé](qw-perf1h-pc-role-benchmark-placement-2026-10-29.md). Aucun geste/moteur/modèle embarqué ni souvenir modifié.
+
+
 **QW-PERF-1H — banc de comparaison PC du rôle 9B (29/10/2026, candidat PC-fixtures) :** [protocole](qw-perf1h-pc-role-benchmark-placement-2026-10-29.md). Suite aux deux couleurs QW-PERF-1G, adapter le banc existant QW-PERF-1 pour observer la résidence mémoire pendant les cinq profils v2/texte/JSON synthétiques, avec lancement Vulkan/iGPU isolé sur 11435 et témoin 11434 ; le nouveau commutateur PowerShell nécessite une autorisation explicite de cinq appels et refuse un port déjà occupé. **Pas de nouveau modèle ni de nouveau conseiller** ; effectivité du calcul GPU, vitesse du rôle, généralisation et qualité demeurent non validées sur le PC et sur le robot. Préférer mesures réelles contrôlées puis QW-1/QW-2 après protections et mémoire filtrée.
 
 
