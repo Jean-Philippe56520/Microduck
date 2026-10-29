@@ -1,5 +1,8 @@
 # QW-PERF-1H — Banc PC du rôle Qwen 9B avec placement Ollama observé
 
+**Addendum QW-PERF-1I après exécution réelle opérateur (29/10/2026) :** [cinq profils Qwen3.5 9B sur GPU candidat/CPU, chiffres et réserves](qw-perf1i-real-pc-role-cpu-gpu-2026-10-29.md). Le protocole ci-dessous a été exécuté dans le worktree Windows `a037778`, avec code de sortie 0 de chaque côté et arrêt du serveur temporaire. `11435` a déclaré **5 614 726 020 octets de mémoire GPU**, `11434` **0** ; les sommes de `wall_s` sont **50,422 s vs 74,937 s**, différence descriptive **−32,714 %** sur une seule série non contrebalancée. Tous les profils restent `status=unverified`, deux JSON correspondants aux fixtures par serveur seulement ; la qualité de conseil et les calculs GPU indépendants **ne sont pas validés**. Le texte initial ci-dessous exprime le plan **avant** cette preuve réelle ; ne pas demander automatiquement une répétition.
+
+
 **État post-fusion vérifié le 29/10/2026 :** [PR #158 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/158) avec commit squash `b558007a565f4ca0fb83cef75b3eae3da59c010f`, [CI Python #40857661598](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40857661598) et [inventaire N1 #40857661522](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40857661522) verts. Le premier contrôle CI avait relevé une régression du texte d'un garde-fou PowerShell historique ; le correctif maintient le test `if ($VisionCheck -and $Image)` et ajoute un garde-fou séparé pour `PerfCheck`. Les contrôles finaux sont verts. **Aucun Qwen réel, GPU, Mac/Windows PowerShell exécuté ni robot testé par ces CI.** Le protocole initial ci-dessous s'applique maintenant à la version fusionnée et requiert toujours l'accord de l'opérateur.
 
 
