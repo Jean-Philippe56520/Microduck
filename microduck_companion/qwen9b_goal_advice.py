@@ -377,8 +377,14 @@ def _pc_fixture() -> tuple[
 ]:
     """Seed only a single IN-MEMORY fictional objective for an opt-in PC A/B."""
     from .passive_intentions import PassiveIntent
+    from .passive_memory import PassiveObservationJournal
+    from .passive_learning import PassiveLearning
     memory = ExperienceMemory(":memory:")
     try:
+        # MEM-2A/C1 depend on existing F1-C/F2-C tables even when empty.
+        # Reuse their normal initializers in this isolated PC-only fixture.
+        PassiveObservationJournal(memory)
+        PassiveLearning(memory)
         semantics = CategorySemantics(memory)
         ledger = MockExperienceLedger(memory)
         goals = MockGoalMemory(memory, ledger)
