@@ -183,7 +183,9 @@ def run_case(*, case_id: str, consent: bool, port: int = 11434,
         "role_version": ROLE_VERSION_V2,
         "case_id": case_id,
         "status": answer["status"],
-        "review_state": "independent_human_review_required",
+        "review_state": ("independent_human_review_required"
+                         if answer["status"] == "unverified"
+                         else "not_assessable_no_valid_answer"),
         "quality_score": None,
         "machine_use": "blocked",
         "review_flags": flags,
