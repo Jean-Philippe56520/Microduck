@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**QW-QUAL-1C — second relevé PC du vrai Qwen9B (29/10/2026) :** [rapport `scene_a`](qw-qual1c-scene-a-real-qwen-human-review-2026-10-29.md) ; **48,109 secondes pour 173 tokens** sur un seul stimulus artificiel, contre **37,063 secondes pour 114 tokens** du cas `scene_b` distinct. **Aucun calcul de speedup, p50/p95 ou effet GPU autorisé** : SHA local, port, poids binaires, charge CPU/GPU, RSS/thermie, énergie inconnus ; images/prompt/tokens non identiques. Aucune modification Ollama, modèle, Yocto, RAM du RK3566, NPU ou robotd 50 Hz ; l'inférence PC Qwen reste facultative et hors boucle moteurs.
+
+
 **QW-QUAL-1B — une consultation de Qwen3.5 9B sur scène synthétique affichée (29/10/2026, PC opérateur) :** [rapport](qw-qual1b-scene-b-real-qwen-human-review-2026-10-29.md), **37,063 s**, **114 tokens**, sortie de rôle v2, code 0. La provenance JSON ne documente ni consommation CPU/GPU/RSS ni température, ne permet pas d'attribuer cette durée à un backend donné, et n'inclut pas l'identifiant exact du code exécuté. Aucun essai robot, consommation RK3566, utilisation NPU, commande moteur, image réelle, migration SQLite, changement de driver ou ajout de service. Une durée 37 s est **hors boucle robotd 50 Hz** : conseiller PC éventuellement asynchrone uniquement, toujours facultatif, pas de conclusion de latence typique depuis un seul essai.
 
 

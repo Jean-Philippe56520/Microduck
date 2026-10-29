@@ -1,5 +1,8 @@
 # Kwipi — plan d'apprentissage autonome par l'expérience (EX)
 
+**QW-QUAL-1C — frontière hypothèse → expérience → mémoire (29/10/2026, PC réel) :** [`scene_a` analysée](qw-qual1c-scene-a-real-qwen-human-review-2026-10-29.md) : Qwen suggère hypothèse de contact/déplacement d'une forme rouge et mesure de position, propose aussi inaction ; cependant une **image synthétique unique**, une commande supposée ou un changement hypothétique ne sont ni une action OEM terminée, ni un effet observé indépendamment, ni une causalité apprise. **Aucun crédit, épisode SQLite, détermination ou récompense** ; `machine_use=blocked`, 0 commandes et 0 écritures. Qualité de la pertinence `ground_pick`/kick et géométrie 3D non établie. Après contre-lecture indépendante, `scene_c` facultative pour tester relation textile/récipient sans prétendre transporter.
+
+
 **QW-QUAL-1B — analyse d'une vraie réponse 9B sur dessin synthétique (29/10/2026) :** [première grille QW-QUAL](qw-qual1b-scene-b-real-qwen-human-review-2026-10-29.md). Le conseiller distingue écran et chat réel (indice positif de sens), mais propose une approche sans garantie du sol et une expérience « geste moteur » sans effet indépendant utile ni autorisation ; `review_flags=[]` signifie seulement absence de correspondance lexicale. **Aucune hypothèse n'est promue en souvenir causal, intention ou récompense** ; réponses `unverified` et `machine_use=blocked`. La suite doit évaluer des observations d'objets inertes/relations et la qualité d'abstention de façon indépendante, avec/sans Qwen, sans nouveau test moteur ni contact avec le vivant.
 
 
