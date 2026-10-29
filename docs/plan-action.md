@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**QW-PERF-1F — clore la preuve GPU manquante sans essais aléatoires (29/10/2026, code PC candidat/CI à vérifier) :** [sondage Ollama local `/api/ps` facultatif](qw-perf1f-ollama-placement-sampling-2026-10-29.md). Après constat que les **20 lignes du 29/10** dans `server.log` ne contiennent aucune trace GPU exploitable, **réutiliser** `kwipi-vision-test.ps1 -VisionCheck` et y ajouter l'option `-ReportPlacement` pour relever le `size_vram` déclaré pendant les deux appels autorisés. **Ne pas** inférer GPU utilisé depuis Vulkan demandé ou le succès de couleurs ; un échantillon `size_vram>0` indique une résidence GPU rapportée, **pas** un calcul GPU ou une accélération prouvée. Surveillance basse fréquence en lecture seule et timeout, mode absent par défaut, zéro changement au moteur/OEM/SQLite. Essai PC réel et comparaison à tâche identique restent à faire.
+
+
 **QW-PERF-1E — test temporaire réalisé le 29/10/2026, preuve partielle :** [relevé de deux couleurs synthétiques + question GPU](qw-perf1b-real-windows-9b-baseline-2026-10-29.md). Le lanceur existant `kwipi-vision-test.ps1 -VisionCheck -Port 11435` a exécuté **un cycle complet réussi** (rouge correct en **9,079 s**, bleu correct en **9,031 s**, zéro photo privée/moteur/SQLite) et arrêté le serveur qu'il a démarré. **L'option `OLLAMA_IGPU_ENABLE=1` dans le script ne prouve pas le GPU effectif** : pas de `ollama ps` sur `11435` durant l'inférence, ni journal de ce processus. Un second essai est commencé dans le journal utilisateur mais **pas achevé dans l'extrait**. Prochaine preuve : processeur réellement choisi, sans répétition arbitraire, avant toute comparaison appariée et optimisation 9B. Pas de nouveau pilote ni action OEM.
 
 

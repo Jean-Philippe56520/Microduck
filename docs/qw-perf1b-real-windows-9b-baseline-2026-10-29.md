@@ -1,5 +1,8 @@
 # QW-PERF-1B — Premier relevé réel opérateur, PC Windows/Ollama (29/10/2026)
 
+**Addendum QW-PERF-1F (29/10/2026, code PC candidat, non testé sur PC réel dans ce lot) :** [sonde automatique de placement mémoire Ollama](qw-perf1f-ollama-placement-sampling-2026-10-29.md) à exécuter seulement avec `-VisionCheck -ReportPlacement` sur le lanceur existant. Le fichier `server.log` possédait **20 lignes du 29/10**, aucune trace de sélection GPU, et l'ancien `ollama ps` port `11435` a échoué après arrêt du serveur temporaire. Cette absence de preuve **n'est pas** une preuve CPU. Le nouveau rapport local `ollama_placement` permettra de distinguer absence de modèle, CPU déclaré et mémoire GPU déclarée pendant l'inférence ; aucune mesure de calcul GPU ou de gain avant benchmark apparié.
+
+
 ## QW-PERF-1E — Premier test PC sur serveur iGPU autorisé, sans preuve GPU
 
 **Essai opérateur réel du 29/10/2026, résultats reçus en conversation ; mesures non reproduites indépendamment.** Le port `11435` était libre selon `Get-NetTCPConnection`. L'opérateur a exécuté dans un processus PowerShell enfant le **lanceur déjà présent** `scripts/kwipi-vision-test.ps1 -VisionCheck -Port 11435`. Le script source **définit** localement `OLLAMA_VULKAN=1` et `OLLAMA_IGPU_ENABLE=1` avant de lancer son Ollama temporaire si aucun serveur n'écoute sur le port ; **aucun relevé `ollama ps` ou journal de découverte GPU de ce processus temporaire n'a été transmis**.

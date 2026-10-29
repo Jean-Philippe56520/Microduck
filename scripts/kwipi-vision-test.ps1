@@ -8,7 +8,8 @@ param(
     [switch]$VisionCheck,
     [switch]$ComparePrompts,
     [switch]$RolePreview,
-    [switch]$RoleV2
+    [switch]$RoleV2,
+    [switch]$ReportPlacement
 )
 
 $ErrorActionPreference = "Stop"
@@ -49,6 +50,10 @@ Write-Host "Kwipi - evaluation visuelle PC, sans mouvement ni memorisation"
 Write-Host "Mode : $Mode | Modele : qwen3.5:9b | Ollama local : 127.0.0.1:$Port"
 Write-Host "L'image est preparee localement puis envoyee uniquement a Ollama sur 127.0.0.1."
 
+if ($ReportPlacement -and -not $VisionCheck) {
+    Write-Host "Placement GPU uniquement avec -VisionCheck et des couleurs synthetiques."
+    exit 2
+}
 if ($VisionCheck -and $Image) {
     Write-Host "Autotest synthetique : ne pas fournir d'image privee."
     exit 2
@@ -160,8 +165,10 @@ try {
     Push-Location $repo
     try {
         if ($VisionCheck) {
+            $placementArgs = @()
+            if ($ReportPlacement) { $placementArgs = @("--report-placement") }
             & $python -m microduck_companion.qwen9b_vision_check `
-                --ollama-port $Port --timeout 120
+                --ollama-port $Port --timeout 120 @placementArgs
         } elseif ($RolePreview) {
             $roleName = if ($RoleV2) { "v2" } else { "v1" }
             & $python -m microduck_companion.qwen9b_role_preview `
