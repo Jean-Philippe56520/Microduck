@@ -181,6 +181,7 @@ class PCOnlyOneShotTests(unittest.TestCase):
             self.assertNotIn("PRIVATE_USERNAME", json.dumps(report))
             self.assertNotIn("advisor_text_for_human_only", report)
             self.assertIsNone(report["quality_score"])
+            self.assertEqual("not_assessable_no_valid_answer", report["review_state"])
             self.assertEqual("blocked", report["machine_use"])
 
     def test_cli_one_case_with_explicit_text_display_is_only_opt_in(self):
