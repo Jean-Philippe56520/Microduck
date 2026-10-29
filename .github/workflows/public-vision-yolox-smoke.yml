@@ -53,9 +53,10 @@ jobs:
           
           from PIL import Image, ImageOps
           import onnxruntime as ort
+          import numpy as np
           
           from microduck_companion.cata_yolox_categories import (
-              MODEL_SHA256, MIN_SCORE, SIZE, prepare_image, validate_model_file,
+              MODEL_SHA256, MIN_SCORE, SIZE, CATEGORIES, prepare_image, validate_model_file,
           )
           from microduck_companion.cata2_bbox_eval import decode_boxes
           
@@ -81,6 +82,7 @@ jobs:
           
           rows = []
           times = []
+          diagnostics = []
           for rec in records:
               name = rec["file"]
               if Path(name).name != name or Path(name).suffix.lower() not in (".jpg", ".png"):
@@ -115,6 +117,33 @@ jobs:
               start = time.perf_counter()
               prediction = session.run(None, {"images": tensor})[0]
               times.append((time.perf_counter() - start) * 1000)
+              # Diagnostic of the unchanged raw head, before threshold or NMS.
+              # Diagnostic only; never use these scores as a new detector.
+              head = prediction[0]
+              obj = head[:, 4]
+              target_joint = {}
+              for label, class_idx in CATEGORIES.items():
+                  target_joint[label] = float(np.max(obj * head[:, 5 + class_idx]))
+              ball_cond = head[:, 5 + CATEGORIES["sports_ball"]]
+              ball_joint = obj * ball_cond
+              ball_index = int(np.argmax(ball_joint))
+              whole = obj[:, None] * head[:, 5:]
+              top_index = np.unravel_index(int(np.argmax(whole)), whole.shape)
+              diagnostics.append({
+                  "file": name,
+                  "declared_image_label": rec["category"],
+                  "max_sports_ball_joint": round(float(ball_joint[ball_index]), 7),
+                  "objectness_at_best_ball_joint": round(float(obj[ball_index]), 7),
+                  "sports_ball_conditional_at_best_joint": round(float(ball_cond[ball_index]), 7),
+                  "max_any_anchor_objectness": round(float(np.max(obj)), 7),
+                  "max_sports_ball_class_conditional_any_anchor": round(float(np.max(ball_cond)), 7),
+                  "top_any_of_80_class_idx": int(top_index[1]),
+                  "top_any_of_80_joint": round(float(whole[top_index]), 7),
+                  "max_joint_by_requested_category": {
+                      label: round(value, 7) for label, value in target_joint.items()
+                  },
+              })
+              del head, obj, whole
               boxes = decode_boxes(prediction, width=width, height=height)
               proposed = sorted({box.category for box in boxes})
               expected = rec["category"]
@@ -155,6 +184,8 @@ jobs:
               "cpu_onnx_inference_ms_median": round(statistics.median(times), 3),
               "counts_by_image_label": summary,
               "images": rows,
+              "raw_head_diagnostics_only": diagnostics,
+              "diagnostic_no_new_threshold_or_detection": True,
           }
           Path(os.environ["SMOKE_REPORT"]).write_text(
               json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
