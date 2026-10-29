@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**QW-PERF-1G — réemploi mesuré (29/10/2026, PC opérateur) :** [preuve CPU / mémoire GPU déclarée](qw-perf1g-pc-gpu-cpu-color-comparison-2026-10-29.md). **RÉUTILISER** l'observateur `/api/ps` et les deux fixtures vision de [PR #156 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/156) ; 11435 `gpu_memory_reported` (5 614 726 020 octets) vs 11434 `cpu_memory_reported` (0) ; 8,617 vs 11,039 s en moyenne sur deux couleurs synthétiques. **ADAPTER** uniquement la documentation de preuve ; **NE PAS CRÉER** de nouveau pilote, backend, serveur de production, lecteur SQLite ou code moteur. Le gain descriptif de 21,94 % n'est ni une preuve indépendante de calcul GPU ni une performance statistiquement établie ; une comparaison bornée sur les mêmes prompts de conseil reste nécessaire.
+
+
 **QW-PERF-1F — réutiliser/adapter/créer (29/10/2026, code candidat) :** [protocole et API officielle Ollama](qw-perf1f-ollama-placement-sampling-2026-10-29.md). **Réutiliser** `kwipi-vision-test.ps1`, `qwen9b_vision_check.py`, `OllamaEndpoint`, JSON strict, vraie API locale `GET /api/ps` ; **adapter** les deux entrées PC existantes avec `-ReportPlacement` facultatif ; **créer uniquement** la sonde bornée `ollama_device_placement.py` (GET localhost, petite fréquence, résumé numérique, aucune sauvegarde). Aucun fork ROCm/Vulkan, HSA override, second serveur, dépendance tierce, pilote moteur ni changement de sous-module.
 
 
