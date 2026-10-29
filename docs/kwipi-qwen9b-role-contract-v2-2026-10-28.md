@@ -1,5 +1,8 @@
 # Kwipi / Qwen3.5 9B — rôle v2, sens, personnalité et expériences (candidat)
 
+**QW-QUAL-1D — troisième consultation réelle du rôle candidat v2 (29/10/2026) :** [contre-lecture `scene_c`](qw-qual1d-scene-c-real-qwen-human-review-2026-10-29.md) : dessin de forme claire textile possible près de récipient vert ; Qwen répond en **44,140 s / 192 tokens**, classe la forme en céramique brisée possible, évoque `ground_pick` conditionnel, approche et son/fragilité sans protocole causal cohérent, et cite l'observation passive. Aucun effet OEM ni contenu/saisie/transport démontré. **Drapeaux humains présents, `machine_use=blocked`, 0 moteur/mémoire.** Les trois sorties `scene_a/b/c` sont des observations isolées, pas une qualification du conseiller ; **ne pas modifier le prompt v2 par surajustement** sans notation indépendante sur scénarios supplémentaires.
+
+
 **QW-QUAL-1C — retour réel sur `scene_a` (29/10/2026) :** [rapport de contre-lecture](qw-qual1c-scene-a-real-qwen-human-review-2026-10-29.md). Qwen v2 candidat a envisagé conditionnellement des interactions avec une forme rouge, un contrôle de déplacement et l'inaction (48,109 s, 173 tokens, résultat `unverified`), mais la sphéricité, un cylindre, la surface réelle et la pertinence de `ground_pick` ne sont pas démontrées par les pixels 2D. Références OEM chargées, acte achevé et effet indépendant inconnus. Les deux avertissements de revue humaine ont été levés ; machine_use reste blocked. Aucun ajustement de prompt ou commande robot ne découle de cette seule sortie.
 
 
