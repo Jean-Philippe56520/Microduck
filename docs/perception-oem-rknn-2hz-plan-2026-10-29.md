@@ -1,0 +1,46 @@
+# PER-OEM-0 — Direction de chantier : perception native Microduck, 2 Hz initialement
+
+**Décision du 29/10/2026 — CADRAGE UNIQUEMENT.** Le plan directeur [plan-action.md](plan-action.md) reste l'autorité. Aucun détecteur général choisi, aucun modèle embarqué, essai moteur, modification OEM ou nouvelle capacité déployée. Cette décision stabilise l'architecture et les critères de reprise pour éviter de recommencer des comparatifs sans gain.
+
+## Résultat fonctionnel attendu
+
+Kwipi doit pouvoir **observer hors ligne** à fréquence modérée des catégories utiles (humain, chat, chien, balle, chaise, inconnu), conserver la provenance et l'incertitude, puis proposer une attention/inaction selon F2 et ExperienceMemory. Une détection ne donne aucune commande à robotd et n'établit ni profondeur, ni danger, ni réel-vs-TV, ni conséquence d'action. La perception doit préserver les ressources et la commande OEM à 50 Hz.
+
+**Choix d'architecture fixé :** capteur caméra → `mediad` et prétraitement OEM `uyvy`/`duck-detect` → **RKNN/NPU RK3566 si le modèle est compatible et prouvé** → observations pour Kwipi. Le détecteur OEM existant à une classe est conservé. Ne créer ni second service caméra, ni contrôleur moteur/NPU, ni nouveau stockage, ni pilote. **Cadence initiale de reconnaissance = 2 Hz** (500 ms par analyse) ; pas de système adaptatif 1/1,5/2 Hz à coder. Le débit de la caméra et la boucle robotd à 50 Hz sont distincts. Si le modèle multicatégorie ne tient pas les budgets, il n'est pas activé ; 2 Hz n'est ni garantie de performance ni limite rigide.
+
+## Faits contrôlés et déficits
+
+- **SHA projet de référence avant lot :** `d4c34d307fedfa0ede38233d6047a8cfd18f7a6a`. Gitlinks : `upstream/microduck@942e58e3aa6dbb28e7037203fff11866122c7567`, `upstream/microduck_rl@b02fdea4902c2b93b7d34a83a6f05da4ececb7d3`. OEM main consulté `7d866d0f864c9b6f19ec6b7762ec2341520db3cc` (49 commits après le pin), **pas de mise à jour approuvée** ; décodeur `duck-detect/src/lib.rs` toujours mono-classe, `mediad/src/detect.rs` et notification `media.detections` idem.
+- [Paramètres OEM](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/robotd-params/src/lib.rs) : `duck_detector.enabled=false` **par défaut**, `hz=2.0`, `threshold=0.35` **propre au modèle mono-classe**. Le choix de 2 Hz ne signifie donc pas que la reconnaissance générale est déjà active. `mediad` lit ces paramètres, `duck-detect` attend un modèle 320×320, une classe, 2100 candidats ; `media.detections` diffuse des boîtes **sans identifiant de catégorie**. Compatibilité et consommation d'un autre modèle : **inconnues**.
+- [Mesures OEM Radxa Zero 3](https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/docs/project/npu-bringup.md) : NPU INT8 ≈0,8 TOPS, détecteur mono-classe 3,9 Mo, latence p50 **25,7 ms** / p95 **58,4 ms**, CPU de boucle **20,7 ms/image** à 2 Hz (≈4 % d'un coeur pour ce test), 63 °C fin d'essai ; jusqu'à ~95 °C à cadence non bornée. Ni autonomie batterie ni mémoire/thermique de modèle général mesurées.
+- [RK-A1 sur 18 JPEG COCO indépendants](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40930605777) : Rockchip YOLO11n **29 TP / 3 FP / 13 FN**, AP50 macro 0,555115, CPU hôte médian 33,985 ms ; YOLOX Nano **27 / 7 / 15**, AP50 0,546818, 7,377 ms. **0/4 balles reconnues pour chacun**, chaises 2/7 ; seuil de gain préannoncé non franchi. YOLO11n Rockchip **non adopté** ; YOLOX demeure témoin PC/MuJoCo, **pas cible embarquée**. Licence des poids YOLO11n/Ultralytics en distribution à vérifier.
+- [SIM-VIS-B #182](https://github.com/Jean-Philippe56520/Microduck/pull/182) prouve une balle visible par segmentation MuJoCo **3 352 pixels**, YOLOX = **0 boîte**. [SIM-VIS-A1 #181](https://github.com/Jean-Philippe56520/Microduck/pull/181) **brouillon**, `mediad` bloqué sur runner x86 par `webrtcsink`, OSMesa hors temps réel : ni caméra complète ni autonomie validée. Ne pas confondre GT simulée, annotations humaines et vrais capteurs.
+
+## Matrice de réemploi
+
+| Fonction | Décision | Condition |
+| --- | --- | --- |
+| Acquisition, caméra, UYVY, rotations, flux, contrôle d'état | **Réutiliser mediad/uyvy** | Sensor, optique et mount réels à vérifier à la réception |
+| Runtime RKNN, chargement et mesures NPU | **Réutiliser duck-detect/rknn, robotctl, duck-bench** | Driver, ABI, quantification, licence et coûts vérifiés |
+| Sortie observation/monitoring | **Réutiliser les interfaces OEM** | Vérifier consommateurs et fraîcheur ; notification actuelle mono-classe |
+| Décodage multicatégorie et schéma catégorie | **Adapter seulement si nécessaire** | Après démonstration d'un modèle suffisant et accord pour sous-modules |
+| YOLOX, bancs COCO/MuJoCo/Cat-A2b | **Réutiliser comme témoins** | Ne pas régler sur le jeu déjà testé ; pas de transfert du score PC à RK3566 |
+| Deuxième pilote, caméra concurrente, sécurité additionnelle, DB, nouvel entraînement par défaut | **Ne pas créer** | Aucun manque prouvé justifiant ces doublons |
+
+## Jalons avec portes de passage et d'arrêt
+
+**P0 — Architecture et état OEM : CADRAGE VALIDÉ.** Preuve positive : le code OEM épinglé fournit une caméra dans `mediad`, le runtime RKNN, des paramètres 2 Hz, un banc constructeur et un décodeur mono-classe. Preuve négative : aucune catégorie générale n'est livrée ; ni matériel réel ni modèle général prêt. **Arrêt :** ne plus débattre de la pile ni ajouter d'outil de capture ; pas d'action sur NPU/daemon à ce stade.
+
+**P1 — Qualité des catégories qui manquent (Cat-A2b #78) : EN ATTENTE d'annotations indépendantes.** À partir de prises nouvelles à faible hauteur, anonymisées et conservées hors Git, comparer GT humaine indépendante, objets partiels, balles/chaises et catégories inconnu ; cas positifs et négatifs (écran/photo/dessin, confusion, objet masqué). Compléter par GT segmentation OEM sur scènes **inédites et pré-déclarées** si cela répond à un manque. **Passage :** dataset/annotation/provenance jugés suffisants, critères de reconnaissance définis *avant* le modèle. **Stop :** si GT absente, ne pas multiplier les modèles/bancs ; poursuivre B/C, EX4 et scénarios de décision indépendants.
+
+**P2 — Sélection d'un modèle existant : NON ENTAMÉE pour l'embarqué.** Examiner d'abord variantes constructeur/communauté et références Rockchip réellement licenciées, compatibles RK3566, quantifiables et capables des catégories utiles. Comparer **une fois sur un nouveau lot non utilisé**, avec le même protocole (TP/FP/FN/IoU, petites balles/chaises, inconnus, détections erronées), baseline existante. Mesurer coût CPU hôte sans l'extrapoler au NPU. **Passage :** gain fonctionnel préenregistré sur classes faibles, faux positifs bornés, droits des poids clarifiés. **Stop :** non-gain comme RK-A1 ou licence douteuse → ne pas intégrer ni régler les seuils après résultat.
+
+**P3 — Préparation OEM/RKNN sur PC : conditionnelle à P2.** Vérifier empreintes modèles et outils de conversion Rockchip épinglés, format entrée/sortie, classe/score, orientation, lettrebox, quantification INT8 et correspondance ONNX↔RKNN sur échantillons indépendants. Réutiliser code `duck-detect` ; proposer **adaptateur minimal** ou contribution OEM seulement si l'incompatibilité est démontrée et accord obtenu. Positif : boîtes/classes/coordonnées reproduites et décodeur valide. Négatif : géométrie, classe, tensor/ABI incohérents → refus. **Aucune modification de gitlink ni activation sur robot sans autorisation.**
+
+**P4 — Porte matériel après réception : NON TESTÉ.** Inspection en lecture seule : révision caméra (IMX219/GC2093), modèle installé, `robotctl` version/health, pilote NPU, `mediad`, politiques, NPU, logs et `scripts/resource-audit.sh`. Tests graduels **à 2 Hz** sur scènes contrôlées, modèle et retour arrière connus, puis contrôle du CPU/RSS/RAM/NPU, température, disque/WAL, batterie/autonomie, latence p50/p95, fraîcheur détections et perturbation éventuelle de `robotd` 50 Hz. Témoin : service normal, détecteur désactivé. **Arrêt immédiat** si perte de sûreté, dégradation moteurs, surchauffe, OOM, faux positifs dangereux ou capteurs non fiables. 1 Hz / 1,5 Hz n'est envisagé qu'avec gain batterie/thermique **mesuré** et impact comportemental acceptable.
+
+**P5 — Perception → motivations → action OEM → effet : APRÈS preuves précédentes.** Réutiliser F1/F2, ExperienceMemory et EX4 ; détection = observation avec source, date, confiance et possibilité d'inaction, **jamais permission d'action**. Évaluer sur scènes inédites avec/sans mémoire/PC si l'effet réellement observé modifie une décision. Fin `robotd` et effet indépendant sont nécessaires à la causalité. Conserver SIM-E2 #101 et la voix en axes séparés.
+
+## Décision et retour arrière
+
+**En vigueur :** OEM `mediad` + RKNN/NPU comme architecture cible, **2 Hz par défaut lors de l'activation supervisée future**. **Non choisi :** modèle général précis ; ne pas confondre « OEM une classe prête » et « Kwipi multicatégorie livré ». Tests PC et CI servent à rejeter des pistes, non à certifier le robot. Aucune intervention sur les sous-modules, les moteurs, les poids, la configuration du robot ou les médias personnels dans ce lot. **Rollback documentaire :** revert de la PR d'orientation, sans rollback matériel requis.
