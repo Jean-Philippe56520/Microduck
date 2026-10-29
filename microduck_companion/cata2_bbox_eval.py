@@ -148,6 +148,11 @@ def decode_boxes(raw: object, *, width: int, height: int) -> tuple[Box, ...]:
     x2 = np.clip(center[:, 0] + size[:, 0] / 2, 0, rw) * sx
     y1 = np.clip(center[:, 1] - size[:, 1] / 2, 0, rh) * sy
     y2 = np.clip(center[:, 1] + size[:, 1] / 2, 0, rh) * sy
+    # The final multiply can overshoot the integer original boundary by one
+    # float ULP (e.g. 416 * (417/416) > 417). Clip AFTER rescaling too.
+    # This affects only boundary rounding, not scores/NMS/COCO labels.
+    x1, x2 = np.clip(x1, 0, width), np.clip(x2, 0, width)
+    y1, y2 = np.clip(y1, 0, height), np.clip(y2, 0, height)
     valid = (x2 > x1 + 1e-6) & (y2 > y1 + 1e-6)
     detections: list[Box] = []
     for name, coco_index in CATEGORIES.items():
