@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - "experiments/yolox_candidate_regions_sixth_coco.py"
+      - "microduck_companion/yolox_attention_candidates.py"
       - "experiments/test_yolox_candidate_regions_sixth_coco.py"
       - ".github/workflows/yolox-candidate-regions-sixth-coco.yml"
   workflow_dispatch:
