@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-PERF-1E — preuve PC du 29/10/2026 :** [test de deux images synthétiques avec iGPU demandé](qw-perf1b-real-windows-9b-baseline-2026-10-29.md) ; `-VisionCheck -Port 11435` a renvoyé rouge et bleu corrects avec **9,079/9,031 s**, serveur temporaire arrêté normalement. **GPU réellement chargé inconnu** ; second lancement visible mais sans sortie finale fournie. Vérifier la sélection matérielle du serveur temporaire par `ollama ps` pendant l'appel ou journaux pertinents, puis benchmark CPU/GPU sur mêmes prompts et images. Ne pas comparer directement ces couleurs au rôle Qwen v2 ni déclarer Kwipi accéléré, autonome ou validé.
+
+
 **QW-PERF-1D — preuve de filtre iGPU (journaux 28/10, fournis 29/10/2026) :** [diagnostic exact et test réutilisé](qw-perf1b-real-windows-9b-baseline-2026-10-29.md#qw-perf-1d--cause-locale-du-repli-cpu-observée-logs-du-2810-reçus-le-2910). Ollama détecte `Vulkan0 Radeon 860M` mais l'écarte car `OLLAMA_IGPU_ENABLE` non défini. ROCm `gfx1152` non admis par ce build. **Porte suivante :** essai facultatif `kwipi-vision-test.ps1 -VisionCheck` déjà existant, port temporaire libre `11435`, deux images de couleur synthétiques, puis `ollama ps` pendant la requête ; ne pas perturber `11434` ni modifier GPU/driver/Yocto. Accélération réelle, stabilité, RSS, latences/qualité pour objectifs Kwipi **inconnus**.
 
 

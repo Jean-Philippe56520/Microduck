@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**QW-PERF-1E — Vulkan demandé, GPU non prouvé, 29/10/2026 (rapport propriétaire) :** [premier essai temporaire du 9B](qw-perf1b-real-windows-9b-baseline-2026-10-29.md) sur port `11435` : deux couleurs synthétiques correctement distinguées (9,079/9,031 s), serveur temporaire arrêté en fin d'essai. Le code du lanceur active `OLLAMA_VULKAN=1` et `OLLAMA_IGPU_ENABLE=1` localement, mais le rapport n'indique **aucune mesure d'utilisation de la Radeon 860M pendant l'inférence**. L'accès CPU/GPU et la latence comparative sont inconnus, ainsi que VRAM/RSS/thermie. Le test n'a aucun rapport quantifié avec le RK3566/robot physique.
+
+
 **QW-PERF-1D — facteur GPU PC mieux établi (29/10/2026, logs opérateur du 28/10) :** [journal Ollama avec preuve de filtrage](qw-perf1b-real-windows-9b-baseline-2026-10-29.md#qw-perf-1d--cause-locale-du-repli-cpu-observée-logs-du-2810-reçus-le-2910). Le Vulkan du serveur `0.40.12` **a détecté la Radeon 860M**, puis Ollama **a exclu l'iGPU** avec `OLLAMA_IGPU_ENABLE` non activé ; inférence CPU 100 %, `total_vram=0`. ROCm `gfx1152` non pris en charge par rocBLAS de cette installation. Cela **n'établit pas** une capacité GPU, allocation VRAM/RSS, température, ou gain de latence. Pas d'extrapolation PC→RK3566. Essai de détection Vulkan temporaire / benchmark apparié requis, aucun changement pilote/OEM.
 
 

@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**QW-PERF-1E — résultat réel opérateur (29/10/2026, iGPU demandé mais non vérifié) :** [bilan du test `-VisionCheck` sur serveur temporaire `11435`](docs/qw-perf1b-real-windows-9b-baseline-2026-10-29.md). Deux images **synthétiques rouge/bleu** ont été reconnues aux latences **9,079 s** et **9,031 s** ; le serveur Ollama temporaire s'est arrêté normalement après le premier essai. Le lanceur demande Vulkan et `OLLAMA_IGPU_ENABLE=1`, mais **aucun relevé `ollama ps` du GPU pendant ce test** n'a été fourni : **ni accélération GPU ni gain de latence démontré**. Deuxième invocation commencée, résultat final inconnu ; aucune nouvelle relance automatique, modèle, mémoire ni moteur.
+
+
 **QW-PERF-1D — cause du repli CPU identifiée dans les logs du 28/10 (reçus le 29/10) :** [diagnostic Vulkan/860M et essai OEM/PC borné](docs/qw-perf1b-real-windows-9b-baseline-2026-10-29.md#qw-perf-1d--cause-locale-du-repli-cpu-observée-logs-du-2810-reçus-le-2910). Ollama `0.40.12` détecte la **Radeon 860M via Vulkan**, mais l'exclut : `OLLAMA_IGPU_ENABLE` vide, message explicite `dropping integrated GPU; to enable, set OLLAMA_IGPU_ENABLE=1`. ROCm `gfx1152` rejeté par les rocBLAS présents : **ne pas forcer HSA_OVERRIDE**. À essayer uniquement si autorisé : le lanceur **déjà existant** `scripts/kwipi-vision-test.ps1 -VisionCheck -Port 11435` démarre/arrête un serveur temporaire activant Vulkan et l'iGPU, sans toucher au `11434`. **Aucun GPU exécutant le modèle ni gain de vitesse encore prouvés** ; aucun code/moteur modifié.
 
 
