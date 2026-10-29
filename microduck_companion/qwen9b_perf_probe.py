@@ -17,6 +17,7 @@ import time
 import uuid
 
 from .ollama_local_client import OllamaEndpoint, _strict_json
+from .ollama_device_placement import LocalOllamaModelSampler
 from .qwen9b_advisor_v2 import prepare_jpeg
 from .qwen9b_production_role_v2 import ROLE_VERSION
 from .qwen9b_role_preview import MODEL, make_request
@@ -223,10 +224,13 @@ def _read_one(endpoint: OllamaEndpoint, request: bytes, profile: str,
 
 def run_probe(*, consent: bool, port: int = 11435, timeout_s: float = 120,
               endpoint: OllamaEndpoint | None = None,
-              profiles: tuple[str, ...] = PROFILES) -> dict:
+              profiles: tuple[str, ...] = PROFILES,
+              report_placement: bool = False) -> dict:
     """Explicit opt-in; at most five synthetic calls, no raw response export."""
     if consent is not True:
         raise ValueError("five synthetic model calls require explicit opt-in")
+    if type(report_placement) is not bool:
+        raise ValueError("placement sampling requires a boolean opt-in")
     if (type(port) is not int or not 1 <= port <= 65535 or
             type(timeout_s) not in (int, float) or
             not math.isfinite(timeout_s) or not 0 < timeout_s <= MAX_TIMEOUT):
@@ -241,13 +245,21 @@ def run_probe(*, consent: bool, port: int = 11435, timeout_s: float = 120,
     if not ipaddress.ip_address(target.host_port[0]).is_loopback:
         raise ValueError("no LAN or cloud endpoints")
     jpeg = make_synthetic_jpeg()
+    sampler = (LocalOllamaModelSampler(port=target.host_port[1])
+               if report_placement else None)
     observations = []
-    for profile in profiles:
-        rid = uuid.uuid4().hex
-        body = make_probe_request(profile, jpeg, rid)
-        measurement = _read_one(target, body, profile, rid, timeout_s)
-        observations.append({"profile": profile, **measurement})
-    return {
+    try:
+        if sampler is not None:
+            sampler.start()
+        for profile in profiles:
+            rid = uuid.uuid4().hex
+            body = make_probe_request(profile, jpeg, rid)
+            measurement = _read_one(target, body, profile, rid, timeout_s)
+            observations.append({"profile": profile, **measurement})
+    finally:
+        if sampler is not None:
+            sampler.stop()
+    report = {
         "study": "QW-PERF-1-PC-synthetic-only",
         "model": MODEL,
         "mode": "real_pc_opt_in",
@@ -265,6 +277,9 @@ def run_probe(*, consent: bool, port: int = 11435, timeout_s: float = 120,
         "memory_writes": 0,
         "private_images_read": 0,
     }
+    if sampler is not None:
+        report["ollama_placement"] = sampler.report()
+    return report
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -275,7 +290,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--authorize-five-synthetic-calls", action="store_true")
     parser.add_argument("--ollama-port", type=int, default=11435)
     parser.add_argument("--timeout", type=float, default=120)
+    parser.add_argument("--report-placement", action="store_true",
+                        help="optional bounded localhost Ollama /api/ps sampling")
     args = parser.parse_args(argv)
+    if args.report_placement and not args.run:
+        parser.error("--report-placement requires --run and explicit approval")
     if not args.run:
         print(json.dumps({"study": "QW-PERF-1-PC-synthetic-only",
                           "mode": "dry_run_no_network", "model": MODEL,
@@ -287,7 +306,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("operator must explicitly authorize five synthetic Ollama calls")
     try:
         report = run_probe(consent=True, port=args.ollama_port,
-                           timeout_s=args.timeout)
+                           timeout_s=args.timeout,
+                           report_placement=args.report_placement)
     except (ValueError, OSError) as exc:
         parser.error("local PC probe could not start; no private data used")
     print(json.dumps(report, sort_keys=True))
