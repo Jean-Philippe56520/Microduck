@@ -16,7 +16,7 @@ Le propriétaire a exécuté **sur son PC Windows** `python -m microduck_compani
 | `compact_json` | 7.110 | 7.0786 | 0.0087 | 0.1717 | 6.8933 | 134 | 60 | **oui sur fixture** |
 | `compact_json_mock_context` | 9.109 | 9.1061 | 0.0057 | 2.2976 | 6.7988 | 178 | 60 | **oui sur fixture** |
 
-Après les appels, l'opérateur a exécuté `ollama ps` et rapporté : **`qwen3.5:9b`, 6,2 GB chargés, `PROCESSOR=100% CPU`, `CONTEXT=4096`, `RUNNER=llamacpp`**. Ce relevé constitue une preuve directe de l'absence d'utilisation du GPU **pour ce serveur et ce modèle à cet instant**, non une preuve que le matériel ne supporte aucun backend accéléré. La **version exacte d'Ollama**, le **pilote**, le **modèle précis du GPU** et sa reconnaissance effective par Vulkan/ROCm n'ont pas encore été fournis par `ollama --version` ou le gestionnaire Windows ; ne rien présumer. Les 6,2 GB correspondent au **SIZE affiché par Ollama**, pas à une mesure indépendante de RSS système.
+Après les appels, l'opérateur a exécuté `ollama ps` et rapporté : **`qwen3.5:9b`, 6,2 GB chargés, `PROCESSOR=100% CPU`, `CONTEXT=4096`, `RUNNER=llamacpp`**. Ce relevé constitue une preuve directe de l'absence d'utilisation du GPU **pour ce serveur et ce modèle à cet instant**, non une preuve que le matériel ne supporte aucun backend accéléré. **Diagnostic logiciel reçu ensuite (29/10/2026, rapport opérateur) :** `ollama version is 0.40.12` ; `Get-CimInstance Win32_VideoController` : `AMD Radeon(TM) 860M Graphics`, `DriverVersion=32.0.22052.3`. `ollama ps` a ensuite été affiché vide, compatible avec l'expiration du `keep_alive=2m` du banc ; ce n'est pas une panne. La **détection effective de la 860M par Vulkan/ROCm dans les journaux Ollama reste inconnue** ; un `100% CPU` ne prouve pas que Vulkan/ROCm fonctionne ou ne fonctionne pas au niveau de Windows. Les 6,2 GB correspondent au **SIZE affiché par Ollama**, pas à une mesure indépendante de RSS système.
 
 ## Interprétation et limites
 
@@ -29,15 +29,23 @@ Après les appels, l'opérateur a exécuté `ollama ps` et rapporté : **`qwen3.
 
 ## Porte avant tout nouvel essai ou installation
 
-**Observation :** tous les appels réels ont réussi, mais la charge est au CPU, pas au GPU. **Hypothèses :** Ollama/driver trop ancien, mauvais backend/paramètre au démarrage, incompatibilité iGPU Windows/Vulkan, ou iGPU volontairement non sélectionné. **Question unique :** quel couple GPU/driver/version Ollama se trouve réellement sur le PC ?
+**Observation :** tous les appels réels ont réussi, mais la charge était au CPU ; version et GPU sont identifiés : **Ollama 0.40.12 / Radeon 860M / driver 32.0.22052.3**. La [liste GPU officielle Ollama Windows ROCm](https://docs.ollama.com/gpu) **ne mentionne pas la 860M** ; Vulkan offre une voie complémentaire et est normalement actif par défaut si le backend est disponible. L'[issue Ollama #14562](https://github.com/ollama/ollama/issues/14562) signale une non-détection **de la même Radeon 860M**, mais sous **Ollama 0.17.4–0.17.5**, et ne prouve pas que 0.40.12 est affecté. **Hypothèses concurrentes :** iGPU absent de la découverte Vulkan, composant backend non chargé, réglage serveur déjà existant, pilote Windows incompatible, ou autre problème. **Prochaine question unique :** que signalent les journaux du serveur Ollama actuel sur la détection GPU au démarrage ?
 
 **Diagnostic exclusivement en lecture seule, depuis PowerShell :**
 
 ```powershell
-ollama --version
-Get-CimInstance Win32_VideoController | Select-Object Name, DriverVersion
-ollama ps
+# Version / pilote déjà confirmés le 29/10/2026 ; ne pas répéter inutilement.
+$log = Join-Path $env:LOCALAPPDATA "Ollama\\server.log"
+if (Test-Path -LiteralPath $log) {
+    Get-Content -LiteralPath $log -Tail 1200 |
+        Select-String -Pattern "ggml_vulkan|gfx1152|Vulkan|ROCm|GPU.*discover|GPU.*detect|inference compute|filtering device|total_vram" |
+        ForEach-Object { $_.Line }
+} else {
+    "Journal serveur introuvable (vérifier le serveur Ollama Windows actif)."
+}
 ```
+
+**Précaution journaux :** la commande ci-dessus lit uniquement un fichier local et filtre des lignes GPU. Avant toute transmission, **supprimer chemins personnels, jetons, contenus de requêtes ou données sensibles** si présents. Les lignes sans correspondance ne prouvent pas qu'aucun GPU n'a été examiné ; consulter la rotation `server-#.log` seulement si nécessaire. La documentation officielle localise les journaux Windows dans `%LOCALAPPDATA%\\Ollama\\server.log` ([dépannage Ollama](https://docs.ollama.com/troubleshooting)).
 
 Ne pas faire `ollama pull`, `setx`, `stop-process`, `ollama stop`, mise à jour de pilote, remplacement de DLL, surcharge forcée ROCm, allocation VRAM ou second serveur concurrent pour ce diagnostic. **Critères d'échec :** versions non vérifiées, GPU non détecté, accélération sans amélioration de la qualité ou dégradation mémoire/fiabilité, suppression d'un service existant. **Retour arrière :** aucun réglage durable modifié dans ce lot documentaire ; si une expérimentation active est ensuite autorisée, faire un seul changement temporaire mesuré et restaurer l'environnement immédiatement après, avec témoin CPU.
 
