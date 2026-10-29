@@ -40,7 +40,8 @@ class DET1DeterminationTests(unittest.TestCase):
     def setUp(self):
         scratch = tempfile.TemporaryDirectory()
         self.addCleanup(scratch.cleanup)
-        self.memory = ExperienceMemory(Path(scratch.name) / "only.sqlite3")
+        self.path = Path(scratch.name) / "only.sqlite3"
+        self.memory = ExperienceMemory(self.path)
         self.addCleanup(self.memory.close)
         self.journal = PassiveObservationJournal(self.memory)
         self.ledger = MockExperienceLedger(self.memory)
@@ -472,6 +473,61 @@ class DET1DeterminationTests(unittest.TestCase):
                 wall=WALL+2,mono=101.1,guarded=False,pacing=flag)
             self.assertEqual("idle",bad.intention)
             self.assertFalse(bad.executed)
+
+
+
+    def test_det2_restart_preserves_attempt_hold_without_second_database(self):
+        self._det2_link_initial_dog()
+        self.memory.close()
+        reopened=ExperienceMemory(self.path)
+        try:
+            journal=PassiveObservationJournal(reopened)
+            store=MockGoalMemory(reopened,MockExperienceLedger(reopened))
+            brain=AutonomyBrain(reopened,Motivations(determination=1.))
+            before=reopened.conn.total_changes
+            proposal=brain.propose_balanced_passive(
+                read("dog"),journal=journal,goals=store,
+                guard_attempted_goals=True,
+                now_monotonic_s=100.1,now_wall_epoch_s=WALL+1)
+            self.assertEqual("idle",proposal.intention)
+            self.assertEqual(before,reopened.conn.total_changes)
+            self.assertEqual(0,proposal.motor_commands_issued)
+            self.assertFalse(proposal.executed)
+        finally:
+            reopened.close()
+
+    def test_det2_resume_grant_is_explicitly_not_durable_after_restart(self):
+        self._det2_link_initial_dog()
+        self.goals.transition(
+            goal_id=GOAL_DOG,expected_revision=2,next_state="suspended",
+            reason="repeat_blocked",at_epoch_s=WALL+.8)
+        self.goals.transition(
+            goal_id=GOAL_DOG,expected_revision=3,next_state="active",
+            reason="new_view",at_epoch_s=WALL+.9)
+        plan=self._det2_tick(self._det2_brain(),read("dog"))
+        self.assertEqual("det2_mock_resumed_strategy_unverified",plan.reason)
+        self.memory.close()
+        reopened=ExperienceMemory(self.path)
+        try:
+            journal=PassiveObservationJournal(reopened)
+            store=MockGoalMemory(reopened,MockExperienceLedger(reopened))
+            brain=AutonomyBrain(reopened,Motivations(determination=1.))
+            before=reopened.conn.total_changes
+            next_plan=brain.propose_balanced_passive(
+                read("dog"),journal=journal,goals=store,
+                guard_attempted_goals=True,
+                now_monotonic_s=100.1,now_wall_epoch_s=WALL+1)
+            # The one-shot guarantee is process-local and MUST NOT be used
+            # as a physical retry budget without an explicit persisted receipt.
+            self.assertEqual("det2_mock_resumed_strategy_unverified",
+                             next_plan.reason)
+            self.assertFalse(next_plan.executed)
+            self.assertEqual(0,next_plan.motor_commands_issued)
+            self.assertEqual(before,reopened.conn.total_changes)
+            self.assertEqual(1,len(store.attempts(GOAL_DOG)))
+            self.assertFalse(store.attempts(GOAL_DOG)[0].physical_effect_verified)
+        finally:
+            reopened.close()
 
 
 
