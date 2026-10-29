@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-QUAL-1A — support d'essais sémantiques fusionné le 29/10/2026 :** [PR #161](https://github.com/Jean-Philippe56520/Microduck/pull/161), SHA `76a8a6e`, [CI Python #40861288706](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40861288706) et [N1 #40861288696](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40861288696) vertes. **Codé et testé sur images artificielles et réponses de modèle fictives** : scènes inédites, garde lexical non autorisant, affichage de conseil uniquement sur console explicitement, comparateur humain à effectuer. **Vrai Qwen9B non interrogé dans ce lot ; qualité réelle inconnue.** Ce volet ne remplace ni Cat-A2b/vues réelles, ni QW-1/QW-2, ni l'OEM et reste sans effet moteur.
+
+
 **QW-QUAL-1A — nouvelle porte de qualité du conseiller 9B (29/10/2026, PC-fixtures candidats) :** [quatre scènes synthétiques, réponses v2 non fiables, revue humaine](qw-qual1a-synthetic-semantic-human-review-2026-10-29.md) : relation/usage, hypothèse et conséquence vérifiable, incertitude, refus de contact vivant et représentation TV, sécurité d'une zone ambiguë. Le banc reste **manuel, une seule requête PC explicitement autorisée**, et ne note pas automatiquement la qualité ; le garde lexical réutilisé bloque tout usage machine, sans certifier la sûreté du texte. Qualifications réelles, images OEM, motorisation, apprentissage causal et robot **non validés**. Après revue indépendante, décider QW-1/QW-2 ou corriger le contrat sans surajuster un exemple isolé.
 
 
