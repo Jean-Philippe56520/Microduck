@@ -10,6 +10,6 @@
 - Ne pas reutiliser ces images comme nouvelles donnees independantes si un modele a deja ete ajuste dessus. Ne pas les envoyer a Qwen ou sur le robot par defaut.
 - Les licences par fichier peuvent differer de celle du code Microduck. Les variantes sous CC BY-SA gardent la mention d'auteur et le lien d'origine dans le manifeste; le fichier image reste sous sa propre licence. Les photos RoboCup et TripoSR sont publiees dans des depots sous MIT mais les droits individuels ne sont pas confirms: usage exploratoire, pas de redistributions externes tant que ces droits ne sont pas clarifies.
 
-Verification de l'integrite des copies : `python -m pytest -q tests/test_public_vision_smoke_assets.py`.
+Verification de l'integrite des copies : `python -m unittest discover -s tests -p test_public_vision_smoke_assets.py -v`.
 
 **But concret :** voir si une balle, un chat, une chaise ou un humain sont proposes par le detecteur. Le score mAP/IoU et la validation de vision embarquee sont distincts et non revendiques ici.
