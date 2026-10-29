@@ -1,5 +1,7 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**MEM-2B (29/10/2026, candidat) :** [preuve de rappel sans écriture sur fixtures](mem2b-readonly-multiview-candidates-2026-10-29.md). 2 vues positives, 2 négatifs, imposteur identique, conflit, ambiguïté et reprise SQLite. **CI à vérifier**, aucune revendication de généralisation réelle ; ne pas confondre candidat M1-B avec individu ou objet physique prouvé.
+
 **DÉCISION OPÉRATIONNELLE PRIORITAIRE — 29/10/2026, remplace les consignes de poursuite contradictoires des comptes rendus antérieurs :** [porte 0 « résultat mesurable avant code »](development-reuse-protocol.md) obligatoire pour chaque lot. La succession QW-QUAL-2A/#169–171 n'a **pas** produit de contre-évaluation indépendante et ne justifie aucune nouvelle récupération de JSON historiques ; elle est **mise en sommeil, non déclarée achevée**. Ses outils restent inertes et disponibles, sans suppression précipitée. **Ne plus bloquer les axes B/C/D** par cette absence : seule la prétention de qualité Qwen sur les quatre anciens cas demeure non validée. Un nouveau protocole de cas inédits peut être préparé sans reconstituer ces anciens essais, mais sans promouvoir v3 ni envoyer de texte Qwen aux moteurs/mémoires.
 
 **Jalons actifs et résultats utiles à obtenir (les statuts des PR historiques ne sont pas des portes de passage) :**
