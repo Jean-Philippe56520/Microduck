@@ -1,0 +1,164 @@
+name: Kwipi public images YOLOX smoke (host only)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/public-vision-yolox-smoke.yml"
+      - "tests/assets/public_vision_smoke/**"
+      - "microduck_companion/cata_yolox_categories.py"
+      - "microduck_companion/cata2_bbox_eval.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Check the 13 pinned public assets and invalid-image cases
+        run: python -m unittest discover -s tests -p 'test_public_vision_smoke_assets.py' -v
+      - name: Install EXISTING YOLOX CPU tools
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0 numpy==1.26.4 onnxruntime==1.21.0
+      - name: Retrieve the exact existing Apache-2.0 Megvii YOLOX Nano weights
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 120 \
+            --output "$RUNNER_TEMP/yolox_nano.onnx" \
+            "https://huggingface.co/skillsafe-ai/yolox-nano/resolve/8e308810ede488f742901a4ac597dc7796798e46/yolox_nano.onnx"
+          echo "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d  $RUNNER_TEMP/yolox_nano.onnx" | sha256sum --check
+      - name: Infer the 13 committed JPEG/PNG with existing box decoder
+        shell: bash
+        env:
+          OMP_NUM_THREADS: "1"
+          OPENBLAS_NUM_THREADS: "1"
+          YOLOX_MODEL: ${{ runner.temp }}/yolox_nano.onnx
+          SMOKE_REPORT: ${{ runner.temp }}/public_vision_smoke_result.json
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import io
+          import json
+          import os
+          from pathlib import Path
+          import statistics
+          import time
+          
+          from PIL import Image, ImageOps
+          import onnxruntime as ort
+          
+          from microduck_companion.cata_yolox_categories import (
+              MODEL_SHA256, MIN_SCORE, SIZE, prepare_image, validate_model_file,
+          )
+          from microduck_companion.cata2_bbox_eval import decode_boxes
+          
+          root = Path("tests/assets/public_vision_smoke")
+          records = json.loads((root / "manifest.json").read_text(encoding="utf-8"))["images"]
+          if len(records) != 13 or len({r["file"] for r in records}) != 13:
+              raise SystemExit("unexpected public smoke image roster")
+          
+          model_path = Path(os.environ["YOLOX_MODEL"])
+          validate_model_file(model_path)
+          options = ort.SessionOptions()
+          options.intra_op_num_threads = 1
+          options.inter_op_num_threads = 1
+          session = ort.InferenceSession(
+              str(model_path), sess_options=options, providers=["CPUExecutionProvider"]
+          )
+          if (len(session.get_inputs()) != 1 or len(session.get_outputs()) != 1
+                  or session.get_inputs()[0].name != "images"
+                  or session.get_inputs()[0].shape != [1, 3, SIZE, SIZE]
+                  or session.get_outputs()[0].name != "output"
+                  or session.get_outputs()[0].shape != [1, 3549, 85]):
+              raise SystemExit("unexpected YOLOX ONNX interface")
+          
+          rows = []
+          times = []
+          for rec in records:
+              name = rec["file"]
+              if Path(name).name != name or Path(name).suffix.lower() not in (".jpg", ".png"):
+                  raise SystemExit("unexpected asset name")
+              source = (root / name).read_bytes()
+              git_sha = hashlib.sha1(f"blob {len(source)}\0".encode() + source).hexdigest()
+              if git_sha != rec["source_git_blob_sha"]:
+                  raise SystemExit("public image source digest mismatch: " + name)
+              with Image.open(io.BytesIO(source)) as original:
+                  picture = ImageOps.exif_transpose(original)
+                  width, height = picture.size
+                  if original.format == "JPEG":
+                      jpeg = source
+                      converted_png = False
+                  elif original.format == "PNG":
+                      # The existing YOLOX helper accepts JPEG: convert PNG in memory.
+                      rgba = picture.convert("RGBA")
+                      white = Image.new("RGBA", rgba.size, (255, 255, 255, 255))
+                      white.alpha_composite(rgba)
+                      encoded = io.BytesIO()
+                      white.convert("RGB").save(encoded, format="JPEG", quality=95, subsampling=0)
+                      jpeg = encoded.getvalue()
+                      converted_png = True
+                  else:
+                      raise SystemExit("unapproved image encoding: " + name)
+              tensor = prepare_image(jpeg, mode="original")
+              start = time.perf_counter()
+              prediction = session.run(None, {"images": tensor})[0]
+              times.append((time.perf_counter() - start) * 1000)
+              boxes = decode_boxes(prediction, width=width, height=height)
+              proposed = sorted({box.category for box in boxes})
+              expected = rec["category"]
+              present = (not proposed) if expected == "unknown" else expected in proposed
+              rows.append({
+                  "file": name, "expected_image_label": expected,
+                  "proposed_categories": proposed, "expected_category_proposed": present,
+                  "total_boxes": len(boxes), "png_to_jpeg_in_memory": converted_png,
+                  "top_boxes": [
+                      {
+                          "category": box.category,
+                          "confidence": round(box.confidence, 4),
+                          "xyxy": [round(v, 1) for v in box.xyxy],
+                      }
+                      for box in boxes[:5]
+                  ],
+              })
+          
+          summary = {}
+          for cat in ("cat", "dog", "sports_ball", "chair", "person", "unknown"):
+              group = [r for r in rows if r["expected_image_label"] == cat]
+              summary[cat] = {
+                  "total": len(group),
+                  "expected_category_proposed": sum(r["expected_category_proposed"] for r in group),
+              }
+          report = {
+              "status": "host_qualitative_smoke_completed",
+              "model": "Megvii YOLOX-Nano COCO (existing baseline)",
+              "model_sha256": MODEL_SHA256,
+              "fixed_confidence_threshold": MIN_SCORE,
+              "source_image_count": len(rows),
+              "source_manifest": str(root / "manifest.json"),
+              "image_level_labels_only_no_independent_boxes": True,
+              "classification_accuracy_or_map_claimed": False,
+              "real_robot_or_npu_validated": False,
+              "motor_commands": 0, "sqlite_writes": 0, "qwen_calls": 0,
+              "cpu_onnx_inference_ms_median": round(statistics.median(times), 3),
+              "counts_by_image_label": summary,
+              "images": rows,
+          }
+          Path(os.environ["SMOKE_REPORT"]).write_text(
+              json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(report, ensure_ascii=False, separators=(",", ":"), allow_nan=False))
+          PY
+      - name: Preserve only numeric/text predictions (no photos or model)
+        uses: actions/upload-artifact@v4
+        with:
+          name: kwipi-public-vision-yolox-smoke-json
+          path: ${{ runner.temp }}/public_vision_smoke_result.json
+          if-no-files-found: error
