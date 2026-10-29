@@ -1,5 +1,8 @@
 # Point de reprise — Microduck Companion / Kwipi — 28 octobre 2026
 
+**Reprise QW-PERF-1C — 29/10/2026 :** version PC confirmée **Ollama 0.40.12**, iGPU **Radeon 860M**, pilote **32.0.22052.3**, **100 % CPU** lors de QW-PERF-1B. Le modèle a ensuite été déchargé après son maintien temporaire, sans incident. [Rapport et commande PowerShell pour consulter le journal GPU en lecture seule](qw-perf1b-real-windows-9b-baseline-2026-10-29.md). ROCm Windows ne liste pas la 860M, Vulkan est une possibilité non prouvée. **Ne pas mettre à jour Ollama/pilote ou tester un autre backend sans lire d'abord la cause dans `server.log`.**
+
+
 **Reprise QW-PERF-1B — 29/10/2026, cinq réponses Qwen réelles PC rapportées :** [tableau, preuves et limites](qw-perf1b-real-windows-9b-baseline-2026-10-29.md) — v2 premier/répété 44,234/14,750 s, texte court 3,703 s, JSON 7,110 s, JSON + contexte fictif 9,109 s. **`ollama ps`: 100 % CPU** ; deux réponses JSON correctes sur cercle rouge fictif seulement, ni validation sémantique d'objectifs, ni robot. Le serveur réellement disponible est `127.0.0.1:11434`, pas l'ancien `11435`. **Prochaine question avant code ou essai actif :** `ollama --version`, `Get-CimInstance Win32_VideoController | Select Name,DriverVersion`, `ollama ps` en lecture seule. Pas de réinstallation, GPU forcé, second serveur ou modification moteur.
 
 
