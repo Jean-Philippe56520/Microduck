@@ -162,6 +162,11 @@ case "${DUCK_SIM_DEP_MODE:-full}" in
         uv venv --python 3.12 "$DUCK_SIM_RL/.venv"
         uv pip install --python "$DUCK_SIM_RL/.venv/bin/python" \
             'mujoco==3.10.0' 'numpy==2.5.4' 'onnxruntime==1.28.0'
+        if [ "${DUCK_SIM_VIS_A1:-NO}" = YES ]; then
+            # Only the optional simulated-camera smoke needs JPEG + OSMesa.
+            uv pip install --python "$DUCK_SIM_RL/.venv/bin/python" \
+                'Pillow==11.3.0' 'PyOpenGL==3.1.10'
+        fi
         # The lean environment deliberately skips editable RL-package
         # installation. Python must therefore find its pinned source tree.
         export PYTHONPATH="$DUCK_SIM_RL/src:$PYTHONPATH"
