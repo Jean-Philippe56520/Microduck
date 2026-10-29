@@ -95,6 +95,61 @@ class CocoBoxContracts(unittest.TestCase):
         self.assertTrue(all(x.filename == f"{x.image_id:012d}.jpg" for x in a))
         self.assertTrue(all(x.width==416 and x.height==416 for x in a))
 
+
+    def test_disjoint_followup_cohort_reuses_pinned_annotations(self):
+        data=fixture_annotation()
+        for image in tuple(data["images"]):
+            duplicate=dict(image)
+            duplicate["id"] += 20
+            duplicate["file_name"] = f'{duplicate["id"]:012d}.jpg'
+            data["images"].append(duplicate)
+        for ann in tuple(data["annotations"]):
+            duplicate=dict(ann)
+            duplicate["image_id"] += 20
+            data["annotations"].append(duplicate)
+        blob=json.dumps(data).encode()
+        original=select_coco_cases(blob,per_class=1,negatives=1)
+        holdout=select_coco_cases(
+            blob,per_class=1,negatives=1,
+            excluded_image_ids=frozenset(c.image_id for c in original))
+        self.assertEqual(6,len(original))
+        self.assertEqual(6,len(holdout))
+        self.assertFalse({c.image_id for c in original} &
+                         {c.image_id for c in holdout})
+        self.assertEqual(original,select_coco_cases(
+            blob,per_class=1,negatives=1,
+            excluded_image_ids=frozenset()))
+        self.assertEqual(set(CATEGORIES),{
+            b.category for case in holdout for b in case.ground_truth})
+        self.assertEqual(1,sum(not x.ground_truth for x in holdout))
+        self.assertEqual(holdout,select_coco_cases(
+            blob,per_class=1,negatives=1,
+            excluded_image_ids=frozenset(c.image_id for c in original)))
+
+    def test_disjoint_cohort_fails_closed_on_invalid_exclusion(self):
+        blob=fake_coco()
+        for excluded in ({1},frozenset({-1}),frozenset({"1"}),
+                         frozenset({True}),frozenset(range(26))):
+            with self.subTest(excluded=excluded):
+                with self.assertRaises(PhotoBaselineError):
+                    select_coco_cases(blob,per_class=1,negatives=1,
+                                      excluded_image_ids=excluded)
+        with self.assertRaisesRegex(PhotoBaselineError,"insufficient licensed"):
+            select_coco_cases(blob,per_class=1,negatives=1,
+                              excluded_image_ids=frozenset(range(1,7)))
+
+    def test_coco_unknown_is_absence_of_target_annotations_only(self):
+        # Five-class labels do not certify absence of unlabelled real subjects.
+        result=evaluate_localization((
+            (sample(1), (box("person",1,1,50,50,conf=.51),)),
+            (sample(2), ()),
+        ))
+        self.assertEqual(2,result["images_with_no_gt_target"])
+        self.assertEqual(1,result["empty_gt_images_with_false_alarm"])
+        self.assertEqual(1,result["empty_gt_images_without_false_alarm"])
+        self.assertEqual(1,result["fp_iou50"])
+
+
     def test_disallowed_noncommercial_licence_is_excluded(self):
         data=fixture_annotation()
         data["images"][0]["license"]=3
