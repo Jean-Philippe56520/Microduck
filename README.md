@@ -1,5 +1,7 @@
 # Microduck Companion
 
+**MEM-2B — candidat 29/10/2026, CI à vérifier :** lecture seule de candidats M1-B facultatifs dans MEM-2A, avec [critères d'ablation et refus](docs/mem2b-readonly-multiview-candidates-2026-10-29.md). Tests synthétiques uniquement : ni identité d'objet, ni progrès de perception réelle, ni moteur/Qwen/écriture pendant le rappel.
+
 **Pilotage par résultat — arbitrage du 29/10/2026 :** [plan directeur et prochain jalon utile](docs/plan-action.md) · [porte 0 anti-dérive](docs/development-reuse-protocol.md). Avant chaque chantier, montrer quel comportement ou quelle preuve manque vraiment, le témoin, les critères de succès/échec et la décision. **Fusion/CI ne suffisent pas.** QW-QUAL-2A reste **sans contre-annotation indépendante** ; la recherche des quatre anciens JSON est suspendue, sans bloquer la mémoire/perception. **Prochain lot technique candidat : MEM-2B**, seulement si son test comparatif avec/sans rappel apporte une information utile, sur fixtures sans moteurs ni faux souvenirs d'identité.
 
 
