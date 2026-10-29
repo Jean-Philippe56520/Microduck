@@ -106,7 +106,8 @@ jobs:
                       converted_png = True
                   else:
                       raise SystemExit("unapproved image encoding: " + name)
-              tensor = prepare_image(jpeg, mode="original")
+              print(f"IMAGE {name}: source_format={original.format} source_size={original.size} oriented_size={(width, height)} preprocessed_bytes={len(jpeg)}", flush=True)
+          tensor = prepare_image(jpeg, mode="original")
               start = time.perf_counter()
               prediction = session.run(None, {"images": tensor})[0]
               times.append((time.perf_counter() - start) * 1000)
