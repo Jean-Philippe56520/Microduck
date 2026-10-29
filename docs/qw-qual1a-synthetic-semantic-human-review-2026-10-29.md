@@ -1,5 +1,8 @@
 # QW-QUAL-1A — Qualification sémantique prudente de Qwen3.5 9B (PC, images synthétiques)
 
+**État post-fusion (29/10/2026) :** [PR #161 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/161) au commit `76a8a6e457f4ce0810bc913bc73f974b684de886` ; [CI Python #40861288706](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40861288706) et [inventaire N1 #40861288696](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40861288696) **verts** sur la branche candidate, y compris générateur des quatre PNG et refus d'export écrasant un fichier. **Aucun nouveau vrai Qwen9B n'a été interrogé par la CI ni par l'agent pour QW-QUAL-1A** ; l'examen humain sur le PC Windows reste à réaliser. Les mentions « candidat / CI à vérifier » plus bas correspondent à la photographie initiale du chantier.
+
+
 **Date :** 29 octobre 2026. **Autorité :** [plan-action.md](plan-action.md). **Base de chantier :** `main@e94893f03378c463b0718cbfd789411178695ac5`, après [PR #160 QW-PERF-1I fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/160). **État initial :** scénario, code et tests PC-fixtures candidats ; **aucune nouvelle consultation du vrai Qwen dans ce lot**, aucun robot connecté. Statuts distincts : prévu (notation indépendante et généralisation), codé (pilote d'un scénario synthétique par appel), testé PC-fixtures (CI à vérifier), testé sur PC réel (pas encore pour QW-QUAL-1A), simulé OEM (non), validé robot (non).
 
 ## 1. Question, hypothèses, preuves et critères d'échec
