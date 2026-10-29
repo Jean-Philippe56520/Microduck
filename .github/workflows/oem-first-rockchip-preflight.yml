@@ -1,0 +1,69 @@
+name: OEM-first Rockchip YOLO11n provenance and ONNX preflight
+on:
+  push:
+    branches:
+      - feat/oem-first-rockchip-multiclass-20261029
+    paths:
+      - ".github/workflows/oem-first-rockchip-preflight.yml"
+      - "microduck_companion/rockchip_candidate_probe.py"
+      - "tests/test_rockchip_candidate_probe.py"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: oem-first-rknn-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  candidate-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+      - name: Download one vendor-linked optimized model (NO model in repository)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Exactly the published download_model.sh URL in Rockchip's Model Zoo.
+          curl --fail --location --silent --show-error \
+            --connect-timeout 10 --max-time 110 \
+            --max-filesize 35000000 \
+            'https://ftrg.zbox.filez.com/v2/delivery/data/95f00b0fc900458ba134f8b180b3f7a1/examples/yolo11/yolo11n.onnx' \
+            -o "$RUNNER_TEMP/rockchip-yolo11n.onnx"
+          test "$(stat -c '%s' "$RUNNER_TEMP/rockchip-yolo11n.onnx")" -gt 1000000
+          test "$(stat -c '%s' "$RUNNER_TEMP/rockchip-yolo11n.onnx")" -lt 35000000
+          sha256sum "$RUNNER_TEMP/rockchip-yolo11n.onnx"
+          wc -c "$RUNNER_TEMP/rockchip-yolo11n.onnx"
+      - name: Verify ONNX contract before writing any adapter
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv python install 3.12
+          uv venv --python 3.12 "$RUNNER_TEMP/oem-first-env"
+          uv pip install --python "$RUNNER_TEMP/oem-first-env/bin/python" 'onnxruntime==1.28.0' 'numpy==2.5.4'
+          "$RUNNER_TEMP/oem-first-env/bin/python" - <<'PY'
+          import os, pathlib, hashlib
+          import onnxruntime as rt
+          root=pathlib.Path(os.environ["RUNNER_TEMP"])
+          p=root/"rockchip-yolo11n.onnx"
+          raw=p.read_bytes()
+          options=rt.SessionOptions()
+          options.intra_op_num_threads=1
+          session=rt.InferenceSession(str(p),options,providers=["CPUExecutionProvider"])
+          ip=[{"name":z.name,"shape":z.shape,"type":z.type} for z in session.get_inputs()]
+          op=[{"name":z.name,"shape":z.shape,"type":z.type} for z in session.get_outputs()]
+          print("ROCKCHIP_CANDIDATE_ONNX_SHA256",hashlib.sha256(raw).hexdigest())
+          print("ROCKCHIP_CANDIDATE_BYTES",len(raw))
+          print("ROCKCHIP_CANDIDATE_INPUT",ip)
+          print("ROCKCHIP_CANDIDATE_OUTPUTS",op)
+          assert len(ip)==1 and len(op)==9, "vendor optimized YOLO11n head contract differs"
+          assert ip[0]["shape"] == [1,3,640,640] and ip[0]["type"]=="tensor(float)", "unexpected input contract"
+          assert all(z["type"]=="tensor(float)" for z in op), "unexpected output data types"
+          for ix,res in enumerate((80,40,20)):
+              assert [z["shape"] for z in op][ix*3:ix*3+3] == [
+                  [1,64,res,res],[1,80,res,res],[1,1,res,res]
+              ], "branch mismatch"
+          print("ROCKCHIP_CANDIDATE_CONTRACT_OK")
+          PY
