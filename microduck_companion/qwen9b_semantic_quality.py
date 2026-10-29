@@ -1,7 +1,8 @@
 """QW-QUAL-1A: opt-in, ONE-case semantic preview on original synthetic drawings.
 
 This is human review material, NOT an automated semantic judge. No camera,
-real user media, files, SQLite, robot, motor, model installation or cloud.
+real user media, automatic file writes, SQLite, robot, motor, installation
+or cloud. An explicit dry-run may export one original synthetic PNG.
 Importing or running without --run never contacts Ollama. Every generated
 scene is an intentionally simplified vector drawing, not an OEM camera view.
 """
