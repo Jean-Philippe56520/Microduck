@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**QW-PERF-1D — réutilisation validée (29/10/2026, documentation seulement) :** [rapport Vulkan/ROCm avec filtre iGPU attesté](qw-perf1b-real-windows-9b-baseline-2026-10-29.md#qw-perf-1d--cause-locale-du-repli-cpu-observée-logs-du-2810-reçus-le-2910). **RÉUTILISER** le lanceur PC existant `scripts/kwipi-vision-test.ps1`, qui configure `OLLAMA_VULKAN=1`/`OLLAMA_IGPU_ENABLE=1` sur un serveur synthétique temporaire ; **NE PAS ADOPTER** fork, DLL, HSA override, nouveau scheduler ni agent. L'issue Ollama #14562 décrit une non-détection sous versions antérieures, mais le **journal local constate bien Vulkan0 détecté puis filtré** : ne pas confondre causes. Aucune intégration de Qwen à SQLite/robotd ni accélération GPU encore prouvée.
+
+
 **QW-PERF-1B — ressources réellement mesurées, 29/10/2026 :** [rapport PC réel du propriétaire](qw-perf1b-real-windows-9b-baseline-2026-10-29.md). Réutiliser `qwen9b_perf_probe.py`, Ollama et mesures natives ; **ne pas créer** de second banc ou moteur, ne pas forcer de backend GPU ou copier un contournement communautaire sans vérifier GPU/driver Ollama exacts. `100% CPU` observé, issue publique Ollama #14562 Radeon 860M seulement indicative, pas diagnostic local. Aucun sous-module ni modèle modifié.
 
 
