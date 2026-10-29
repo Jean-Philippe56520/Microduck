@@ -1,5 +1,8 @@
 # Kwipi — plan d'apprentissage autonome par l'expérience (EX)
 
+**QW-QUAL-1D — la chaîne « sens → hypothèse → effet » reste incomplète (29/10/2026, vrai 9B PC) :** [troisième essai `scene_c`](qw-qual1d-scene-c-real-qwen-human-review-2026-10-29.md), 44,140 s / 192 tokens. Une forme textile possible a été interprétée comme céramique cassée ; Qwen décrit un récipient, mais n'établit pas d'usage conditionnel fiable avec l'objet et imagine un son par simple approche. L'inaction et l'incertitude restent des pistes positives. **Aucun `ground_pick` exécuté, aucun transport, aucune conséquence causale ni souvenir enregistré** : `machine_use=blocked`, mémoire 0, moteur 0. Trois dessins ne suffisent pas à conclure à l'apprentissage ; revue indépendante requise avant intégration QW-1/QW-2.
+
+
 **QW-QUAL-1C — frontière hypothèse → expérience → mémoire (29/10/2026, PC réel) :** [`scene_a` analysée](qw-qual1c-scene-a-real-qwen-human-review-2026-10-29.md) : Qwen suggère hypothèse de contact/déplacement d'une forme rouge et mesure de position, propose aussi inaction ; cependant une **image synthétique unique**, une commande supposée ou un changement hypothétique ne sont ni une action OEM terminée, ni un effet observé indépendamment, ni une causalité apprise. **Aucun crédit, épisode SQLite, détermination ou récompense** ; `machine_use=blocked`, 0 commandes et 0 écritures. Qualité de la pertinence `ground_pick`/kick et géométrie 3D non établie. Après contre-lecture indépendante, `scene_c` facultative pour tester relation textile/récipient sans prétendre transporter.
 
 

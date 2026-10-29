@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**QW-QUAL-1D — latence réelle du 9B sur troisième dessin synthétique, 29/10/2026 :** [rapport](qw-qual1d-scene-c-real-qwen-human-review-2026-10-29.md), **44,140 s pour 192 tokens** avec `status=unverified`, code 0 ; aucune mesure GPU/RSS/température/énergie, backend et SHA Windows inconnus. Ce chiffre n'est pas comparable en speedup aux 37,063 s/114 tokens (`scene_b`) et 48,109 s/173 tokens (`scene_a`) ; sujets et sorties différents. **Aucun dimensionnement RK3566, exécution embarquée ni interruption/validation de la boucle moteur 50 Hz** ; conseiller PC facultatif seulement.
+
+
 **QW-QUAL-1C — second relevé PC du vrai Qwen9B (29/10/2026) :** [rapport `scene_a`](qw-qual1c-scene-a-real-qwen-human-review-2026-10-29.md) ; **48,109 secondes pour 173 tokens** sur un seul stimulus artificiel, contre **37,063 secondes pour 114 tokens** du cas `scene_b` distinct. **Aucun calcul de speedup, p50/p95 ou effet GPU autorisé** : SHA local, port, poids binaires, charge CPU/GPU, RSS/thermie, énergie inconnus ; images/prompt/tokens non identiques. Aucune modification Ollama, modèle, Yocto, RAM du RK3566, NPU ou robotd 50 Hz ; l'inférence PC Qwen reste facultative et hors boucle moteurs.
 
 
