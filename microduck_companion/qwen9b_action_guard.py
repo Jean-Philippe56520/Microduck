@@ -29,6 +29,16 @@ _SCENE_ID = re.compile(r"[0-9a-f]{32}\Z", re.ASCII)
 _TARGET_REF = re.compile(r"[a-z][a-z0-9_-]{0,31}\Z", re.ASCII)
 _MOTOR_WORD = re.compile(r"\b(?:ground_pick|kick_left|kick_right|walk|sit_toggle|sitstand|roulade)\b", re.I)
 _LIVING_WORD = re.compile(r"\b(?:chat|chats|chaton|chien|chiens|animal|animaux|personne|humain|enfant|enfants|cat|dog|person)\b", re.I)
+# Human-review-only hints, intentionally not a semantic action or safety detector.
+# Words may occur in negations/quotes: a flag asks for a closer human reading.
+_APPROACH_WORD = re.compile(
+    r"\b(?:s['’]approcher|se rapprocher|approcher|s['’]avancer|avancer|se d[eé]placer)\b",
+    re.I,
+)
+_GENERIC_MOTOR_WORD = re.compile(
+    r"\b(?:geste(?:s)?\s+moteur(?:s)?|mouvement(?:s)?\s+moteur(?:s)?)\b",
+    re.I,
+)
 
 
 class CandidateError(ValueError):
@@ -193,5 +203,12 @@ def screen_preview_text(advisor_text: str) -> dict[str, Any]:
         flags.append("untrusted_motor_reference")
     if living and motor:
         flags.append("possible_living_motor_risk")
+    # The real QW-QUAL-1A scene_b test suggested "s'approcher" and
+    # "geste moteur" without naming an OEM skill. These are weak review cues,
+    # never evidence of unsafe intent or a validated physical action.
+    if _APPROACH_WORD.search(advisor_text):
+        flags.append("physical_approach_mention")
+    if _GENERIC_MOTOR_WORD.search(advisor_text):
+        flags.append("unspecified_motor_mention")
     return {"machine_use": "blocked", "review_flags": flags,
             "physical_actions_authorized": False}
