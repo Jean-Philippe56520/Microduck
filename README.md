@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**QW-PERF-1G — mesure opérateur CPU/GPU à stimulus identique (29/10/2026 ; PC réel, 2 couleurs synthétiques uniquement) :** [relevé, calculs et limites](docs/qw-perf1g-pc-gpu-cpu-color-comparison-2026-10-29.md). Au port temporaire `11435` (Vulkan et iGPU demandés), `/api/ps` a déclaré **5 614 726 020 octets de mémoire GPU** pour `qwen3.5:9b`, avec rouge/bleu corrects en **8,343/8,891 s** ; au port principal CPU `11434`, `size_vram=0` et couleurs correctes en **10,735/11,343 s**. Écart descriptif moyen **−21,94 %** sur deux paires non randomisées ; **aucune vérification indépendante de calcul GPU, d'accélération reproductible ou de performance de conseil**. Codes retour 0, aucun média privé, SQLite, moteur ou modification du pilote ; PC seulement. La sonde est livrée sur `main` via [PR #156](https://github.com/Jean-Philippe56520/Microduck/pull/156), contrôles CI de la PR verts.
+
+
 **QW-PERF-1F — relevé matériel facultatif pendant le test Qwen (29/10/2026, code PC candidat/fixtures, CI à vérifier) :** [protocole et commande](docs/qw-perf1f-ollama-placement-sampling-2026-10-29.md). Le lanceur Windows existant accepte `-VisionCheck -ReportPlacement -Port 11435` pour observer **automatiquement** `GET /api/ps` pendant les deux couleurs synthétiques, sans conserver de texte/image ni bloquer le modèle. `size_vram` renseigne la **mémoire GPU déclarée**, pas une mesure des calculs GPU ni un gain de latence. Mode désactivé par défaut, aucune nouvelle commande moteur, connexion hors loopback ou lecture SQLite ; **GPU réel non encore testé dans ce lot**.
 
 
