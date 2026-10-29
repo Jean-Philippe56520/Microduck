@@ -31,6 +31,26 @@ Aujourd'hui F5-B/Ollama refuse de deviner le sens d'une image absente et force `
 
 Tout chemin nouvellement créé **opt-in PC seulement** et déconnecté de F2 et robotd ; aucune création de schéma, aucune modification OEM, aucune image. Si 9B indisponible, le choix F2 local reste intact. Ne pas fusionner sans CI Python et N1 vertes ; **CI verte prouve le contrat PC fixturé, pas que les deux vraies requêtes ont été exécutées sur la machine utilisateur**. L'adaptateur peut être fusionné comme outil facultatif seulement en statut `test_logiciel_seul` tant que les sorties PC véritables ne sont pas reçues.
 
-## Résultats
+## Résultats code et prochaine preuve — état du 29 octobre 2026
 
-**Prévu, non mesuré au moment de l'enregistrement de cette porte.** Aucun chiffre réel Qwen n'est inféré des anciens cas QW-QUAL ni des tests de GitHub.
+**Codé, CI hôte verte, vrai PC en attente.** Le code [`qwen9b_goal_advice.py`](../microduck_companion/qwen9b_goal_advice.py) et [16 tests](../tests/test_qw1a_goal_pc_advice.py) passent [CI Python #40909756219](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40909756219), **1 807 tests exécutés, 6 ignorés, aucun échec**. Le vrai lecteur `MockGoalMemory`/EX1/MEM-2A lit une tentative fictive de stratégie `observe_from_distance` dans la seule SQLite `ExperienceMemory(":memory:")`, sans écriture additionnelle pendant la consultation. Le premier essai CI a découvert une dépendance manquante aux **tables F1-C/F2-C existantes** dans l'amorçage fictif, corrigée avec leurs **constructeurs existants**, sans schéma ni base nouvellement définis. La contrainte CHECK SQLite refuse déjà les stratégies invalides ; le lecteur rejette également des liens corrompus.
+
+**Éléments vérifiés en tests, pas par le vrai modèle :** la demande A et B garde le même objectif et la même catégorie ; le rappel B ne contient que le code de stratégie antérieure. Les réponses fictives au protocole sont limitées à `observe_from_distance / observe_over_time / inspect_other_view / compare_memory / abstain`. JSON supplémentaire, proposition `kick_left / walk / ground_pick`, fausse source, identifiant différent, réponse trop longue, double clé, non-finitude, faux `mock_executed` comme fait, HTTP corrompu, modèle incorrect ou `done_reason=length` sont refusés. Aucun résultat modèle ne change F2, ExperienceMemory, un moteur ou une récompense. Les tests n'envoient aucune requête réseau réelle.
+
+### Commande Windows — premier vrai A/B, local et explicite
+
+Dans **une copie locale à jour du dépôt `Microduck`** et l'environnement Python habituel contenant les modules `microduck_companion` (pas dans la simulation et pas depuis une ancienne copie) :
+
+```powershell
+python -m microduck_companion.qwen9b_goal_advice
+# Diagnostic sans réseau, zéro appel réel
+python -m microduck_companion.qwen9b_goal_advice --run --authorize-two-synthetic-goal-calls --ollama-port 11435 --timeout 120 --show-human-review-text
+```
+
+La **deuxième commande** n'est à lancer qu'après vérification que le modèle installé est bien `qwen3.5:9b` et qu'**Ollama local** répond sur `127.0.0.1:11435`. Elle autorise explicitement **deux appels maximum, séquentiels**, uniquement sur un objectif et des propositions fictives intégrés au module (aucune photo privée ou véritable mémoire robot). Aucun Ollama n'est démarré ou modèle téléchargé par le programme. Le premier appel défaillant interdit le second. Échec technique = code de sortie 2 ; ne pas augmenter automatiquement le budget. L'affichage optionnel `--show-human-review-text` imprime sur la console locale deux courts textes **non fiables pour relecture humaine uniquement** ; aucun fichier résultat n'est enregistré, aucune SQLite privée ouverte.
+
+**À relever dans la sortie locale :** `qwen_real_calls_attempted`, les deux `status`, `diagnostic`, `strategy`, `repeats_prior_proposal`, `wall_s`, `ollama_total_s` et `tokens_generated`, puis le jugement humain indépendant sur pertinence de l'observation, conséquence testable, incertitude, évitement des répétitions et refus d'effets imaginés. L'option de texte est un affichage humain, jamais un champ donnant pouvoir moteur ou confiance automatique.
+
+**Statut conservé tant que cette sortie n'existe pas :** `test_logiciel_seul` pour le code ; **`vrai_qwen_9b_avec_sans_memoire_non_mesuré`**. Ne pas confondre la CI GitHub avec les 2 requêtes du modèle sur le PC Ryzen. La qualité du conseiller et la généralisation E2E restent en attente d'autres scènes prospectives indépendamment évaluées. On n'ouvrira pas de nouvelle suite de récupération des JSON QW-QUAL-2A historiques.
+
+**Retour arrière :** l'outil n'est invoqué par aucun service, F2, PD3 ni politique F5-C ; pas d'adaptateur sur le robot. Ne pas le lancer ⇒ retour au comportement existant. Sous-modules constructeur épinglés inchangés, aucun droit moteur ni mémoire causal délégué.
