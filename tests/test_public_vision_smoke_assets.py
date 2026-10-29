@@ -1,9 +1,10 @@
-"""Public image smoke assets: keep the source bytes and labels intact."""
+"""Integrity checks for public visual smoke fixtures used by Kwipi."""
 from __future__ import annotations
 
 import hashlib
 import json
 from pathlib import Path
+import unittest
 
 ROOT = Path(__file__).parent / "assets" / "public_vision_smoke"
 ALLOWED = {"cat", "dog", "sports_ball", "chair", "person", "unknown"}
@@ -17,23 +18,32 @@ def _valid_image(data: bytes, name: str) -> bool:
     return False
 
 
-def test_public_images_match_pinned_source_git_blobs():
-    rows = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))["images"]
-    assert len(rows) == 13
-    names = [row["file"] for row in rows]
-    assert len(set(names)) == len(names)
-    for row in rows:
-        name = row["file"]
-        assert name == Path(name).name and row["category"] in ALLOWED
-        assert row["source_url"].startswith("https://github.com/")
-        assert row["origin_url"].startswith("https://")
-        content = (ROOT / name).read_bytes()
-        assert _valid_image(content, name)
-        header = f"blob {len(content)}\0".encode()
-        assert hashlib.sha1(header + content).hexdigest() == row["source_git_blob_sha"]
+class PublicVisionSmokeAssetTests(unittest.TestCase):
+    def test_public_images_match_pinned_source_git_blobs(self):
+        rows = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))["images"]
+        self.assertEqual(len(rows), 13)
+        names = [row["file"] for row in rows]
+        self.assertEqual(len(set(names)), len(names))
+        for row in rows:
+            name = row["file"]
+            with self.subTest(name=name):
+                self.assertEqual(name, Path(name).name)
+                self.assertIn(row["category"], ALLOWED)
+                self.assertTrue(row["source_url"].startswith("https://github.com/"))
+                self.assertTrue(row["origin_url"].startswith("https://"))
+                payload = (ROOT / name).read_bytes()
+                self.assertTrue(_valid_image(payload, name))
+                git_header = f"blob {len(payload)}\0".encode()
+                self.assertEqual(
+                    hashlib.sha1(git_header + payload).hexdigest(),
+                    row["source_git_blob_sha"],
+                )
+
+    def test_public_image_validator_rejects_corruption(self):
+        self.assertFalse(_valid_image(b"not a jpeg", "cat_01.jpg"))
+        self.assertFalse(_valid_image(b"not a png", "ball_02.png"))
+        self.assertFalse(_valid_image(b"\xff\xd8\xff", "cat_01.jpg"))
 
 
-def test_public_image_validator_rejects_corruption():
-    assert not _valid_image(b"not a jpeg", "cat_01.jpg")
-    assert not _valid_image(b"not a png", "ball_02.png")
-    assert not _valid_image(b"\xff\xd8\xff", "cat_01.jpg")
+if __name__ == "__main__":
+    unittest.main()
