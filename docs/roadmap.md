@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-QUAL-1F — première série de quatre scènes réelle PC clôturée (29/10/2026) :** [rapport décisionnel](qw-qual1f-four-scenes-decision-2026-10-29.md) et [cas `scene_d`](qw-qual1f-scene-d-real-qwen-review-2026-10-29.md). Dernière consultation **45,546 s / 191 tokens** ; ambiguïté partiellement reconnue, **pas de seconde vue spontanée pour l'objet masqué**, contact OEM hypothétique et « pas de danger » non justifié. L'ensemble `a/b/c/d` montre **sens possible et inaction**, pas de robustesse, séquence expérimentale cohérente ou perception active. Tous les textes bloqués, **0 commandes moteur / 0 mémoire**. **Suite :** QW-QUAL-2A revue aveugle, 2B cas non vus avec témoins négatifs/positifs, 2C variante de rôle seulement après comparaison ; **ne pas modifier v2 maintenant**. Aucune navigation, saisie, contournement ou validation robot livrée.
+
+
 **QW-QUAL-1E — critère spontané de meilleure observation fixé AVANT dernier vrai essai 9B (29/10/2026) :** [protocole `scene_d`](qw-qual1e-scene-d-viewpoint-preregistration-2026-10-29.md). Mesurer qualitativement si Qwen voit la limite/occlusion, précise quel indice visuel manque et suggère **sans amorce** une seconde vue conditionnelle ou l'inaction. **Aucune capacité de repositionnement visuel réel n'est livrée** : `category_inspection.py` fournit seulement des indices fictifs, `IdleHead` regarde autour sans chercher une cible, locomotion SIM-E2 non résolue, ToF frontal ≠ cartographie fiable. Pas de nouvelle politique OEM, de prompt optimisé sur une scène ni de test moteur. Suite prévue : quatre réponses réelles puis revue indépendante, si l'opérateur choisit de faire `scene_d`.
 
 
