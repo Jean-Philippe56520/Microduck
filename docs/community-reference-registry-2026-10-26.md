@@ -1,5 +1,7 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**QW-QUAL-2A — choix de réemploi (29/10/2026, documentation préparatoire) :** [protocole de contre-annotation](qw-qual2a-blind-independent-human-review-protocol-2026-10-29.md). **Réutiliser** images originales/export sec `qwen9b_semantic_quality.py`, réponses réelles locales, QW-QUAL-1A/1E et v2 figé ; **adapter** grille d'analyse et séparation aveugle ; **créer uniquement** protocole/fiches, sans code, deuxième juge LLM, moteur, SQLite, service, QuackNav, brain, Quacksat ou Twin. Ne pas appeler « indépendant » un assistant exposé aux résultats ; les quatre sorties complètes restent hors dépôt.
+
 **QW-QUAL-1F — décision réutiliser/adapter/créer après quatre sorties réelles (29/10/2026) :** [bilan](qw-qual1f-four-scenes-decision-2026-10-29.md). **RÉUTILISER, baseline gelée** : `qwen9b_production_role_v2.py`, `qwen9b_semantic_quality.py`, garde `screen_preview_text`, `category_inspection.py` sur indices fictifs. **ADAPTER uniquement** le protocole de contre-lecture indépendante, scènes inédites et documents d'autorité ; une variante de rôle v3 reste **envisagée, non livrée**, après critères d'évaluation fixés. **NE PAS CRÉER** de second pilote, validateur autonome à mots clés, deuxième SQLite, service réseau, nouveau modèle, QuackNav/M9/Twin/Quacksat, moteur OEM ou navigation. `scene_d` ne propose pas de meilleure vue spontanée, et le conseil physique `ground_pick`/approche n'autorise rien ; 4/4 sorties du banc `machine_use=blocked`, aucune action ni apprentissage réel.
 
 
