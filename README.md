@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**QW-PERF-1C — diagnostic PC précisé (29/10/2026, rapport opérateur) :** Ollama **0.40.12**, Radeon **860M**, driver Windows **32.0.22052.3** ; le modèle 9B a effectivement tourné à **100 % CPU**. La liste ROCm Windows officielle ne couvre pas la 860M, Vulkan reste une piste de compatibilité mais la détection du backend n'est **pas démontrée**. [Rapport et prochain contrôle des journaux en lecture seule](docs/qw-perf1b-real-windows-9b-baseline-2026-10-29.md). Aucune installation, modification GPU/Windows, réinférence ni commande OEM autorisée par ce constat.
+
+
 **QW-PERF-1B — mesures opérateur réelles du 29/10/2026, à confirmer indépendamment :** [rapport CPU/Qwen 9B](docs/qw-perf1b-real-windows-9b-baseline-2026-10-29.md). Cinq appels sur image synthétique : rôle v2 44,234 s première requête / 14,750 s répétition cache, texte court 3,703 s, JSON 7,110 s et JSON + contexte fictif 9,109 s. Deux JSON corrects pour **cercle rouge synthétique seulement**. `ollama ps` : **100 % CPU** et 6,2 GB SIZE, pas une mesure RSS indépendante ; GPU/driver/version à identifier avant d'optimiser. Aucun gain GPU mesuré, ni connaissance réelle, ni moteur/SQLite.
 
 
