@@ -85,6 +85,8 @@ class GoalQuestion:
                 or type(self.category) is not str
                 or self.category not in OBJECT_CATEGORIES
                 or self.goal_kind not in GOAL_KINDS
+                or (self.goal_kind == "inspect_unknown" and self.category != "unknown")
+                or (self.goal_kind == "observe_category" and self.category == "unknown")
                 or self.state not in _GOAL_STATES
                 or self.need != NEED
                 or type(self.prior_proposals) is not tuple
