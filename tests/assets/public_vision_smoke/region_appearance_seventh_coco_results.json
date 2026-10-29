@@ -1,0 +1,1724 @@
+{
+  "study": "VIS-APP-1_seventh_disjoint_COCO_polygon_color",
+  "status": "failed",
+  "predeclared_gate_passed": false,
+  "checks": {
+    "all_10_target_polygon_masks": true,
+    "at_least_5_GT_objects_have_unambiguous_dominant_color": false,
+    "oracle_center_coverage_at_least_70pct": true,
+    "oracle_center_precision_at_least_75pct": true,
+    "center_better_than_whole_GT_box_by_one_correct": true,
+    "at_least_7_target_boxes_in_YOLOX_top3": false,
+    "at_least_1_ball_in_YOLOX_top3": true,
+    "matched_top3_resolved_colors_60pct_correct_and_at_least_3": false,
+    "median_two_descriptions_under_10ms_PC": true,
+    "p95_two_descriptions_under_25ms_PC": true
+  },
+  "images": 12,
+  "earlier_cohort_sizes": [
+    24,
+    24,
+    18,
+    12,
+    12,
+    12
+  ],
+  "coco_image_ids": [
+    477288,
+    210299,
+    435299,
+    554291,
+    29393,
+    80153,
+    85772,
+    177065,
+    325838,
+    74733,
+    186938,
+    496722
+  ],
+  "unchanged_YOLOX_SHA256": "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d",
+  "unchanged_YOLOX_threshold": 0.25,
+  "COCO_annotations_SHA256": "e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aeefa635b8c810b6f",
+  "GT_target_polygons": 10,
+  "GT_eligible_unambiguous_color": 4,
+  "oracle_center_resolved": 3,
+  "oracle_center_color_correct": 3,
+  "oracle_whole_box_color_correct": 2,
+  "top3_target_IoU50_hits": 5,
+  "top3_ball_IoU50_hits": 1,
+  "matched_top3_GT_eligible": 2,
+  "matched_top3_color_resolved": 2,
+  "matched_top3_color_correct": 2,
+  "region_descriptor_two_methods_host_ms": {
+    "median": 1.329,
+    "p95_nearest_rank": 1.665,
+    "max": 1.937
+  },
+  "n_regions_timed": 28,
+  "host_peak_RSS_kib": 345716,
+  "GT_used_to_select_detector_proposals": false,
+  "GT_used_to_choose_matched_proposal_for_scoring_only": true,
+  "colors_may_be_background": true,
+  "shape_descriptions_delivered": false,
+  "bbox_aspect_is_not_object_shape": true,
+  "real_object_vs_screen_unproven": true,
+  "not_generic_unknown_object_detection": true,
+  "not_RK3566_or_NPU_measured": true,
+  "motor_commands": 0,
+  "sqlite_writes": 0,
+  "qwen_calls": 0,
+  "rows": [
+    {
+      "coco_image_id": 477288,
+      "expected_category_for_scoring_only": "person",
+      "image_size": [
+        480,
+        640
+      ],
+      "candidate_regions": [
+        {
+          "xyxy": [
+            223.79607567420373,
+            77.03772911658655,
+            383.4896909273588,
+            592.948983999399
+          ],
+          "joint_score": 0.843742,
+          "untrusted_class_index": 0,
+          "center": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.3594,
+            "color_runner_up": 0.2326,
+            "geometry": {
+              "bbox_width_fraction": 0.3327,
+              "bbox_height_fraction": 0.8061,
+              "bbox_aspect_ratio": 0.3095,
+              "bbox_geometry_only": "tall_box",
+              "center_x_fraction": 0.6326,
+              "center_y_fraction": 0.5234
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.4115,
+            "color_runner_up": 0.2101,
+            "geometry": {
+              "bbox_width_fraction": 0.3327,
+              "bbox_height_fraction": 0.8061,
+              "bbox_aspect_ratio": 0.3095,
+              "bbox_geometry_only": "tall_box",
+              "center_x_fraction": 0.6326,
+              "center_y_fraction": 0.5234
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        },
+        {
+          "xyxy": [
+            0.4041701096754808,
+            115.15718900240385,
+            116.14606417142429,
+            559.4865534855769
+          ],
+          "joint_score": 0.829251,
+          "untrusted_class_index": 0,
+          "center": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.4219,
+            "color_runner_up": 0.3194,
+            "geometry": {
+              "bbox_width_fraction": 0.2411,
+              "bbox_height_fraction": 0.6943,
+              "bbox_aspect_ratio": 0.2605,
+              "bbox_geometry_only": "tall_box",
+              "center_x_fraction": 0.1214,
+              "center_y_fraction": 0.5271
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.4062,
+            "color_runner_up": 0.2622,
+            "geometry": {
+              "bbox_width_fraction": 0.2411,
+              "bbox_height_fraction": 0.6943,
+              "bbox_aspect_ratio": 0.2605,
+              "bbox_geometry_only": "tall_box",
+              "center_x_fraction": 0.1214,
+              "center_y_fraction": 0.5271
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        },
+        {
+          "xyxy": [
+            169.47334876427286,
+            210.70272592397836,
+            253.00298837515027,
+            471.96497990534857
+          ],
+          "joint_score": 0.803055,
+          "untrusted_class_index": 0,
+          "center": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.3351,
+            "color_runner_up": 0.2587,
+            "geometry": {
+              "bbox_width_fraction": 0.174,
+              "bbox_height_fraction": 0.4082,
+              "bbox_aspect_ratio": 0.3197,
+              "bbox_geometry_only": "tall_box",
+              "center_x_fraction": 0.4401,
+              "center_y_fraction": 0.5333
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.3403,
+            "color_runner_up": 0.1493,
+            "geometry": {
+              "bbox_width_fraction": 0.174,
+              "bbox_height_fraction": 0.4082,
+              "bbox_aspect_ratio": 0.3197,
+              "bbox_geometry_only": "tall_box",
+              "center_x_fraction": 0.4401,
+              "center_y_fraction": 0.5333
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        }
+      ],
+      "candidate_selection_and_descriptors_before_GT": true,
+      "target_GT_status": "available",
+      "target_GT_color": {
+        "color": "unknown",
+        "color_dominance": 0.2831,
+        "eligible_unambiguous": false,
+        "foreground_pixels_at_bounded_resolution": 41429,
+        "polygon_mask_source": "COCO_GT_only_for_scoring"
+      },
+      "oracle_bbox_central_color": "unknown",
+      "oracle_bbox_full_color": "unknown",
+      "oracle_bbox_aspect_hint": "rectangular_box",
+      "best_target_matching_candidate_rank_for_scoring_only": null,
+      "best_target_matching_candidate_bbox_IoU": 0.2033,
+      "matching_candidate_color_for_scoring_only": null,
+      "matching_candidate_geometry_only": null
+    },
+    {
+      "coco_image_id": 210299,
+      "expected_category_for_scoring_only": "person",
+      "image_size": [
+        640,
+        480
+      ],
+      "candidate_regions": [
+        {
+          "xyxy": [
+            119.18896014873799,
+            122.41843590369592,
+            256.79903470552887,
+            330.41279719426086
+          ],
+          "joint_score": 0.826447,
+          "untrusted_class_index": 0,
+          "center": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.2778,
+            "color_runner_up": 0.2656,
+            "geometry": {
+              "bbox_width_fraction": 0.215,
+              "bbox_height_fraction": 0.4333,
+              "bbox_aspect_ratio": 0.6616,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.2937,
+              "center_y_fraction": 0.4717
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.4583,
+            "color_runner_up": 0.2396,
+            "geometry": {
+              "bbox_width_fraction": 0.215,
+              "bbox_height_fraction": 0.4333,
+              "bbox_aspect_ratio": 0.6616,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.2937,
+              "center_y_fraction": 0.4717
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        },
+        {
+          "xyxy": [
+            131.16163400503305,
+            189.971184363732,
+            255.29414837176984,
+            406.77982036884015
+          ],
+          "joint_score": 0.810339,
+          "untrusted_class_index": 3,
+          "center": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.2465,
+            "color_runner_up": 0.224,
+            "geometry": {
+              "bbox_width_fraction": 0.194,
+              "bbox_height_fraction": 0.4517,
+              "bbox_aspect_ratio": 0.5725,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.3019,
+              "center_y_fraction": 0.6216
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.375,
+            "color_runner_up": 0.2049,
+            "geometry": {
+              "bbox_width_fraction": 0.194,
+              "bbox_height_fraction": 0.4517,
+              "bbox_aspect_ratio": 0.5725,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.3019,
+              "center_y_fraction": 0.6216
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        }
+      ],
+      "candidate_selection_and_descriptors_before_GT": true,
+      "target_GT_status": "available",
+      "target_GT_color": {
+        "color": "unknown",
+        "color_dominance": 0.2881,
+        "eligible_unambiguous": false,
+        "foreground_pixels_at_bounded_resolution": 11725,
+        "polygon_mask_source": "COCO_GT_only_for_scoring"
+      },
+      "oracle_bbox_central_color": "unknown",
+      "oracle_bbox_full_color": "unknown",
+      "oracle_bbox_aspect_hint": "rectangular_box",
+      "best_target_matching_candidate_rank_for_scoring_only": 1,
+      "best_target_matching_candidate_bbox_IoU": 0.9033,
+      "matching_candidate_color_for_scoring_only": "unknown",
+      "matching_candidate_geometry_only": "rectangular_box"
+    },
+    {
+      "coco_image_id": 435299,
+      "expected_category_for_scoring_only": "cat",
+      "image_size": [
+        640,
+        480
+      ],
+      "candidate_regions": [
+        {
+          "xyxy": [
+            277.8384868915265,
+            43.7860342172476,
+            432.3575298602765,
+            317.101792555589
+          ],
+          "joint_score": 0.595605,
+          "untrusted_class_index": 15,
+          "center": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "orange",
+            "color_dominance": 0.6615,
+            "color_runner_up": 0.1441,
+            "geometry": {
+              "bbox_width_fraction": 0.2414,
+              "bbox_height_fraction": 0.5694,
+              "bbox_aspect_ratio": 0.5653,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.5548,
+              "center_y_fraction": 0.3759
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.3663,
+            "color_runner_up": 0.3108,
+            "geometry": {
+              "bbox_width_fraction": 0.2414,
+              "bbox_height_fraction": 0.5694,
+              "bbox_aspect_ratio": 0.5653,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.5548,
+              "center_y_fraction": 0.3759
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        },
+        {
+          "xyxy": [
+            0.9990046574519231,
+            62.12383563701923,
+            637.878183218149,
+            465.38851224459137
+          ],
+          "joint_score": 0.440694,
+          "untrusted_class_index": 59,
+          "center": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.4948,
+            "color_runner_up": 0.1771,
+            "geometry": {
+              "bbox_width_fraction": 0.9951,
+              "bbox_height_fraction": 0.8401,
+              "bbox_aspect_ratio": 1.5793,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.4991,
+              "center_y_fraction": 0.5495
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.4618,
+            "color_runner_up": 0.3021,
+            "geometry": {
+              "bbox_width_fraction": 0.9951,
+              "bbox_height_fraction": 0.8401,
+              "bbox_aspect_ratio": 1.5793,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.4991,
+              "center_y_fraction": 0.5495
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        }
+      ],
+      "candidate_selection_and_descriptors_before_GT": true,
+      "target_GT_status": "available",
+      "target_GT_color": {
+        "color": "orange",
+        "color_dominance": 0.8518,
+        "eligible_unambiguous": true,
+        "foreground_pixels_at_bounded_resolution": 16400,
+        "polygon_mask_source": "COCO_GT_only_for_scoring"
+      },
+      "oracle_bbox_central_color": "orange",
+      "oracle_bbox_full_color": "unknown",
+      "oracle_bbox_aspect_hint": "tall_box",
+      "best_target_matching_candidate_rank_for_scoring_only": 1,
+      "best_target_matching_candidate_bbox_IoU": 0.8463,
+      "matching_candidate_color_for_scoring_only": "orange",
+      "matching_candidate_geometry_only": "rectangular_box"
+    },
+    {
+      "coco_image_id": 554291,
+      "expected_category_for_scoring_only": "cat",
+      "image_size": [
+        640,
+        428
+      ],
+      "candidate_regions": [
+        {
+          "xyxy": [
+            451.09333918644836,
+            41.34225881013939,
+            640,
+            245.912496662826
+          ],
+          "joint_score": 0.576301,
+          "untrusted_class_index": 56,
+          "center": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "red",
+            "color_dominance": 0.9427,
+            "color_runner_up": 0.0382,
+            "geometry": {
+              "bbox_width_fraction": 0.2952,
+              "bbox_height_fraction": 0.478,
+              "bbox_aspect_ratio": 0.9234,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.8524,
+              "center_y_fraction": 0.3356
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "red",
+            "color_dominance": 0.7535,
+            "color_runner_up": 0.1215,
+            "geometry": {
+              "bbox_width_fraction": 0.2952,
+              "bbox_height_fraction": 0.478,
+              "bbox_aspect_ratio": 0.9234,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.8524,
+              "center_y_fraction": 0.3356
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        },
+        {
+          "xyxy": [
+            173.79764263446515,
+            54.19367025910522,
+            506.5341069148137,
+            419.9210248988309
+          ],
+          "joint_score": 0.495469,
+          "untrusted_class_index": 15,
+          "center": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.5017,
+            "color_runner_up": 0.2847,
+            "geometry": {
+              "bbox_width_fraction": 0.5199,
+              "bbox_height_fraction": 0.8545,
+              "bbox_aspect_ratio": 0.9098,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.5315,
+              "center_y_fraction": 0.5539
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.3889,
+            "color_runner_up": 0.3108,
+            "geometry": {
+              "bbox_width_fraction": 0.5199,
+              "bbox_height_fraction": 0.8545,
+              "bbox_aspect_ratio": 0.9098,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.5315,
+              "center_y_fraction": 0.5539
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        }
+      ],
+      "candidate_selection_and_descriptors_before_GT": true,
+      "target_GT_status": "available",
+      "target_GT_color": {
+        "color": "unknown",
+        "color_dominance": 0.4148,
+        "eligible_unambiguous": false,
+        "foreground_pixels_at_bounded_resolution": 42368,
+        "polygon_mask_source": "COCO_GT_only_for_scoring"
+      },
+      "oracle_bbox_central_color": "unknown",
+      "oracle_bbox_full_color": "unknown",
+      "oracle_bbox_aspect_hint": "roughly_square_box",
+      "best_target_matching_candidate_rank_for_scoring_only": 2,
+      "best_target_matching_candidate_bbox_IoU": 0.7839,
+      "matching_candidate_color_for_scoring_only": "unknown",
+      "matching_candidate_geometry_only": "roughly_square_box"
+    },
+    {
+      "coco_image_id": 29393,
+      "expected_category_for_scoring_only": "dog",
+      "image_size": [
+        500,
+        375
+      ],
+      "candidate_regions": [
+        {
+          "xyxy": [
+            167.984283887423,
+            151.59708719987134,
+            357.50743059011603,
+            341.52857156900257
+          ],
+          "joint_score": 0.774375,
+          "untrusted_class_index": 16,
+          "center": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.2969,
+            "color_runner_up": 0.2153,
+            "geometry": {
+              "bbox_width_fraction": 0.379,
+              "bbox_height_fraction": 0.5065,
+              "bbox_aspect_ratio": 0.9979,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.5255,
+              "center_y_fraction": 0.6575
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.2222,
+            "color_runner_up": 0.1979,
+            "geometry": {
+              "bbox_width_fraction": 0.379,
+              "bbox_height_fraction": 0.5065,
+              "bbox_aspect_ratio": 0.9979,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.5255,
+              "center_y_fraction": 0.6575
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        }
+      ],
+      "candidate_selection_and_descriptors_before_GT": true,
+      "target_GT_status": "available",
+      "target_GT_color": {
+        "color": "unknown",
+        "color_dominance": 0.371,
+        "eligible_unambiguous": false,
+        "foreground_pixels_at_bounded_resolution": 17457,
+        "polygon_mask_source": "COCO_GT_only_for_scoring"
+      },
+      "oracle_bbox_central_color": "unknown",
+      "oracle_bbox_full_color": "unknown",
+      "oracle_bbox_aspect_hint": "roughly_square_box",
+      "best_target_matching_candidate_rank_for_scoring_only": 1,
+      "best_target_matching_candidate_bbox_IoU": 0.9209,
+      "matching_candidate_color_for_scoring_only": "unknown",
+      "matching_candidate_geometry_only": "roughly_square_box"
+    },
+    {
+      "coco_image_id": 80153,
+      "expected_category_for_scoring_only": "dog",
+      "image_size": [
+        428,
+        640
+      ],
+      "candidate_regions": [
+        {
+          "xyxy": [
+            194.4767224428465,
+            124.36606773963342,
+            298.37223793962875,
+            426.4457467886118
+          ],
+          "joint_score": 0.861968,
+          "untrusted_class_index": 0,
+          "center": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "red",
+            "color_dominance": 0.7135,
+            "color_runner_up": 0.1649,
+            "geometry": {
+              "bbox_width_fraction": 0.2427,
+              "bbox_height_fraction": 0.472,
+              "bbox_aspect_ratio": 0.3439,
+              "bbox_geometry_only": "tall_box",
+              "center_x_fraction": 0.5758,
+              "center_y_fraction": 0.4303
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.3646,
+            "color_runner_up": 0.3247,
+            "geometry": {
+              "bbox_width_fraction": 0.2427,
+              "bbox_height_fraction": 0.472,
+              "bbox_aspect_ratio": 0.3439,
+              "bbox_geometry_only": "tall_box",
+              "center_x_fraction": 0.5758,
+              "center_y_fraction": 0.4303
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        },
+        {
+          "xyxy": [
+            235.95474122411056,
+            368.88242281400244,
+            405.8053589964942,
+            392.23489614633417
+          ],
+          "joint_score": 0.25385,
+          "untrusted_class_index": 30,
+          "center": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.434,
+            "color_runner_up": 0.3854,
+            "geometry": {
+              "bbox_width_fraction": 0.3968,
+              "bbox_height_fraction": 0.0365,
+              "bbox_aspect_ratio": 7.2733,
+              "bbox_geometry_only": "wide_box",
+              "center_x_fraction": 0.7497,
+              "center_y_fraction": 0.5946
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.5052,
+            "color_runner_up": 0.191,
+            "geometry": {
+              "bbox_width_fraction": 0.3968,
+              "bbox_height_fraction": 0.0365,
+              "bbox_aspect_ratio": 7.2733,
+              "bbox_geometry_only": "wide_box",
+              "center_x_fraction": 0.7497,
+              "center_y_fraction": 0.5946
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        }
+      ],
+      "candidate_selection_and_descriptors_before_GT": true,
+      "target_GT_status": "available",
+      "target_GT_color": {
+        "color": "unknown",
+        "color_dominance": 0.4831,
+        "eligible_unambiguous": false,
+        "foreground_pixels_at_bounded_resolution": 7789,
+        "polygon_mask_source": "COCO_GT_only_for_scoring"
+      },
+      "oracle_bbox_central_color": "unknown",
+      "oracle_bbox_full_color": "unknown",
+      "oracle_bbox_aspect_hint": "tall_box",
+      "best_target_matching_candidate_rank_for_scoring_only": null,
+      "best_target_matching_candidate_bbox_IoU": 0.1428,
+      "matching_candidate_color_for_scoring_only": null,
+      "matching_candidate_geometry_only": null
+    },
+    {
+      "coco_image_id": 85772,
+      "expected_category_for_scoring_only": "sports_ball",
+      "image_size": [
+        640,
+        427
+      ],
+      "candidate_regions": [
+        {
+          "xyxy": [
+            47.73892916165865,
+            66.45777832689903,
+            375.9285794771635,
+            424.52286672249113
+          ],
+          "joint_score": 0.941328,
+          "untrusted_class_index": 0,
+          "center": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.3976,
+            "color_runner_up": 0.3976,
+            "geometry": {
+              "bbox_width_fraction": 0.5128,
+              "bbox_height_fraction": 0.8386,
+              "bbox_aspect_ratio": 0.9166,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.331,
+              "center_y_fraction": 0.5749
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "gray",
+            "color_dominance": 0.6302,
+            "color_runner_up": 0.1771,
+            "geometry": {
+              "bbox_width_fraction": 0.5128,
+              "bbox_height_fraction": 0.8386,
+              "bbox_aspect_ratio": 0.9166,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.331,
+              "center_y_fraction": 0.5749
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        },
+        {
+          "xyxy": [
+            38.880273378812355,
+            10.026673474757791,
+            84.46339680598332,
+            204.01964441477824
+          ],
+          "joint_score": 0.879522,
+          "untrusted_class_index": 38,
+          "center": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "gray",
+            "color_dominance": 0.849,
+            "color_runner_up": 0.0451,
+            "geometry": {
+              "bbox_width_fraction": 0.0712,
+              "bbox_height_fraction": 0.4543,
+              "bbox_aspect_ratio": 0.235,
+              "bbox_geometry_only": "tall_box",
+              "center_x_fraction": 0.0964,
+              "center_y_fraction": 0.2506
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "gray",
+            "color_dominance": 0.8524,
+            "color_runner_up": 0.1215,
+            "geometry": {
+              "bbox_width_fraction": 0.0712,
+              "bbox_height_fraction": 0.4543,
+              "bbox_aspect_ratio": 0.235,
+              "bbox_geometry_only": "tall_box",
+              "center_x_fraction": 0.0964,
+              "center_y_fraction": 0.2506
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        },
+        {
+          "xyxy": [
+            596.9095860994779,
+            275.7916356779688,
+            625.851362668551,
+            302.949365149299
+          ],
+          "joint_score": 0.863509,
+          "untrusted_class_index": 32,
+          "center": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "yellow_green",
+            "color_dominance": 1,
+            "color_runner_up": 0,
+            "geometry": {
+              "bbox_width_fraction": 0.0452,
+              "bbox_height_fraction": 0.0636,
+              "bbox_aspect_ratio": 1.0657,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.9553,
+              "center_y_fraction": 0.6777
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "yellow_green",
+            "color_dominance": 0.6823,
+            "color_runner_up": 0.1944,
+            "geometry": {
+              "bbox_width_fraction": 0.0452,
+              "bbox_height_fraction": 0.0636,
+              "bbox_aspect_ratio": 1.0657,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.9553,
+              "center_y_fraction": 0.6777
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        }
+      ],
+      "candidate_selection_and_descriptors_before_GT": true,
+      "target_GT_status": "available",
+      "target_GT_color": {
+        "color": "yellow_green",
+        "color_dominance": 0.8228,
+        "eligible_unambiguous": true,
+        "foreground_pixels_at_bounded_resolution": 683,
+        "polygon_mask_source": "COCO_GT_only_for_scoring"
+      },
+      "oracle_bbox_central_color": "yellow_green",
+      "oracle_bbox_full_color": "yellow_green",
+      "oracle_bbox_aspect_hint": "roughly_square_box",
+      "best_target_matching_candidate_rank_for_scoring_only": 3,
+      "best_target_matching_candidate_bbox_IoU": 0.899,
+      "matching_candidate_color_for_scoring_only": "yellow_green",
+      "matching_candidate_geometry_only": "roughly_square_box"
+    },
+    {
+      "coco_image_id": 177065,
+      "expected_category_for_scoring_only": "sports_ball",
+      "image_size": [
+        640,
+        564
+      ],
+      "candidate_regions": [
+        {
+          "xyxy": [
+            342.54763676570013,
+            206.70094785768265,
+            456.9930032583384,
+            402.1616951009558
+          ],
+          "joint_score": 0.907218,
+          "untrusted_class_index": 0,
+          "center": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.2517,
+            "color_runner_up": 0.1667,
+            "geometry": {
+              "bbox_width_fraction": 0.1788,
+              "bbox_height_fraction": 0.3466,
+              "bbox_aspect_ratio": 0.5855,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.6246,
+              "center_y_fraction": 0.5398
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.3698,
+            "color_runner_up": 0.1458,
+            "geometry": {
+              "bbox_width_fraction": 0.1788,
+              "bbox_height_fraction": 0.3466,
+              "bbox_aspect_ratio": 0.5855,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.6246,
+              "center_y_fraction": 0.5398
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        },
+        {
+          "xyxy": [
+            29.085822472205532,
+            30.92938747977691,
+            194.12260789137622,
+            549.8028441384963
+          ],
+          "joint_score": 0.831079,
+          "untrusted_class_index": 0,
+          "center": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.2309,
+            "color_runner_up": 0.2083,
+            "geometry": {
+              "bbox_width_fraction": 0.2579,
+              "bbox_height_fraction": 0.92,
+              "bbox_aspect_ratio": 0.3181,
+              "bbox_geometry_only": "tall_box",
+              "center_x_fraction": 0.1744,
+              "center_y_fraction": 0.5148
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.3264,
+            "color_runner_up": 0.1753,
+            "geometry": {
+              "bbox_width_fraction": 0.2579,
+              "bbox_height_fraction": 0.92,
+              "bbox_aspect_ratio": 0.3181,
+              "bbox_geometry_only": "tall_box",
+              "center_x_fraction": 0.1744,
+              "center_y_fraction": 0.5148
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        },
+        {
+          "xyxy": [
+            30.450339684119594,
+            278.5576171875,
+            158.5719475379357,
+            388.56247738206747
+          ],
+          "joint_score": 0.789135,
+          "untrusted_class_index": 38,
+          "center": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "gray",
+            "color_dominance": 0.6615,
+            "color_runner_up": 0.2031,
+            "geometry": {
+              "bbox_width_fraction": 0.2002,
+              "bbox_height_fraction": 0.195,
+              "bbox_aspect_ratio": 1.1647,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.1477,
+              "center_y_fraction": 0.5914
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.309,
+            "color_runner_up": 0.3073,
+            "geometry": {
+              "bbox_width_fraction": 0.2002,
+              "bbox_height_fraction": 0.195,
+              "bbox_aspect_ratio": 1.1647,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.1477,
+              "center_y_fraction": 0.5914
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        }
+      ],
+      "candidate_selection_and_descriptors_before_GT": true,
+      "target_GT_status": "available",
+      "target_GT_color": {
+        "color": "unknown",
+        "color_dominance": 0.4784,
+        "eligible_unambiguous": false,
+        "foreground_pixels_at_bounded_resolution": 232,
+        "polygon_mask_source": "COCO_GT_only_for_scoring"
+      },
+      "oracle_bbox_central_color": "red",
+      "oracle_bbox_full_color": "unknown",
+      "oracle_bbox_aspect_hint": "roughly_square_box",
+      "best_target_matching_candidate_rank_for_scoring_only": null,
+      "best_target_matching_candidate_bbox_IoU": 0.0124,
+      "matching_candidate_color_for_scoring_only": null,
+      "matching_candidate_geometry_only": null
+    },
+    {
+      "coco_image_id": 325838,
+      "expected_category_for_scoring_only": "chair",
+      "image_size": [
+        640,
+        480
+      ],
+      "candidate_regions": [
+        {
+          "xyxy": [
+            48.68055490347056,
+            238.96172156700723,
+            234.48679410494293,
+            449.90471473106976
+          ],
+          "joint_score": 0.891259,
+          "untrusted_class_index": 63,
+          "center": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.5278,
+            "color_runner_up": 0.3854,
+            "geometry": {
+              "bbox_width_fraction": 0.2903,
+              "bbox_height_fraction": 0.4395,
+              "bbox_aspect_ratio": 0.8808,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.2212,
+              "center_y_fraction": 0.7176
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.4201,
+            "color_runner_up": 0.4028,
+            "geometry": {
+              "bbox_width_fraction": 0.2903,
+              "bbox_height_fraction": 0.4395,
+              "bbox_aspect_ratio": 0.8808,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.2212,
+              "center_y_fraction": 0.7176
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        },
+        {
+          "xyxy": [
+            4.201560387244592,
+            3.169543926532452,
+            142.2423788217398,
+            167.48218242938702
+          ],
+          "joint_score": 0.841031,
+          "untrusted_class_index": 56,
+          "center": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "blue",
+            "color_dominance": 0.9618,
+            "color_runner_up": 0.0382,
+            "geometry": {
+              "bbox_width_fraction": 0.2157,
+              "bbox_height_fraction": 0.3423,
+              "bbox_aspect_ratio": 0.8401,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.1144,
+              "center_y_fraction": 0.1778
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "blue",
+            "color_dominance": 0.724,
+            "color_runner_up": 0.1753,
+            "geometry": {
+              "bbox_width_fraction": 0.2157,
+              "bbox_height_fraction": 0.3423,
+              "bbox_aspect_ratio": 0.8401,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.1144,
+              "center_y_fraction": 0.1778
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        },
+        {
+          "xyxy": [
+            180.54411081167368,
+            65.15565138596754,
+            368.7099926288312,
+            413.7278747558594
+          ],
+          "joint_score": 0.748238,
+          "untrusted_class_index": 0,
+          "center": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "gray",
+            "color_dominance": 0.6806,
+            "color_runner_up": 0.2066,
+            "geometry": {
+              "bbox_width_fraction": 0.294,
+              "bbox_height_fraction": 0.7262,
+              "bbox_aspect_ratio": 0.5398,
+              "bbox_geometry_only": "tall_box",
+              "center_x_fraction": 0.4291,
+              "center_y_fraction": 0.4988
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "gray",
+            "color_dominance": 0.7622,
+            "color_runner_up": 0.0938,
+            "geometry": {
+              "bbox_width_fraction": 0.294,
+              "bbox_height_fraction": 0.7262,
+              "bbox_aspect_ratio": 0.5398,
+              "bbox_geometry_only": "tall_box",
+              "center_x_fraction": 0.4291,
+              "center_y_fraction": 0.4988
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        }
+      ],
+      "candidate_selection_and_descriptors_before_GT": true,
+      "target_GT_status": "available",
+      "target_GT_color": {
+        "color": "gray",
+        "color_dominance": 0.6875,
+        "eligible_unambiguous": true,
+        "foreground_pixels_at_bounded_resolution": 12156,
+        "polygon_mask_source": "COCO_GT_only_for_scoring"
+      },
+      "oracle_bbox_central_color": "unknown",
+      "oracle_bbox_full_color": "unknown",
+      "oracle_bbox_aspect_hint": "roughly_square_box",
+      "best_target_matching_candidate_rank_for_scoring_only": null,
+      "best_target_matching_candidate_bbox_IoU": 0,
+      "matching_candidate_color_for_scoring_only": null,
+      "matching_candidate_geometry_only": null
+    },
+    {
+      "coco_image_id": 74733,
+      "expected_category_for_scoring_only": "chair",
+      "image_size": [
+        612,
+        612
+      ],
+      "candidate_regions": [
+        {
+          "xyxy": [
+            276.4644304055434,
+            395.712380702679,
+            451.3931552080008,
+            610.1310559052688
+          ],
+          "joint_score": 0.912292,
+          "untrusted_class_index": 41,
+          "center": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.5347,
+            "color_runner_up": 0.3021,
+            "geometry": {
+              "bbox_width_fraction": 0.2858,
+              "bbox_height_fraction": 0.3504,
+              "bbox_aspect_ratio": 0.8158,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.5947,
+              "center_y_fraction": 0.8218
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.467,
+            "color_runner_up": 0.2726,
+            "geometry": {
+              "bbox_width_fraction": 0.2858,
+              "bbox_height_fraction": 0.3504,
+              "bbox_aspect_ratio": 0.8158,
+              "bbox_geometry_only": "roughly_square_box",
+              "center_x_fraction": 0.5947,
+              "center_y_fraction": 0.8218
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        },
+        {
+          "xyxy": [
+            390.6467703305758,
+            326.3748836517334,
+            541.4728585756742,
+            567.7936631716215
+          ],
+          "joint_score": 0.885592,
+          "untrusted_class_index": 41,
+          "center": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.3611,
+            "color_runner_up": 0.316,
+            "geometry": {
+              "bbox_width_fraction": 0.2464,
+              "bbox_height_fraction": 0.3945,
+              "bbox_aspect_ratio": 0.6247,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.7615,
+              "center_y_fraction": 0.7305
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.3854,
+            "color_runner_up": 0.2344,
+            "geometry": {
+              "bbox_width_fraction": 0.2464,
+              "bbox_height_fraction": 0.3945,
+              "bbox_aspect_ratio": 0.6247,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.7615,
+              "center_y_fraction": 0.7305
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        },
+        {
+          "xyxy": [
+            48.79055769626911,
+            74.82399669060341,
+            130.32000991014334,
+            190.03038751162018
+          ],
+          "joint_score": 0.848675,
+          "untrusted_class_index": 41,
+          "center": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "orange",
+            "color_dominance": 0.8924,
+            "color_runner_up": 0.0503,
+            "geometry": {
+              "bbox_width_fraction": 0.1332,
+              "bbox_height_fraction": 0.1882,
+              "bbox_aspect_ratio": 0.7077,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.1463,
+              "center_y_fraction": 0.2164
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.5434,
+            "color_runner_up": 0.2448,
+            "geometry": {
+              "bbox_width_fraction": 0.1332,
+              "bbox_height_fraction": 0.1882,
+              "bbox_aspect_ratio": 0.7077,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.1463,
+              "center_y_fraction": 0.2164
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        }
+      ],
+      "candidate_selection_and_descriptors_before_GT": true,
+      "target_GT_status": "available",
+      "target_GT_color": {
+        "color": "black",
+        "color_dominance": 0.8649,
+        "eligible_unambiguous": true,
+        "foreground_pixels_at_bounded_resolution": 6812,
+        "polygon_mask_source": "COCO_GT_only_for_scoring"
+      },
+      "oracle_bbox_central_color": "black",
+      "oracle_bbox_full_color": "black",
+      "oracle_bbox_aspect_hint": "rectangular_box",
+      "best_target_matching_candidate_rank_for_scoring_only": null,
+      "best_target_matching_candidate_bbox_IoU": 0,
+      "matching_candidate_color_for_scoring_only": null,
+      "matching_candidate_geometry_only": null
+    },
+    {
+      "coco_image_id": 186938,
+      "expected_category_for_scoring_only": "target_free",
+      "image_size": [
+        640,
+        427
+      ],
+      "candidate_regions": [
+        {
+          "xyxy": [
+            212.9709683931791,
+            46.58332646321907,
+            601.6947467510518,
+            357.19345238225924
+          ],
+          "joint_score": 0.911517,
+          "untrusted_class_index": 14,
+          "center": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "gray",
+            "color_dominance": 0.9444,
+            "color_runner_up": 0.0399,
+            "geometry": {
+              "bbox_width_fraction": 0.6074,
+              "bbox_height_fraction": 0.7274,
+              "bbox_aspect_ratio": 1.2515,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.6365,
+              "center_y_fraction": 0.4728
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "gray",
+            "color_dominance": 0.9705,
+            "color_runner_up": 0.0156,
+            "geometry": {
+              "bbox_width_fraction": 0.6074,
+              "bbox_height_fraction": 0.7274,
+              "bbox_aspect_ratio": 1.2515,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.6365,
+              "center_y_fraction": 0.4728
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        },
+        {
+          "xyxy": [
+            69.89407466008113,
+            167.70344981186682,
+            225.55246793306793,
+            286.1591250330424
+          ],
+          "joint_score": 0.741752,
+          "untrusted_class_index": 14,
+          "center": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "white",
+            "color_dominance": 0.6267,
+            "color_runner_up": 0.3611,
+            "geometry": {
+              "bbox_width_fraction": 0.2432,
+              "bbox_height_fraction": 0.2774,
+              "bbox_aspect_ratio": 1.3141,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.2308,
+              "center_y_fraction": 0.5315
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "gray",
+            "color_dominance": 0.5729,
+            "color_runner_up": 0.3594,
+            "geometry": {
+              "bbox_width_fraction": 0.2432,
+              "bbox_height_fraction": 0.2774,
+              "bbox_aspect_ratio": 1.3141,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.2308,
+              "center_y_fraction": 0.5315
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        }
+      ],
+      "candidate_selection_and_descriptors_before_GT": true,
+      "target_GT_status": "target_free_not_empty"
+    },
+    {
+      "coco_image_id": 496722,
+      "expected_category_for_scoring_only": "target_free",
+      "image_size": [
+        640,
+        360
+      ],
+      "candidate_regions": [
+        {
+          "xyxy": [
+            1.9364342322716348,
+            0.5275432880108173,
+            171.14478478064905,
+            351.42330463115985
+          ],
+          "joint_score": 0.695078,
+          "untrusted_class_index": 5,
+          "center": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "red",
+            "color_dominance": 0.6962,
+            "color_runner_up": 0.1823,
+            "geometry": {
+              "bbox_width_fraction": 0.2644,
+              "bbox_height_fraction": 0.9747,
+              "bbox_aspect_ratio": 0.4822,
+              "bbox_geometry_only": "tall_box",
+              "center_x_fraction": 0.1352,
+              "center_y_fraction": 0.4888
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "red",
+            "color_dominance": 0.7274,
+            "color_runner_up": 0.1233,
+            "geometry": {
+              "bbox_width_fraction": 0.2644,
+              "bbox_height_fraction": 0.9747,
+              "bbox_aspect_ratio": 0.4822,
+              "bbox_geometry_only": "tall_box",
+              "center_x_fraction": 0.1352,
+              "center_y_fraction": 0.4888
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        },
+        {
+          "xyxy": [
+            473.72324430025543,
+            80.47761770395132,
+            633.0587944617639,
+            199.72816467285156
+          ],
+          "joint_score": 0.353866,
+          "untrusted_class_index": 6,
+          "center": {
+            "status": "color_candidate",
+            "reason": "dominant_region_pixels_not_verified_foreground",
+            "color": "red",
+            "color_dominance": 0.6111,
+            "color_runner_up": 0.1753,
+            "geometry": {
+              "bbox_width_fraction": 0.249,
+              "bbox_height_fraction": 0.3313,
+              "bbox_aspect_ratio": 1.3361,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.8647,
+              "center_y_fraction": 0.3892
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          },
+          "whole_box_control": {
+            "status": "unknown",
+            "reason": "ambiguous_color",
+            "color": "unknown",
+            "color_dominance": 0.467,
+            "color_runner_up": 0.3003,
+            "geometry": {
+              "bbox_width_fraction": 0.249,
+              "bbox_height_fraction": 0.3313,
+              "bbox_aspect_ratio": 1.3361,
+              "bbox_geometry_only": "rectangular_box",
+              "center_x_fraction": 0.8647,
+              "center_y_fraction": 0.3892
+            },
+            "not_object_shape": true,
+            "not_object_category": true,
+            "not_physical_size_or_distance": true,
+            "source_pixels_stored": false
+          }
+        }
+      ],
+      "candidate_selection_and_descriptors_before_GT": true,
+      "target_GT_status": "target_free_not_empty"
+    }
+  ],
+  "provenance": {
+    "github_actions_run": "https://github.com/Jean-Philippe56520/Microduck/actions/runs/40972137925",
+    "github_job_id": 123791203362,
+    "executed_feature_commit": "8affa0601ffca2b11efaaa48d9893efe99432bb6",
+    "images_public_COCO_temporary_not_committed": true,
+    "source": "successful CI runner output",
+    "evaluation": "GT segmentation polygon for region-colour ground truth",
+    "original_model_hash_verified": "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d",
+    "metrics_are_PC_only": true
+  },
+  "decision": {
+    "pass": false,
+    "candidate_production_integration": false,
+    "no_ExperienceMemory_or_Qwen_connection": true,
+    "predeclared_failed_checks": [
+      "at_least_5_GT_objects_have_unambiguous_dominant_color",
+      "at_least_7_target_boxes_in_YOLOX_top3",
+      "matched_top3_resolved_colors_60pct_correct_and_at_least_3"
+    ],
+    "reason": "Unambiguous GT dominant color in only 4/10 targets; only 5/10 target spatial matches from top3; too few paired color cases. Cannot claim safe object properties from RGB center.",
+    "action": "Stop this approximate RGB region descriptor; retain numeric report, remove prototype & workflow.",
+    "correction": "Rectangular box aspect ratio is NOT real object shape; 1.3ms CPU for two descriptors is not proof of accurate object property, nor of RK3566 feasibility."
+  }
+}
