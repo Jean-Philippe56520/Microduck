@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "goal": "Exploration visuelle publique informelle de Kwipi, sans seuil de hauteur et sans preuve de detection",
+  "nature": "smoke_qualitatif_non_annote",
+  "images": [
+    {
+      "file": "cat_01.jpg",
+      "category": "cat",
+      "source_url": "https://github.com/brandon-whitman-orlin/cats/blob/main/low-resolution-images/cat2-lowres.jpg",
+      "source_git_blob_sha": "338cef770395364e56cb4cdc1637d72e7c1ab740",
+      "license": "CC0-1.0",
+      "origin_url": "https://www.pexels.com/photo/grey-and-white-short-fur-cat-104827/",
+      "note": "photo recadree et compressee par le depot source"
+    },
+    {
+      "file": "cat_02.jpg",
+      "category": "cat",
+      "source_url": "https://github.com/brandon-whitman-orlin/cats/blob/main/low-resolution-images/cat3-lowres.jpg",
+      "source_git_blob_sha": "338852c3f17cdfdefe69aa06e093e2348a45dffb",
+      "license": "CC0-1.0",
+      "origin_url": "https://www.pexels.com/photo/close-up-photo-of-cute-sleeping-cat-416160/",
+      "note": "photo recadree et compressee par le depot source"
+    },
+    {
+      "file": "cat_03.jpg",
+      "category": "cat",
+      "source_url": "https://github.com/brandon-whitman-orlin/cats/blob/main/low-resolution-images/cat6-lowres.jpg",
+      "source_git_blob_sha": "af6f1746d7ad599c9f569f9676713b9fc230c410",
+      "license": "CC0-1.0",
+      "origin_url": "https://www.pexels.com/photo/close-up-photo-of-yellow-and-white-cat-57416/",
+      "note": "photo recadree et compressee par le depot source"
+    },
+    {
+      "file": "cat_04.jpg",
+      "category": "cat",
+      "source_url": "https://github.com/brandon-whitman-orlin/cats/blob/main/low-resolution-images/cat10-lowres.jpg",
+      "source_git_blob_sha": "a6f2269055f31dd96b52403dd344acde02c20a8a",
+      "license": "CC0-1.0",
+      "origin_url": "https://www.pexels.com/photo/low-angle-shot-of-a-tabby-cat-208984/",
+      "note": "angle bas mentionne par la source mais hauteur non mesuree"
+    },
+    {
+      "file": "dog_01.jpg",
+      "category": "dog",
+      "source_url": "https://github.com/yelaman1x9/pet-breed-classifier/blob/main/clf/static/samples/sample-3.jpg",
+      "source_git_blob_sha": "43dca305ff762ac070c2b7f0d3a52ff4cf80817c",
+      "license": "CC-BY-SA-4.0",
+      "origin_url": "https://www.robots.ox.ac.uk/~vgg/data/pets/",
+      "note": "Oxford-IIIT Pet, german_shorthaired_191.jpg"
+    },
+    {
+      "file": "dog_02.jpg",
+      "category": "dog",
+      "source_url": "https://github.com/yelaman1x9/pet-breed-classifier/blob/main/clf/static/samples/sample-4.jpg",
+      "source_git_blob_sha": "3c20dd225b25296a6de83aaddb31a41290347cf7",
+      "license": "CC-BY-SA-4.0",
+      "origin_url": "https://www.robots.ox.ac.uk/~vgg/data/pets/",
+      "note": "Oxford-IIIT Pet, pug_193.jpg"
+    },
+    {
+      "file": "ball_01.jpg",
+      "category": "sports_ball",
+      "source_url": "https://github.com/RoboCupAtHome/Bordeaux2023/blob/master/objects/objects/toys/soccer_ball.jpg",
+      "source_git_blob_sha": "b91369c1324d00c7592f9224ea9365715bb24db3",
+      "license": "MIT-repository",
+      "origin_url": "https://github.com/RoboCupAtHome/Bordeaux2023/blob/master/LICENSE",
+      "note": "ballon de football reel, vue robotique de table; droits photo non verifies independamment"
+    },
+    {
+      "file": "ball_02.png",
+      "category": "sports_ball",
+      "source_url": "https://github.com/RoboCupAtHome/Bordeaux2023/blob/master/objects/objects/toys/tennis_ball.png",
+      "source_git_blob_sha": "28a87509aab96040359eb891256f521cf971e02d",
+      "license": "MIT-repository",
+      "origin_url": "https://github.com/RoboCupAtHome/Bordeaux2023/blob/master/LICENSE",
+      "note": "balle de tennis; droits photo non verifies independamment"
+    },
+    {
+      "file": "ball_03.png",
+      "category": "sports_ball",
+      "source_url": "https://github.com/RoboCupAtHome/Bordeaux2023/blob/master/objects/objects/toys/baseball.png",
+      "source_git_blob_sha": "f5306f5649e32d93157d6d7829603ed230f6566f",
+      "license": "MIT-repository",
+      "origin_url": "https://github.com/RoboCupAtHome/Bordeaux2023/blob/master/LICENSE",
+      "note": "balle de baseball; droits photo non verifies independamment"
+    },
+    {
+      "file": "chair_01.png",
+      "category": "chair",
+      "source_url": "https://github.com/VAST-AI-Research/TripoSR/blob/main/examples/chair.png",
+      "source_git_blob_sha": "fee2a21d1c9bbdf707631060f110539401265a1d",
+      "license": "MIT-repository",
+      "origin_url": "https://github.com/VAST-AI-Research/TripoSR/blob/main/LICENSE",
+      "note": "chaise detouree, pas une scene domestique; droits photo non verifies independamment"
+    },
+    {
+      "file": "person_01.jpg",
+      "category": "person",
+      "source_url": "https://github.com/llama-farm/vision-sample-data/blob/main/none-of-the-above/misc_07.jpg",
+      "source_git_blob_sha": "493eead63a86d8ed81ba2f5f606ce4f97eb9b731",
+      "license": "CC-BY-SA-3.0",
+      "origin_url": "https://commons.wikimedia.org/wiki/File:Paris_-_Playing_chess_at_the_Jardins_du_Luxembourg_-_2966.jpg",
+      "note": "Jorge Royan; reduction depuis Commons par le depot source, photo publique, pas d'identification personnelle"
+    },
+    {
+      "file": "unknown_01.jpg",
+      "category": "unknown",
+      "source_url": "https://github.com/llama-farm/vision-sample-data/blob/main/none-of-the-above/misc_02.jpg",
+      "source_git_blob_sha": "892fd0b322948e1278eef8d31f6863a80ad545fc",
+      "license": "CC-BY-SA-2.0",
+      "origin_url": "https://commons.wikimedia.org/wiki/File:Bow_Fiddle_Rock_East.jpg",
+      "note": "Lucas Kendall; paysage sans classe cible declaree"
+    },
+    {
+      "file": "unknown_02.jpg",
+      "category": "unknown",
+      "source_url": "https://github.com/llama-farm/vision-sample-data/blob/main/none-of-the-above/misc_11.jpg",
+      "source_git_blob_sha": "2eacacd51125bee6af0c75b07e7949c45c411afb",
+      "license": "PD-USGov-NASA",
+      "origin_url": "https://commons.wikimedia.org/wiki/File:LargeBinoTelescope_NASA.jpg",
+      "note": "NASA; telescope sans classe cible declaree"
+    }
+  ]
+}
