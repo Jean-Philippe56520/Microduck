@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-QUAL-1E — critère spontané de meilleure observation fixé AVANT dernier vrai essai 9B (29/10/2026) :** [protocole `scene_d`](qw-qual1e-scene-d-viewpoint-preregistration-2026-10-29.md). Mesurer qualitativement si Qwen voit la limite/occlusion, précise quel indice visuel manque et suggère **sans amorce** une seconde vue conditionnelle ou l'inaction. **Aucune capacité de repositionnement visuel réel n'est livrée** : `category_inspection.py` fournit seulement des indices fictifs, `IdleHead` regarde autour sans chercher une cible, locomotion SIM-E2 non résolue, ToF frontal ≠ cartographie fiable. Pas de nouvelle politique OEM, de prompt optimisé sur une scène ni de test moteur. Suite prévue : quatre réponses réelles puis revue indépendante, si l'opérateur choisit de faire `scene_d`.
+
+
 **QW-QUAL-1D — troisième réponse Qwen3.5 9B sur PC réel, 29/10/2026 :** [rapport `scene_c`](qw-qual1d-scene-c-real-qwen-human-review-2026-10-29.md). Durée **44,140 s / 192 tokens**, sortie `unverified`, machine bloquée, drapeaux de revue présents, 0 moteur/mémoire. L'interprétation « céramique cassée » reste une hypothèse non vérifiable sur dessin stylisé ; le lien entre objet et contenant et l'effet d'une approche sont mal raisonnés. **Abstention et incertitude mentionnées**. Trois scènes réelles `a/b/c` ne suffisent ni à qualifier la sécurité ni à démontrer de la généralisation. Après une dernière scène ambiguë `d` facultative, prioriser **contre-lecture indépendante et critères de qualité** avant de retoucher le rôle Qwen.
 
 

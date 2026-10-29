@@ -1,5 +1,8 @@
 # QW-GOAL-0 — Qwen guide les objectifs motivés de Kwipi, sans rareté arbitraire
 
+**QW-QUAL-1E — test préenregistré des questions de point de vue (29/10/2026, avant consultation Qwen) :** [grille `scene_d`](qw-qual1e-scene-d-viewpoint-preregistration-2026-10-29.md). La possibilité QW-GOAL-0 « demander une analyse sous un angle réellement différent » demeure **prévue et non raccordée** : le prompt Qwen v2 actuel n'exige pas explicitement de meilleur angle et ne doit pas être modifié avant l'essai. Vérifier d'abord si le modèle propose **spontanément** quel indice compléter, une autre prise conditionnelle ou une abstention ; si une locomotion ou orientation ciblée est suggérée, la classer comme hypothèse non exécutable sous sûreté OEM inconnue. `IdleHead` non ciblé et `category_inspection.py` fictif ne fournissent pas d'acte de perception active réel.
+
+
 **QW-PERF-1 (28/10/2026, [PR #151](https://github.com/Jean-Philippe56520/Microduck/pull/151) fusionnée (`cf8bf760`), [CI Python #40786532440](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786532440) et [N1 #40786532406](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786532406) vertes) :** [banc comparatif synthétique](qw-perf1-pc-synthetic-benchmark-2026-10-28.md) pour mesurer chargement, traitement et génération de Qwen3.5 9B avant raccordement de mémoire sourcée et de contexte motivé. Il ne remet en cause ni le principe « aucune cadence par nombre de rencontres », ni l'usage facultatif de Qwen, ni les portes F5-C encore codées. L'IdleHead OEM peut exprimer l'attention en arrière-plan, mais QW-EXPR-1 (arrêt/posture ciblée) n'est **pas codé**. Aucun profil n'utilise SQLite réelle, image personnelle ou commande moteur.
 
 
