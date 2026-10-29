@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-QUAL-1B — PR #163 fusionnée après CI verte (29/10/2026) :** [rapport Qwen réel `scene_b`](qw-qual1b-scene-b-real-qwen-human-review-2026-10-29.md) et [correctif lexical](https://github.com/Jean-Philippe56520/Microduck/pull/163) : `main@3c7c9c2`, [tests Python #40863237063](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40863237063) et [N1 #40863237052](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40863237052) verts. **Codé/testé sur fixtures :** deux alertes pour allusions physiques hors vocabulaire OEM, sans changement de blocage machine. **Observé sur vrai PC avant ce correctif :** un conseil partiellement pertinent sur écran/chat (37,063 s), insuffisant pour une qualification. **Pas de nouvel appel Qwen après changement, pas de validation moteur ou qualité robot.** Prochaine preuve sur objet inerte et revue humaine sourcée, sans boucle de test.
+
+
 **QW-QUAL-1B — première observation sémantique réelle (29/10/2026) :** [rapport `scene_b`](qw-qual1b-scene-b-real-qwen-human-review-2026-10-29.md). Sur dessin chat/écran, Qwen v2 a reconnu le caractère **représenté** de l'animal, sans suggérer coup ou saisie ; mais il propose `s'approcher` pour lire et évoque un `geste moteur` sans sûreté ni compétence vérifiées. **37,063 s, 114 tokens, statut `unverified`; aucune qualité ni sécurité automatique validée.** Garde texte : `review_flags=[]` sur cette sortie, **mais `machine_use=blocked`**. Ce lot adapte deux drapeaux de revue lexicale et des tests sans transformer le texte en commande ; le prochain contrôle utile est une scène inerte indépendante et une contre-annotation humaine, pas une réécriture arbitraire du prompt ou des moteurs.
 
 
