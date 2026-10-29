@@ -1,5 +1,8 @@
 # QW-PERF-1 — Profilage prudent du vrai Qwen3.5 9B sur PC
 
+**Addendum QW-PERF-1B (29/10/2026) :** [cinq mesures réelles opérateur sur `11434`](qw-perf1b-real-windows-9b-baseline-2026-10-29.md) avec 44,234 s initial / 14,750 s même rôle répété, 3,703 s texte court, 7,110 s JSON, 9,109 s JSON + contexte fictif. Ollama affichait `100% CPU` ; le GPU et les pilotes restent à identifier. **Aucune amélioration GPU mesurée, aucune mémoire SQLite, aucun robot.** Les passages historiques disant « performance non mesurée » sont antérieurs à cet addendum.
+
+
 **Date :** 28 octobre 2026. **Statut :** banc PC codé et testé en CI, [PR #151](https://github.com/Jean-Philippe56520/Microduck/pull/151) fusionnée (`cf8bf760`), [CI Python #40786532440](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786532440) et [N1 #40786532406](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40786532406) vertes ; vrai 9B non exécuté par la CI. **Autorité :** [plan-action.md](plan-action.md). Version de référence avant ce lot : `main@c87089d105ddffe36e247709ba27fc561ba377f7`, OEM épinglé `microduck@942e58e3aa6dbb28e7037203fff11866122c7567`, RL `microduck_rl@b02fdea4902c2b93b7d34a83a6f05da4ececb7d3`. Revalider avant exécution et fusion.
 
 ## 1. Observation, hypothèses, preuve recherchée et risque
