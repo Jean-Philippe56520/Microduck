@@ -1,5 +1,8 @@
 # QW-PERF-1F — Échantillonnage automatique du placement mémoire d'Ollama
 
+**Addendum opérateur QW-PERF-1G (29/10/2026) :** [résultat de la sonde QW-PERF-1F sur un vrai PC, puis comparaison CPU à mêmes fixtures](qw-perf1g-pc-gpu-cpu-color-comparison-2026-10-29.md). `11435` : `gpu_memory_reported`, maximum 5 614 726 020 octets, 26 échantillons du modèle, latences 8,343/8,891 s ; `11434` : `cpu_memory_reported`, 0 octet de VRAM déclarée, 35 échantillons, latences 10,735/11,343 s. Deux couleurs correctes, aucune erreur de sondage, codes 0. Baisse descriptive moyenne de 21,94 % sur deux paires non randomisées, **pas** une validation de calcul GPU indépendant ou de gain reproductible. La PR #156 est fusionnée sur `main` (`642b2ca9`) avec CI de PR vertes ; les sections ci-dessous restent le protocole initial et doivent être lues comme antérieures à ces nouvelles observations.
+
+
 **Date :** 29 octobre 2026. **Statut :** code candidat PC/fixtures, CI à vérifier, **aucun nouvel essai réel** dans ce lot. **Autorité :** [plan-action.md](plan-action.md). Base initiale de branche : Companion main 7df0adc05007b1591546307d34031e0a0dd76965 ; OEM épinglé upstream/microduck@942e58e3aa6dbb28e7037203fff11866122c7567 et upstream/microduck_rl@b02fdea4902c2b93b7d34a83a6f05da4ececb7d3. Vérifier SHAs/PR/CI avant toute reprise.
 
 ## 1. Observations et question unique

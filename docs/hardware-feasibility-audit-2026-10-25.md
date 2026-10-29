@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**QW-PERF-1G — nouvelles observations PC (29/10/2026) :** [mesures CPU / résidence GPU déclarée](qw-perf1g-pc-gpu-cpu-color-comparison-2026-10-29.md) pour Ollama 0.40.12 et Radeon 860M : serveur 11435, size_vram maximum **5 614 726 020 octets**, 26 observations du modèle ; serveur 11434, **0 octet**, 35 observations. Latences moyennes rouge/bleu **8,617 s contre 11,039 s**, **−21,94 % descriptif**, deux observations seulement et configuration non randomisée. iGPU = mémoire partagée ; aucune mesure physique indépendante de GPU%, de RSS, de température, de débit ni d'autonomie, **pas de preuve de calcul GPU effectif ni de gain généralisable**. Aucun rapport de dimensionnement avec la RAM du RK3566, la thermique OEM ou les moteurs 50 Hz.
+
+
 **QW-PERF-1F — observateur de mémoire GPU déclarée (29/10/2026, PC-fixtures candidat) :** [procédure](qw-perf1f-ollama-placement-sampling-2026-10-29.md). `GET /api/ps` sur Ollama local peut rapporter `size_vram` **pendant** l'inférence, sans relancer de modèle, mais ce n'est ni une mesure physique d'activité GPU, ni un relevé VRAM/RSS fiable indépendant, ni un taux d'accélération. L'option `-ReportPlacement` sur l'autotest PC est facultative et bornée ; aucun changement à la RAM du Microduck RK3566, aux budgets OEM ou à ses capteurs. Données GPU effectivement utilisées restent inconnues avant test opérateur.
 
 

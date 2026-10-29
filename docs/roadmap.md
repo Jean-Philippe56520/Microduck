@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-PERF-1G — comparaison exploratoire CPU/GPU opérateur (29/10/2026, PC réel) :** [rapport](qw-perf1g-pc-gpu-cpu-color-comparison-2026-10-29.md) ; sur deux paires couleur synthétiques de mêmes scripts/paramètres, Qwen9B a répondu en 8,343/8,891 s sur 11435 (`gpu_memory_reported`, ~5,615 Go déclarés) contre 10,735/11,343 s sur 11434 (`cpu_memory_reported`, 0 octet). Moyenne 8,617 s vs 11,039 s, écart descriptif −21,94 %. **Calcul GPU/efficacité réelle non vérifiés indépendamment ; absence de randomisation, d'échantillon statistique, de contrôle mémoire/cache/thermie et de validation sémantique.** L'étape suivante est une comparaison appariée bornée de vrais prompts de conseiller Qwen sur images artificielles, mesures CPU/GPU/RSS, sans nouvelle commande motrice ni installation.
+
+
 **QW-PERF-1F — preuve de placement en cours (29/10/2026, PC-fixtures candidat) :** [observateur `/api/ps` opt-in](qw-perf1f-ollama-placement-sampling-2026-10-29.md) pendant l'autotest vision synthétique existant sur Ollama local `11435`, sans nouveaux moteurs/modèles ou stockage. La dernière lecture du fichier `server.log` comptait **20 lignes du 29/10**, **aucune trace de sélection GPU**, et les journaux du 28/10 sont historiques ; garder **GPU réel inconnu** jusqu'au rapport `ollama_placement`. Si `size_vram` positif, confirmer ensuite le backend et la qualité/latence CPU/GPU à stimuli identiques ; aucune réduction de délai acquise.
 
 
