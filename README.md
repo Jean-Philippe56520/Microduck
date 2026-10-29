@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**QW-PERF-1F — relevé matériel facultatif pendant le test Qwen (29/10/2026, code PC candidat/fixtures, CI à vérifier) :** [protocole et commande](docs/qw-perf1f-ollama-placement-sampling-2026-10-29.md). Le lanceur Windows existant accepte `-VisionCheck -ReportPlacement -Port 11435` pour observer **automatiquement** `GET /api/ps` pendant les deux couleurs synthétiques, sans conserver de texte/image ni bloquer le modèle. `size_vram` renseigne la **mémoire GPU déclarée**, pas une mesure des calculs GPU ni un gain de latence. Mode désactivé par défaut, aucune nouvelle commande moteur, connexion hors loopback ou lecture SQLite ; **GPU réel non encore testé dans ce lot**.
+
+
 **QW-PERF-1E — résultat réel opérateur (29/10/2026, iGPU demandé mais non vérifié) :** [bilan du test `-VisionCheck` sur serveur temporaire `11435`](docs/qw-perf1b-real-windows-9b-baseline-2026-10-29.md). Deux images **synthétiques rouge/bleu** ont été reconnues aux latences **9,079 s** et **9,031 s** ; le serveur Ollama temporaire s'est arrêté normalement après le premier essai. Le lanceur demande Vulkan et `OLLAMA_IGPU_ENABLE=1`, mais **aucun relevé `ollama ps` du GPU pendant ce test** n'a été fourni : **ni accélération GPU ni gain de latence démontré**. Deuxième invocation commencée, résultat final inconnu ; aucune nouvelle relance automatique, modèle, mémoire ni moteur.
 
 
