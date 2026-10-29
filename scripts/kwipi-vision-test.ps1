@@ -9,7 +9,9 @@ param(
     [switch]$ComparePrompts,
     [switch]$RolePreview,
     [switch]$RoleV2,
-    [switch]$ReportPlacement
+    [switch]$ReportPlacement,
+    [switch]$PerfCheck,
+    [switch]$AuthorizeFiveSyntheticCalls
 )
 
 $ErrorActionPreference = "Stop"
@@ -50,25 +52,44 @@ Write-Host "Kwipi - evaluation visuelle PC, sans mouvement ni memorisation"
 Write-Host "Mode : $Mode | Modele : qwen3.5:9b | Ollama local : 127.0.0.1:$Port"
 Write-Host "L'image est preparee localement puis envoyee uniquement a Ollama sur 127.0.0.1."
 
-if ($ReportPlacement -and -not $VisionCheck) {
-    Write-Host "Placement GPU uniquement avec -VisionCheck et des couleurs synthetiques."
+if ($ReportPlacement -and -not ($VisionCheck -or $PerfCheck)) {
+    Write-Host "Placement Ollama uniquement avec -VisionCheck ou -PerfCheck."
+    exit 2
+}
+if ($PerfCheck -and -not $AuthorizeFiveSyntheticCalls) {
+    Write-Host "Cinq appels synthetiques : ajouter -AuthorizeFiveSyntheticCalls explicitement."
+    exit 2
+}
+if ($AuthorizeFiveSyntheticCalls -and -not $PerfCheck) {
+    Write-Host "Autorisation des cinq appels valable uniquement avec -PerfCheck."
+    exit 2
+}
+if ($PerfCheck -and $Port -ne 11435) {
+    Write-Host "Le benchmark temporaire n'utilise que le port 11435, pas le serveur habituel."
     exit 2
 }
 if ($VisionCheck -and $Image) {
     Write-Host "Autotest synthetique : ne pas fournir d'image privee."
     exit 2
 }
+if ($PerfCheck -and $Image) {
+    Write-Host "Benchmark synthetique : ne pas fournir d'image privee."
+    exit 2
+}
 if ($RoleV2 -and -not $RolePreview) {
     Write-Host "Role v2 disponible uniquement dans l'essai conseil."
     exit 2
 }
-if (($VisionCheck -and $ComparePrompts) -or ($VisionCheck -and $RolePreview) -or ($ComparePrompts -and $RolePreview)) {
+if (($VisionCheck -and $ComparePrompts) -or ($VisionCheck -and $RolePreview) -or ($ComparePrompts -and $RolePreview) -or ($PerfCheck -and ($VisionCheck -or $ComparePrompts -or $RolePreview))) {
     Write-Host "Choisir un seul mode d'essai a la fois."
     exit 2
 }
 if ($VisionCheck) {
     Write-Host "Autotest visuel : deux carres rouge/bleu generes en memoire, aucune photo personnelle."
     Write-Host "Le double-clic sur VERIFIER_VISION_KWIPI.cmd autorise uniquement ces deux images synthetiques."
+} elseif ($PerfCheck) {
+    Write-Host "Benchmark PC : cinq appels synthetiques, sans photo, SQLite, moteur ni texte brut conserve."
+    Write-Host "Le modele et la charge CPU/GPU sont observes, aucune qualite de conseil prouvee."
 } else {
     if ($RolePreview) {
         if ($RoleV2) { Write-Host "Role v2 : sens, options, consequences, personnalite locale de Kwipi." }
@@ -119,10 +140,17 @@ if ($VisionCheck) {
     }
  }
 
-# Start Ollama only AFTER photo approval OR explicit synthetic vision test.
+# Start Ollama only AFTER photo approval OR explicit synthetic test.
 # Never kill an existing server. This process is temporary and uses localhost only.
 $serverWeStarted = $null
 try {
+    if ($PerfCheck) {
+        $listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+        if ($listener) {
+            Write-Host "Port temporaire 11435 deja occupe : refus de reutiliser un serveur inconnu."
+            exit 2
+        }
+    }
     $tags = Get-LocalOllamaTags -LocalPort $Port
     if ($null -eq $tags) {
         $ollama = Get-Command -Name ollama.exe -CommandType Application -ErrorAction SilentlyContinue
@@ -169,6 +197,12 @@ try {
             if ($ReportPlacement) { $placementArgs = @("--report-placement") }
             & $python -m microduck_companion.qwen9b_vision_check `
                 --ollama-port $Port --timeout 120 @placementArgs
+        } elseif ($PerfCheck) {
+            $placementArgs = @()
+            if ($ReportPlacement) { $placementArgs = @("--report-placement") }
+            & $python -m microduck_companion.qwen9b_perf_probe `
+                --run --authorize-five-synthetic-calls `
+                --ollama-port $Port --timeout 120 @placementArgs
         } elseif ($RolePreview) {
             $roleName = if ($RoleV2) { "v2" } else { "v1" }
             & $python -m microduck_companion.qwen9b_role_preview `
@@ -193,6 +227,8 @@ try {
     }
     if ($VisionCheck) {
         Write-Host "Deux couleurs simples distinguees, vision d'objets reels NON verifiee."
+    } elseif ($PerfCheck) {
+        Write-Host "Cinq profils synthetiques mesures sur PC, pas de vitesse GPU independamment validee."
     } elseif ($RolePreview) {
         Write-Host "Conseil Qwen de role candidat teste sur PC, AUCUNE connaissance verifiee ni action."
     } elseif ($ComparePrompts) {

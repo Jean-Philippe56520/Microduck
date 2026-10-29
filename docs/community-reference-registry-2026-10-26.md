@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**QW-PERF-1H — audit de réutilisation (29/10/2026) :** [protocole PC Qwen v2/JSON + placement Ollama](qw-perf1h-pc-role-benchmark-placement-2026-10-29.md). **RÉUTILISER** `qwen9b_perf_probe.py` (#151), `ollama_device_placement.py` (#156), `OllamaEndpoint`, `kwipi-vision-test.ps1` et l'API loopback `/api/ps` ; **ADAPTER** un flag opt-in de sondage sur le banc de cinq profils et un lancement PowerShell à autorisation explicite. **NE PAS CRÉER** d'autre benchmark, service autonome, modèle multimodal, contrôleur, SQLite, backend Ollama ou dépendance QuackNav/M9/twin. Tests CI purement simulés ; la vérification de calcul GPU et l'intérêt du conseil sont encore inconnus.
+
+
 **QW-PERF-1G — réemploi mesuré (29/10/2026, PC opérateur) :** [preuve CPU / mémoire GPU déclarée](qw-perf1g-pc-gpu-cpu-color-comparison-2026-10-29.md). **RÉUTILISER** l'observateur `/api/ps` et les deux fixtures vision de [PR #156 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/156) ; 11435 `gpu_memory_reported` (5 614 726 020 octets) vs 11434 `cpu_memory_reported` (0) ; 8,617 vs 11,039 s en moyenne sur deux couleurs synthétiques. **ADAPTER** uniquement la documentation de preuve ; **NE PAS CRÉER** de nouveau pilote, backend, serveur de production, lecteur SQLite ou code moteur. Le gain descriptif de 21,94 % n'est ni une preuve indépendante de calcul GPU ni une performance statistiquement établie ; une comparaison bornée sur les mêmes prompts de conseil reste nécessaire.
 
 
