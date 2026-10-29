@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-QUAL-1B — première observation sémantique réelle (29/10/2026) :** [rapport `scene_b`](qw-qual1b-scene-b-real-qwen-human-review-2026-10-29.md). Sur dessin chat/écran, Qwen v2 a reconnu le caractère **représenté** de l'animal, sans suggérer coup ou saisie ; mais il propose `s'approcher` pour lire et évoque un `geste moteur` sans sûreté ni compétence vérifiées. **37,063 s, 114 tokens, statut `unverified`; aucune qualité ni sécurité automatique validée.** Garde texte : `review_flags=[]` sur cette sortie, **mais `machine_use=blocked`**. Ce lot adapte deux drapeaux de revue lexicale et des tests sans transformer le texte en commande ; le prochain contrôle utile est une scène inerte indépendante et une contre-annotation humaine, pas une réécriture arbitraire du prompt ou des moteurs.
+
+
 **QW-QUAL-1A — support d'essais sémantiques fusionné le 29/10/2026 :** [PR #161](https://github.com/Jean-Philippe56520/Microduck/pull/161), SHA `76a8a6e`, [CI Python #40861288706](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40861288706) et [N1 #40861288696](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40861288696) vertes. **Codé et testé sur images artificielles et réponses de modèle fictives** : scènes inédites, garde lexical non autorisant, affichage de conseil uniquement sur console explicitement, comparateur humain à effectuer. **Vrai Qwen9B non interrogé dans ce lot ; qualité réelle inconnue.** Ce volet ne remplace ni Cat-A2b/vues réelles, ni QW-1/QW-2, ni l'OEM et reste sans effet moteur.
 
 

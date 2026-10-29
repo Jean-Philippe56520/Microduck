@@ -132,6 +132,31 @@ class PCOnlyOneShotTests(unittest.TestCase):
         self.assertFalse(report["robot_validated"])
         self.assertEqual(91, report["generated_tokens"])
 
+    def test_real_scene_b_review_hints_do_not_qualify_or_authorize(self):
+        # No true model or raw operator log in CI. This short fixture is a
+        # targeted regression for the previously empty review_flags field.
+        prose = ("Un chat est dessiné sur un écran. "
+                 "Kwipi peut s'approcher pour lire ; "
+                 "vérifier si le dessin réagit à un geste moteur.")
+        with patch(
+            "microduck_companion.qwen9b_semantic_quality.evaluate_local_image",
+            return_value=fake_response(prose),
+        ):
+            report = run_case(
+                case_id="scene_b", consent=True,
+                display_advice=False,
+            )
+        self.assertEqual("blocked", report["machine_use"])
+        self.assertFalse(report["physical_actions_authorized"])
+        self.assertIn("physical_approach_mention", report["review_flags"])
+        self.assertIn("unspecified_motor_mention", report["review_flags"])
+        self.assertIsNone(report["quality_score"])
+        self.assertNotIn("advisor_text_for_human_only", report)
+        self.assertEqual("independent_human_review_required",
+                         report["review_state"])
+        self.assertEqual(0, report["motor_commands_issued"])
+        self.assertEqual(0, report["memory_writes"])
+
     def test_default_hides_prose_and_no_quality_claims(self):
         prose = "Observation : un chat ; ground_pick pour pointer vers le chat."
         with patch(

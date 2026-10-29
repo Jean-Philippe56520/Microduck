@@ -147,6 +147,30 @@ class GuardTests(unittest.TestCase):
         self.assertEqual([], benign["review_flags"])
         self.assertEqual("blocked", benign["machine_use"])
 
+    def test_real_scene_b_physical_movement_synonyms_need_human_review(self):
+        # Short, synthetic reenactment of the operator's scene_b finding:
+        # the original lexical guard returned [] without any OEM skill name.
+        text = ("Un dessin de chat est affiché sur un écran. "
+                "Kwipi pourrait s'approcher pour lire. "
+                "A vérifier : une réaction à un geste moteur.")
+        r = screen_preview_text(text)
+        self.assertEqual("blocked", r["machine_use"])
+        self.assertFalse(r["physical_actions_authorized"])
+        self.assertIn("physical_approach_mention", r["review_flags"])
+        self.assertIn("unspecified_motor_mention", r["review_flags"])
+        self.assertNotIn("possible_living_motor_risk", r["review_flags"])
+
+        # False positive by design: even a negated phrase is reviewed,
+        # so the scanner never claims semantic understanding.
+        negated = screen_preview_text("Ne pas s'approcher de l'écran.")
+        self.assertIn("physical_approach_mention", negated["review_flags"])
+        self.assertEqual("blocked", negated["machine_use"])
+        curly = screen_preview_text("Il pourrait s’approcher.")
+        self.assertIn("physical_approach_mention", curly["review_flags"])
+        passive = screen_preview_text("Observer un écran à distance, sans contact.")
+        self.assertEqual([], passive["review_flags"])
+        self.assertFalse(passive["physical_actions_authorized"])
+
     def test_preview_prose_cannot_enter_structured_guard(self):
         raw = ("Chat : ground_pick pour attirer attention").encode("utf-8")
         verdict = assess_candidate(raw, scene=scene("cat"), now_monotonic_s=11)

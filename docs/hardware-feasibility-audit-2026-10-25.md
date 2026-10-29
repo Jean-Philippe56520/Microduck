@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**QW-QUAL-1B — une consultation de Qwen3.5 9B sur scène synthétique affichée (29/10/2026, PC opérateur) :** [rapport](qw-qual1b-scene-b-real-qwen-human-review-2026-10-29.md), **37,063 s**, **114 tokens**, sortie de rôle v2, code 0. La provenance JSON ne documente ni consommation CPU/GPU/RSS ni température, ne permet pas d'attribuer cette durée à un backend donné, et n'inclut pas l'identifiant exact du code exécuté. Aucun essai robot, consommation RK3566, utilisation NPU, commande moteur, image réelle, migration SQLite, changement de driver ou ajout de service. Une durée 37 s est **hors boucle robotd 50 Hz** : conseiller PC éventuellement asynchrone uniquement, toujours facultatif, pas de conclusion de latence typique depuis un seul essai.
+
+
 **QW-QUAL-1A — périmètre ressources PC uniquement (29/10/2026, tests fixtures prévus) :** [protocole](qw-qual1a-synthetic-semantic-human-review-2026-10-29.md) pour quatre dessins PNG 320×240 en mémoire convertis par le prétraitement Qwen v2 existant. Un seul appel optionnel `qwen3.5:9b` par lancement, timeout <=120 s, serveur Ollama local **déjà actif** : pas de nouvel Ollama, installation, GPU config, lecture de photo privée, SQLite ou commande moteur ; aperçu PNG synthétique sauvegardé seulement si l'opérateur demande explicitement un export hors ligne, sans écrasement. RSS, charge CPU/GPU, température, watts, conformité de la caméra basse réelle et ressources RK3566 restent **inconnus**. Les données de QW-PERF-1I ne permettent ni prédiction de latence de ces scènes ni autonomie moteur.
 
 
