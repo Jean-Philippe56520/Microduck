@@ -136,7 +136,9 @@ class E2E1AIntegratedF2MemF5Tests(unittest.TestCase):
                     sent = done.request.to_wire().decode("utf-8")
                     self.assertNotIn("ephemeral-fixture", sent)
                     self.assertNotIn("g-0000000000000e21", sent)
-                    self.assertNotIn("cat", sent)  # no known category leak
+                    self.assertEqual(
+                        ["unknown"], [x["category"] for x in
+                                      json.loads(sent)["observations"]])
                 return {
                     "intent": done.local_intent.intention,
                     "target": done.local_intent.target_category,
