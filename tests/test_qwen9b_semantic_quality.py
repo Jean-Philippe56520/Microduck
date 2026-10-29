@@ -5,6 +5,8 @@ from contextlib import redirect_stderr, redirect_stdout
 import hashlib
 import io
 import json
+from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -214,6 +216,38 @@ class PCOnlyOneShotTests(unittest.TestCase):
         report = json.loads(stream.getvalue())
         self.assertEqual("dry_run_no_network", report["mode"])
         self.assertIn("review_focus", report["independent_reference"])
+
+
+    def test_optional_rendered_pixels_are_visible_only_on_explicit_offline_export(self):
+        with tempfile.TemporaryDirectory() as folder:
+            target = Path(folder) / "kwipi-scene-b.png"
+            stream = io.StringIO()
+            with patch(
+                "microduck_companion.qwen9b_semantic_quality.evaluate_local_image",
+                side_effect=AssertionError("offline preview must not call Ollama"),
+            ), redirect_stdout(stream):
+                self.assertEqual(0, main([
+                    "--case", "scene_b", "--export-preview", str(target),
+                ]))
+            self.assertTrue(target.is_file())
+            self.assertEqual(make_synthetic_png("scene_b"), target.read_bytes())
+            self.assertTrue(json.loads(stream.getvalue())[
+                "synthetic_preview_exported_explicitly"])
+            # Never overwrite existing content, even when asked twice.
+            with redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit):
+                    main(["--case", "scene_b", "--export-preview", str(target)])
+                with self.assertRaises(SystemExit):
+                    main(["--run", "--case", "scene_b",
+                          "--authorize-one-synthetic-call",
+                          "--export-preview", str(Path(folder) / "other.png")])
+                with self.assertRaises(SystemExit):
+                    main(["--case", "scene_b",
+                          "--export-preview", "relative.png"])
+                with self.assertRaises(SystemExit):
+                    main(["--case", "scene_b", "--export-preview",
+                          str(Path(folder) / "bad.jpg")])
+            self.assertEqual(make_synthetic_png("scene_b"), target.read_bytes())
 
 
 if __name__ == "__main__":
