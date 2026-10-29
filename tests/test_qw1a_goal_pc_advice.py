@@ -250,7 +250,7 @@ class StrictSchemaTests(unittest.TestCase):
         cases=(
             good[:-1]+b',"strategy":"abstain"}',
             good.replace(b'"status":"unverified"',b'"status":NaN'),
-            good+b" ",
+            good+b"{}",
             b"{}",
             b"\xff",
             b"x"*4000,
@@ -325,7 +325,7 @@ class FakeRealTransportTests(unittest.TestCase):
             lambda d: envelope(d,done_reason="length"),
             lambda d: envelope(d,message={"role":"assistant","content":"{}",
                                           "tool_calls":[{"tool":"motor"}]}),
-            lambda d: envelope(d,status=500),
+            lambda d: FakeResponse(envelope(d).data,status=500),
             lambda d: FakeResponse(b"{}",length="9999999"),
             lambda d: FakeResponse(b"{}",content_type="text/html"),
             lambda d: envelope(d,message={"role":"assistant","content":
