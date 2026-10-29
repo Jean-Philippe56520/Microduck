@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 import json
+import sqlite3
 import unittest
 from unittest.mock import patch
 
@@ -192,11 +193,16 @@ class GoalMemoryContextTests(unittest.TestCase):
             self.questions()
 
     def test_corrupt_attempt_reference_fails_closed_without_export(self):
-        self.memory.conn.execute(
-            "UPDATE mem1_mock_goal_links SET strategy=?",
-            ("invalid_synthetic_strategy",))
-        self.memory.conn.commit()
-        with self.assertRaises(ValueError):
+        # The ONE existing SQLite already prevents invalid strategy writes.
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.memory.conn.execute(
+                "UPDATE mem1_mock_goal_links SET strategy=?",
+                ("invalid_synthetic_strategy",))
+        self.memory.conn.rollback()
+        # A corrupted reader is also never converted to a model question.
+        with patch.object(
+            self.goals, "attempts", side_effect=ValueError("invalid EX1")
+        ), self.assertRaises(ValueError):
             self.questions()
 
     def test_mock_executed_is_still_not_physical_proof(self):
