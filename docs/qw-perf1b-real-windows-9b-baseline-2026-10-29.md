@@ -1,5 +1,32 @@
 # QW-PERF-1B — Premier relevé réel opérateur, PC Windows/Ollama (29/10/2026)
 
+
+## QW-PERF-1D — cause locale du repli CPU observée (logs du 28/10 reçus le 29/10)
+
+**Preuve opérateur réelle, mais historique :** cinq lignes filtrées du fichier Ollama `server.log` sont horodatées **2026-10-28 09:11** ; leur transmission date du **29 octobre**. Elles décrivent la configuration de ce serveur du 28 octobre, sans prouver la configuration d'un nouveau processus Ollama ultérieur :
+
+- `OLLAMA_VULKAN:true`, `OLLAMA_IGPU_ENABLE:` *(vide)* : Vulkan activé, sélection d'iGPU non activée dans ce processus.
+- `dropping ROCm device ... no rocblas support for gfx target`, `gfx1152` : le backend **ROCm présent** ne peut pas charger ce target dans son inventaire ; **ne pas** suivre la suggestion `HSA_OVERRIDE_GFX_VERSION` et ne pas maquiller le type de GPU.
+- `dropping integrated GPU; to enable, set OLLAMA_IGPU_ENABLE=1`, `library=Vulkan`, `description=AMD Radeon(TM) 860M Graphics` : **preuve directe que Vulkan a découvert la Radeon 860M, puis qu'Ollama l'a écartée à cause du contrôle d'admission iGPU**. Ce cas est donc distinct d'un problème où Vulkan ne verrait *aucun* GPU (par exemple les symptômes de l'issue historique #14562).
+- `inference compute id=cpu` et `total_vram=0 B` : repli CPU cohérent, confirmé séparément par `ollama ps` **100 % CPU** pendant les cinq consultations rapportées.
+
+**Cause démontrée pour cette session :** le filtrage de l'iGPU Vulkan faute de `OLLAMA_IGPU_ENABLE=1`. **Encore inconnu :** si l'admission temporaire de la Radeon 860M produira réellement une inférence GPU fonctionnelle, correcte, plus rapide, stable et sobre en mémoire avec le 9B. Les gains et les traitements QW-1/QW-2 ne sont **pas testés**.
+
+**Réutiliser d'abord l'existant :** `scripts/kwipi-vision-test.ps1` du dépôt épinglé possède déjà un test synthétique `-VisionCheck` (deux carrés rouge/bleu) et démarre un serveur **temporaire** sur `127.0.0.1:11435`, si ce port est libre, avec `OLLAMA_VULKAN=1` et **`OLLAMA_IGPU_ENABLE=1`** ; il arrête seulement le processus qu'il a lancé. Pas de changement de `11434`, pas de média réel, pas de SQL, pas de commande moteur ni de variable système persistante. Le lancer dans **une session PowerShell enfant** pour isoler les variables de processus :
+
+```powershell
+# Précontrôle : port temporaire libre ; sortie vide attendue.
+Get-NetTCPConnection -LocalPort 11435 -State Listen -ErrorAction SilentlyContinue
+# Si et seulement si le port est libre : essai borné de DEUX images synthétiques.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\kwipi-vision-test.ps1" -VisionCheck -Port 11435
+```
+
+**Observation attendue pour conclure :** pendant le test, dans une seconde fenêtre indépendante, `OLLAMA_HOST=127.0.0.1:11435` puis `ollama ps` doit afficher l'utilisation d'un GPU/Vulkan **et pas 100 % CPU**, les deux couleurs doivent être correctement reconnues, le serveur créé doit se fermer, aucune dégradation/erreur mémoire ne doit être apparue. Le serveur peut se replier sur CPU malgré l'option : **échec de l'hypothèse GPU**, pas une réussite. Les deux images et la latence du test ne sont pas équivalentes aux cinq profils QW-PERF-1B ; aucune comparaison chiffrée CPU/GPU ne sera affirmée sans les **mêmes stimuli et réglages**.
+
+**Risques et retour arrière :** GPU intégré partage la RAM avec Windows, quantités de RAM/RSS/thermie et allocation encore inconnues ; possibilité de lenteur, échec Vulkan ou indisponibilité temporaire du modèle. Ne pas modifier pilote, DLL, installation Ollama, HSA override, variables globales, `robotd` ou F5-C ; si le test échoue ou bloque, **arrêter uniquement le serveur temporaire** (le lanceur le fait lors de la fin normale), conserver le serveur habituel `11434` intact, ne pas répéter à l'aveugle. Le test doit rester facultatif et sous supervision de l'opérateur.
+
+**Références :** [GPU Ollama officiel](https://docs.ollama.com/gpu) ; [commentaire d'un mainteneur Ollama sur l'admission d'iGPU](https://github.com/ollama/ollama/issues/18672) (octobre 2026). Les options de la version installée et leurs effets doivent toujours être vérifiés sur **le vrai PC**, pas extrapolés depuis une issue tierce.
+
 **Statut : relevé opérateur réel, transmis en conversation, non reproduit indépendamment sur son ordinateur.** Aucun moteur, Qwen automatique, photo personnelle, SQLite, capteur physique ou commande OEM. **Autorité :** [plan-action.md](plan-action.md) ; [protocole QW-PERF-1](qw-perf1-pc-synthetic-benchmark-2026-10-28.md). Dépôt de référence : `main@9eab4aefd89b00c3caef0df7979d25b7632b19ad`, sous-modules inchangés `microduck@942e58e3aa6dbb28e7037203fff11866122c7567` et `microduck_rl@b02fdea4902c2b93b7d34a83a6f05da4ececb7d3`.
 
 ## Observation indépendante du code : ce qui a été communiqué
@@ -29,7 +56,7 @@ Après les appels, l'opérateur a exécuté `ollama ps` et rapporté : **`qwen3.
 
 ## Porte avant tout nouvel essai ou installation
 
-**Observation :** tous les appels réels ont réussi, mais la charge était au CPU ; version et GPU sont identifiés : **Ollama 0.40.12 / Radeon 860M / driver 32.0.22052.3**. La [liste GPU officielle Ollama Windows ROCm](https://docs.ollama.com/gpu) **ne mentionne pas la 860M** ; Vulkan offre une voie complémentaire et est normalement actif par défaut si le backend est disponible. L'[issue Ollama #14562](https://github.com/ollama/ollama/issues/14562) signale une non-détection **de la même Radeon 860M**, mais sous **Ollama 0.17.4–0.17.5**, et ne prouve pas que 0.40.12 est affecté. **Hypothèses concurrentes :** iGPU absent de la découverte Vulkan, composant backend non chargé, réglage serveur déjà existant, pilote Windows incompatible, ou autre problème. **Prochaine question unique :** que signalent les journaux du serveur Ollama actuel sur la détection GPU au démarrage ?
+**Observation :** tous les appels réels ont réussi, mais la charge était au CPU ; version et GPU sont identifiés : **Ollama 0.40.12 / Radeon 860M / driver 32.0.22052.3**. La [liste GPU officielle Ollama Windows ROCm](https://docs.ollama.com/gpu) **ne mentionne pas la 860M** ; Vulkan offre une voie complémentaire et est normalement actif par défaut si le backend est disponible. L'[issue Ollama #14562](https://github.com/ollama/ollama/issues/14562) signale une non-détection **de la même Radeon 860M**, mais sous **Ollama 0.17.4–0.17.5**, et ne prouve pas que 0.40.12 est affecté. **Hypothèses concurrentes :** iGPU absent de la découverte Vulkan, composant backend non chargé, réglage serveur déjà existant, pilote Windows incompatible, ou autre problème. **Cette question a été tranchée pour le serveur du 28/10 par les journaux reçus le 29/10 (voir QW-PERF-1D ci-dessus) : Vulkan voit la 860M mais son admission iGPU est désactivée.** Le paragraphe suivant conserve le diagnostic historique initial.
 
 **Diagnostic exclusivement en lecture seule, depuis PowerShell :**
 
@@ -47,7 +74,7 @@ if (Test-Path -LiteralPath $log) {
 
 **Précaution journaux :** la commande ci-dessus lit uniquement un fichier local et filtre des lignes GPU. Avant toute transmission, **supprimer chemins personnels, jetons, contenus de requêtes ou données sensibles** si présents. Les lignes sans correspondance ne prouvent pas qu'aucun GPU n'a été examiné ; consulter la rotation `server-#.log` seulement si nécessaire. La documentation officielle localise les journaux Windows dans `%LOCALAPPDATA%\Ollama\server.log` ([dépannage Ollama](https://docs.ollama.com/troubleshooting)).
 
-Ne pas faire `ollama pull`, `setx`, `stop-process`, `ollama stop`, mise à jour de pilote, remplacement de DLL, surcharge forcée ROCm, allocation VRAM ou second serveur concurrent pour ce diagnostic. **Critères d'échec :** versions non vérifiées, GPU non détecté, accélération sans amélioration de la qualité ou dégradation mémoire/fiabilité, suppression d'un service existant. **Retour arrière :** aucun réglage durable modifié dans ce lot documentaire ; si une expérimentation active est ensuite autorisée, faire un seul changement temporaire mesuré et restaurer l'environnement immédiatement après, avec témoin CPU.
+Ne pas faire `ollama pull`, `setx`, `stop-process` global, `ollama stop` sur le serveur principal, mise à jour de pilote, remplacement de DLL, surcharge forcée ROCm, allocation VRAM ou second serveur **non isolé**. Un seul serveur **temporaire et supervisé sur 11435**, prévu dans QW-PERF-1D, est le seul essai facultatif proposé. **Critères d'échec :** versions non vérifiées, GPU non détecté, accélération sans amélioration de la qualité ou dégradation mémoire/fiabilité, suppression d'un service existant. **Retour arrière :** aucun réglage durable modifié dans ce lot documentaire ; si une expérimentation active est ensuite autorisée, faire un seul changement temporaire mesuré et restaurer l'environnement immédiatement après, avec témoin CPU.
 
 **Après diagnostic confirmé :** concevoir, si nécessaire, **un** essai GPU **isolé et réversible** avec le même JPEG, le même prompt, la même résolution, les mêmes quotas et mesure `ollama ps` + `load/prompt/eval` + RSS/thermique ; vérifier compatibilité exacte avant de lancer, et ne pas changer les paramétrages OEM. Ensuite seulement étudier le raccourcissement sémantique des réponses, l'amortissement du cache sur objectifs différents et l'accès mémoire QW-1/QW-2.
 

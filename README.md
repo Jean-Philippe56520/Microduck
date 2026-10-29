@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**QW-PERF-1D — cause du repli CPU identifiée dans les logs du 28/10 (reçus le 29/10) :** [diagnostic Vulkan/860M et essai OEM/PC borné](docs/qw-perf1b-real-windows-9b-baseline-2026-10-29.md#qw-perf-1d--cause-locale-du-repli-cpu-observée-logs-du-2810-reçus-le-2910). Ollama `0.40.12` détecte la **Radeon 860M via Vulkan**, mais l'exclut : `OLLAMA_IGPU_ENABLE` vide, message explicite `dropping integrated GPU; to enable, set OLLAMA_IGPU_ENABLE=1`. ROCm `gfx1152` rejeté par les rocBLAS présents : **ne pas forcer HSA_OVERRIDE**. À essayer uniquement si autorisé : le lanceur **déjà existant** `scripts/kwipi-vision-test.ps1 -VisionCheck -Port 11435` démarre/arrête un serveur temporaire activant Vulkan et l'iGPU, sans toucher au `11434`. **Aucun GPU exécutant le modèle ni gain de vitesse encore prouvés** ; aucun code/moteur modifié.
+
+
 **QW-PERF-1C — diagnostic PC précisé (29/10/2026, rapport opérateur) :** Ollama **0.40.12**, Radeon **860M**, driver Windows **32.0.22052.3** ; le modèle 9B a effectivement tourné à **100 % CPU**. La liste ROCm Windows officielle ne couvre pas la 860M, Vulkan reste une piste de compatibilité mais la détection du backend n'est **pas démontrée**. [Rapport et prochain contrôle des journaux en lecture seule](docs/qw-perf1b-real-windows-9b-baseline-2026-10-29.md). Aucune installation, modification GPU/Windows, réinférence ni commande OEM autorisée par ce constat.
 
 

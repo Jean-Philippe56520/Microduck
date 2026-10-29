@@ -1,5 +1,8 @@
 # Point de reprise — Microduck Companion / Kwipi — 28 octobre 2026
 
+**Reprise prioritaire QW-PERF-1D — 29/10/2026 (preuve logs datés 28/10) :** [Vulkan détecte la 860M mais Ollama refuse l'iGPU faute de `OLLAMA_IGPU_ENABLE=1`](qw-perf1b-real-windows-9b-baseline-2026-10-29.md#qw-perf-1d--cause-locale-du-repli-cpu-observée-logs-du-2810-reçus-le-2910). Le `server.log` montre `OLLAMA_VULKAN:true`, `OLLAMA_IGPU_ENABLE:` vide, `dropping integrated GPU`, puis `inference compute id=cpu`; ROCm `gfx1152` sans rocBLAS. **Ce filtrage est démontré pour le processus du 28/10 ; GPU actif non encore validé.** Réutiliser le test synthétique temporaire `scripts/kwipi-vision-test.ps1 -VisionCheck -Port 11435` après contrôle port libre, dans une fenêtre PowerShell enfant pour ne pas affecter `11434`. Ne pas installer pilote/backend, forcer HSA, éditer DLL, créer service permanent ou toucher aux moteurs. Mesurer ensuite CPU/GPU à tâche identique ; aucun gain acquis.
+
+
 **Reprise QW-PERF-1C — 29/10/2026 :** version PC confirmée **Ollama 0.40.12**, iGPU **Radeon 860M**, pilote **32.0.22052.3**, **100 % CPU** lors de QW-PERF-1B. Le modèle a ensuite été déchargé après son maintien temporaire, sans incident. [Rapport et commande PowerShell pour consulter le journal GPU en lecture seule](qw-perf1b-real-windows-9b-baseline-2026-10-29.md). ROCm Windows ne liste pas la 860M, Vulkan est une possibilité non prouvée. **Ne pas mettre à jour Ollama/pilote ou tester un autre backend sans lire d'abord la cause dans `server.log`.**
 
 
