@@ -4,6 +4,24 @@
 
 Le projet doit ajouter ce qui manque, sans réinventer les composants du constructeur ou de Companion. La [matrice R0](oem-reuse-audit-2026-10-26.md) et son [inventaire machine](oem-reuse-inventory-2026-10-26.json) recensent les premiers composants et leurs propriétaires. Le [registre C3 par chantier](community-reference-registry-2026-10-26.md) complète R0/R1.5 par une veille **officielle non fusionnée** et communautaire, sans présumer de compatibilité ou de permission de déploiement. Une fonctionnalité mentionnée dans une roadmap, comme le cerveau OEM M9, **n'est pas automatiquement codée ni déployée**.
 
+## Porte 0 — Utilité mesurable et anti-dérive (29/10/2026)
+
+**Avant la porte OEM, tout chantier doit répondre à une question concrète : « Que saura mieux FAIRE ou VÉRIFIER Kwipi après ce lot, par rapport au code actuel ? »** Une infrastructure, une PR ou un nombre de tests supplémentaires ne constitue pas, à lui seul, un jalon fonctionnel. Le [plan-action.md](plan-action.md) fait foi pour l'ordre, pas un ancien compte rendu ou une suite de commandes.
+
+**Fiche de décision minimale avant de coder, tester ou créer une PR :**
+
+1. **Jalon et résultat** : référence à une fonction cible A–H / F0–F8 / MEM / Cat et scénario observable (stimulus → décision / abstention → effet indépendant si requis). Préciser si le résultat est fonctionnel, une **preuve nécessaire** ou une correction de sûreté.
+2. **Écart vérifié** : ce que la base actuelle ne permet pas ou mesure mal, avec lien aux fichiers, SHA, tests et éléments OEM. Une impression, un succès de CI ou l'absence d'un fichier historique ne suffisent pas à démontrer un besoin.
+3. **Comparateur et critère de passage** : choisir *avant l'essai* un témoin sans la nouvelle logique (ou la solution OEM existante), cas nominal et négatifs, mesure de qualité/risque/coût, condition de réussite et condition d'échec. Ne pas définir le seuil après avoir vu le résultat ni revendiquer un gain non mesuré.
+4. **Réutiliser / adapter / créer** : préférer un test de l'existant ou un adaptateur minimal à une nouvelle bibliothèque, CLI, base, procédure ou série de PR. Justifier l'effort et le bénéfice du plus petit lot ; aucun changement moteur hors revue OEM dédiée.
+5. **Décision à l'issue** : `progres_demontré` (preuve dans le bon environnement), `test_logiciel_seul`, `bloque_source_externe`, `insuffisant` ou `abandonne_non_prioritaire`. Documenter fait, limites et prochain jalon, **sans confondre fusion et accomplissement**.
+
+**Arrêt / pivot anti-spirale :** après un diagnostic ciblé, si la preuve requise n'existe pas, si l'essai ne répond plus à la question du jalon ou si une réparation d'outil ne change aucune décision sur Kwipi, **arrêter ce sous-chantier**. Ne pas créer en chaîne des outils pour récupérer d'anciennes sorties ou ajuster une métrique de démonstration. Conserver l'historique, ne pas inventer des données ni prétendre la porte franchie. Reprendre le meilleur **jalon indépendant** accessible sans robot ou média privé. Une tâche facultative non conclue peut bloquer **sa propre revendication** (par exemple la qualité démontrée de Qwen), pas toute la cognition, la mémoire ou la perception.
+
+**Cas concret QW-QUAL-2A (29/10/2026) :** les quatre consultations passées ont des traces partielles et ne sont pas un jeu indépendant de validation ; les PR #169–171 ont préparé des outils de relecture, **sans contre-annotation humaine reçue**. Suspendre la récupération des quatre JSON originaux et tout nouvel outil associé : *coût sans preuve supplémentaire acquise*. Préserver la baseline Qwen v2 et `machine_use=blocked`. On peut préparer un **nouveau protocole prospectif** sur cas réellement inédits, sorties conservées localement avec consentement et revue aveugle, **sans déclarer 2A achevé** ; les promotions de prompt/robot attendent les preuves correspondantes. Cela ne bloque ni MEM-2B ni Cat-A2b.
+
+**Lot documentaire admissible :** seulement s'il modifie une **décision opérationnelle obligatoire**, corrige une erreur dangereuse ou enlève un blocage réel ; sinon intégrer la note au prochain lot fonctionnel. Toute PR doit expliciter ce gain de pilotage dans le [modèle](../.github/pull_request_template.md) ; pas de PR répétées de simple statut.
+
 ## Porte préalable : aucun développement ni essai à l'aveugle (28/10/2026)
 
 **Obligation de preuve avant action :** (1) définir problème, faits et hypothèses, (2) lire la recommandation OEM épinglée **et** la configuration constructeur normale, (3) inventorier ce qui tourne réellement (fichiers/empreintes, politique, actionneurs, scène, version, journaux, horloges), (4) rechercher code/tests déjà livrés chez OEM et Companion, (5) préciser critère mesurable, cas négatifs, risque et retour arrière. Si un maillon manque, annoncer « inconnu » et privilégier **une lecture ciblée**, pas une nouvelle commande moteur.

@@ -1,3 +1,15 @@
+## Porte 0 — jalon et valeur démontrable (OBLIGATOIRE)
+
+- **Jalon du plan directeur / besoin réel de Kwipi :** [A–H, F, MEM, Cat ; lien précis].
+- **Résultat attendu pour Kwipi :** [scénario entrée → meilleure décision / preuve / abstention ; ou correction de sûreté/obligation documentaire].
+- **Écart constaté sur la baseline :** [SHA, fichiers/tests, mesure ou fait vérifiable ; pas une intuition].
+- **Pourquoi réutiliser/tester l'existant ne suffit pas :** [ou « aucun nouveau code », justifié].
+- **Témoin / cas positifs et négatifs :** [comparaison avant/après, inconnus, erreurs et sécurité].
+- **Critère de passage et critère d'arrêt fixés AVANT résultat :** [preuve, seuil justifié, environnement ; si donnée externe absente → `bloqué` et pivot].
+- **Valeur obtenue et décision de clôture :** [`progres_demontré`, `test_logiciel_seul`, `bloque_source_externe`, `insuffisant`, `abandonne_non_prioritaire`; liens mesures ou « pas encore mesuré »].
+
+**Refuser** les PR qui ajoutent une couche de préparation sans démontrer leur nécessité pour un jalon. CI verte, fichiers changés et nombre de tests **ne sont pas le résultat fonctionnel**. Une pièce de preuve facultative indisponible n'interdit pas un autre jalon indépendant. Documentation seule : démontrer quelle décision de travail obligatoire elle corrige. Voir [protocole anti-dérive](../docs/development-reuse-protocol.md).
+
 ## Objectif et statut réel
 
 Décrire précisément la fonction livrée : prévu / codé / test logiciel (fixtures ou médias publics) / simulé / validé sur robot. Éviter les affirmations non mesurées.

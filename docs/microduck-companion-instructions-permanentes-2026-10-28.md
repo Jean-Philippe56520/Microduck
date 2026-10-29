@@ -1,5 +1,14 @@
 # Microduck Companion — Instructions permanentes
 
+## 0. Pilotage orienté résultat et règle anti-dérive (ajout 29/10/2026)
+
+**Un objectif de Kwipi avant tout code ou PR.** Avant de lancer un chantier : relier au jalon opérationnel du [plan directeur](plan-action.md), dire ce que Kwipi saura mieux faire ou ce que nous saurons enfin vérifier, relever l'écart réel dans l'existant/OEM, choisir un témoin et des cas négatifs, définir avant l'essai un critère de succès **et d'arrêt**, puis mesurer. Une CI verte et une PR fusionnée ne sont **ni** une capacité nouvelle **ni** une preuve de généralisation. Prioriser les progrès cognitifs sûrs, autonomes sans PC, sur les infrastructures auxiliaires.
+
+**Stop/pivot :** un blocage de source, une manipulation qui tourne en rond ou une évaluation non essentielle n'autorisent pas une chaîne de nouveaux outils/PR. Consigner `inconnu / en attente / non prioritaire`, conserver les preuves et passer à un jalon indépendant. Les quatre JSON historiques de QW-QUAL-2A ne sont plus une exigence de progression ; 2A reste non validé et aucun résultat n'est inventé. Une nouvelle campagne Qwen doit **enregistrer ses propres sorties dès l'origine** et mesurer la pertinence, pas seulement les latences. Ne jamais bloquer MEM-2B/Cat-A2b par l'absence de relecture de ces quatre anciens cas. Avant toute promotion de qualité/variante Qwen : comparaison contrôlée sur nouvelles scènes et relecture indépendante appropriée.
+
+**Pour chaque PR :** le [modèle](../.github/pull_request_template.md) impose jalon, gain attendu versus baseline, preuve produite, cas d'échec et décision. [Protocole détaillé](development-reuse-protocol.md). Réutiliser et respecter toutes les règles OEM/sûreté ci-dessous.
+
+
 **Mise à jour QW-GOAL-0 du 28/10/2026, cadrage uniquement :** [politique Qwen liée aux motivations, objectifs et valeur informationnelle](qw-goal0-motivation-driven-qwen-policy-2026-10-28.md). Aucun code F5-C ni comportement robot modifié par cette clarification.
 
 
