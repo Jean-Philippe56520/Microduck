@@ -1,5 +1,7 @@
 # Images publiques pour essais rapides de vision de Kwipi
 
+**Résultat YOLOX réel sur ce lot (29/10/2026) :** [rapport JSON image par image](yolox_baseline_results.json), [CI GPU absent/CPU hôte](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40950364823) réussie. Proposition de catégorie attendue : chats **3/4**, chiens **2/2**, balles **0/3**, chaise **1/1**, personne **1/1**, deux images sans cible **2/2** sans proposition. Seuil YOLOX-Nano **0,25** inchangé ; inférence médiane CPU runner **23,632 ms**. Certaines photos source >4 096 px ont été réduites **en mémoire**; les originaux Git sont intacts. Ces catégories image-level ne sont ni un score mAP ni une preuve de localisation correcte ou un test NPU/robot. **Décision : conserver le témoin, ne pas retoucher les seuils pour faire reconnaître ces mêmes balles, chercher une nouvelle source/proposition adaptée aux petites balles dans un autre lot.**
+
 13 images effectivement conservees dans ce repertoire Git : 4 chats, 2 chiens, 3 balles, 1 chaise isolee, 1 personne et 2 scenes negatives. Elles servent a regarder les sorties des detecteurs existants sans imposer de hauteur de prise de vue ni reconstruire un banc.
 
 - Fichiers JPEG/PNG d'origine (ou leurs versions compressees publiques), sans photos privees.
