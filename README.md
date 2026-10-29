@@ -1,5 +1,8 @@
 # Microduck Companion
 
+**QW-PERF-1H fusionné sur main (29/10/2026) :** [PR #158](https://github.com/Jean-Philippe56520/Microduck/pull/158) fusionnée au squash `b558007a565f4ca0fb83cef75b3eae3da59c010f` après [CI Python #40857661598](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40857661598) et [inventaire N1 #40857661522](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40857661522) **verts**. Les tests Python, compilation et analyse syntaxique PowerShell ont réussi ; **aucun nouveau test réel du Qwen 9B sur PC ni du GPU n'a été réalisé par la CI**. Le banc, facultatif et borné, mesure cinq profils synthétiques avec relevé `/api/ps` sur 11435 et témoin 11434, sans média privé, mémoire SQLite ni moteur. [Procédure de reprise et limites](docs/qw-perf1h-pc-role-benchmark-placement-2026-10-29.md).
+
+
 **QW-PERF-1H — banc PC candidat pour comparer le coût du rôle Qwen9B sur CPU et GPU (29/10/2026 ; test réel NON exécuté dans ce lot) :** [protocole et commandes PowerShell explicitement consenties](docs/qw-perf1h-pc-role-benchmark-placement-2026-10-29.md). **Réutilise** les cinq profils synthétiques de QW-PERF-1, étend le sondage `/api/ps` de QW-PERF-1F au banc existant, et ajoute au lanceur PC temporaire `-PerfCheck -AuthorizeFiveSyntheticCalls -ReportPlacement -Port 11435`. Serveur principal 11434 non arrêté, port 11435 refusé s'il est déjà occupé, aucune photo réelle, mémoire SQLite ou moteur. Les durées et l'identité du backend de calcul **restent à mesurer** sur le PC ; les fixtures CI ne calculent aucun token réel du 9B. Fusion/CI à vérifier.
 
 
