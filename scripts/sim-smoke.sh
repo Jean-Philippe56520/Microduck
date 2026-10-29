@@ -15,8 +15,16 @@ export DUCK_SIM_PORT="${DUCK_SIM_PORT:-17801}"
 export DUCK_SIM_FRAME_PORT="${DUCK_SIM_FRAME_PORT:-17901}"
 export DUCK_SIM_DUCKS=1
 export DUCK_SIM_VIEWER=0
-export DUCK_SIM_CAMERAS=
-export DUCK_SIM_SCENE=
+# SIM-VIS-A1 is the single opt-in exception to the historic blind smoke.
+# It reuses the OEM apartment, frame socket, camera and ToF; no motor trial.
+if [ "${DUCK_SIM_VIS_A1:-NO}" = YES ]; then
+    export DUCK_SIM_CAMERAS=a
+    export DUCK_SIM_SCENE=apartment
+    export MUJOCO_GL=osmesa
+else
+    export DUCK_SIM_CAMERAS=
+    export DUCK_SIM_SCENE=
+fi
 export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"
 
 check() {
@@ -52,6 +60,28 @@ case "$MODE" in
         exit 2
         ;;
 esac
+
+# A1 only measures simulated images/ToF. Never combine with motor trials.
+if [ "${DUCK_SIM_VIS_A1:-NO}" = YES ]; then
+    for motion_flag in "${DUCK_SIM_SHORT_MOVE:-NO}" \
+                       "${DUCK_SIM_WALK_TRIAL:-NO}" \
+                       "${DUCK_SIM_WALK_COMPARE:-NO}" \
+                       "${DUCK_SIM_POLICY_PAIR:-NO}" \
+                       "${DUCK_SIM_VX_ONSET:-NO}" \
+                       "${DUCK_SIM_SIM_E1:-NO}" \
+                       "${DUCK_SIM_X2C_ACCEPTANCE:-NO}" \
+                       "${DUCK_SIM_SOLVER_TRACE:-NO}" \
+                       "${DUCK_SIM_ACTUATOR_AUDIT:-NO}"; do
+        if [ "$motion_flag" = YES ]; then
+            printf 'SIM-VIS-A1 refuses mixed motor or trace experiments.\\n' >&2
+            exit 2
+        fi
+    done
+    [ -n "${DUCK_SIM_VIS_MODEL:-}" ] || {
+        printf 'SIM-VIS-A1 requires the approved public model path.\\n' >&2
+        exit 2
+    }
+fi
 
 # X2-C must never coexist with any opt-in test that commands locomotion.
 # An X2-C run only measures read-only OEM telemetry and local SQLite.
@@ -132,6 +162,11 @@ case "${DUCK_SIM_DEP_MODE:-full}" in
         uv venv --python 3.12 "$DUCK_SIM_RL/.venv"
         uv pip install --python "$DUCK_SIM_RL/.venv/bin/python" \
             'mujoco==3.10.0' 'numpy==2.5.4' 'onnxruntime==1.28.0'
+        if [ "${DUCK_SIM_VIS_A1:-NO}" = YES ]; then
+            # Only the optional simulated-camera smoke needs JPEG + OSMesa.
+            uv pip install --python "$DUCK_SIM_RL/.venv/bin/python" \
+                'Pillow==11.3.0' 'PyOpenGL==3.1.10'
+        fi
         # The lean environment deliberately skips editable RL-package
         # installation. Python must therefore find its pinned source tree.
         export PYTHONPATH="$DUCK_SIM_RL/src:$PYTHONPATH"
@@ -183,6 +218,28 @@ started=1
 "$SIM" realtime
 python3 -m microduck_companion.sim_probe --state-dir "$DUCK_SIM_STATE"
 python3 -m microduck_companion.sim_observer --state-dir "$DUCK_SIM_STATE"
+# SIM-VIS-A1b: direct official MuJoCo FrameServer optical control.
+# Independent of mediad: 1 rendered frame with NO real-time / IPC claim.
+# It is recorded before the OEM media.frame integration check, which must
+# still FAIL if the real mediad does not provide its socket.
+if [ "${DUCK_SIM_VIS_A1:-NO}" = YES ]; then
+    "$DUCK_SIM_RL/.venv/bin/python" -m microduck_companion.sim_visual_direct \
+        --camera-port "$DUCK_SIM_FRAME_PORT" \
+        --scene-path "$DUCK_SIM_RL/src/mjlab_microduck/robot/microduck/apartment.xml" \
+        --model-path "$DUCK_SIM_VIS_MODEL" \
+        --output "$DUCK_SIM_STATE/sim-visual-a1b.json" \
+        --authorize-sim-render-only
+fi
+
+# SIM-VIS-A1: one source-labelled camera/ToF/Yolox diagnostic, no media archived.
+if [ "${DUCK_SIM_VIS_A1:-NO}" = YES ]; then
+    "$DUCK_SIM_RL/.venv/bin/python" -m microduck_companion.sim_visual_a1 \
+        --state-dir "$DUCK_SIM_STATE" \
+        --scene-path "$DUCK_SIM_RL/src/mjlab_microduck/robot/microduck/apartment.xml" \
+        --model-path "$DUCK_SIM_VIS_MODEL" \
+        --output "$DUCK_SIM_STATE/sim-visual-a1.json" \
+        --authorize-simulated-snapshot
+fi
 # P2b: two separate read-only sessions on a single persistent SQLite database.
 # Only the P2b simulation branch opts in. No robot.move / robot.stop is issued.
 if [ "${DUCK_SIM_PASSIVE_CYCLES:-NO}" = YES ]; then

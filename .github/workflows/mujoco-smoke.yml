@@ -23,6 +23,7 @@ on:
       - feat/x2c-mujoco-passive-acceptance-20261027
       - feat/sim-e1-active-experience-20261028
       - feat/sim-e2g-one-speed-onset-probe-20261028
+      - feat/sim-visual-a1-20261029
     paths:
       - ".github/workflows/mujoco-smoke.yml"
       - "scripts/sim-smoke.sh"
@@ -43,9 +44,9 @@ jobs:
     env:
       DUCK_SIM_DEP_MODE: runtime
       PYTHONUNBUFFERED: "1"
-      # Do not start a viewer or camera: keep the initial experiment cheap.
+      # Default remains no camera; only SIM-VIS-A1 opts into one simulated eye.
       DUCK_SIM_STATE: /tmp/duck-sim-companion
-      # No MUJOCO_GL override: body-only headless physics opens no GL context.
+      # Visual opt-in sets MUJOCO_GL=osmesa; the default smoke remains blind.
     steps:
       - uses: actions/checkout@v4
         with:
@@ -62,6 +63,27 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libudev-dev pkg-config libasound2-dev python3-pil
+
+      # The visual branch alone uses the OEM rendered camera. No V4L2/NPU.
+      - name: SIM-VIS-A1 software rendering and pinned public model
+        if: github.ref_name == 'feat/sim-visual-a1-20261029'
+        run: |
+          set -euo pipefail
+          # Reuse the official OEM CI dependency set for mediad (Linux GStreamer).
+          sudo apt-get install -y libosmesa6 libgl1-mesa-dri \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            libgstreamer-plugins-bad1.0-dev
+          uv python install 3.12
+          # Public Apache-2.0 Cat-A YOLOX; fixed content digest and size.
+          curl --fail --location --silent --show-error --connect-timeout 10 --max-time 90 \
+            'https://huggingface.co/skillsafe-ai/yolox-nano/resolve/8e308810ede488f742901a4ac597dc7796798e46/yolox_nano.onnx' \
+            --output "$RUNNER_TEMP/yolox-nano-a1.onnx"
+          printf '%s  %s\n' \
+            'c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d' \
+            "$RUNNER_TEMP/yolox-nano-a1.onnx" | sha256sum -c -
+          # The actual headless vision probe uses the lean RL runtime Python.
+          # Pillow and PyOpenGL are only required for this opt-in scene.
+          # Installed after uv creates the runtime venv inside sim-smoke.sh.
 
       - name: Check pinned simulator sources and runtime
         run: |
@@ -100,6 +122,8 @@ jobs:
           # SIM-E2G: ONE pinned OEM alpha run at 0.30m/s, never user/robot mode.
           DUCK_SIM_VX_ONSET: ${{ github.ref_name == 'feat/sim-e2g-one-speed-onset-probe-20261028' && 'YES' || 'NO' }}
           # No automatic E2H motor run: original contacts are archived and rechecked offline.
+          DUCK_SIM_VIS_A1: ${{ github.ref_name == 'feat/sim-visual-a1-20261029' && 'YES' || 'NO' }}
+          DUCK_SIM_VIS_MODEL: ${{ runner.temp }}/yolox-nano-a1.onnx
         run: |
           set -o pipefail
           timeout --signal=TERM --kill-after=30s 18m             sh scripts/sim-smoke.sh run 2>&1 | tee "${{ runner.temp }}/mujoco-smoke-console.log"
@@ -141,3 +165,5 @@ jobs:
             /tmp/duck-sim-companion/sim-e1-report.json
             /tmp/duck-sim-companion/sim-e2g-report.json
             /tmp/duck-sim-companion/sim-e2h-contact-report.json
+            /tmp/duck-sim-companion/sim-visual-a1.json
+            /tmp/duck-sim-companion/sim-visual-a1b.json
