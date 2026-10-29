@@ -93,7 +93,7 @@ La consultation différée devrait proposer un **export manuel local**, expurgé
 | 4b | **PER-1** | Coût d'engagement facultatif de 0,12 dans F2 ; repos et inertie descriptive PD2 déjà livrés, **aucune nouvelle humeur réelle ni arbitre** | [PR #176](https://github.com/Jean-Philippe56520/Microduck/pull/176), testé PC-fixtures uniquement ; seuil non validé robot |
 | 4c | **OBS-2** | Diagnostic direct optionnel + export différé, OEM read-only, événements incomplets signalés ; charge mesurée | prévu |
 | 5 | **EXP-1** | Provenance vraie action début/fin/effet, sinon `indeterminate` ; aucun crédit moteur non prouvé | prévu, bloqué sur capacité de preuve OEM/robot |
-| 6 | **E2E-1** | Scènes tenues à part et ablation avec/sans mémoire/PC, détermination faible/forte ; tests contradictoires | prévu PC-fixtures |
+| 6 | **E2E-1** | **Préflight E2E-1A #177** : F2/MEM-1/F5-A réellement composés sur 40 voies fictives, y compris mémoire × détermination × JSON PC local, 0 changement de décision dû au conseil | `test_logiciel_seul` pour E2E-1A ; **E2E-1 complet bloqué** faute de scènes réelles annotées indépendamment et vrai 9B mesuré ; ne pas prétendre généralisation |
 | parallèle | **Cat-A2b/C3-B** | Vision basse réaliste, contre-annotations indépendantes, confusion/`unknown`, scènes disjointes | priorité existante maintenue |
 | après robot | **PHY-1** | Audit robot en lecture seule puis gestes OEM graduels sous supervision, ressources/stop/capteurs frais mesurés | bloqué : robot absent |
 | dernier | **AUT-1** | Expériences physiques autonomes seulement pour classes d'actions réellement validées et sûres | bloqué : PHY-1 |

@@ -41,6 +41,22 @@ Combinaisons **2×2×2**, états indépendants mais entrées F1 de mêmes catég
 
 E2E-1 **complet** nécessite des scénarios vraiment distincts **avec observation indépendante** et mesures de bénéfice sur des décisions utiles, plus une véritable comparaison PC/9B QW-1 en opt-in et sans données privées. Ici la branche PC ne reçoit que JSON artificiel ; `qwen_requests_real=0`. Cat-A2b manque toujours annotations indépendantes à hauteur 20–30 cm ; mémoire d'instance invalide sur ABO ; causalité robot toujours indéterminée. Aucun protocole de fiction ne peut débloquer `PHY-1` ou `AUT-1`.
 
-## Résultats
+## Résultats mesurés — intégration de logiciels réelle, scènes entièrement fictives
 
-**Non mesurés à ce commit**, statut `prévu`. Aucun ajustement des critères après observation des nouveaux tests.
+**Exécution :** [CI Python #40906041166](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40906041166), commit `c1091aa74346d22d313e29fdc89cd9da3a98f29c` : **1 791 tests, 6 ignorés, 0 échec**, dont les **six** nouveaux tests d'intégration E2E-1A. Les tests appellent réellement `start_optional_pc_cycle`, `AutonomyBrain.propose_balanced_passive`, F2/DET-1/DET-2, la même connexion `ExperienceMemory` et les contrats MEM-1/EX1/F5-A. Contrairement à C3-A, il ne s'agit pas de sorties de prédictions librement déclarées. Les **observations entrantes restent entièrement synthétiques**.
+
+| Situation de fixture | Mémoire absente/présente × détermination 0/1 × réponse PC fictive off/on (8 lanes) | Observation contrôlée |
+| --- | --- | --- |
+| `cat` + `toy` observés simultanément | **2/8 `observe cat`** ; **6/8 `observe toy`** | Le changement de priorité n'existe qu'avec mémoire d'objectif actif et détermination forte ; retour PC n'influe jamais |
+| But `cat` déjà lié à un EX1 antérieur | **4/4 `idle` avec mémoire**, **4/4 `observe cat` sans mémoire** | Le refus de re-proposer une attention déjà tentée est conditionné par MEM-1/DET-2 ; EX1 n'atteste pas un échec physique |
+| Indice d'objet `unknown` partiel | **8/8 `inspect unknown`** | PC off : 4/4 `pc_unavailable` ; PC on : **4/4 JSON de conseil injectés localement**, statut `hypotheses_unverified` ; aucune identité promue |
+| Lecture périmée (source non fraîche) | **8/8 `idle`** | Aucune requête de PC même si le drapeau on est activé |
+| Énergie motivationnelle simulée basse | **8/8 `rest`** | Le repos F2 l'emporte sans supposer de batterie mesurée |
+
+**Total : 40 exécutions de voies F2/F5-A sur 5 jeux de labels scriptés × 8 configurations**, plus tests négatifs de JSON prétendant `person`, ajoutant `motor_commands`, falsifiant la source ou l'identifiant de requête, réponse hors délai, connexion `ExperienceMemory` étrangère, lecture sous provenance `sensor` incompatible mock et mauvais booléen. Tous sont refusés sans action ni souvenir. Au moins le test du cas `cat+toy` constate **un seul cycle F2 par lane**, même avec F5 activé.
+
+**Abstentions / effet indépendant :** aucune classification visuelle ni reconnaissance de chat, jouet ou personne n'a été exécutée ; il n'y a pas de capteur ni de mesure de pertinence dans une scène physique. Les objectifs et liens EX1 sont **pré-inscrits volontairement dans chaque lane de fixture** ; le contrôle `total_changes` constate **zéro nouvelle écriture pendant la consultation/décision**. Le retour PC déclaré « on » est **un JSON fabriqué dans le test**, non Ollama/Qwen. Il ne doit jamais être interprété comme une consultation sémantique réussie.
+
+**Décision : `test_logiciel_seul` pour l'intégration des contrats ; `E2E-1 complet = bloque_source_externe`.** L'écart minimal F5-A/DET-2 est corrigé sans nouvelle boucle ni modification par défaut des anciens appels F5-A. **Aucun gain d'autonomie interscènes ni avantage du vrai Qwen3.5 9B n'est mesuré.** Le prochain essai utile sur le vrai E2E nécessite un nouveau corpus de scènes à faible hauteur **indépendamment annotées et autorisées** et un vrai 9B sur le PC, comparés en aveugle et enregistrés dès les premiers essais. Sans ces éléments, **STOP** : ne pas ajouter d'autres scénarios fictifs comme preuves d'une généralisation.
+
+**Risques résiduels et retour arrière :** MEM-2B ne reconnaît pas les instances sur les photos ABO (#174 : 0/48), Cat-A2b sans vérité terrain externe et DET-2 ne garantit pas le quota de reprises après redémarrage (#176). Laisser le moteur OEM intact et les options DET-2/PER-1 désactivées par défaut ; si F5-A cause une régression, supprimer les 3 paramètres facultatifs (anciens appels restent inchangés). Aucun nouveau schéma/modèle/services, aucun média privé ni consommation RK3566/thermique/50 Hz mesurée.
