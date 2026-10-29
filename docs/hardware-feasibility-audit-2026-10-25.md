@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**QW-QUAL-1A — périmètre ressources PC uniquement (29/10/2026, tests fixtures prévus) :** [protocole](qw-qual1a-synthetic-semantic-human-review-2026-10-29.md) pour quatre dessins PNG 320×240 en mémoire convertis par le prétraitement Qwen v2 existant. Un seul appel optionnel `qwen3.5:9b` par lancement, timeout <=120 s, serveur Ollama local **déjà actif** : pas de nouvel Ollama, installation, GPU config, lecture de photo privée, SQLite ou commande moteur ; aperçu PNG synthétique sauvegardé seulement si l'opérateur demande explicitement un export hors ligne, sans écrasement. RSS, charge CPU/GPU, température, watts, conformité de la caméra basse réelle et ressources RK3566 restent **inconnus**. Les données de QW-PERF-1I ne permettent ni prédiction de latence de ces scènes ni autonomie moteur.
+
+
 **QW-PERF-1I — relevé Windows réel des cinq consultations synthétiques (29/10/2026) :** [rapport QW-PERF-1I](qw-perf1i-real-pc-role-cpu-gpu-2026-10-29.md). Ollama a déclaré `max_reported_vram_bytes=5 614 726 020` (port iGPU temporaire 11435) contre 0 (CPU 11434), avec **113/172** échantillons de modèle et **0 erreur** de sonde. Sommes des cinq latences **50,422/74,937 s**, non-randomisées ; le matériel rapporte des tailles de modèle différentes **5 614 726 020 / 6 187 856 689 octets** malgré le même tag, sans vérification indépendante des poids. **GPU intégré à RAM partagée : ni VRAM indépendante, ni utilisation GPU%, RSS, chauffe, énergie ou stabilité sous charge mesurés**. Sans rapport direct avec l'allocation RAM/CPU/50 Hz du RK3566 ; aucune validation robot ou Yocto.
 
 

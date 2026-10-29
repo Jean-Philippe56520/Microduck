@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-QUAL-1A — nouvelle porte de qualité du conseiller 9B (29/10/2026, PC-fixtures candidats) :** [quatre scènes synthétiques, réponses v2 non fiables, revue humaine](qw-qual1a-synthetic-semantic-human-review-2026-10-29.md) : relation/usage, hypothèse et conséquence vérifiable, incertitude, refus de contact vivant et représentation TV, sécurité d'une zone ambiguë. Le banc reste **manuel, une seule requête PC explicitement autorisée**, et ne note pas automatiquement la qualité ; le garde lexical réutilisé bloque tout usage machine, sans certifier la sûreté du texte. Qualifications réelles, images OEM, motorisation, apprentissage causal et robot **non validés**. Après revue indépendante, décider QW-1/QW-2 ou corriger le contrat sans surajuster un exemple isolé.
+
+
 **QW-PERF-1I — banc du vrai 9B exécuté sur PC par l'opérateur (29/10/2026) :** [tableau et limites](qw-perf1i-real-pc-role-cpu-gpu-2026-10-29.md). Sur cinq profils synthétiques QW-PERF-1H et un seul passage par configuration, temps muraux totalisés **50,422 s (11435 iGPU déclaré, `size_vram=5 614 726 020`)** contre **74,937 s (11434 CPU déclaré, `size_vram=0`)**, baisse descriptive **32,714 %**. Deux JSON corrects par port sur forme/couleur artificielle, mais rôles v2 seulement `unverified`; identité binaire du modèle, activité GPU, charge RSS/chaleur, répétabilité et qualité de stratégies de Kwipi **non validées**. Prochain jalon = qualité de conseil/hypothèses et prudence mesurées indépendamment, pas nouveau pilote, second LLM ou test moteur.
 
 

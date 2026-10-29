@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**QW-QUAL-1A — choix réutiliser/adapt/créer vérifié (29/10/2026) :** [protocole](qw-qual1a-synthetic-semantic-human-review-2026-10-29.md). **RÉUTILISER** `qwen9b_production_role_v2.py`, `qwen9b_role_preview.evaluate_local_image`, `qwen9b_action_guard.screen_preview_text`, prétraitement F5 et Ollama loopback ; **CRÉER SEULEMENT** quatre dessins originaux en mémoire et un lanceur CLI d'un appel manuel pour revue humaine. **NE PAS IMPORTER** cerveau tiers, QuackNav, Quacksat, Twin, nouveau modèle, moteur, module de sûreté prétendu ni seconde base. L'analyse lexicale est un simple drapeau de contre-lecture ; le texte ne devient ni décision ni action. Tests CI fictifs, qualité du vrai 9B encore inconnue.
+
+
 **QW-PERF-1I — preuve de réemploi plutôt que duplication (29/10/2026) :** [compte rendu des mesures PC réelles](qw-perf1i-real-pc-role-cpu-gpu-2026-10-29.md). **RÉUTILISÉ** : banc QW-PERF-1H (#158), observateur Ollama #156 et API `/api/ps`, cinq prompts synthétiques, mêmes clients/validateurs JSON ; **ADAPTÉ** : documentation et interprétation d'une seule paire de séries CPU/iGPU déclarées (50,422 s vs 74,937 s, −32,714 % descriptif). **CRÉÉ** : uniquement un rapport de preuves, zéro nouveau modèle, pilote, mémoire, capteur, service M9/QuackNav, contrôleur OEM ou sous-module. **Inconnus** : calcul GPU matériel, répétabilité du gain, sémantique v2, conditions thermiques/RSS.
 
 
