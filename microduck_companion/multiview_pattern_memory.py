@@ -345,6 +345,80 @@ class MultiviewPatternMemory:
                 raise ValueError("M1-B capacity cannot fit a single feature")
             self._drop_exemplar(victim["id"], preserve_group=protected_group)
 
+
+    def probe_image(self, gray8: bytes, *, now_wall_epoch_s: float,
+                    category: str = "unknown") -> MultiviewEncounter:
+        """MEM-2B: bounded READ-ONLY candidate, never an object identity.
+
+        The only source is an already populated M1-B synthetic fixture store.
+        Unmatched, ambiguous, conflicting, expired or over-budget observations
+        provide no identity/novelty proof. This does not call observe_image(),
+        prune(), Qwen, OEM or any SQLite writer.
+        """
+        if type(category) is not str or category not in OBJECT_CATEGORIES:
+            raise ValueError("unsupported candidate category")
+        if category == "person":
+            raise ValueError("person appearance probing forbidden")
+        now = _time(now_wall_epoch_s)
+        signature = image_fingerprint(gray8)
+        rows = self.memory.conn.execute("""
+            SELECT s.id AS exemplar_id,s.group_id,s.fingerprint,
+                   g.category AS group_category,g.sightings AS group_sightings
+            FROM m1b_signatures s
+            JOIN m1b_groups g ON g.id=s.group_id
+            WHERE s.modality='image' AND g.modality='image'
+              AND s.feature_version=1 AND g.source='synthetic_fixture_claim'
+              AND s.last_seen_epoch_s BETWEEN ? AND ?
+              AND g.last_seen_epoch_s BETWEEN ? AND ?
+            ORDER BY s.id
+            LIMIT ?
+        """, (max(0., now-self.limits.retention_s), now,
+              max(0., now-self.limits.retention_s), now,
+              self.limits.max_comparisons+1)).fetchall()
+
+        def result(status: str, row=None, similarity=None):
+            group_id = None if row is None else row["group_id"]
+            return MultiviewEncounter(
+                status=status, modality="image",
+                category=category if row is None else row["group_category"],
+                group_id=group_id,
+                group_sightings=0 if row is None else row["group_sightings"],
+                exemplar_count=0 if group_id is None else sum(
+                    r["group_id"] == group_id for r in rows),
+                similarity=similarity,
+                comparisons=min(len(rows), self.limits.max_comparisons),
+                pc_review_suggested=False,
+            )
+
+        if len(rows) > self.limits.max_comparisons:
+            return result("search_budget_exhausted")
+        for row in rows:
+            if (type(row["fingerprint"]) is not bytes
+                    or len(row["fingerprint"]) != len(signature)
+                    or row["group_category"] not in OBJECT_CATEGORIES
+                    or row["group_category"] == "person"):
+                raise ValueError("invalid persisted M1-B fixture evidence")
+        scores = sorted(
+            ((1. - sum(abs(a-b) for a,b in zip(signature,row["fingerprint"]))
+              / (255. * len(signature)), row) for row in rows),
+            key=lambda pair: (-pair[0],pair[1]["exemplar_id"]),
+        )
+        if not scores or scores[0][0] < MATCH_IMAGE:
+            return result("no_candidate_unverified")
+        score, best = scores[0]
+        competing = any(
+            value >= MATCH_IMAGE
+            and score-value < AMBIGUITY_GAP
+            and row["group_id"] != best["group_id"]
+            for value,row in scores[1:]
+        )
+        mismatch = (category != "unknown"
+                    and best["group_category"] not in ("unknown",category))
+        if competing or mismatch:
+            return result("ambiguous_unverified", similarity=score)
+        return result("candidate_prior_group_unverified",
+                      row=best, similarity=score)
+
     def observe_image(
         self, gray8: bytes, *, now_wall_epoch_s: float,
         category: str = "unknown", group_hint: int | None = None,

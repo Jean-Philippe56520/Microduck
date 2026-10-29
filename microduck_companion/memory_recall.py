@@ -20,6 +20,7 @@ from .passive_observations import OBJECT_CATEGORIES
 
 if TYPE_CHECKING:
     from .mock_goal_memory import MockGoalMemory
+    from .multiview_pattern_memory import MultiviewPatternMemory, MultiviewEncounter
 
 _OBJECT_KEY = re.compile(r"o-[0-9a-f]{16}\Z")
 MAX_RECALLED_GOALS = 8
@@ -61,6 +62,7 @@ class MemoryRecall:
     object_counter: LegacyObjectCounter | None
     category_goals: tuple[MockGoalReminder, ...]
     goals_truncated: bool
+    multiview_hint: MultiviewEncounter | None = None
     unverified_context_only: bool = True
     same_physical_object_verified: bool = False
     independent_encounters_verified: int = 0
@@ -74,6 +76,7 @@ def recall_memory(
     memory: ExperienceMemory, semantics: CategorySemantics, *,
     category: str, now_wall_epoch_s: float,
     object_key: str | None = None, goals: MockGoalMemory | None = None,
+    multiview: MultiviewPatternMemory | None = None, gray8: bytes | None = None,
 ) -> MemoryRecall:
     """Return existing evidence, with corrections applied by C1/C2.
 
@@ -94,6 +97,20 @@ def recall_memory(
         type(object_key) is not str or _OBJECT_KEY.fullmatch(object_key) is None
     ):
         raise ValueError("only an opaque fixture object key is accepted")
+    if (multiview is None) != (gray8 is None):
+        raise ValueError("paired M1-B store and fixture image required")
+    hint = None
+    if multiview is not None:
+        from .multiview_pattern_memory import MultiviewPatternMemory
+        if (not isinstance(multiview, MultiviewPatternMemory)
+                or multiview.memory is not memory):
+            raise ValueError("M1-B must share the single ExperienceMemory")
+        # Category vocabularies differ; do not promote an 'object' pattern
+        # into a ball/ chair category or fingerprint people.
+        if category not in ("unknown", "cat", "dog"):
+            raise ValueError("no proven common image category for MEM-2B")
+        hint = multiview.probe_image(
+            gray8, category=category, now_wall_epoch_s=now)
     if goals is not None:
         # The optional mock goal module is intentionally not imported unless
         # needed; host production closures must not acquire mock components.
@@ -156,5 +173,5 @@ def recall_memory(
     return MemoryRecall(
         category=category, category_history=history,
         object_counter=counter, category_goals=tuple(reminders),
-        goals_truncated=truncated,
+        goals_truncated=truncated, multiview_hint=hint,
     )
