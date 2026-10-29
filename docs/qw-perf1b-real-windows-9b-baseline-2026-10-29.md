@@ -1,5 +1,8 @@
 # QW-PERF-1B — Premier relevé réel opérateur, PC Windows/Ollama (29/10/2026)
 
+**Addendum QW-PERF-1G — comparaison CPU/témoin sur couleurs identiques (29/10/2026, mesures opérateur) :** [rapport détaillé](qw-perf1g-pc-gpu-cpu-color-comparison-2026-10-29.md). La sonde de [PR #156 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/156) a relevé `gpu_memory_reported` / 5 614 726 020 octets sur le temporaire 11435 et `cpu_memory_reported` / 0 sur 11434. Rouge/bleu : 8,343/8,891 s (candidat GPU) et 10,735/11,343 s (CPU). Moyennes 8,617/11,039 s, différence descriptive −21,94 % seulement (une paire par couleur, ordre fixe). Les deux codes de sortie sont 0 ; **gpu_compute_independently_verified=false** et **gpu_speedup_measured=false** demeurent exacts. Aucun résultat matériel GPU indépendant ni usage du conseiller sur scènes réelles.
+
+
 **Addendum QW-PERF-1F (29/10/2026, code PC candidat, non testé sur PC réel dans ce lot) :** [sonde automatique de placement mémoire Ollama](qw-perf1f-ollama-placement-sampling-2026-10-29.md) à exécuter seulement avec `-VisionCheck -ReportPlacement` sur le lanceur existant. Le fichier `server.log` possédait **20 lignes du 29/10**, aucune trace de sélection GPU, et l'ancien `ollama ps` port `11435` a échoué après arrêt du serveur temporaire. Cette absence de preuve **n'est pas** une preuve CPU. Le nouveau rapport local `ollama_placement` permettra de distinguer absence de modèle, CPU déclaré et mémoire GPU déclarée pendant l'inférence ; aucune mesure de calcul GPU ou de gain avant benchmark apparié.
 
 
