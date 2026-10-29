@@ -1,5 +1,7 @@
 # QW-QUAL-2A — Porte de contre-annotation humaine indépendante (préparation uniquement)
 
+**Addendum de mise en œuvre QW-QUAL-2A-P1 (29/10/2026 ; relecture réelle toujours EN ATTENTE) :** [procédure de paquet local](qw-qual2a-private-packet-preparation-2026-10-29.md) réutilise le générateur des quatre scènes et exige les **textes intégraux exacts** des JSON opérateur (`model_text_saved_by_probe=false` dans les sorties historiques). Un dossier `REVIEWER_SHARE_ONLY` peut être créé **sur demande explicite** et livré sans la table de correspondance `COORDINATOR_PRIVATE`. Refuser une source manquante, un artefact reconstitué ou un relecteur ayant vu les conclusions. Ce code **ne remplace pas** les quatre grilles d'un véritable tiers. Aucune requête Qwen, aucune note de qualité ou validation robot.
+
 **29 octobre 2026 — PROTOCOLE PRÉPARÉ, AUCUNE ANNOTATION INDÉPENDANTE REÇUE.**
 **Autorité :** [plan-action.md](plan-action.md). **Base de préparation :** `main@bfe6a308da812b2da37a0734b46c24bbf6c11476`, après [PR #168](https://github.com/Jean-Philippe56520/Microduck/pull/168) fusionnée.
 **Grille vierge réservée au relecteur :** [QW-QUAL-2A — fiche aveugle](qw-qual2a-independent-review-worksheet-2026-10-29.md).
