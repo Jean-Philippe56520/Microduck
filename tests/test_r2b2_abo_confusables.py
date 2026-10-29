@@ -14,13 +14,14 @@ import unittest
 from unittest.mock import patch
 
 from microduck_companion.r2b_independent_capture_eval import (
-    ABO_POSES, R2BEvidenceError,
+    ABO_POSES, ABO_REFS, ABO_QUERIES, R2BEvidenceError,
     _abo_spin_sample,
 )
 from microduck_companion.r2b2_abo_confusables import (
     CATEGORY, LISTING_BASE, SOURCE_COUNT, SHARDS, TEST_KNOWN, TEST_UNKNOWN,
     VAL_KNOWN, VAL_UNKNOWN, _parse_listings, _read_metadata,
     _splits, evaluate_vectors, _anonymized_confusions,
+    evaluate_mem2b_candidates, _mem2b_policy_candidate,
 )
 
 
@@ -151,6 +152,111 @@ class R2B2ConfusableProtocolTests(unittest.TestCase):
         self.assertEqual(1, report["wrong_pair_total"])
         self.assertEqual(1, len(report["pair_errors_anonymous"]))
         self.assertNotIn("B000000", json.dumps(report))
+
+
+    def test_mem2b_fixed_policy_known_unknown_screen_on_synthetic_vectors(self):
+        selected = fake_roster()
+        mapping = {s: f"B{i:09d}" for i, (s, _) in enumerate(selected)}
+        groups = _splits(selected, mapping)
+        vectors = fake_vectors(selected)
+        result = evaluate_mem2b_candidates(vectors, groups)
+        measured = result["test"]
+        self.assertEqual(0.94, result["fixed_probe_similarity_min"])
+        self.assertEqual(0.025, result["fixed_probe_ambiguity_gap"])
+        self.assertEqual(48, measured["known_views"])
+        self.assertEqual(48, measured["correct_candidates"])
+        self.assertEqual(0, measured["wrong_known_candidates"])
+        self.assertEqual(0, measured["known_abstentions"])
+        self.assertEqual(24, measured["unknown_views"])
+        self.assertEqual(24, measured["unknown_rejected"])
+        self.assertEqual(0, measured["false_candidates_for_unknown"])
+        self.assertTrue(result["screening_gate_predeclared_24_of_48_zero_errors"])
+        self.assertFalse(result["hardware_validated"])
+        self.assertTrue(result["actual_sqlite_probe_not_run_on_real_media"])
+
+    def test_mem2b_same_category_impostor_counted_not_verified(self):
+        selected = fake_roster()
+        mapping = {s: f"B{i:09d}" for i, (s, _) in enumerate(selected)}
+        groups = _splits(selected, mapping)
+        vectors = fake_vectors(selected)
+        unknown = groups["test_unknown"][0]
+        known = groups["test_known"][0]
+        # An independent catalogue fixture impersonates the enrolled source.
+        vectors[(unknown, ABO_QUERIES[0])] = {
+            "legacy": vectors[(known, ABO_REFS[0])]["legacy"]
+        }
+        output = evaluate_mem2b_candidates(vectors, groups)
+        self.assertEqual(1, output["test"]["false_candidates_for_unknown"])
+        self.assertEqual(23, output["test"]["unknown_rejected"])
+        self.assertFalse(output["screening_gate_predeclared_24_of_48_zero_errors"])
+        self.assertNotIn("B0000000", json.dumps(output))
+
+    def test_mem2b_exact_tie_between_groups_abstains(self):
+        selected = fake_roster()
+        mapping = {s: f"B{i:09d}" for i, (s, _) in enumerate(selected)}
+        groups = _splits(selected, mapping)
+        vectors = fake_vectors(selected)
+        a, b = groups["test_known"][:2]
+        # Two declared DIFFERENT products can have identical descriptors.
+        for angle in ABO_REFS:
+            vectors[(b, angle)] = {"legacy": vectors[(a, angle)]["legacy"]}
+        stats = evaluate_mem2b_candidates(vectors, groups)["test"]
+        self.assertGreaterEqual(stats["ambiguous_abstentions_included_in_rejections"], 4)
+        self.assertEqual(0, stats["wrong_known_candidates"])
+
+    def test_mem2b_parity_with_real_probe_on_artificial_fixtures(self):
+        from microduck_companion.episodic_memory import ExperienceMemory
+        from microduck_companion.multiview_pattern_memory import MultiviewPatternMemory
+        from microduck_companion.compact_multimodal_memory import image_fingerprint
+        def square(y=3, x=4):
+            data = [30]*1024
+            for row in range(y, y+12):
+                for col in range(x, x+12):
+                    data[row*32+col] = 195
+            return bytes(data)
+        a, b, unseen = square(), square(16, 16), bytes(
+            [25 if (i//128) % 2 == 0 else 225 for i in range(1024)])
+        db = ExperienceMemory(":memory:")
+        try:
+            store = MultiviewPatternMemory(db)
+            one = store.observe_image(a, now_wall_epoch_s=1780000000.,
+                                      category="object")
+            store.observe_image(b, now_wall_epoch_s=1780000001.,
+                                category="object", group_hint=one.group_id,
+                                synthetic_same_source_claim=True)
+            references = {"declared_a": (
+                {"legacy": image_fingerprint(a)},
+                {"legacy": image_fingerprint(b)},
+            )}
+            for observation in (a, b, unseen):
+                predicted, status = _mem2b_policy_candidate(
+                    references, {"legacy": image_fingerprint(observation)})
+                actual = store.probe_image(
+                    observation, now_wall_epoch_s=1780000002.,
+                    category="unknown")
+                self.assertEqual(status, actual.status)
+                self.assertEqual(predicted is not None,
+                                 actual.group_id is not None)
+                self.assertFalse(actual.same_physical_source_verified)
+        finally:
+            db.close()
+
+    def test_mem2b_refuses_wrong_provenance_and_partial_descriptors(self):
+        selected = fake_roster()
+        mapping = {s: f"B{i:09d}" for i, (s, _) in enumerate(selected)}
+        groups = _splits(selected, mapping)
+        vectors = fake_vectors(selected)
+        with self.assertRaises(R2BEvidenceError):
+            _mem2b_policy_candidate({"a": ({"legacy": b"x"*63},)},
+                                    {"legacy": b"x"*64})
+        with self.assertRaises(R2BEvidenceError):
+            _mem2b_policy_candidate({"a": ({"legacy": b"x"*64},)},
+                                    {"legacy": b"x"*63})
+        with self.assertRaises(R2BEvidenceError):
+            evaluate_mem2b_candidates({**vectors, ("other", 9): {}}, groups)
+        groups = {**groups, "test_unknown": groups["test_known"]}
+        with self.assertRaises(R2BEvidenceError):
+            evaluate_mem2b_candidates(vectors, groups)
 
     def test_metadata_limits_and_redirects_fail_closed(self):
         good = fake_metadata()

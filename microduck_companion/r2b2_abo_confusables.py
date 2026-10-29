@@ -31,9 +31,9 @@ from .r2b_independent_capture_eval import (
     _abo_spin_sample, _abo_https_bytes,
     _metrics, _negative_scores, _predict,
 )
-from .compact_multimodal_memory import image_fingerprint
+from .compact_multimodal_memory import image_fingerprint, MATCH_IMAGE, AMBIGUITY_GAP
 from .m1b2_host_embeddings import (
-    _image_baseline, _image_learned, _latency, conservative_threshold,
+    _image_baseline, _image_learned, _latency, conservative_threshold, _score,
 )
 from .visual_photo_mobilenet_demo import check_model_file
 
@@ -211,6 +211,121 @@ def evaluate_vectors(vectors: dict, groups: dict, *,
     return result
 
 
+
+def _mem2b_policy_candidate(refs: dict, query: dict) -> tuple[str | None, str]:
+    """Mirror the fixed M1-B probe decision over PUBLIC descriptor vectors.
+
+    Real ABO media may NOT enter the synthetic-only M1-B SQLite. This pure
+    evaluator uses existing M1-B score/threshold/gap with catalogue-declared
+    reference groups; an optimistic *candidate*, never verified identity.
+    No threshold tuning, database, feature learning, media persistence or OEM.
+    """
+    feature = query.get("legacy") if type(query) is dict else None
+    if type(feature) is not bytes or len(feature) != 64:
+        raise R2BEvidenceError("MEM-2B requires exactly one 64-byte descriptor")
+    scored = []
+    for group, exemplars in refs.items():
+        if not exemplars:
+            raise R2BEvidenceError("MEM-2B group lacks references")
+        scores = []
+        for reference in exemplars:
+            ref = reference.get("legacy") if type(reference) is dict else None
+            if type(ref) is not bytes or len(ref) != 64:
+                raise R2BEvidenceError("MEM-2B reference descriptor malformed")
+            scores.append(_score(feature, ref, "legacy"))
+        scored.append((max(scores), group))
+    scored.sort(key=lambda item: (-item[0], item[1]))
+    if not scored or scored[0][0] < MATCH_IMAGE:
+        return None, "no_candidate_unverified"
+    best, source = scored[0]
+    if any(score >= MATCH_IMAGE and best - score < AMBIGUITY_GAP
+           for score, _ in scored[1:]):
+        return None, "ambiguous_unverified"
+    return source, "candidate_prior_group_unverified"
+
+
+def evaluate_mem2b_candidates(vectors: dict, groups: dict) -> dict:
+    """Frozen MEM-2B candidate gate on held-out catalogue spin cohorts.
+
+    Reuses the real-image descriptors ALREADY acquired by R2-B+2. Sources
+    are different catalogue listings; the six frames of one spin remain
+    correlated and are not independent photographic sessions.
+    """
+    expected_groups = ("validation_known", "validation_unknown",
+                       "test_known", "test_unknown")
+    if type(groups) is not dict or set(groups) != set(expected_groups):
+        raise R2BEvidenceError("predeclared source cohorts required")
+    if any(type(groups[g]) is not tuple for g in expected_groups):
+        raise R2BEvidenceError("invalid cohort declaration")
+    if (len(groups["validation_known"]) != VAL_KNOWN or
+            len(groups["validation_unknown"]) != VAL_UNKNOWN or
+            len(groups["test_known"]) != TEST_KNOWN or
+            len(groups["test_unknown"]) != TEST_UNKNOWN):
+        raise R2BEvidenceError("wrong frozen source counts")
+    sources = [s for name in expected_groups for s in groups[name]]
+    if len(sources) != SOURCE_COUNT or len(set(sources)) != SOURCE_COUNT:
+        raise R2BEvidenceError("source leakage across splits")
+    if type(vectors) is not dict or set(vectors) != {
+            (s, pose) for s in sources for pose in ABO_POSES}:
+        raise R2BEvidenceError("incomplete or extra multiview images")
+
+    def study(known: tuple, unknown: tuple) -> dict:
+        refs, queries = _cohort(vectors, known, unknown)
+        right = wrong = rejected_known = ambiguous = false_known = 0
+        unknown_rejected = 0
+        angles = {str(a): {"correct": 0, "total": 0} for a in ABO_QUERIES}
+        for actual, pose, record in queries:
+            guess, status = _mem2b_policy_candidate(refs, record)
+            if status == "ambiguous_unverified":
+                ambiguous += 1
+            if actual in refs:
+                angles[str(pose)]["total"] += 1
+                if guess == actual:
+                    right += 1
+                    angles[str(pose)]["correct"] += 1
+                elif guess is None:
+                    rejected_known += 1
+                else:
+                    wrong += 1
+            elif guess is None:
+                unknown_rejected += 1
+            else:
+                false_known += 1
+        return {
+            "known_views": len(known) * len(ABO_QUERIES),
+            "correct_candidates": right, "wrong_known_candidates": wrong,
+            "known_abstentions": rejected_known,
+            "unknown_views": len(unknown) * len(ABO_QUERIES),
+            "unknown_rejected": unknown_rejected,
+            "false_candidates_for_unknown": false_known,
+            "ambiguous_abstentions_included_in_rejections": ambiguous,
+            "correct_by_pose_index": angles,
+            "memory_off_candidate_count": 0,
+        }
+
+    test = study(groups["test_known"], groups["test_unknown"])
+    return {
+        "method": "M1B_fixed_probe_similarity_and_ambiguity_public_vectors",
+        "fixed_probe_similarity_min": MATCH_IMAGE,
+        "fixed_probe_ambiguity_gap": AMBIGUITY_GAP,
+        "provenance": "ABO_CC_BY4_correlation_within_turntable_sessions",
+        "catalogue_declared_reference_groups_not_physical_identity": True,
+        "actual_sqlite_probe_not_run_on_real_media": True,
+        "matching_policy_compared_to_sqlite_probe_on_synthetic_tests": True,
+        "candidate_is_not_safe_action_or_recognition": True,
+        "threshold_tuned_on_test": False,
+        "validation": study(groups["validation_known"],
+                            groups["validation_unknown"]),
+        "test": test,
+        "screening_gate_predeclared_24_of_48_zero_errors": (
+            test["correct_candidates"] >= 24
+            and test["wrong_known_candidates"] == 0
+            and test["false_candidates_for_unknown"] == 0),
+        "hardware_validated": False,
+        "motor_commands": 0, "pc_requests": 0,
+    }
+
+
 def run(*, model_file: Path | None = None, opener=None) -> dict:
     """One-shot host comparison on same-class product listings, no retries by score."""
     from PIL import Image
@@ -300,6 +415,7 @@ def run(*, model_file: Path | None = None, opener=None) -> dict:
         "motor_commands": 0, "pc_requests": 0,
         "hardware_validated": False,
         "candidates": candidates,
+        "mem2b_candidate_study": evaluate_mem2b_candidates(images, groups),
     }
 
 
