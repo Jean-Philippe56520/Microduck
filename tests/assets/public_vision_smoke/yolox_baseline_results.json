@@ -1,0 +1,359 @@
+{
+  "status": "host_qualitative_smoke_completed",
+  "model": "Megvii YOLOX-Nano COCO (existing baseline)",
+  "model_sha256": "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d",
+  "fixed_confidence_threshold": 0.25,
+  "source_image_count": 13,
+  "source_manifest": "tests/assets/public_vision_smoke/manifest.json",
+  "image_level_labels_only_no_independent_boxes": true,
+  "classification_accuracy_or_map_claimed": false,
+  "real_robot_or_npu_validated": false,
+  "motor_commands": 0,
+  "sqlite_writes": 0,
+  "qwen_calls": 0,
+  "cpu_onnx_inference_ms_median": 23.632,
+  "counts_by_image_label": {
+    "cat": {
+      "total": 4,
+      "expected_category_proposed": 3
+    },
+    "dog": {
+      "total": 2,
+      "expected_category_proposed": 2
+    },
+    "sports_ball": {
+      "total": 3,
+      "expected_category_proposed": 0
+    },
+    "chair": {
+      "total": 1,
+      "expected_category_proposed": 1
+    },
+    "person": {
+      "total": 1,
+      "expected_category_proposed": 1
+    },
+    "unknown": {
+      "total": 2,
+      "expected_category_proposed": 2
+    }
+  },
+  "images": [
+    {
+      "file": "cat_01.jpg",
+      "expected_image_label": "cat",
+      "proposed_categories": [
+        "cat"
+      ],
+      "expected_category_proposed": true,
+      "total_boxes": 1,
+      "png_to_jpeg_in_memory": false,
+      "oversize_jpeg_resized_in_memory": true,
+      "inference_image_dimensions": [
+        2048,
+        1360
+      ],
+      "top_boxes": [
+        {
+          "category": "cat",
+          "confidence": 0.7499,
+          "xyxy": [
+            135.6,
+            34.2,
+            1537,
+            1288.9
+          ]
+        }
+      ]
+    },
+    {
+      "file": "cat_02.jpg",
+      "expected_image_label": "cat",
+      "proposed_categories": [],
+      "expected_category_proposed": false,
+      "total_boxes": 0,
+      "png_to_jpeg_in_memory": false,
+      "oversize_jpeg_resized_in_memory": false,
+      "inference_image_dimensions": [
+        3888,
+        2592
+      ],
+      "top_boxes": []
+    },
+    {
+      "file": "cat_03.jpg",
+      "expected_image_label": "cat",
+      "proposed_categories": [
+        "cat"
+      ],
+      "expected_category_proposed": true,
+      "total_boxes": 1,
+      "png_to_jpeg_in_memory": false,
+      "oversize_jpeg_resized_in_memory": false,
+      "inference_image_dimensions": [
+        2557,
+        1704
+      ],
+      "top_boxes": [
+        {
+          "category": "cat",
+          "confidence": 0.6877,
+          "xyxy": [
+            43.7,
+            153,
+            2117.3,
+            1656.1
+          ]
+        }
+      ]
+    },
+    {
+      "file": "cat_04.jpg",
+      "expected_image_label": "cat",
+      "proposed_categories": [
+        "cat"
+      ],
+      "expected_category_proposed": true,
+      "total_boxes": 1,
+      "png_to_jpeg_in_memory": false,
+      "oversize_jpeg_resized_in_memory": true,
+      "inference_image_dimensions": [
+        1365,
+        2048
+      ],
+      "top_boxes": [
+        {
+          "category": "cat",
+          "confidence": 0.7874,
+          "xyxy": [
+            68.9,
+            264.7,
+            1365,
+            1898.3
+          ]
+        }
+      ]
+    },
+    {
+      "file": "dog_01.jpg",
+      "expected_image_label": "dog",
+      "proposed_categories": [
+        "dog"
+      ],
+      "expected_category_proposed": true,
+      "total_boxes": 1,
+      "png_to_jpeg_in_memory": false,
+      "oversize_jpeg_resized_in_memory": false,
+      "inference_image_dimensions": [
+        500,
+        333
+      ],
+      "top_boxes": [
+        {
+          "category": "dog",
+          "confidence": 0.6325,
+          "xyxy": [
+            135.7,
+            96.3,
+            498.1,
+            333
+          ]
+        }
+      ]
+    },
+    {
+      "file": "dog_02.jpg",
+      "expected_image_label": "dog",
+      "proposed_categories": [
+        "dog"
+      ],
+      "expected_category_proposed": true,
+      "total_boxes": 1,
+      "png_to_jpeg_in_memory": false,
+      "oversize_jpeg_resized_in_memory": false,
+      "inference_image_dimensions": [
+        300,
+        225
+      ],
+      "top_boxes": [
+        {
+          "category": "dog",
+          "confidence": 0.8977,
+          "xyxy": [
+            0,
+            17.8,
+            265.4,
+            222.9
+          ]
+        }
+      ]
+    },
+    {
+      "file": "ball_01.jpg",
+      "expected_image_label": "sports_ball",
+      "proposed_categories": [],
+      "expected_category_proposed": false,
+      "total_boxes": 0,
+      "png_to_jpeg_in_memory": false,
+      "oversize_jpeg_resized_in_memory": false,
+      "inference_image_dimensions": [
+        720,
+        1280
+      ],
+      "top_boxes": []
+    },
+    {
+      "file": "ball_02.png",
+      "expected_image_label": "sports_ball",
+      "proposed_categories": [],
+      "expected_category_proposed": false,
+      "total_boxes": 0,
+      "png_to_jpeg_in_memory": true,
+      "oversize_jpeg_resized_in_memory": false,
+      "inference_image_dimensions": [
+        200,
+        204
+      ],
+      "top_boxes": []
+    },
+    {
+      "file": "ball_03.png",
+      "expected_image_label": "sports_ball",
+      "proposed_categories": [],
+      "expected_category_proposed": false,
+      "total_boxes": 0,
+      "png_to_jpeg_in_memory": true,
+      "oversize_jpeg_resized_in_memory": false,
+      "inference_image_dimensions": [
+        200,
+        203
+      ],
+      "top_boxes": []
+    },
+    {
+      "file": "chair_01.png",
+      "expected_image_label": "chair",
+      "proposed_categories": [
+        "chair"
+      ],
+      "expected_category_proposed": true,
+      "total_boxes": 2,
+      "png_to_jpeg_in_memory": true,
+      "oversize_jpeg_resized_in_memory": false,
+      "inference_image_dimensions": [
+        512,
+        512
+      ],
+      "top_boxes": [
+        {
+          "category": "chair",
+          "confidence": 0.8488,
+          "xyxy": [
+            128.6,
+            35.2,
+            383.7,
+            487.8
+          ]
+        },
+        {
+          "category": "chair",
+          "confidence": 0.2811,
+          "xyxy": [
+            137.6,
+            228.6,
+            377.1,
+            466.3
+          ]
+        }
+      ]
+    },
+    {
+      "file": "person_01.jpg",
+      "expected_image_label": "person",
+      "proposed_categories": [
+        "person"
+      ],
+      "expected_category_proposed": true,
+      "total_boxes": 4,
+      "png_to_jpeg_in_memory": false,
+      "oversize_jpeg_resized_in_memory": false,
+      "inference_image_dimensions": [
+        800,
+        545
+      ],
+      "top_boxes": [
+        {
+          "category": "person",
+          "confidence": 0.9018,
+          "xyxy": [
+            131.5,
+            0,
+            800,
+            518.6
+          ]
+        },
+        {
+          "category": "person",
+          "confidence": 0.304,
+          "xyxy": [
+            198,
+            409.5,
+            224,
+            468.8
+          ]
+        },
+        {
+          "category": "person",
+          "confidence": 0.2887,
+          "xyxy": [
+            160.1,
+            422,
+            184.2,
+            476.5
+          ]
+        },
+        {
+          "category": "person",
+          "confidence": 0.2801,
+          "xyxy": [
+            235,
+            406.5,
+            262,
+            485.1
+          ]
+        }
+      ]
+    },
+    {
+      "file": "unknown_01.jpg",
+      "expected_image_label": "unknown",
+      "proposed_categories": [],
+      "expected_category_proposed": true,
+      "total_boxes": 0,
+      "png_to_jpeg_in_memory": false,
+      "oversize_jpeg_resized_in_memory": false,
+      "inference_image_dimensions": [
+        800,
+        533
+      ],
+      "top_boxes": []
+    },
+    {
+      "file": "unknown_02.jpg",
+      "expected_image_label": "unknown",
+      "proposed_categories": [],
+      "expected_category_proposed": true,
+      "total_boxes": 0,
+      "png_to_jpeg_in_memory": false,
+      "oversize_jpeg_resized_in_memory": false,
+      "inference_image_dimensions": [
+        800,
+        600
+      ],
+      "top_boxes": []
+    }
+  ],
+  "source_run_url": "https://github.com/Jean-Philippe56520/Microduck/actions/runs/40950364823",
+  "source_job_id": 123716557114,
+  "source_commit_sha": "7aedeaa368a323dac28f80b64d7859677aba6c92"
+}
