@@ -1,5 +1,7 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**QW-QUAL-2A-P1 — budget matériel du paquet PC seulement (29/10/2026) :** [outil de préparation locale](qw-qual2a-private-packet-preparation-2026-10-29.md) lit quatre JSON bornés à 32 768 octets chacun et génère les quatre PNG synthétiques du banc existant, chacun limité à 50 000 octets, uniquement après opt-in. Pas de capture réelle, aucun modèle, aucune nouvelle inference ni connexion réseau/moteur/SQLite. Les limites de taille sont **des garde-fous de code, pas des mesures RSS/CPU/thermiques** ; test local sur fixtures, CI à vérifier. Aucun résultat RK3566/Yocto, caméra ou boucle 50 Hz à déduire.
+
 **QW-QUAL-1F — clôture du premier lot qualitatif PC (29/10/2026) :** [quatre sorties et limites](qw-qual1f-four-scenes-decision-2026-10-29.md), dont `scene_d` **45,546 s / 191 tokens**. Les durées de 37,063 s (`b`), 48,109 s (`a`), 44,140 s (`c`) et 45,546 s (`d`) proviennent de **stimuli et nombres de tokens différents** : ni comparaison CPU/GPU, ni latence typique, ni p50/p95. **CPU%, GPU%, RAM/RSS, chaleur et énergie non mesurés dans ces quatre JSON ; le backend actif n'est pas identifiable**. Les conseils de plusieurs dizaines de secondes restent facultatifs sur PC et hors boucle `robotd` 50 Hz. Aucun indicateur de faisabilité RK3566, de déplacement sûr ou de capteur OEM réel n'en découle, aucune installation/driver/ONNX modifiés.
 
 
