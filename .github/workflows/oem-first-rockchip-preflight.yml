@@ -16,7 +16,7 @@ concurrency:
 jobs:
   candidate-preflight:
     runs-on: ubuntu-24.04
-    timeout-minutes: 9
+    timeout-minutes: 17
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,13 +36,13 @@ jobs:
           test "$(stat -c '%s' "$RUNNER_TEMP/rockchip-yolo11n.onnx")" -lt 35000000
           sha256sum "$RUNNER_TEMP/rockchip-yolo11n.onnx"
           wc -c "$RUNNER_TEMP/rockchip-yolo11n.onnx"
-      - name: Verify ONNX contract before writing any adapter
+      - name: Verify pinned Rockchip ONNX architecture and vendor outputs
         shell: bash
         run: |
           set -euo pipefail
           uv python install 3.12
           uv venv --python 3.12 "$RUNNER_TEMP/oem-first-env"
-          uv pip install --python "$RUNNER_TEMP/oem-first-env/bin/python" 'onnxruntime==1.28.0' 'numpy==2.5.4'
+          uv pip install --python "$RUNNER_TEMP/oem-first-env/bin/python" 'onnxruntime==1.28.0' 'numpy==2.5.4' 'Pillow==11.3.0' 'opencv-python-headless==4.11.0.86'
           "$RUNNER_TEMP/oem-first-env/bin/python" - <<'PY'
           import os, pathlib, hashlib
           import onnxruntime as rt
@@ -67,3 +67,48 @@ jobs:
               ], "branch mismatch"
           print("ROCKCHIP_CANDIDATE_CONTRACT_OK")
           PY
+
+      - name: Retrieve unchanged YOLOX and public independently annotated COCO val
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error \
+            --connect-timeout 10 --max-time 90 \
+            --max-filesize 5000000 \
+            'https://huggingface.co/skillsafe-ai/yolox-nano/resolve/8e308810ede488f742901a4ac597dc7796798e46/yolox_nano.onnx' \
+            -o "$RUNNER_TEMP/yolox-nano.onnx"
+          echo "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d  $RUNNER_TEMP/yolox-nano.onnx" | sha256sum -c -
+          curl --fail --location --silent --show-error \
+            --connect-timeout 10 --max-time 120 \
+            --max-filesize 30000000 \
+            'https://huggingface.co/datasets/LibreYOLO/coco2017/resolve/main/instances_val2017.json' \
+            -o "$RUNNER_TEMP/instances_val2017.json"
+          echo "e8c7f7908f1d7278341fae127d0da654f102f11bdaefa635b8c810b6f  $RUNNER_TEMP/instances_val2017.json" | sha256sum -c -
+
+      - name: Positive and negative model-decoding contract tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/oem-first-env/bin/python" -m unittest discover \
+            -s tests -p test_rockchip_candidate_probe.py -v
+          "$RUNNER_TEMP/oem-first-env/bin/python" -m compileall -q microduck_companion/rockchip_candidate_probe.py
+
+      - name: Compare same unseen third COCO cohort, not the old images
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/oem-first-env/bin/python" -m microduck_companion.rockchip_candidate_probe \
+            --candidate-model "$RUNNER_TEMP/rockchip-yolo11n.onnx" \
+            --baseline-model "$RUNNER_TEMP/yolox-nano.onnx" \
+            --annotations "$RUNNER_TEMP/instances_val2017.json" \
+            --output "$RUNNER_TEMP/oem-first-rockchip-metrics.json" \
+            --authorize-cc-by-public
+
+      - name: Preserve aggregate metrics only, never images/models
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oem-first-rockchip-third-cohort-metrics
+          if-no-files-found: warn
+          retention-days: 7
+          path: ${{ runner.temp }}/oem-first-rockchip-metrics.json
