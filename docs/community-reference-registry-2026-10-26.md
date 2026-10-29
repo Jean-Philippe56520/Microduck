@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**QW-QUAL-1C — réutilisation après preuve PC `scene_a` (29/10/2026) :** [rapport](qw-qual1c-scene-a-real-qwen-human-review-2026-10-29.md). **RÉUTILISER sans changement** les dessins originaux, rôle Qwen v2, client Ollama local, `qwen9b_semantic_quality`, drapeaux humains et blocage `qwen9b_action_guard` ; la sortie 48,109 s / 173 tokens a bien les drapeaux `untrusted_motor_reference` et `unspecified_motor_mention`. **ADAPTER** les preuves de qualité et de causalité dans la documentation ; **CRÉER** uniquement un compte rendu. **NE PAS INTÉGRER** second évaluateur, nouveau prompt/model, QuackNav/M9/Twin/Quacksat, moteur OEM, SQLite, pilote ou dépendance nouvelle sur une seule scène.
+
+
 **QW-QUAL-1B — écart entre texte Qwen réel et avertissements existants (29/10/2026) :** [analyse `scene_b`](qw-qual1b-scene-b-real-qwen-human-review-2026-10-29.md). **RÉUTILISER** le rôle v2 et `screen_preview_text` F5-v3 ; **ADAPTER** deux détections lexicales orientées **relecteur humain**, `physical_approach_mention` et `unspecified_motor_mention`, avec tests de formulations positives, négations et observation sans contact ; **CRÉER** seulement ce document d'essai. Aucun modèle/pilote, QuackNav/M9/Quacksat/Twin, seconde DB, média personnel ou contrôleur OEM ajouté. Les drapeaux, même présents, **ne certifient aucune capacité ni sûreté** ; le texte reste `machine_use=blocked`.
 
 
