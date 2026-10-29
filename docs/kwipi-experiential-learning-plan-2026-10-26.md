@@ -1,5 +1,8 @@
 # Kwipi — plan d'apprentissage autonome par l'expérience (EX)
 
+**QW-QUAL-1B — analyse d'une vraie réponse 9B sur dessin synthétique (29/10/2026) :** [première grille QW-QUAL](qw-qual1b-scene-b-real-qwen-human-review-2026-10-29.md). Le conseiller distingue écran et chat réel (indice positif de sens), mais propose une approche sans garantie du sol et une expérience « geste moteur » sans effet indépendant utile ni autorisation ; `review_flags=[]` signifie seulement absence de correspondance lexicale. **Aucune hypothèse n'est promue en souvenir causal, intention ou récompense** ; réponses `unverified` et `machine_use=blocked`. La suite doit évaluer des observations d'objets inertes/relations et la qualité d'abstention de façon indépendante, avec/sans Qwen, sans nouveau test moteur ni contact avec le vivant.
+
+
 **QW-QUAL-1A — passage de la vitesse à la pertinence/prudence du Qwen 9B (29/10/2026, code PC-fixtures candidat) :** [essais de quatre scènes dessinées inédites et grille humaine](qw-qual1a-synthetic-semantic-human-review-2026-10-29.md). Mesurer d'abord si le conseiller donne du sens au contexte, des hypothèses et effets vérifiables plutôt qu'un lexique, s'il identifie sa propre incertitude et s'abstient sur chat affiché/zone ambiguë. Une consultation réelle PC est **manuelle et facultative** ; réponses texte toujours `machine_use=blocked`. Aucun raccordement du résultat à la SQLite ExperienceMemory, à la détermination ou aux moteurs. Le score humain et les effets physiques restent **non évalués**.
 
 
