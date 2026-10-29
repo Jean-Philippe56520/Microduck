@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**QW-PERF-1F — observateur de mémoire GPU déclarée (29/10/2026, PC-fixtures candidat) :** [procédure](qw-perf1f-ollama-placement-sampling-2026-10-29.md). `GET /api/ps` sur Ollama local peut rapporter `size_vram` **pendant** l'inférence, sans relancer de modèle, mais ce n'est ni une mesure physique d'activité GPU, ni un relevé VRAM/RSS fiable indépendant, ni un taux d'accélération. L'option `-ReportPlacement` sur l'autotest PC est facultative et bornée ; aucun changement à la RAM du Microduck RK3566, aux budgets OEM ou à ses capteurs. Données GPU effectivement utilisées restent inconnues avant test opérateur.
+
+
 **QW-PERF-1E — Vulkan demandé, GPU non prouvé, 29/10/2026 (rapport propriétaire) :** [premier essai temporaire du 9B](qw-perf1b-real-windows-9b-baseline-2026-10-29.md) sur port `11435` : deux couleurs synthétiques correctement distinguées (9,079/9,031 s), serveur temporaire arrêté en fin d'essai. Le code du lanceur active `OLLAMA_VULKAN=1` et `OLLAMA_IGPU_ENABLE=1` localement, mais le rapport n'indique **aucune mesure d'utilisation de la Radeon 860M pendant l'inférence**. L'accès CPU/GPU et la latence comparative sont inconnus, ainsi que VRAM/RSS/thermie. Le test n'a aucun rapport quantifié avec le RK3566/robot physique.
 
 
