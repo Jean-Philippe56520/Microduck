@@ -1,5 +1,8 @@
 # Kwipi — plan d'apprentissage autonome par l'expérience (EX)
 
+**QW-QUAL-1A — passage de la vitesse à la pertinence/prudence du Qwen 9B (29/10/2026, code PC-fixtures candidat) :** [essais de quatre scènes dessinées inédites et grille humaine](qw-qual1a-synthetic-semantic-human-review-2026-10-29.md). Mesurer d'abord si le conseiller donne du sens au contexte, des hypothèses et effets vérifiables plutôt qu'un lexique, s'il identifie sa propre incertitude et s'abstient sur chat affiché/zone ambiguë. Une consultation réelle PC est **manuelle et facultative** ; réponses texte toujours `machine_use=blocked`. Aucun raccordement du résultat à la SQLite ExperienceMemory, à la détermination ou aux moteurs. Le score humain et les effets physiques restent **non évalués**.
+
+
 **QW-PERF-1I — coût du conseiller facultatif mesuré sur PC réel (29/10/2026) :** [cinq profils synthétiques CPU/iGPU déclarés](qw-perf1i-real-pc-role-cpu-gpu-2026-10-29.md) ; sommes **50,422 s sur 11435** contre **74,937 s sur 11434**, 5/5 réponses de transport admises de chaque côté, deux JSON conformes à l'image artificielle attendue. Les rôles v2 **n'ont pas été évalués pour leur capacité à proposer des hypothèses, expériences, conséquences ou conseils sûrs**. Les latences, surtout 22,891 s pour le premier appel iGPU, motivent un conseiller **rare, facultatif, asynchrone vis-à-vis du cycle moteur, avec repli hors ligne**, mais **pas une intégration livrée** à `ExperienceMemory`, au robot ni une preuve de politique de consultation. Les 32,714 % restent descriptifs, calcul GPU et ressources indépendantes inconnus.
 
 
