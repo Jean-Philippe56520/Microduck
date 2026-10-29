@@ -1,5 +1,8 @@
 # Point de reprise — Microduck Companion / Kwipi — 28 octobre 2026
 
+**Reprise QW-PERF-1E — 29/10/2026, vérification GPU encore ouverte :** [preuves et limites du vrai test `VisionCheck`](qw-perf1b-real-windows-9b-baseline-2026-10-29.md). Port `11435` libre, lanceur `scripts/kwipi-vision-test.ps1` avec Vulkan et `OLLAMA_IGPU_ENABLE=1` demandés ; deux couleurs synthétiques reconnues (**9,079 s rouge**, **9,031 s bleu**), serveur temporaire arrêté normalement **pour le premier lancement**. **Deuxième lancement commencé dans le transcript, aucun résultat final transmis.** Aucun `ollama ps` pendant l'inférence sur `11435` : **GPU, vitesse/fiabilité comparative et bénéfice pour Kwipi non prouvés**. Ne pas demander de troisième test à l'aveugle ; d'abord confirmer la sortie du second et le processeur effectivement utilisé. OEM, F5-C, SQLite et sous-modules inchangés.
+
+
 **Reprise prioritaire QW-PERF-1D — 29/10/2026 (preuve logs datés 28/10) :** [Vulkan détecte la 860M mais Ollama refuse l'iGPU faute de `OLLAMA_IGPU_ENABLE=1`](qw-perf1b-real-windows-9b-baseline-2026-10-29.md#qw-perf-1d--cause-locale-du-repli-cpu-observée-logs-du-2810-reçus-le-2910). Le `server.log` montre `OLLAMA_VULKAN:true`, `OLLAMA_IGPU_ENABLE:` vide, `dropping integrated GPU`, puis `inference compute id=cpu`; ROCm `gfx1152` sans rocBLAS. **Ce filtrage est démontré pour le processus du 28/10 ; GPU actif non encore validé.** Réutiliser le test synthétique temporaire `scripts/kwipi-vision-test.ps1 -VisionCheck -Port 11435` après contrôle port libre, dans une fenêtre PowerShell enfant pour ne pas affecter `11434`. Ne pas installer pilote/backend, forcer HSA, éditer DLL, créer service permanent ou toucher aux moteurs. Mesurer ensuite CPU/GPU à tâche identique ; aucun gain acquis.
 
 
