@@ -83,7 +83,7 @@ jobs:
             --max-filesize 30000000 \
             'https://huggingface.co/datasets/LibreYOLO/coco2017/resolve/main/instances_val2017.json' \
             -o "$RUNNER_TEMP/instances_val2017.json"
-          echo "e8c7f7908f1d7278341fae127d0da654f102f11bdaefa635b8c810b6f  $RUNNER_TEMP/instances_val2017.json" | sha256sum -c -
+          echo "e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aeefa635b8c810b6f  $RUNNER_TEMP/instances_val2017.json" | sha256sum -c -
 
       - name: Positive and negative model-decoding contract tests
         shell: bash
