@@ -27,6 +27,7 @@ MAX_TIMEOUT_S = 120.0
 MAX_SOURCE_BYTES = 50_000
 ALLOWED_FLAGS = frozenset({
     "untrusted_motor_reference", "possible_living_motor_risk",
+    "physical_approach_mention", "unspecified_motor_mention",
 })
 
 # Independent fixture notes for a human reviewer, not supplied to Qwen.
