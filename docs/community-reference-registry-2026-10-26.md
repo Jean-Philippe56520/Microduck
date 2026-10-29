@@ -1,5 +1,8 @@
 # C3 — Registre de références et comparaison par chantier (Microduck Companion)
 
+**QW-QUAL-1B — écart entre texte Qwen réel et avertissements existants (29/10/2026) :** [analyse `scene_b`](qw-qual1b-scene-b-real-qwen-human-review-2026-10-29.md). **RÉUTILISER** le rôle v2 et `screen_preview_text` F5-v3 ; **ADAPTER** deux détections lexicales orientées **relecteur humain**, `physical_approach_mention` et `unspecified_motor_mention`, avec tests de formulations positives, négations et observation sans contact ; **CRÉER** seulement ce document d'essai. Aucun modèle/pilote, QuackNav/M9/Quacksat/Twin, seconde DB, média personnel ou contrôleur OEM ajouté. Les drapeaux, même présents, **ne certifient aucune capacité ni sûreté** ; le texte reste `machine_use=blocked`.
+
+
 **QW-QUAL-1A — choix réutiliser/adapt/créer vérifié (29/10/2026) :** [protocole](qw-qual1a-synthetic-semantic-human-review-2026-10-29.md). **RÉUTILISER** `qwen9b_production_role_v2.py`, `qwen9b_role_preview.evaluate_local_image`, `qwen9b_action_guard.screen_preview_text`, prétraitement F5 et Ollama loopback ; **CRÉER SEULEMENT** quatre dessins originaux en mémoire et un lanceur CLI d'un appel manuel pour revue humaine. **NE PAS IMPORTER** cerveau tiers, QuackNav, Quacksat, Twin, nouveau modèle, moteur, module de sûreté prétendu ni seconde base. L'analyse lexicale est un simple drapeau de contre-lecture ; le texte ne devient ni décision ni action. Tests CI fictifs, qualité du vrai 9B encore inconnue.
 
 
