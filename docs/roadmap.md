@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-QUAL-1D — troisième réponse Qwen3.5 9B sur PC réel, 29/10/2026 :** [rapport `scene_c`](qw-qual1d-scene-c-real-qwen-human-review-2026-10-29.md). Durée **44,140 s / 192 tokens**, sortie `unverified`, machine bloquée, drapeaux de revue présents, 0 moteur/mémoire. L'interprétation « céramique cassée » reste une hypothèse non vérifiable sur dessin stylisé ; le lien entre objet et contenant et l'effet d'une approche sont mal raisonnés. **Abstention et incertitude mentionnées**. Trois scènes réelles `a/b/c` ne suffisent ni à qualifier la sécurité ni à démontrer de la généralisation. Après une dernière scène ambiguë `d` facultative, prioriser **contre-lecture indépendante et critères de qualité** avant de retoucher le rôle Qwen.
+
+
 **QW-QUAL-1C — comparaison qualitative naissante de deux vraies sorties du 9B PC (29/10/2026) :** [résultat `scene_a`](qw-qual1c-scene-a-real-qwen-human-review-2026-10-29.md), après [`scene_b`](qw-qual1b-scene-b-real-qwen-human-review-2026-10-29.md). Sur dessin inerte, Qwen explore hypothèse de jeu, effet et observation passive ; cependant formes 3D, sol et adéquation des compétences OEM restent supposés et le changement de position imaginé ne vérifie pas la causalité. **48,109 s / 173 tokens, `unverified`**, 2 avertissements de revue et texte bloqué ; aucune action ni mémoire. **Aucune amélioration de garde/prompt démontrée nécessaire à ce stade** ; prochaine décision après analyse indépendante `scene_c` si elle apporte de nouvelles preuves, ou synthèse des deux essais. Validation robot toujours non.
 
 
