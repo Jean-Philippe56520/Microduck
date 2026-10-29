@@ -1,5 +1,8 @@
 # Point de reprise — Microduck Companion / Kwipi — 28 octobre 2026
 
+**Reprise prioritaire QW-PERF-1F — 29/10/2026, code candidat non exécuté sur vrai 9B :** [protocole de sonde automatique de placement](qw-perf1f-ollama-placement-sampling-2026-10-29.md). Le `server.log` observé a **20 lignes datées 29/10** mais aucune ligne GPU utile ; cela ne prouve pas que le serveur temporaire `11435` a été en CPU. Ajouter uniquement le flag opt-in `-ReportPlacement` sur `scripts/kwipi-vision-test.ps1 -VisionCheck -Port 11435` après vérification du port libre et de la PR/CI ; l'utilitaire lit localement `/api/ps` pendant les mêmes deux images artificielles et rapporte seulement taille/VRAM déclarées. **Pas de nouveau vrai test, pas de GPU validé, pas de mesure de gain** à ce stade. Ne rien changer au modèle, au serveur principal `11434`, aux moteurs ou à SQLite.
+
+
 **Reprise QW-PERF-1E — 29/10/2026, vérification GPU encore ouverte :** [preuves et limites du vrai test `VisionCheck`](qw-perf1b-real-windows-9b-baseline-2026-10-29.md). Port `11435` libre, lanceur `scripts/kwipi-vision-test.ps1` avec Vulkan et `OLLAMA_IGPU_ENABLE=1` demandés ; deux couleurs synthétiques reconnues (**9,079 s rouge**, **9,031 s bleu**), serveur temporaire arrêté normalement **pour le premier lancement**. **Deuxième lancement commencé dans le transcript, aucun résultat final transmis.** Aucun `ollama ps` pendant l'inférence sur `11435` : **GPU, vitesse/fiabilité comparative et bénéfice pour Kwipi non prouvés**. Ne pas demander de troisième test à l'aveugle ; d'abord confirmer la sortie du second et le processeur effectivement utilisé. OEM, F5-C, SQLite et sous-modules inchangés.
 
 
