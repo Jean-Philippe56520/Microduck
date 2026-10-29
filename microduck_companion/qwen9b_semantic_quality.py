@@ -12,6 +12,7 @@ import io
 import ipaddress
 import json
 import math
+from pathlib import Path
 from typing import Any
 
 from .ollama_local_client import OllamaEndpoint
@@ -215,6 +216,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--authorize-one-synthetic-call", action="store_true")
     parser.add_argument("--display-advice", action="store_true")
     parser.add_argument("--show-independent-reference", action="store_true")
+    parser.add_argument("--export-preview", type=Path,
+                        help="explicitly save an original synthetic PNG, offline only")
     parser.add_argument("--ollama-port", type=int, default=11434)
     parser.add_argument("--timeout", type=float, default=MAX_TIMEOUT_S)
     args = parser.parse_args(argv)
@@ -231,12 +234,24 @@ def main(argv: list[str] | None = None) -> int:
             if args.case is None:
                 parser.error("an independent reference needs --case")
             catalog["independent_reference"] = independent_reference(args.case)
+        if args.export_preview is not None:
+            target = args.export_preview
+            if (args.case is None or not target.is_absolute() or
+                    target.suffix.lower() != ".png"):
+                parser.error("explicit preview needs --case and absolute PNG path")
+            try:
+                # Exclusive creation: refuse an existing file or symlink.
+                with target.open("xb") as output:
+                    output.write(make_synthetic_png(args.case))
+            except OSError:
+                parser.error("unable to create new synthetic preview; no overwrite")
+            catalog["synthetic_preview_exported_explicitly"] = True
         print(json.dumps(catalog, sort_keys=True))
         return 0
     if args.case is None or not args.authorize_one_synthetic_call:
         parser.error("choose --case and explicitly authorize ONE synthetic call")
-    if args.show_independent_reference:
-        parser.error("read independent reference separately, AFTER observing the model")
+    if args.show_independent_reference or args.export_preview is not None:
+        parser.error("offline reference/preview export requires dry-run")
     try:
         report = run_case(
             case_id=args.case, consent=True, port=args.ollama_port,
