@@ -1,0 +1,366 @@
+{
+  "status": "host_visual_region_experiment",
+  "source": "existing_static_public_photos_and_pinned_raw_yolox_boxes",
+  "source_diagnostic": "tests/assets/public_vision_smoke/yolox_raw_head_diagnostic.json",
+  "number_of_images": 13,
+  "synthetic_tests_separate": true,
+  "real_photos_are_diagnostic_not_independent_holdout": true,
+  "ground_truth_pixel_masks_absent": true,
+  "source_class_names_not_used_to_extract_descriptors": true,
+  "new_detector_models": 0,
+  "modified_onnx_or_oem": false,
+  "robot_or_npu_validated": false,
+  "motor_commands": 0,
+  "memory_writes": 0,
+  "qwen_calls": 0,
+  "descriptor_median_elapsed_ms_host": 13.798,
+  "candidate_foreground_count": 4,
+  "rounded_shape_count": 0,
+  "rows": [
+    {
+      "image": "cat_01.jpg",
+      "image_label_for_human_review_only": "cat",
+      "roi_from_existing_raw_yolox_diagnostic": [
+        135.6,
+        34.2,
+        1537,
+        1288.9
+      ],
+      "raw_top_80_coco_index": 15,
+      "raw_top_joint_score": 0.7498528,
+      "descriptor": {
+        "status": "foreground_candidate",
+        "reason": "partial_or_ambiguous_outline",
+        "mask_source": "corner_colour_contrast",
+        "dominant_colours": [
+          {
+            "colour": "gris",
+            "fraction": 0.545
+          }
+        ],
+        "shape": "indeterminee",
+        "geometry": {
+          "aspect_ratio": 1.243,
+          "foreground_occupancy": 0.53,
+          "foreground_fraction_of_roi": 0.437,
+          "corner_occupancy": 0.14,
+          "cutoff_by_roi": false,
+          "resized_roi_pixels": [
+            96,
+            86
+          ]
+        },
+        "object_category": "unknown"
+      }
+    },
+    {
+      "image": "cat_02.jpg",
+      "image_label_for_human_review_only": "cat",
+      "roi_from_existing_raw_yolox_diagnostic": [
+        241.4,
+        380.6,
+        3112.5,
+        2366.2
+      ],
+      "raw_top_80_coco_index": 15,
+      "raw_top_joint_score": 0.206998,
+      "descriptor": {
+        "status": "indeterminate",
+        "reason": "nonuniform_background",
+        "mask_source": "unknown",
+        "dominant_colours": [],
+        "shape": "indeterminee",
+        "geometry": null,
+        "object_category": "unknown"
+      }
+    },
+    {
+      "image": "cat_03.jpg",
+      "image_label_for_human_review_only": "cat",
+      "roi_from_existing_raw_yolox_diagnostic": [
+        43.7,
+        153,
+        2117.3,
+        1656.1
+      ],
+      "raw_top_80_coco_index": 15,
+      "raw_top_joint_score": 0.6876673,
+      "descriptor": {
+        "status": "indeterminate",
+        "reason": "nonuniform_background",
+        "mask_source": "unknown",
+        "dominant_colours": [],
+        "shape": "indeterminee",
+        "geometry": null,
+        "object_category": "unknown"
+      }
+    },
+    {
+      "image": "cat_04.jpg",
+      "image_label_for_human_review_only": "cat",
+      "roi_from_existing_raw_yolox_diagnostic": [
+        68.9,
+        264.7,
+        1365,
+        1898.3
+      ],
+      "raw_top_80_coco_index": 15,
+      "raw_top_joint_score": 0.7874393,
+      "descriptor": {
+        "status": "indeterminate",
+        "reason": "nonuniform_background",
+        "mask_source": "unknown",
+        "dominant_colours": [],
+        "shape": "indeterminee",
+        "geometry": null,
+        "object_category": "unknown"
+      }
+    },
+    {
+      "image": "dog_01.jpg",
+      "image_label_for_human_review_only": "dog",
+      "roi_from_existing_raw_yolox_diagnostic": [
+        57.7,
+        57.2,
+        116.8,
+        133.3
+      ],
+      "raw_top_80_coco_index": 58,
+      "raw_top_joint_score": 0.7778874,
+      "descriptor": {
+        "status": "indeterminate",
+        "reason": "nonuniform_background",
+        "mask_source": "unknown",
+        "dominant_colours": [],
+        "shape": "indeterminee",
+        "geometry": null,
+        "object_category": "unknown"
+      }
+    },
+    {
+      "image": "dog_02.jpg",
+      "image_label_for_human_review_only": "dog",
+      "roi_from_existing_raw_yolox_diagnostic": [
+        0,
+        17.8,
+        265.4,
+        222.9
+      ],
+      "raw_top_80_coco_index": 16,
+      "raw_top_joint_score": 0.8976893,
+      "descriptor": {
+        "status": "indeterminate",
+        "reason": "nonuniform_background",
+        "mask_source": "unknown",
+        "dominant_colours": [],
+        "shape": "indeterminee",
+        "geometry": null,
+        "object_category": "unknown"
+      }
+    },
+    {
+      "image": "ball_01.jpg",
+      "image_label_for_human_review_only": "sports_ball",
+      "roi_from_existing_raw_yolox_diagnostic": [
+        224.6,
+        557,
+        515.5,
+        856.1
+      ],
+      "raw_top_80_coco_index": 25,
+      "raw_top_joint_score": 0.1383191,
+      "descriptor": {
+        "status": "indeterminate",
+        "reason": "nonuniform_background",
+        "mask_source": "unknown",
+        "dominant_colours": [],
+        "shape": "indeterminee",
+        "geometry": null,
+        "object_category": "unknown"
+      }
+    },
+    {
+      "image": "ball_02.png",
+      "image_label_for_human_review_only": "sports_ball",
+      "roi_from_existing_raw_yolox_diagnostic": [
+        59.5,
+        61,
+        141.4,
+        144.3
+      ],
+      "raw_top_80_coco_index": 49,
+      "raw_top_joint_score": 0.6693028,
+      "descriptor": {
+        "status": "foreground_candidate",
+        "reason": "partial_or_ambiguous_outline",
+        "mask_source": "corner_colour_contrast",
+        "dominant_colours": [
+          {
+            "colour": "jaune-vert",
+            "fraction": 0.95
+          }
+        ],
+        "shape": "indeterminee",
+        "geometry": {
+          "aspect_ratio": 0.952,
+          "foreground_occupancy": 0.802,
+          "foreground_fraction_of_roi": 0.754,
+          "corner_occupancy": 0.132,
+          "cutoff_by_roi": true,
+          "resized_roi_pixels": [
+            83,
+            84
+          ]
+        },
+        "object_category": "unknown"
+      }
+    },
+    {
+      "image": "ball_03.png",
+      "image_label_for_human_review_only": "sports_ball",
+      "roi_from_existing_raw_yolox_diagnostic": [
+        53.3,
+        47.9,
+        148.8,
+        148.8
+      ],
+      "raw_top_80_coco_index": 55,
+      "raw_top_joint_score": 0.6770669,
+      "descriptor": {
+        "status": "indeterminate",
+        "reason": "fragmented_or_weak_foreground",
+        "mask_source": "corner_colour_contrast",
+        "dominant_colours": [],
+        "shape": "indeterminee",
+        "geometry": null,
+        "object_category": "unknown"
+      }
+    },
+    {
+      "image": "chair_01.png",
+      "image_label_for_human_review_only": "chair",
+      "roi_from_existing_raw_yolox_diagnostic": [
+        128.6,
+        35.2,
+        383.7,
+        487.8
+      ],
+      "raw_top_80_coco_index": 56,
+      "raw_top_joint_score": 0.8487929,
+      "descriptor": {
+        "status": "foreground_candidate",
+        "reason": "partial_or_ambiguous_outline",
+        "mask_source": "alpha",
+        "dominant_colours": [
+          {
+            "colour": "gris",
+            "fraction": 0.321
+          },
+          {
+            "colour": "orange",
+            "fraction": 0.245
+          },
+          {
+            "colour": "blanc",
+            "fraction": 0.24
+          }
+        ],
+        "shape": "indeterminee",
+        "geometry": {
+          "aspect_ratio": 0.562,
+          "foreground_occupancy": 0.588,
+          "foreground_fraction_of_roi": 0.505,
+          "corner_occupancy": 0.342,
+          "cutoff_by_roi": false,
+          "resized_roi_pixels": [
+            54,
+            96
+          ]
+        },
+        "object_category": "unknown"
+      }
+    },
+    {
+      "image": "person_01.jpg",
+      "image_label_for_human_review_only": "person",
+      "roi_from_existing_raw_yolox_diagnostic": [
+        131.5,
+        0,
+        800,
+        518.6
+      ],
+      "raw_top_80_coco_index": 0,
+      "raw_top_joint_score": 0.9017538,
+      "descriptor": {
+        "status": "foreground_candidate",
+        "reason": "partial_or_ambiguous_outline",
+        "mask_source": "corner_colour_contrast",
+        "dominant_colours": [
+          {
+            "colour": "orange",
+            "fraction": 0.768
+          }
+        ],
+        "shape": "indeterminee",
+        "geometry": {
+          "aspect_ratio": 1.297,
+          "foreground_occupancy": 0.724,
+          "foreground_fraction_of_roi": 0.724,
+          "corner_occupancy": 0.22,
+          "cutoff_by_roi": true,
+          "resized_roi_pixels": [
+            96,
+            74
+          ]
+        },
+        "object_category": "unknown"
+      }
+    },
+    {
+      "image": "unknown_01.jpg",
+      "image_label_for_human_review_only": "unknown",
+      "roi_from_existing_raw_yolox_diagnostic": [
+        144.6,
+        102.6,
+        700.3,
+        447.5
+      ],
+      "raw_top_80_coco_index": 17,
+      "raw_top_joint_score": 0.2982547,
+      "descriptor": {
+        "status": "indeterminate",
+        "reason": "nonuniform_background",
+        "mask_source": "unknown",
+        "dominant_colours": [],
+        "shape": "indeterminee",
+        "geometry": null,
+        "object_category": "unknown"
+      }
+    },
+    {
+      "image": "unknown_02.jpg",
+      "image_label_for_human_review_only": "unknown",
+      "roi_from_existing_raw_yolox_diagnostic": [
+        311.1,
+        248.5,
+        358.2,
+        298.7
+      ],
+      "raw_top_80_coco_index": 74,
+      "raw_top_joint_score": 0.7389789,
+      "descriptor": {
+        "status": "indeterminate",
+        "reason": "nonuniform_background",
+        "mask_source": "unknown",
+        "dominant_colours": [],
+        "shape": "indeterminee",
+        "geometry": null,
+        "object_category": "unknown"
+      }
+    }
+  ],
+  "original_run_url": "https://github.com/Jean-Philippe56520/Microduck/actions/runs/40957222072",
+  "original_job_id": 123740317518,
+  "predeclared_gate_passed": false,
+  "decision": "STOP_no_region_descriptor_integrated"
+}
