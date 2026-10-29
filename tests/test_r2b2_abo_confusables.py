@@ -215,7 +215,7 @@ class R2B2ConfusableProtocolTests(unittest.TestCase):
                     data[row*32+col] = 195
             return bytes(data)
         a, b, unseen = square(), square(16, 16), bytes(
-            [25 if (i//32) % 2 == 0 else 225 for i in range(1024)])
+            [25 if (i//128) % 2 == 0 else 225 for i in range(1024)])
         db = ExperienceMemory(":memory:")
         try:
             store = MultiviewPatternMemory(db)
