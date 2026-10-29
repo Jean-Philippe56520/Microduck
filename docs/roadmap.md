@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**QW-QUAL-1C — comparaison qualitative naissante de deux vraies sorties du 9B PC (29/10/2026) :** [résultat `scene_a`](qw-qual1c-scene-a-real-qwen-human-review-2026-10-29.md), après [`scene_b`](qw-qual1b-scene-b-real-qwen-human-review-2026-10-29.md). Sur dessin inerte, Qwen explore hypothèse de jeu, effet et observation passive ; cependant formes 3D, sol et adéquation des compétences OEM restent supposés et le changement de position imaginé ne vérifie pas la causalité. **48,109 s / 173 tokens, `unverified`**, 2 avertissements de revue et texte bloqué ; aucune action ni mémoire. **Aucune amélioration de garde/prompt démontrée nécessaire à ce stade** ; prochaine décision après analyse indépendante `scene_c` si elle apporte de nouvelles preuves, ou synthèse des deux essais. Validation robot toujours non.
+
+
 **QW-QUAL-1B — PR #163 fusionnée après CI verte (29/10/2026) :** [rapport Qwen réel `scene_b`](qw-qual1b-scene-b-real-qwen-human-review-2026-10-29.md) et [correctif lexical](https://github.com/Jean-Philippe56520/Microduck/pull/163) : `main@3c7c9c2`, [tests Python #40863237063](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40863237063) et [N1 #40863237052](https://github.com/Jean-Philippe56520/Microduck/actions/runs/40863237052) verts. **Codé/testé sur fixtures :** deux alertes pour allusions physiques hors vocabulaire OEM, sans changement de blocage machine. **Observé sur vrai PC avant ce correctif :** un conseil partiellement pertinent sur écran/chat (37,063 s), insuffisant pour une qualification. **Pas de nouvel appel Qwen après changement, pas de validation moteur ou qualité robot.** Prochaine preuve sur objet inerte et revue humaine sourcée, sans boucle de test.
 
 
