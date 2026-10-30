@@ -8,6 +8,8 @@
 //! action permissions. OEM mediad integration requires a separate decision.
 //! Class ids are uncertain detector hypotheses, not real-world semantics.
 
+pub mod oem_region;
+
 pub const IMAGE_SIDE: usize = 640;
 pub const MASK_SIDE: usize = 160;
 pub const MAX_PROPOSALS: usize = 300;
