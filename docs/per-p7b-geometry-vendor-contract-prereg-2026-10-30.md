@@ -26,3 +26,9 @@
 ## Retour arrière
 
 PR isolée, un prédicat de géométrie et des tests seulement. Aucun gitlink `upstream/` modifié ; pas de média, modèle, Qwen ou SQLite publié.
+
+## Résultat observé sur fixtures indépendantes
+
+[CI Rust PER-P7b #41105495461](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41105495461), SHA testé `e2e0147ec2417492cea8699ba5aeb65f8ff85fc7` : **10 tests Rust exécutés / 10 réussis**, `cargo fmt --check`, `cargo clippy --all-targets -D warnings` et `cargo check --target aarch64-unknown-linux-gnu` réussis sous Rust 1.89.0. Les trois nouveaux cas préfixés A/B/C produisent respectivement **2 000**, **100** et **0** pixels vrais, sans changer les masques de sortie maximum ni les restrictions sur les valeurs non finies, les boîtes inversées et les catégories.
+
+**Conclusions volontairement distinctes** : le conflit **source logiciel** `crop_mask` hors cadre a un traitement Rust testé ; la **cause précise du rejet P8 (`InvalidBox`) reste inconnue**, et le résultat négatif P8 ne devient pas positif à la suite de ces tests. Pas de réexécution du JPEG P8, pas de preuve de parité de segmentation RKNN sur une scène ni de compatibilité de déploiement. Le robot et l'image Yocto n'ont pas été exécutés ; vérifier la suite Python du commit final avant fusion.
