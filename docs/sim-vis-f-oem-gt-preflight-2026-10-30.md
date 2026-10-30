@@ -26,3 +26,18 @@ Le cas occultation est un **témoin négatif physique** et n'a pas valeur de per
 **Comparaison** : SIM-VIS-E annonçait « cible non visible » sans origine précise ; SIM-VIS-F doit identifier précisément la préparation non valide de chaque scène, à géométrie source OEM vérifiable. Tests PC de refus : géométrie fausse, masque absent, rayon non intercepté, rapport incomplet, horodatage/pose modifiée. `CI green` valide l'exécution et les garde-fous ; **ne prouve PAS** `preflight_gate_met=true`.
 
 Réutiliser : `World/Body/Camera` constructeur et `visible_geom_bbox` de SIM-VIS-B, **aucun** modèle/décodeur/futur code moteur. Règle d'arrêt après cette passe : si la porte n'est pas franchie, ne pas rééchantillonner ces poses pour obtenir une réussite ; passer à des GT préexistantes (COCO/photographies autorisées nouvelles) ou au prochain jalon indépendant. Si elle passe, le prochain lot pourra utiliser les images **désormais prévalidées**, sans retoucher les poses et avec un critère de détection fixé *avant* l'inférence.
+
+## Résultat exécuté : préflight non entièrement validé
+
+**Preuve :** [GitHub Actions #41032381828](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41032381828), suite MuJoCo/segmentation uniquement, réussite de l'exécution et des 7 tests de contrat. Source OEM et gitlinks vérifiés, **aucun ONNX/YOLOX chargé**. Les pixels proviennent des masques `mjOBJ_GEOM` de l'état figé ; sorties numériques uniquement, pas d'images.
+
+| Cas | Pixels ciblés | Vérification et verdict |
+| --- | ---: | --- |
+| `cube_south_living` | 7 012 | **Valide**, bbox [143,484,217,581] |
+| `chair_near` | 171 720 | **Valide**, bbox [0,163,360,640] |
+| `pillar_cyan_near` | 137 496 | **Valide**, bbox [62,0,297,598] |
+| `ball_hidden_by_chair` | 0 | **Non validé** : fauteuil visible 171 720 pixels, mais premier rayon touche le geom #156 à **0,008571 m** de la caméra, et non le fauteuil attendu (#49) ; test `chair_ray_not_proven` |
+
+Résultat informatique `cases_valid=3/4`, `preflight_gate_met=false`, `yolox_inference_attempted=0`, `motor_commands_issued=0`. **Il serait faux de parler de 3/4 objets détectés.** Le masque balle nul peut être dû à une autre occultation, une géométrie en avant de la caméra ou un hors-champ ; **on ne sait pas** sans nouvel oracle indépendant. Le premier rayon heurte une géométrie à 8,6 mm (nom non identifié dans le rapport), aucune causalité « fauteuil cache la balle » démontrée.
+
+**Décision STOP du lot** : ne pas lancer YOLOX sur les quatre scènes ni modifier le rayon, la pose, les seuils ou le modèle après observation. Les trois positives présentent une GT géométrique exploitable, **mais le jeu préenregistré comme un tout ne satisfait pas sa porte** ; pas de taux multiobjet ni d'autonomie revendiquée. L'outil de préflight garde une valeur indépendante : rapport par cas et détection précoce des témoins invalides, contrairement à l'arrêt opaque de SIM-VIS-E. Piste suivante : négatifs certifiés et données de GT indépendantes déjà existantes (COCO), puis comparaison de perception si le lot est entièrement qualifié.
