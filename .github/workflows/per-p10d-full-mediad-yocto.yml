@@ -60,6 +60,7 @@ jobs:
       PYTHONDONTWRITEBYTECODE: "1"
       RUSTFLAGS: "-D warnings"
       P10D_OEM: /tmp/p10d-full-oem
+      KWIPI_P10B_TEST_MODELS: /tmp/p10d-synthetic-onnx
     steps:
       - uses: actions/checkout@v4
         with:
@@ -98,6 +99,22 @@ jobs:
           file "$P10D_OEM/target/debug/mediad"
           test -s "$P10D_OEM/target/debug/mediad"
           echo "This is a real x86 host binary, NOT an aarch64 Yocto image."
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Prepare actual Rust ORT test runtime and synthetic ONNX (no model weights)
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "onnx==1.16.2" "numpy==1.26.4"
+          python scripts/per_p10b_synthetic_onnx.py --output-dir "$KWIPI_P10B_TEST_MODELS"
+          test "$(find "$KWIPI_P10B_TEST_MODELS" -name '*.onnx' -type f | wc -l)" -eq 6
+          mkdir -p "$RUNNER_TEMP/p10d-ort"
+          curl --proto '=https' --tlsv1.2 -fsSL --retry 3 "https://github.com/microsoft/onnxruntime/releases/download/v1.28.0/onnxruntime-linux-x64-1.28.0.tgz" -o "$RUNNER_TEMP/p10d-ort.tgz"
+          echo "a3e1b79d7bb1bf09696ce675f49e4064e6c81f6202b8225624fff0e93f8d6407  $RUNNER_TEMP/p10d-ort.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/p10d-ort.tgz" -C "$RUNNER_TEMP/p10d-ort"
+          lib="$(find "$RUNNER_TEMP/p10d-ort" -name 'libonnxruntime.so.1.28.0' -type f -print -quit)"
+          test -n "$lib"
+          echo "ORT_DYLIB_PATH=$lib" >> "$GITHUB_ENV"
       - name: Run actual pinned mediad library tests and GStreamer-dependent Rust Clippy
         run: |
           set -euo pipefail
