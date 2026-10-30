@@ -63,8 +63,12 @@ def validate(env: str, p12: dict, *, layer: Path) -> dict:
     bp = bbvar(env, "BP")
     if source_dir.rstrip("/") != (unpack.rstrip("/") + "/" + bp):
         raise EnvRefused("BitBake S does not reference the chosen tar subdirectory")
-    if layer.resolve().as_posix() not in bbvar(env, "BBLAYERS").split():
-        raise EnvRefused("companion layer absent from BitBake layer resolution")
+    layers = bbvar(env, "BBLAYERS")
+    # BitBake prints literal backslash-n continuations in the effective value.
+    # Do not interpret those bytes as part of a layer path.
+    tokens = layers.replace("\\n", " ").replace("\\t", " ").split()
+    if layer.resolve() not in {Path(part).resolve() for part in tokens}:
+        raise EnvRefused("companion layer absent from BitBake layer resolution: " + repr(tokens[:12]))
     return {
         "status": "real_bitbake_metadata_parsed_only",
         "archive_sha256": p12["archive_sha256"],
