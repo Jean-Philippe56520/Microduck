@@ -75,6 +75,7 @@ class EighthCategoryVsRegionTests(unittest.TestCase):
     def test_prior_seven_reproduced_and_eighth_has_new_ids(self):
         blob = json.dumps({
             "images": [], "annotations": [], "licenses": [], "categories": [],
+            "synthetic_test_padding": "X" * 180,
         }).encode()
         # The pinned hash guard remains active for real public evidence.
         with patch.object(study, "ANNOTATIONS_SHA256",
@@ -91,6 +92,7 @@ class EighthCategoryVsRegionTests(unittest.TestCase):
     def test_wrong_seventh_cohort_stops_before_model(self):
         blob = json.dumps({
             "images": [], "annotations": [], "licenses": [], "categories": [],
+            "synthetic_test_padding": "X" * 180,
         }).encode()
         with patch.object(study, "ANNOTATIONS_SHA256",
                           hashlib.sha256(blob).hexdigest()), patch.object(
@@ -103,6 +105,7 @@ class EighthCategoryVsRegionTests(unittest.TestCase):
     def test_reused_old_image_is_refused(self):
         blob = json.dumps({
             "images": [], "annotations": [], "licenses": [], "categories": [],
+            "synthetic_test_padding": "X" * 180,
         }).encode()
         with patch.object(study, "ANNOTATIONS_SHA256",
                           hashlib.sha256(blob).hexdigest()), patch.object(
