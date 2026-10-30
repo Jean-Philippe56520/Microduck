@@ -87,10 +87,12 @@ jobs:
             'torch==2.4.1+cpu' 'torchvision==0.19.1+cpu' \
             --index-url https://download.pytorch.org/whl/cpu
           python -m pip install --disable-pip-version-check --no-cache-dir \
-            'ultralytics==8.4.192' 'Pillow==11.3.0'
+            'ultralytics==8.4.192' 'Pillow==11.3.0' \
+            'numpy==1.26.4' 'opencv-python==4.9.0.80'
           python -m pip install --disable-pip-version-check --no-cache-dir --no-deps \
             vendor-rknn/rknn-toolkit2/packages/x86_64/rknn_toolkit2-2.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-          python -c 'import torch, onnx, rknn, ultralytics; from rknn.api import RKNN; print("verified tool imports:", torch.__version__, onnx.__version__, ultralytics.__version__)'
+          python -m pip check
+          python -c 'import torch, onnx, numpy, scipy, rknn, ultralytics; from rknn.api import RKNN; print("verified imports:", torch.__version__, onnx.__version__, numpy.__version__, scipy.__version__, ultralytics.__version__)'
       - name: Positive and negative tests of static source gate (before model loading)
         run: |
           set -euo pipefail
