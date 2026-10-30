@@ -40,3 +40,28 @@ Valeurs hôte de compilation **non extrapolables** : pics RSS de processus 613 1
 - **Témoin négatif préfixé :** refuser poids/empreinte/calibration non conformes ; refuser sorties/cropping impossibles, retour SDK non zéro, nombre nul ou NaN. Ne pas remplacer un résultat absent par une sortie synthétique fabriquée.
 - **Masques :** `-seg` doit exposer les têtes et prototypes (référence sortie `output1`), mais **le décodeur complet `tail.onnx` reste non validé**. Ne pas corriger l'erreur Ultralytics dans ce lot ni prétendre avoir reconstruit des masques ou mesuré un gain cognitif.
 - **Arrêt :** une seule construction et une seule inférence par modèle, sans diminuer `imgsz`, changer de SDK, modifier quantification/sources ou répéter selon les résultats ; en cas d'échec, `simulation_failed` avec cause exacte et STOP. Si l'essai passe, `host_simulation_passed` **sur PC seulement** ; le coût NPU/RAM/2 Hz/50 Hz/thermie sur vrai RK3566 demeure inconnu, droits AGPL/Enterprise et interface OEM toujours non validés. Aucun modèle publié.
+
+## Résultats définitifs P5-SIM1, 30/10/2026 — sortie brute seulement
+
+**Preuve :** [CI P5 #41095986462](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41095986462), deux jobs **succès**, [suite Python #41095986450](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41095986450) **succès** (tests positifs et négatifs inclus). SHA de branche testé `daec1db5306e9036850488129f75151d85c4eae6`. Environnement Linux Ubuntu x86_64, `rknn-toolkit2 2.3.2`, Torch CPU 2.4.0, Ultralytics 8.4.192, ONNX opset 19, 20 images de calibration Rockchip officielles, **une seule compilation et une seule simulation synthétique par modèle** dans P5-SIM1 ; seules statistiques JSON publiées. `upstream/` inchangés.
+
+| Mesure mesurée sur PC / SDK simulé | YOLO26n | YOLO26n-seg |
+|---|---:|---:|
+| Taille ONNX (octets) | 9 894 053 | 11 165 280 |
+| Taille RKNN INT8 (octets) | **6 934 946** | **8 019 237** |
+| Construction+export RKNN, processus hôte (s) | 11,920 | 15,766 |
+| Sorties brutes, nombre de tenseurs | **6** | **10** (9 têtes + prototype `output1`) |
+| Sorties brutes matérialisées en float32 par le simulateur (octets) | **2 822 400** | **7 174 400** |
+| Une inférence synthétique simulateur x86 (ms) | **459,63** | **668,18** |
+| Pic RSS du processus hôte incluant Torch et compilateur (Kio) | **674 640** | **727 308** |
+| `init_runtime` même instance et sorties finies | **oui** | **oui** |
+| `tail.onnx` / construction de vrais masques | **non testée** | **non validée (erreur officielle `output1` au P5 initial)** |
+| Robot RK3566 / NPU, mémoire Yocto, 2 Hz, 50 Hz, chaleur | **inconnu** | **inconnu** |
+
+**Delta constaté :** `-seg` ajoute **1 084 291 octets de binaire RKNN (+15,6 %)**, et **4 352 000 octets de sorties float32 simulées** (+154,2 % de sorties). Les quatre sorties supplémentaires incluent la branche de coefficients de masque et la carte de prototypes `[1,32,160,160]` ; leur décodage, NMS et l'extraction fiable des contours ne sont pas exécutés. Le temps 668,18 ms est **une inférence du simulateur x86**, **PAS un débit NPU de 1,5 Hz** ; on ne peut le comparer à la cible 2 Hz embarquée. Le pic RSS total du processus Python/compilation n'est **pas** la RAM consommée par un service Rust sur Microduck. Les tailles float32 ne sont ni la taille des sorties quantifiées du pilote ni un pic réel de mémoire NPU.
+
+**Porte franchie :** `YOLO26n` et `YOLO26n-seg` sont compilables en **RKNN ciblé rk3566** avec le SDK fournisseur 2.3.2 et produisent des **sorties numériques valides dans son simulateur hôte**. Pas d'inférence sur puce, pas de comparaison quantifiée contre vérité terrain, pas de preuve de décodage de masque utilisable ou de catégories inconnues, pas de caméra/robot. Les fichiers RKNN (hashs conservés dans les rapports numériques), modèles ONNX, JPG et images ne sont pas publiés.
+
+**Décision 30/10 — avancer sans détour :** `YOLO26n-seg` demeure candidat cognitif conditionnel après la preuve P4 (masque > rectangle sur 98,36 % des régions déjà appariées) et non un modèle adopté. `YOLO26n` est témoin de moindre coût. **Un seul obstacle logiciel concret à traiter si `-seg` est retenu :** l'extraction `tail.onnx` du fournisseur (`KeyError: 'output1'`) et son décodage complet avec coûts CPU/masques ; **ne pas créer de second service vidéo/SQLite**. Vérifier licences code+poids AGPL/Enterprise et interface constructeur une sortie avant toute modification OEM ; sur matériel futur mesurer NPU/quantification, RAM/RSS, 2 Hz, températures et l'impact éventuel sur `robotd` 50 Hz. En attendant : **pas de nouvel entraînement, pas de centaines de photos ni de nouveau sous-module**.
+
+**Maintien de la traçabilité des échecs :** les premières CI ont échoué à l'installation NumPy, aux fixtures puis à `load_rknn` sur simulateur et à `tail.onnx` sur `-seg`, ce qui ne constitue pas un échec d'inférence NPU. Ces événements restent référencés ci-dessus et aucun score ne leur est attribué.
