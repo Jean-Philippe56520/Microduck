@@ -37,8 +37,8 @@ def verify_oem_readonly_source(source: bytes) -> dict:
     imported = set()
     denied = {"subprocess", "ctypes", "multiprocessing", "importlib", "requests",
               "http", "urllib", "serial", "sqlite3"}
-    allowed = {"collections", "dataclasses", "json", "math", "os", "socket",
-               "time", "typing"}
+    allowed = {"__future__", "collections", "dataclasses", "json", "math", "os",
+               "socket", "time", "typing"}
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             imported.update(x.name.split(".")[0] for x in node.names)
