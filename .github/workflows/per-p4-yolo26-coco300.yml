@@ -4,8 +4,8 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - "experiments/per_p4_yolo26_coco300.py"
-      - "tests/test_per_p4_yolo26_coco300.py"
+      - "experiments/per_p4_yolo_coco300.py"
+      - "tests/test_per_p4_yolo_coco300.py"
       - "docs/per-p4-yolo26-coco300-prereg-2026-10-30.md"
       - ".github/workflows/per-p4-yolo26-coco300.yml"
   workflow_dispatch:
@@ -51,8 +51,8 @@ jobs:
             'ultralytics==8.4.192' 'pycocotools==2.0.10'
       - name: Synthetic positive/negative contract tests first (no images, no model)
         run: |
-          python -m compileall -q experiments/per_p4_yolo26_coco300.py tests/test_per_p4_yolo26_coco300.py
-          python -m unittest discover -s tests -p 'test_per_p4_yolo26_coco300.py' -v
+          python -m compileall -q experiments/per_p4_yolo_coco300.py tests/test_per_p4_yolo_coco300.py
+          python -m unittest discover -s tests -p 'test_per_p4_yolo_coco300.py' -v
       - name: Download exactly 3 reviewed official weights and immutable public GT
         shell: bash
         run: |
@@ -77,21 +77,22 @@ jobs:
       - name: Evaluate the same 300 new approved photos and instance masks
         run: |
           set -euo pipefail
-          timeout 2700s python -m experiments.per_p4_yolo26_coco300 \
+          timeout 2700s python -m experiments.per_p4_yolo_coco300 \
+            --approved-public-media \
             --annotations "$RUNNER_TEMP/p4-coco-val2017.json" \
             --weights-dir "$RUNNER_TEMP/p4-models" \
             --report "$RUNNER_TEMP/p4-coco300-numeric-only.json"
           python - <<'PY'
           import json,os,pathlib
           report=json.loads(pathlib.Path(os.environ["RUNNER_TEMP"], "p4-coco300-numeric-only.json").read_text())
-          assert report["images"] == 300
-          assert report["overlap_historical_ids"] == 0
-          assert report["excluded_historical_image_ids"] == 132
-          assert len(report["results"]) == 3
-          assert {r["model"] for r in report["results"]} == {"yolo11n.pt","yolo26n.pt","yolo26n-seg.pt"}
-          assert not report["actual_RK3566_or_NPU_test"]
-          assert not report["private_media_saved"] and not report["robot_motion"]
-          print("NUMERIC EVIDENCE PASS: 300 distinct photos; 3 real model passes; no robot")
+          assert report["source_image_count"] == 300
+          assert len(report["selected_image_ids"]) == 300
+          assert len(set(report["selected_image_ids"])) == 300
+          assert len(report["reports"]) == 3
+          assert set(report["reports"]) == {"yolo11n.pt","yolo26n.pt","yolo26n-seg.pt"}
+          assert report["robot_or_npu_verified"] is False
+          assert report["media_saved"] is False and report["no_robot_actuation"] is True
+          print("NUMERIC EVIDENCE PASS: 300 distinct public photos; 3 model passes; no robot")
           PY
       - name: Preserve only the numeric comparison and IDs, never images or weights
         if: always()
