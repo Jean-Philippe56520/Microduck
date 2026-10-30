@@ -32,3 +32,22 @@ La sélection est indépendante de toutes les prédictions. Rejouer l'ordre SHA 
 Ne pas coder d'intégration \`mediad\`, SDK caméra, service, arbitrage, apprentissage, SQLite nouvelle, Qwen ou moteur. OEM pins \`microduck@942e58e3\` et \`microduck_rl@b02fdea4\` inchangés. CI hôte ≠ RNKK/NPU, robotd 50 Hz ou scènes réelles nouvelles.
 
 **Décision de fin obligatoire** : reporter les 5 classes, appariements classés vs régions top1/3/5, gain top3 non-ballon, témoins, coût hôte et limites dans ce document puis dans README et plan d'action si la CI du code est verte. Une PR n'est fusionnable qu'après CI complètes vertes, même si la porte de valeur du détecteur échoue (elle peut être fusionnée comme mesure négative utile, sans revendiquer une nouvelle fonction).
+
+## Résultat mesuré après préenregistrement et correction de métrique
+
+**Preuve exécutée sur le code corrigé :** [GitHub Actions #41040239645](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41040239645) **verte**, SHA `6256ba47e9d2e6afef41170cb23721395572e0ad`. Les 18 IDs sont nouveaux et exclusifs des 114 images des sept cohortes précédentes ; le 7e roster correspond exactement au témoin historique. Aucune image JPEG n'est publiée. Un seul passage ONNX par image, mêmes sorties pour les deux décodeurs.
+
+| Catégorie cible (3 images chacune) | Localisée avec bonne catégorie | Localisée par région top3 | Récupérée par top3 après échec classé |
+|---|---:|---:|---:|
+| Personne | 3 | 3 | 0 |
+| Chat | 1 | 2 | **1** |
+| Chien | 2 | 3 | **1** |
+| Balle | 2 | 1 | 0 |
+| Chaise | 3 | 1 | 0 |
+| **Total** | **11/15** | **10/15** | **2** |
+
+**Mesures complémentaires :** top1 **3/15**, top5 **11/15** ; régions top3 sur cibles non-ballons **9/12** (personne/chat/chien/chaise, sports_ball explicitement exclu), **2/12 cibles non-ballons récupérées** malgré l'échec du comparateur classé. Parmi 41 régions top3 sur les 18 images, **34** se superposent à une annotation de l'une des 80 classes COCO (IoU≥0,50), **7** n'ont pas de correspondance, soit **17,07 %**. Ces sept régions **ne sont pas démontrées fausses** à cause des lacunes d'annotation. Parmi les trois images *sans annotation des cinq classes cibles*, **3/3** ont au moins une région et **2/3** une région à score ≥0,80 : un rappel critique contre une confiance excessive et contre le déclenchement automatique de F2.
+
+Mesures PC GitHub Actions : inférence ONNX médiane **24,251 ms/image**, décodage **combiné des deux méthodes** p95 **3,720 ms/image**, pic RSS de tout le processus hôte **360 576 KiB** incluant Python, annotations et modèle (ni NPU/robot, ni coût par frame embarqué). Le test du suivi de catégories a révélé **avant fusion** que l'ordre COCO situe `sports_ball` avant `chair` : une agrégation initiale par position comptait la mauvaise tranche de 12 images. L'agrégation est maintenant fondée sur le nom de catégorie, testée pour exclure la balle et inclure la chaise ; les seuils **préannoncés** et les sorties ONNX sont inchangés. Il ne s'agit pas de retuning du détecteur.
+
+**Toutes les portes d'étude préenregistrées sont franchies**, mais **décision d'architecture limitée** : les propositions top3 peuvent compléter une attention **spatiale `unknown`** dans le *banc PC*, surtout chat/chien, **sans remplacer** le détecteur COCO classé (11/15 vs 10/15), sans promouvoir une région en catégorie, objet physique réel ou action. Aucun gain de comportement sur l'OEM réel et aucune perception RKNN/2 Hz validée. Ne pas répéter d'autres cohortes COCO pour gagner artificiellement un point : la prochaine preuve utile concerne les sources et budgets du flux OEM `mediad → duck-detect → RKNN`, puis des scènes basses indépendantes avant déploiement.
