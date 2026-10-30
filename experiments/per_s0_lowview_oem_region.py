@@ -101,6 +101,8 @@ def validate_preflight(cases: list[dict]) -> bool:
             if row["geom_pixels"] != 0 or bbox is not None:
                 raise BallGTError("target inferred in empty negative")
         else:
+            if row["valid_geometry"] and row["geom_pixels"] < MIN_VISIBLE_PIXELS:
+                raise BallGTError("positive declared valid without enough GT pixels")
             if ((row["geom_pixels"] == 0) != (bbox is None)
                     or bbox is not None and (
                         type(bbox) is not list or len(bbox) != 4
@@ -279,6 +281,9 @@ def gate(rows: list[dict]) -> dict:
             or any(r.get("role") != s.role for r, s in zip(rows, CASES))):
         raise BallGTError("missing/reordered scored PER-S0 cases")
     for row in rows:
+        if (row["role"] != "empty_negative"
+                and type(row.get("top3_recovers_without_five_class_box")) is not bool):
+            raise BallGTError("unverified incremental recovery flag")
         caps = row.get("region_caps")
         if type(caps) is not dict or set(caps) != {"1", "3", "5"}:
             raise BallGTError("incomplete region cap scores")
