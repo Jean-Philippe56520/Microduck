@@ -163,7 +163,8 @@ class TestPerS1AVisualPredictor(unittest.TestCase):
         oracle=np.zeros((640,360),dtype=np.bool_)
         cv2.circle(rgb,(180,260),22,(225,35,45),-1)
         cv2.circle(oracle.view(np.uint8),(180,260),22,1,-1)
-        box=(145.,225.,215.,295.)
+        # Tight rectangle around the synthetic circle: GT bbox IoU >0.50.
+        box=(153.,233.,207.,287.)
         first={"xyxy":box,"score":.8,"untrusted_coco_class_index":11}
         other={"xyxy":(80.,40.,120.,90.),"score":.3,
                "untrusted_coco_class_index":2}
