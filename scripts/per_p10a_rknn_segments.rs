@@ -5,7 +5,7 @@
 //! existing OEM rknn.rs, and reuses its context, librknnrt symbols and input.
 //! Never link another RKNN runtime, drive motors or acquire a second camera.
 
-use super::{Model, RknnInput, RknnOutput, RknnTensorAttr, RKNN_TENSOR_NHWC, RKNN_TENSOR_UINT8};
+use super::{Model, RKNN_TENSOR_NHWC, RKNN_TENSOR_UINT8, RknnInput, RknnOutput, RknnTensorAttr};
 use anyhow::{Result, bail};
 use std::ffi::{c_uint, c_void};
 
@@ -24,8 +24,7 @@ const DIMS_NCHW: [[c_uint; 4]; SEG_OUTPUTS] = [
     [1, 32, 160, 160],
 ];
 const ELEMENTS: [usize; SEG_OUTPUTS] = [
-    25_600, 6_400, 1_600, 512_000, 128_000, 32_000, 204_800, 51_200,
-    12_800, 819_200,
+    25_600, 6_400, 1_600, 512_000, 128_000, 32_000, 204_800, 51_200, 12_800, 819_200,
 ];
 
 /// A standalone contract: the single-output OEM model must remain single,
@@ -53,7 +52,8 @@ pub(super) fn verify_attrs(attrs: &[RknnTensorAttr]) -> Result<[usize; SEG_OUTPU
     }
     let mut total_bytes = 0usize;
     for (index, attr) in attrs.iter().enumerate() {
-        if attr.index as usize != index || attr.n_dims != 4
+        if attr.index as usize != index
+            || attr.n_dims != 4
             || attr.dims[..4] != DIMS_NCHW[index]
             || attr.n_elems as usize != ELEMENTS[index]
         {
@@ -87,8 +87,10 @@ fn copy_outputs(
     let mut copied: [Vec<f32>; SEG_OUTPUTS] = std::array::from_fn(|_| Vec::new());
     for (index, output) in raw.iter().enumerate() {
         let length = expected[index];
-        if length != ELEMENTS[index] || output.index as usize != index
-            || output.want_float != 1 || output.buf.is_null()
+        if length != ELEMENTS[index]
+            || output.index as usize != index
+            || output.want_float != 1
+            || output.buf.is_null()
             || (output.buf as usize) % std::mem::align_of::<f32>() != 0
             || output.size as usize != length * std::mem::size_of::<f32>()
         {
@@ -172,14 +174,19 @@ impl Model {
                 bail!("rknn_run failed ({status})");
             }
             let status = (self.outputs_get)(
-                self.context, SEG_OUTPUTS as c_uint, outputs.as_mut_ptr(), std::ptr::null(),
+                self.context,
+                SEG_OUTPUTS as c_uint,
+                outputs.as_mut_ptr(),
+                std::ptr::null(),
             );
             if status != 0 {
                 // The API does not document how many pointers can be allocated
                 // before failure: release if any are non-null, never return data.
                 if outputs.iter().any(|o| !o.buf.is_null()) {
                     let _ = (self.outputs_release)(
-                        self.context, SEG_OUTPUTS as c_uint, outputs.as_mut_ptr(),
+                        self.context,
+                        SEG_OUTPUTS as c_uint,
+                        outputs.as_mut_ptr(),
                     );
                 }
                 bail!("rknn_outputs_get(10) failed ({status})");
@@ -274,7 +281,8 @@ mod tests {
         let copied = copy_then_release(&mut raw, &expected, |_| {
             released.set(released.get() + 1);
             0
-        }).unwrap();
+        })
+        .unwrap();
         assert_eq!(released.get(), 1);
         assert_eq!(copied[0][0], 0.);
         assert_eq!(copied[6][0], 6.);
@@ -297,17 +305,23 @@ mod tests {
                 _ => current[8].want_float = 0,
             }
             let released = Cell::new(0);
-            assert!(copy_then_release(&mut current, &expected, |_| {
-                released.set(released.get() + 1);
-                0
-            }).is_err());
+            assert!(
+                copy_then_release(&mut current, &expected, |_| {
+                    released.set(released.get() + 1);
+                    0
+                })
+                .is_err()
+            );
             assert_eq!(released.get(), 1);
         }
         let released = Cell::new(0);
-        assert!(copy_then_release(&mut raw, &expected, |_| {
-            released.set(released.get() + 1);
-            0
-        }).is_err());
+        assert!(
+            copy_then_release(&mut raw, &expected, |_| {
+                released.set(released.get() + 1);
+                0
+            })
+            .is_err()
+        );
         assert_eq!(released.get(), 1);
     }
 
