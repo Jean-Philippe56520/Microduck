@@ -77,12 +77,8 @@ fn validate_frame(frame: UprightFrame) -> Result<ValidatedFrame, RegionError> {
     // Validate against the pinned OEM's actual round-to-nearest + integer-pad
     // geometry. This is not a second pixel sampler or a different resize.
     let expected = (IMAGE_SIDE as f32 / w).min(IMAGE_SIDE as f32 / h);
-    let fitted_w = ((w * expected).round() as usize)
-        .max(1)
-        .min(IMAGE_SIDE);
-    let fitted_h = ((h * expected).round() as usize)
-        .max(1)
-        .min(IMAGE_SIDE);
+    let fitted_w = ((w * expected).round() as usize).max(1).min(IMAGE_SIDE);
+    let fitted_h = ((h * expected).round() as usize).max(1).min(IMAGE_SIDE);
     let expected_px = ((IMAGE_SIDE - fitted_w) / 2) as f32;
     let expected_py = ((IMAGE_SIDE - fitted_h) / 2) as f32;
     if (frame.scale - expected).abs() > 1e-5
@@ -273,26 +269,54 @@ mod tests {
         assert_eq!(empty.foreground_pixels, 0);
         let padding = from_core([0.0, 80.0, 120.0, 240.0]);
         assert_eq!(padding.foreground_pixels, 1200);
-        assert!(project_to_upright(&[empty, padding], portrait()).unwrap().is_empty());
+        assert!(
+            project_to_upright(&[empty, padding], portrait())
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]
     fn rejects_inconsistent_geometry_and_oversize_frames() {
         let frame = portrait();
         assert_eq!(
-            project_to_upright(&[], UprightFrame { scale: 0.51, ..frame }),
+            project_to_upright(
+                &[],
+                UprightFrame {
+                    scale: 0.51,
+                    ..frame
+                }
+            ),
             Err(RegionError::InvalidLetterbox)
         );
         assert_eq!(
-            project_to_upright(&[], UprightFrame { pad_x: 141.0, ..frame }),
+            project_to_upright(
+                &[],
+                UprightFrame {
+                    pad_x: 141.0,
+                    ..frame
+                }
+            ),
             Err(RegionError::InvalidLetterbox)
         );
         assert_eq!(
-            project_to_upright(&[], UprightFrame { scale: f32::NAN, ..frame }),
+            project_to_upright(
+                &[],
+                UprightFrame {
+                    scale: f32::NAN,
+                    ..frame
+                }
+            ),
             Err(RegionError::InvalidLetterbox)
         );
         assert_eq!(
-            project_to_upright(&[], UprightFrame { width: 4097, ..frame }),
+            project_to_upright(
+                &[],
+                UprightFrame {
+                    width: 4097,
+                    ..frame
+                }
+            ),
             Err(RegionError::InvalidFrame)
         );
         assert_eq!(
