@@ -133,7 +133,12 @@ def summarize(rows: list[dict]) -> dict:
             raise ValueError("unverified region scores misrepresented")
 
     positives = rows[:15]
-    nonball = rows[:12]
+    # CATEGORIES puts sports_ball BEFORE chair: never infer non-ball status
+    # from a slice or a positional class index.
+    nonball = [row for row in positives
+               if row["evaluated_target"] != "sports_ball"]
+    if len(nonball) != 12:
+        raise ValueError("unexpected non-ball category support")
     grouped = {}
     for i, name in enumerate(categories):
         selected = positives[i*3:(i+1)*3]
