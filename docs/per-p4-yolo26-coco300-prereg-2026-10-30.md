@@ -28,3 +28,32 @@ Cette étude est **un classement relatif**, pas une porte éliminatoire fondée 
 **Décision** : \`progres_demontre_PC_public\` si les trois analyses sur 300 vraies photos sont terminées avec provenance et scores ; \`insuffisant\` si les portes ci-dessus échouent ; \`bloque_source_externe\` si la récupération licite et vérifiable est impossible. Une CI logicielle verte ne constitue jamais une performance de détection. Pas de changement de modèles OEM, SQLite, permis moteur ou sous-module sans accord.
 
 **Licence** : le code et les poids Ultralytics sont soumis aux conditions AGPL-3.0 / Enterprise et **ne sont évalués qu'à titre exploratoire sur hôte**. Ne pas redistribuer les poids ou intégrer ces modèles dans un produit sans examen approprié des droits. La licence de l'exemple Rockchip ne remplace pas ces obligations.
+
+
+## Résultat POST-ESSAI, jamais utilisé pour définir les seuils — 30/10/2026
+
+**Preuve effective :** [CI PER-P4 #41085096403](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41085096403) **verte** sur le commit \`289a951edfd3e6c9ff5052275f2821d0643eab0c\`. [CI Python #41085096349](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41085096349) verte sur le même SHA. **300 photos publiques COCO val2017 distinctes et inédites parmi les 132 IDs déjà vus ; 40 photos ciblées par catégorie + 100 contrôles sans annotation des cinq catégories ; 900 prédictions de modèles réellement effectuées sur CPU hôte.** Les cinq catégories totalisent **704 instances annotées** (personnes 421, chats 44, chiens 51, balles 57, chaises 131) ; 573 instances prioritaires hors chaises. Ces 300 JPEG sont distincts, mais leur indépendance physique et leur hauteur de caméra ne sont pas prouvées. Les droits individuels Flickr ne sont pas vérifiés en dehors des six métadonnées CC enregistrées. Aucune image privée ni poids publiés.
+
+| Mesure (COCO hôte, même échantillon ; IoU boîte ≥0,50) | YOLO11n | YOLO26n | YOLO26n-seg |
+| --- | ---: | ---: | ---: |
+| Rappel de régions sans exiger bonne étiquette, 573 instances prioritaires | 0,7435 | 0,7435 | **0,7522** |
+| Rappel avec catégorie correcte, 573 prioritaires | 0,7277 | 0,7295 | **0,7365** |
+| Personne, rappel de région (421 instances) | 319/421 | 312/421 | 318/421 |
+| Chat, rappel de région (44) | 35/44 | 37/44 | 36/44 |
+| Chien, rappel de région (51) | 47/51 | 47/51 | 48/51 |
+| Balle, rappel de région (57) | 25/57 | **30/57** | 29/57 |
+| Chaise, rappel de région (131), non éliminatoire | 61/131 | **62/131** | 56/131 |
+| Images témoins sans annotation cible | 100 | 100 | 100 |
+| Prédictions portant l'une des 5 étiquettes sur ces témoins (diagnostic, pas FP prouvés) | 5 | 5 | 3 |
+| Masque et rectangle comparés sur les propositions réelles | — | — | **487 instances** |
+| IoU moyen masque / rectangle sur ces 487 instances | — | — | **0,7976 / 0,5119** |
+| Fraction d'instances où masque > rectangle, parmi les 487 appariées | — | — | **98,36 %** |
+| Médiane CPU hôte sur exécution verte #41085096403 | 48,09 ms | 44,24 ms | 68,05 ms |
+| p95 CPU hôte sur exécution verte #41085096403 | 61,82 ms | 55,59 ms | 87,72 ms |
+| Pic RSS de processus hôte (modèles successifs / mémoire cumulative) | 692 672 KiB | 703 040 KiB | 780 556 KiB |
+
+**Interprétation sans extrapolation :** seul **YOLO26n-seg franchit** le rappel de régions prioritaires **≥0,75** préenregistré, de peu (0,7522). Il franchit le critère de masques **≥60 %** très largement (98,36 %), sur les **objets qu'il a déjà localisés** : une segmentation fine ne compense pas les objets jamais proposés. **Sélection : YOLO26n-seg comme candidat unique pour un nouveau banc de scènes basses OEM**, pas adoption de ses poids ou déploiement. Gain de rappel modeste versus YOLO26n/YOLO11n (0,87 point) mais important gain géométrique conditionnel ; YOLO26n seul est un **témoin léger/plus rapide** et récupère une balle de plus sur cette cohorte. Les 5 000 images de COCO val2017 ne sont PAS évaluées ; il ne s'agit pas d'un mAP COCO officiel ni d'une détection d'objet sans catégorie prouvée.
+
+Les durées hôte varient entre exécutions du **même** jeu public : une exécution précédente sur le même script a donné 24,77 / 22,98 / 35,30 ms de médiane respectivement, la CI finale 48,09 / 44,24 / 68,05 ms. Aucune durée ni RSS ci-dessus ne démontre les 2 Hz du RK3566, le coût NPU, la latence du capteur, le respect de \`robotd\` 50 Hz ou les contraintes de 1 Go embarqué.
+
+**Prochaine étape, sans ajouter d'infrastructure ni réentraîner :** comparer \`yolo26n-seg\` à son rectangle sur de nouvelles scènes MuJoCo **à hauteur basse**, positives et négatives (balle, chaussure/chaussette, animal/humain simulé, objet inconnu, écran/photo, occultation), vérités terrain indépendantes et validation de la propriété « physique » séparée des pixels. Avant toute adaptation constructeur : statut exact de licence AGPL des poids, format multi-sorties et ABI RKNN RK3566, conditions d'OEM \`mediad/duck-detect\`, CPU/RSS/thermique et intégrité du contrôle 50 Hz. Ne pas connecter automatiquement \`ExperienceMemory\` ni Qwen à une classe ou région incertaine. **Aucune action motrice ni sous-module OEM modifiés.**
