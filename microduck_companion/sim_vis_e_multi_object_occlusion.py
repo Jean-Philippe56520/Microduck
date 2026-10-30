@@ -270,6 +270,76 @@ def one_case(scene_dir: Path, case: str, session) -> dict:
         camera.renderer.close()
 
 
+def assess_gate(cases: list[dict]) -> dict:
+    """Frozen geometry/IoU success gate; no threshold adaptation after result."""
+    if (type(cases) is not list or len(cases) != len(CASES)
+            or tuple(c.get("case") for c in cases) != tuple(x[0] for x in CASES)):
+        raise BallGTError("missing, extra or reordered preregistered observations")
+    results = {row["case"]: row for row in cases}
+    for name in POSITIVES:
+        row = results[name]
+        if (type(row.get("target_gt_visible_pixels")) is not int
+                or row["target_gt_visible_pixels"] < MIN_VISIBLE_PIXELS
+                or row.get("target_gt_bbox") is None):
+            raise BallGTError("positive GT visibility not demonstrated")
+    negative = results[OCCLUDED]
+    witness = negative.get("geom_ray_occlusion_oracle")
+    if (negative.get("target_gt_visible_pixels") != 0
+            or negative.get("target_gt_bbox") is not None
+            or not isinstance(witness, dict)
+            or witness.get("ball_mask_empty") is not True
+            or witness.get("chair_physically_intercepts_ray") is not True
+            or type(witness.get("occluder_visible_pixels")) is not int
+            or witness["occluder_visible_pixels"] < MIN_VISIBLE_PIXELS):
+        raise BallGTError("physical occlusion geometry not independently verified")
+
+    for row in cases:
+        cap = row.get("regions_top1_top3_top5")
+        if not isinstance(cap, dict) or set(cap) != {"1", "3", "5"}:
+            raise BallGTError("missing frozen YOLOX region comparisons")
+        for k in ("1", "3", "5"):
+            entry = cap[k]
+            value = entry.get("best_target_iou")
+            matched = entry.get("target_located_iou50")
+            if (type(entry.get("region_count")) is not int
+                    or entry["region_count"] < 0
+                    or entry["region_count"] > int(k)
+                    or type(matched) is not bool
+                    or (value is None and matched)
+                    or (value is not None
+                        and (type(value) not in (float, int)
+                             or not math.isfinite(value)
+                             or not 0 <= value <= 1
+                             or matched != (value >= 0.5)))):
+                raise BallGTError("invalid target geometry/IoU decision")
+        if row["case"] == OCCLUDED and any(
+                cap[k]["target_located_iou50"] for k in ("1", "3", "5")):
+            raise BallGTError("occluded target cannot have matched geom bbox")
+        f2 = row.get("f2_fixture")
+        if (not isinstance(f2, dict)
+                or f2.get("fixture_source") != "mock_fixture_unix_host_projection_only"
+                or f2.get("known_category_promoted") is not False
+                or f2.get("sensor_source_authenticated") is not False
+                or f2.get("motor_commands_issued") != 0
+                or f2.get("experience_writes") != 0
+                or f2.get("intention") not in ("idle", "inspect")):
+            raise BallGTError("untrusted visual proposal promoted outside mock F2")
+    nonball_hits = sum(
+        results[name]["regions_top1_top3_top5"]["3"]["target_located_iou50"]
+        for name in NON_BALL)
+    positive_hits = sum(
+        results[name]["regions_top1_top3_top5"]["3"]["target_located_iou50"]
+        for name in POSITIVES)
+    return {
+        "nonball_hits_top3_iou50": nonball_hits,
+        "all_positive_hits_top3_iou50": positive_hits,
+        "nonball_gate_met": nonball_hits >= 1,
+        "positive_gate_met": positive_hits >= 2,
+        "physical_occlusion_witness_valid": True,
+        "preregistered_gate_met": nonball_hits >= 1 and positive_hits >= 2,
+    }
+
+
 def evaluate(scene_dir: Path, model_path: Path) -> dict:
     import onnxruntime as ort
     from mjlab_microduck.sim.camera import WIDTH, HEIGHT
@@ -292,36 +362,13 @@ def evaluate(scene_dir: Path, model_path: Path) -> dict:
         raise BallGTError("YOLOX ONNX interface changed")
 
     cases = [one_case(scene_dir, case, session) for case, _, _ in CASES]
-    scored = {c["case"]: c for c in cases}
-    nonball_hits = sum(
-        scored[case]["regions_top1_top3_top5"]["3"]["target_located_iou50"]
-        for case in NON_BALL
-    )
-    positive_hits = sum(
-        scored[case]["regions_top1_top3_top5"]["3"]["target_located_iou50"]
-        for case in POSITIVES
-    )
-    negative = scored[OCCLUDED]["geom_ray_occlusion_oracle"]
+    gate = assess_gate(cases)
     return {
         "lot": "SIM-VIS-E_OEM_multi_object_physical_occlusion_prereg",
         "model_sha256": MODEL_SHA256,
         "min_score_frozen": MIN_SCORE,
         "f2_mock_threshold_frozen": DETECTION_CONFIDENCE,
-        "nonball_hits_top3_iou50": nonball_hits,
-        "all_positive_hits_top3_iou50": positive_hits,
-        "nonball_gate_met": nonball_hits >= 1,
-        "positive_gate_met": positive_hits >= 2,
-        "physical_occlusion_witness_valid": (
-            negative["chair_physically_intercepts_ray"]
-            and negative["ball_mask_empty"]
-            and negative["occluder_visible_pixels"] >= MIN_VISIBLE_PIXELS
-        ),
-        "preregistered_gate_met": (
-            nonball_hits >= 1 and positive_hits >= 2
-            and negative["chair_physically_intercepts_ray"]
-            and negative["ball_mask_empty"]
-            and negative["occluder_visible_pixels"] >= MIN_VISIBLE_PIXELS
-        ),
+        **gate,
         "cases": cases,
         "sensor_semantics_or_RKNN_validated": False,
         "new_f2_policy_added": False,
