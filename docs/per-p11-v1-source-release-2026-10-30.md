@@ -1,0 +1,28 @@
+# PER-P11 — source de distribution V1 reproductible, sans déploiement physique
+
+## Manque prouvé et objectif (critères fixés avant la première CI)
+
+Base `main@66d9b46f9476f820cd3331509d33c4e46f3cbbc0`, OEM gitlink `942e58e3aa6dbb28e7037203fff11866122c7567`, RL `b02fdea4902c2b93b7d34a83a6f05da4ececb7d3`, Yocto observé `1ee58387810cebb67ae0d634c351d95024483bce`. Vérifier les PR Qwen #97–99 fusionnées ; #218 fermée sans parité. L'audit #224/P10D a compilé le vrai `mediad` x86 et vérifié ARM64, mais **pas** de source publiable identifiée : les trois overlays ne vivent que dans une archive éphémère de CI, le banc `p10c-harness` y est ajouté, et la recette Yocto officielle sélectionne un commit de release constructeur qui **n'inclut pas** les overlays.
+
+**Jalon P11** : produire une archive de sources P10A/B/C reproductible par SHA-256, à partir d'un OEM gitlink exact et d'un commit Companion, avec un `Cargo.lock` cohérent, manifest de tous les fichiers, sources OEM originales conservées et banc de tests supprimé ; compiler le **contenu sorti de l'archive**. Cela prépare une entrée immuable pour une future recette Yocto, sans la déclarer installable.
+
+## Réutiliser / adapter / créer
+
+- **Réutiliser** les scripts exact-anchor P10A/B/C, noyau Rust P7/P9, `git archive`, `cargo metadata --locked`, `mediad` OEM, son `Cargo.lock` et les contrôles Git/Yocto existants. Le code constructeur est déjà Apache-2.0 ; conserver sa licence et les ONNX/fixtures constructeur **tels que pinnés**, sans les confondre avec de nouveaux poids Kwipi.
+- **Adapter** uniquement l'assemblage pour supprimer le banc synthétique P10C, normaliser le lockfile depuis les versions OEM et créer une archive gzip/tar déterministe avec empreintes par fichier ; ne pas toucher à `upstream/`, `robotd`, son rythme 50 Hz, caméra, capteurs, services, SQLite ni mécanisme OEM d'updater/RAUC.
+- **Créer** un exporteur strictement hors robot et une CI source-bundle. Aucun modèle YOLO26, `tail.onnx`, média privé, clé de signature, patch de sûreté, service ni fichier d'installation n'est ajouté.
+
+## Preuves positives, négatives, passage et arrêt
+
+1. **Positifs** : `git archive` de l'OEM exact (sans checkout modifié), overlays P10A/B/C complets ; `p10c-harness` et marqueur temporaire absents ; `Cargo.lock` reconnaît le crate P7/P9 et `cargo metadata --locked` ne le change plus ; `mediad` contient **une seule** lecture `frames.next_frame()` et un seul thread `duck-detect`; `DuckDetectorParams.enabled=false`. Deux exportations de la même entrée ont le **même SHA-256** ; manifest intégré et SHA sidecar vérifiés ; le binaire `mediad` x86 est compilé depuis l'archive décompressée avec GStreamer et Cargo `--locked`.
+2. **Négatifs** : gitlinks/RL/OEM erronés, arbre Git modifié, ancre d'overlay absente, banc modifié, nouveau `kwipi_seg.rknn` ou `tail.onnx`, poids non OEM, chemin traversant, lien hors archive, octets modifiés après manifest, doublons, archive tronquée, source incomplète → **refus**, aucune modification de dépôt/robot.
+3. **Critère d'arrêt** : si le Cargo.lock ne se stabilise pas ou un modèle nouveau/une incompatibilité de licence est découvert, ne pas publier de release de robot ; conserver le résultat `source_candidate_only_bitbake_licence_and_robot_blocked`. Si la CI ou la compilation de l'archive échoue : ne pas fusionner. Pas de sélection par défaut de la segmentation.
+4. **Mesures** : SHA et nombre de fichiers, résultat de compilation native, aucune mesure NPU/RK3566, RAM, thermie, autonomie ou `robotd` 50 Hz revendiquée. Les 162/162 tests Rust et `cargo check aarch64` sont des preuves **P10D**, pas des preuves Yocto de P11.
+
+## Dépendances nécessaires avant « distribution V1 prête »
+
+La recette OEM `microduck-daemon.bb` conserve `MICRODUCK_DAEMON_VERSION/SRCREV`, `bmi088` pinné, `cargo-update-recipe-crates`, GStreamer, `onnxruntime` recommandé et la disposition `/opt/robot/daemon/releases/<version>` avec `current/golden`. **Ne pas** injecter cette archive via un bricolage non vérifié ni remplacer une version constructeur par une autre source portant le même numéro (updaterd ferait une fausse comparaison). Le lot suivant doit choisir et vérifier une provenance immuable consommable par une recette Yocto **exacte**, un identifiant de release distinct et son retour arrière, puis exécuter de vrais `bitbake`/package/RAUC avant toute image. Les builds Yocto complets exigent des ressources considérables et les droits du modèle ; un simple `cargo check` ou `bitbake -p` n'autorise pas le statut « prêt ».
+
+Ultralytics publie YOLO26 sous AGPL-3.0 ou Enterprise ; **aucune décision juridique pour ce déploiement n'est démontrée**. Les nouveaux poids et le `tail.onnx` ne sont pas distribués ici, le détecteur reste désactivé par défaut. La parité numérique P8 sur sortie RKNN officielle, l'exécution sur NPU, les ressources RK3566 et la validation motrice restent inconnues avant matériel. Le robot physique reste absent selon le calendrier V1 d'abord.
+
+**Retour arrière** : ne pas fusionner/supprimer la PR ou supprimer l'archive éphémère. Aucune mutation ou installation sur robot, aucune mise à niveau des gitlinks. **Statut à reporter** : source candidate testée (si CI verte), Yocto V1 non construit, droits modèle en attente, robot non validé.
