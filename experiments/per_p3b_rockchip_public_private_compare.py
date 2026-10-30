@@ -83,7 +83,7 @@ def verify_inputs(root: Path, *, source: str) -> list[dict]:
             if type(filename) is not str or Path(filename).name != filename:
                 raise StudyStop("unexpected public image path")
             data = _safe_payload(root, filename)
-            header = f"blob {len(data)}\\0".encode()
+            header = f"blob {len(data)}".encode() + bytes([0])
             digest = hashlib.sha1(header + data).hexdigest()
             if digest != entry.get("source_git_blob_sha") or filename in seen:
                 raise StudyStop("public git-blob hash/uniqueness mismatch")
