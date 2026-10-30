@@ -23,6 +23,7 @@ on:
       - feat/x2c-mujoco-passive-acceptance-20261027
       - feat/sim-e1-active-experience-20261028
       - feat/sim-e2g-one-speed-onset-probe-20261028
+      - feat/sim-s1-passive-memory-ablation-20261030
     paths:
       - ".github/workflows/mujoco-smoke.yml"
       - "scripts/sim-smoke.sh"
@@ -95,7 +96,7 @@ jobs:
           DUCK_SIM_GEOMETRY_COMPARE: ${{ github.ref_name == 'feat/p0g-compiled-contact-variants-20261025' && 'YES' || 'NO' }}
           DUCK_SIM_PASSIVE_CYCLES: ${{ github.ref_name == 'feat/p2b-passive-mujoco-cycles-20261025' && 'YES' || 'NO' }}
           # This branch alone runs the two X2-C read-only simulator sessions.
-          DUCK_SIM_X2C_ACCEPTANCE: ${{ github.ref_name == 'feat/x2c-mujoco-passive-acceptance-20261027' && 'YES' || 'NO' }}
+          DUCK_SIM_X2C_ACCEPTANCE: ${{ (github.ref_name == 'feat/x2c-mujoco-passive-acceptance-20261027' || github.ref_name == 'feat/sim-s1-passive-memory-ablation-20261030') && 'YES' || 'NO' }}
           DUCK_SIM_SIM_E1: ${{ github.ref_name == 'feat/sim-e1-active-experience-20261028' && 'YES' || 'NO' }}
           # SIM-E2G: ONE pinned OEM alpha run at 0.30m/s, never user/robot mode.
           DUCK_SIM_VX_ONSET: ${{ github.ref_name == 'feat/sim-e2g-one-speed-onset-probe-20261028' && 'YES' || 'NO' }}
