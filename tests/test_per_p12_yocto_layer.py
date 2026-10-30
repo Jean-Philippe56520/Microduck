@@ -90,7 +90,12 @@ class PureSourceContractTests(unittest.TestCase):
             self.assertEqual((d / "layer/keep").read_text(), "keep")
 
 
-@unittest.skipUnless(os.environ.get("KWIPI_P12_YOCTO"), "requires exact checked-out Yocto + P11 artifact in CI")
+@unittest.skipUnless(
+    os.environ.get("KWIPI_P12_YOCTO") and os.environ.get("KWIPI_P12_SOURCE")
+    and Path(os.environ["KWIPI_P12_YOCTO"]).is_dir()
+    and Path(os.environ["KWIPI_P12_SOURCE"]).is_dir(),
+    "requires exact checked-out Yocto + P11 artifact in CI",
+)
 class RealPinnedSourceTests(unittest.TestCase):
     def setUp(self):
         self.yocto = Path(os.environ["KWIPI_P12_YOCTO"])
