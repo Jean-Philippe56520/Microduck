@@ -29,6 +29,16 @@ ROBOT_YAW_RAD = math.pi / 2
 MIN_VISIBLE_PIXELS = 80
 FRAME_W = 640
 FRAME_H = 360
+# SIM-VIS-C: fixed BEFORE inference. Controlled views of the SAME OEM scene,
+# not independent real-world images. Distances in metres, lateral offsets
+# relative to the OEM head camera. The old SIM-VIS-B cases stay unchanged.
+S2_ATTENTION_VIEWS = (
+    ("s2_near_left_yaw75", math.radians(75), 0.42, -0.12),
+    ("s2_mid_center_yaw90", math.radians(90), 0.72, 0.0),
+    ("s2_far_right_yaw105", math.radians(105), 0.95, 0.16),
+)
+_S2_POSITIONS = {name: (yaw, distance, offset)
+                 for name, yaw, distance, offset in S2_ATTENTION_VIEWS}
 
 
 class BallGTError(RuntimeError):
@@ -91,7 +101,7 @@ def _rig_scene(scene_path: Path, case: str):
     from mjlab_microduck.sim.body_server import World, Body, HOME_TRUNK_Z
     from mjlab_microduck.sim.camera import Camera
 
-    if case not in ("negative_behind", "positive_floor_ahead"):
+    if case not in ("negative_behind", "positive_floor_ahead") and case not in _S2_POSITIONS:
         raise BallGTError("not a declared test case")
     if (not isinstance(scene_path, Path) or scene_path.is_symlink()
             or scene_path.name != "scene_apartment.xml"
@@ -102,9 +112,10 @@ def _rig_scene(scene_path: Path, case: str):
     body = Body(world, 0)
     body.place(None, HOME_TRUNK_Z, 0.0)
     q = world.data.qpos
+    yaw = _S2_POSITIONS[case][0] if case in _S2_POSITIONS else ROBOT_YAW_RAD
     q[body.trunk + 3:body.trunk + 7] = [
-        math.cos(ROBOT_YAW_RAD / 2), 0.0, 0.0,
-        math.sin(ROBOT_YAW_RAD / 2),
+        math.cos(yaw / 2), 0.0, 0.0,
+        math.sin(yaw / 2),
     ]
     mujoco.mj_forward(world.model, world.data)
     camera = Camera(world.model, "head_camera")
@@ -131,8 +142,12 @@ def _rig_scene(scene_path: Path, case: str):
             camera.renderer.close()
             raise BallGTError("OEM ball geometry is no longer dynamic sphere")
         addr = int(world.model.jnt_qposadr[joint])
-        if case == "positive_floor_ahead" and i == 0:
-            xy = origin + horizontal * POSITIVE_DISTANCE_M
+        if i == 0 and (case == "positive_floor_ahead" or case in _S2_POSITIONS):
+            if case in _S2_POSITIONS:
+                _, distance, lateral = _S2_POSITIONS[case]
+            else:
+                distance, lateral = POSITIVE_DISTANCE_M, 0.0
+            xy = origin + horizontal * distance + sideways * lateral
         else:
             xy = origin - horizontal * (NEGATIVE_DISTANCE_M + 0.1 * i)
             xy += sideways * (i - 1) * 0.12
@@ -143,7 +158,7 @@ def _rig_scene(scene_path: Path, case: str):
     return world, camera, geom_ids
 
 
-def _one_case(scene_path: Path, case: str, session) -> dict:
+def _one_case(scene_path: Path, case: str, session, *, s2_attention: bool = False) -> dict:
     import mujoco
     import numpy as np
     from PIL import Image
@@ -183,7 +198,7 @@ def _one_case(scene_path: Path, case: str, session) -> dict:
             if bounds is not None:
                 gt.append(Box("sports_ball", tuple(bounds)))
         visible_target = next(x for x in boxes if x["name"] == "ball_0")
-        if case == "positive_floor_ahead":
+        if case != "negative_behind":
             if (visible_target["pixels"] < MIN_VISIBLE_PIXELS
                     or visible_target["bbox_xyxy"] is None):
                 raise BallGTError("predeclared ground ball is not measurably visible")
@@ -208,12 +223,44 @@ def _one_case(scene_path: Path, case: str, session) -> dict:
             "static_world_time_s": before_time,
             "camera_intrinsics_source": "pinned_OEM_MJCF",
         })
+        if s2_attention:
+            # Region proposals may have a WRONG COCO label: evaluate geometry
+            # only. Never convert a region into object identity/known category.
+            from .yolox_attention_candidates import decode_candidates
+            target_box = (Box("sports_ball", tuple(visible_target["bbox_xyxy"]))
+                          if visible_target["bbox_xyxy"] is not None else None)
+            caps = {}
+            for cap in (1, 3, 5):
+                decode_start = time.perf_counter()
+                regions = decode_candidates(
+                    output, width=FRAME_H, height=FRAME_W, max_results=cap,
+                )
+                decode_ms = (time.perf_counter() - decode_start) * 1000.
+                overlap = best_region_iou(target_box, regions)
+                caps[str(cap)] = {
+                    "region_count": len(regions),
+                    "best_ball_gt_iou": overlap,
+                    "ball_region_located_iou50": (
+                        overlap is not None and overlap >= MATCH_IOU
+                    ),
+                    "decode_ms_host": round(decode_ms, 3),
+                }
+            outcome["unverified_region_attention"] = caps
         return outcome
     finally:
         camera.renderer.close()
 
 
-def evaluate(scene_path: Path, model_path: Path) -> dict:
+def best_region_iou(ball_gt: Box | None, regions: list[dict]) -> float | None:
+    """Spatial agreement with geom GT, NEVER proof of COCO class or meaning."""
+    if ball_gt is None:
+        return None
+    overlaps = [iou(ball_gt, Box("sports_ball", tuple(item["xyxy"])))
+                for item in regions]
+    return round(max(overlaps, default=0.), 6)
+
+
+def evaluate(scene_path: Path, model_path: Path, *, s2_attention: bool = False) -> dict:
     import onnxruntime as ort
     from mjlab_microduck.sim.camera import WIDTH, HEIGHT
     if (WIDTH, HEIGHT) != (FRAME_W, FRAME_H):
@@ -233,6 +280,43 @@ def evaluate(scene_path: Path, model_path: Path) -> dict:
             or session.get_outputs()[0].shape != [1, 3549, 85]):
         raise BallGTError("unreviewed Cat-A ONNX interface")
 
+    if s2_attention:
+        cases = [_one_case(scene_path, case, session, s2_attention=True)
+                 for case in ("negative_behind",) +
+                 tuple(name for name, _, _, _ in S2_ATTENTION_VIEWS)]
+        positives = cases[1:]
+        localized = sum(
+            row["unverified_region_attention"]["3"]["ball_region_located_iou50"]
+            for row in positives
+        )
+        return {
+            "lot": "SIM-VIS-C_predeclared_static_OEM_ball_region_candidates",
+            "source": "pinned_microduck_rl_camera_and_mujoco_geom_oracle",
+            "model_sha256": MODEL_SHA256,
+            "model_score_threshold": MIN_SCORE,
+            "match_iou_threshold": MATCH_IOU,
+            "positive_views_predeclared": [
+                {"case": name, "robot_yaw_deg": round(math.degrees(yaw)),
+                 "distance_m": dist, "lateral_offset_m": lateral}
+                for name, yaw, dist, lateral in S2_ATTENTION_VIEWS
+            ],
+            "cases": cases,
+            "positive_views": len(positives),
+            "top3_region_localized_count": localized,
+            "region_attention_gate_met": (
+                all(next(x for x in row["ball_segmentation"]
+                         if x["name"] == "ball_0")["pixels"] >= MIN_VISIBLE_PIXELS
+                    for row in positives)
+                and cases[0]["false_positives"] == 0
+                and localized >= 2
+            ),
+            "semantic_classification_verified": False,
+            "real_robot_or_mediad_validated": False,
+            "motor_commands_issued": 0,
+            "qwen_or_sqlite_calls": 0,
+            "raw_images_published": False,
+            "scope": "one_OEM_apartment_three_controlled_views_not_real_world_generalization",
+        }
     cases = [
         _one_case(scene_path, "negative_behind", session),
         _one_case(scene_path, "positive_floor_ahead", session),
@@ -268,11 +352,13 @@ def main(argv=None) -> int:
     parser.add_argument("--model-path", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--authorize-static-oem-render", action="store_true")
+    parser.add_argument("--s2-attention-multiview", action="store_true")
     args = parser.parse_args(argv)
     if not args.authorize_static_oem_render:
         parser.error("explicit synthetic render opt-in required")
     try:
-        result = evaluate(args.scene_path, args.model_path)
+        result = evaluate(args.scene_path, args.model_path,
+                          s2_attention=args.s2_attention_multiview)
         if args.output.exists() or args.output.is_symlink():
             raise BallGTError("refusing to overwrite a prior experiment")
         args.output.write_text(json.dumps(result, sort_keys=True) + "\n",
