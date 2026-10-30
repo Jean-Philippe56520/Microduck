@@ -74,6 +74,27 @@ jobs:
             --output "$RUNNER_TEMP/p4-coco-val2017.json" \
             "https://huggingface.co/datasets/LibreYOLO/coco2017/resolve/main/instances_val2017.json"
           echo "e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aeefa635b8c810b6f  $RUNNER_TEMP/p4-coco-val2017.json" | sha256sum --check
+      - name: Inspect remaining dataset licensing and target counts before any inference
+        run: |
+          python - "$RUNNER_TEMP/p4-coco-val2017.json" <<'PY'
+          import collections,json,sys
+          from experiments.vis_att2_eighth_coco_category_vs_region import eighth_disjoint
+          from microduck_companion.cata2_bbox_eval import COCO_IDS
+          raw=open(sys.argv[1],"rb").read()
+          last,data,_,prior=eighth_disjoint(raw)
+          excluded=set(prior)|{c.image_id for c in last}
+          images={v["id"]:v for v in data["images"] if v["id"] not in excluded}
+          licensed={v["id"]:v["name"] for v in data["licenses"]}
+          observed=collections.defaultdict(lambda:collections.defaultdict(set))
+          for a in data["annotations"]:
+              if a.get("image_id") not in images or a.get("iscrowd")!=0 or not a.get("segmentation"):continue
+              for name,cat in COCO_IDS.items():
+                  if a.get("category_id")==cat:
+                      photo=images[a["image_id"]]
+                      observed[name][licensed.get(photo.get("license"),"UNKNOWN")].add(a["image_id"])
+          for name in COCO_IDS:
+              print("PHOTO_LICENSE_COUNTS",name,{k:len(ids) for k,ids in observed[name].items()},flush=True)
+          PY
       - name: Evaluate the same 300 new approved photos and instance masks
         run: |
           set -euo pipefail
