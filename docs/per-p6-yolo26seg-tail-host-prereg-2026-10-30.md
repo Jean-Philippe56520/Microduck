@@ -14,3 +14,27 @@ Ne modifier ni Ultralytics, ni RKNN, ni OEM. **Extraire seulement le chemin ONNX
 3. À partir **uniquement du premier JPEG officiel** `subset/000000005001.jpg` du jeu fournisseur préexistant (calibration et diagnostic, donc **pas de GT ni de mesure de précision/généralisation**), image RGB redimensionnée 640×640, calculer **une** inférence ONNX pleine + ses neuf têtes `onnxruntime`, **une** simulation RKNN des dix sorties brutes sur la même instance SDK, alimenter le tail CPU avec ces dix tableaux puis mesurer boîte, scores et masques binaires des prédictions >0,25 (maximum 10, sélection officielle Ultralytics). Réaliser une comparaison de topologie ONNX originale vs (têtes ONNX + tail), indépendante de la quantification RKNN : forme identique, `np.allclose` atol/rtol `1e-4` pour `output0`, prototypes identiques. Le décodage et les masques de la branche RKNN simulée doivent être finis et dans les dimensions annoncées, sans exiger de catégorie/objet présent dans ce cliché. Compter objets retenus et masques effectivement non vides ; **0 est un résultat nul, pas un faux succès de segmentation**.
 4. Rapports **numériques seulement** : durées hôte d'un seul cas non extrapolables, RSS complet processus, tailles du tail, sorties, objets et masques ; jamais poids, RKNN, ONNX, JPEG, masques ou capture publiés.
 5. Passage : extraction validée + parité de topologie ONNX + simul. RKNN suivie du tail complète, outputs finis et masques synthétisables. **Le gain qualité de masque et la compatibilité embarquée restent en attente** ; pas de correction opportuniste des sources si le modèle échoue, rapport négatif et STOP. Ne pas diffuser une commande d'action, modifier `robotd`, `mediad`, `duck-detect`, Yocto, gitlinks, SQLite, Qwen ou une permission. Aucun déploiement avant étude licences AGPL/Enterprise et risques ressources/50Hz.
+
+## Résultat mesuré P6 — 30/10/2026, PC uniquement
+
+[CI P6 GitHub Actions #41097906781](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41097906781), SHA de première exécution `24633e4cfa5b0892763ce088b7809733d108252b` : **succès** de la compilation RKNN INT8, de l'extraction `tail.onnx` en conservant les prototypes `output1`, de la parité de décodeur avec ONNX d'origine, et de la chaîne de masque complète sur simulateur SDK Rockchip 2.3.2. Poids et 20 JPEG de calibration fournisseur inchangés ; **une unique photographie publique déjà incluse dans le calibrage** pour le diagnostic, donc aucune preuve indépendante d'efficacité.
+
+| Mesure réelle sur hôte x86 | Valeur |
+|---|---:|
+| RKNN INT8 compilé | **8 019 237 octets** |
+| `tail.onnx` généré par extraction + prototype pass-through | **187 731 octets** |
+| Forme sortie 0 | **[1,300,38]** (boîtes, scores, catégories, coefficients masque) |
+| Forme sortie 1 | **[1,32,160,160]** (prototypes) |
+| Erreur max ONNX complet vs (9 têtes originales + tail) | **0,0** sur cette image |
+| Un appel ONNX complet exposant les têtes, CPU PC | **42,88 ms** |
+| Tail CPU PC sur sorties ONNX non quantifiées | **3,33 ms** |
+| Une simulation brute Rockchip SDK sur PC | **302,11 ms** |
+| Tail CPU PC sur sorties simulées RKNN INT8 | **2,41 ms** |
+| Détections au seuil 0,25 / max 10, ONNX / RKNN simulé | **10 / 10** |
+| Masques non vides, ONNX / RKNN simulé | **10 / 10** |
+| Pixels positifs cumulés sur masques 160², ONNX / RKNN simulé | **9 427 / 10 985** |
+| RSS max de **tout le processus hôte** avec Torch, RKNN et ONNX Runtime | **842 484 Kio** |
+
+**Interprétation bornée :** les 10 masques non vides prouvent le parcours des données et l'exécution du masque officiel `ops.process_mask`, pas dix vrais objets identifiés ou correctement segmentés. La différence des pixels positifs indique que la quantification peut modifier les contours ; ce chiffre **ne mesure ni l'IoU ni un gain de qualité**. Les ms du simulateur et le RSS de l'environnement Python qui compile le RKNN n'ont **aucune valeur d'estimation du NPU embarqué ou de la RAM disponible**. Ce pipeline ne vérifie pas les perspectives basses, objets inconnus, chaises, photos/écrans ni la mémoire SQLite.
+
+**Décision :** `tail.onnx` est **fonctionnel sur CPU PC**, connecté aux **sorties brutes RKNN sur simulateur** par une simple passerelle `output1`. Pas d'extension de l'OEM à ce stade : le chemin `duck-detect` mono-classe/une sortie reste incompatible et la librairie ONNX Runtime nécessaire sur ARM/Yocto, le coût en RAM/CPU des sorties et la licence Ultralytics AGPL/Enterprise ne sont pas audités pour installation finale. Le prochain jalon V1 est **un contrat d'intégration OEM et packaging hors robot**, avec tests Rust/Yocto/PC/MuJoCo, en conservant le pilote, la sûreté et le flux caméra OEM ; **aucun essai physique avant que la V1 soit préparée comme logiciel déployable**. Validation réelle ensuite et capacité physique inconnue jusque-là.
