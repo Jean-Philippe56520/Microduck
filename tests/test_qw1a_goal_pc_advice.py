@@ -146,6 +146,8 @@ class GoalMemoryContextTests(unittest.TestCase):
             self.assertEqual({"task","need","category_claim","goal_kind",
                               "goal_state","history_provenance",
                               "category_history","prior_proposals",
+                              "prior_unverified_properties",
+                              "conflicting_unverified_properties",
                               "physical_executions_verified",
                               "effects_verified","robot_safety_state",
                               "input_is_fixture_only"},set(sent))
@@ -162,6 +164,136 @@ class GoalMemoryContextTests(unittest.TestCase):
                              data["format"]["properties"]["status"]["enum"])
             self.assertEqual([q.request_id],
                              data["format"]["properties"]["request_id"]["enum"])
+
+    def test_f4a_hypotheses_are_visible_only_with_memory_and_never_facts(self):
+        # Seed manually declared fictional C2 hypothesis; no model writes.
+        hid=self.semantics.hypothesize(
+            category="ball", property="affordance", value="playable",
+            confidence=.79, now_wall_epoch_s=self.now-.5)
+        self.assertIsInstance(hid,int)
+        before=self.memory.conn.total_changes
+        no,yes=self.questions()
+        self.assertEqual(before,self.memory.conn.total_changes)
+        self.assertEqual((),no.prior_unverified_properties)
+        self.assertEqual((),no.conflicting_unverified_properties)
+        self.assertEqual((("affordance","playable"),),
+                         yes.prior_unverified_properties)
+        w0=json.loads(make_wire(no))
+        w1=json.loads(make_wire(yes))
+        x=json.loads(w0["messages"][1]["content"])
+        y=json.loads(w1["messages"][1]["content"])
+        self.assertEqual([],x["prior_unverified_properties"])
+        self.assertEqual([],x["conflicting_unverified_properties"])
+        self.assertEqual([{
+            "property":"affordance", "value":"playable",
+            "source":"fictional_llm_hypothesis_only",
+            "verified":False,
+        }],y["prior_unverified_properties"])
+        self.assertEqual([],y["conflicting_unverified_properties"])
+        self.assertEqual(x["category_claim"],y["category_claim"])
+        self.assertEqual(x["goal_kind"],y["goal_kind"])
+        self.assertTrue(y["input_is_fixture_only"])
+        self.assertNotIn(str(hid),json.dumps(y))
+        self.assertNotIn("proposed_confidence",json.dumps(y))
+        self.assertNotIn(self.goal_id,json.dumps(y))
+        self.assertEqual(0,y["physical_executions_verified"])
+        self.assertEqual(0,y["effects_verified"])
+        self.assertLessEqual(len(make_wire(yes)),MAX_WIRE_BYTES)
+        advice=parse_advice(yes,_good_reply(yes))
+        self.assertEqual("blocked",advice.machine_use)
+        self.assertEqual(0,advice.memory_writes)
+        self.assertEqual(before,self.memory.conn.total_changes)
+
+    def test_conflicting_hypotheses_transmitted_without_resolving_them(self):
+        for value in ("soft","hard"):
+            self.semantics.hypothesize(
+                category="ball", property="texture", value=value,
+                confidence=.99, now_wall_epoch_s=self.now-.5)
+        before=self.memory.conn.total_changes
+        _,yes=self.questions()
+        self.assertEqual(before,self.memory.conn.total_changes)
+        self.assertEqual((("texture","hard"),("texture","soft")),
+                         yes.prior_unverified_properties)
+        self.assertEqual(("texture",),yes.conflicting_unverified_properties)
+        contents=json.loads(json.loads(make_wire(yes))["messages"][1]["content"])
+        self.assertEqual(["texture"],contents["conflicting_unverified_properties"])
+        self.assertTrue(all(p["verified"] is False
+                            for p in contents["prior_unverified_properties"]))
+        self.assertNotIn("identity",json.dumps(contents))
+        self.assertNotIn("person",json.dumps(contents))
+
+    def test_retraction_removes_hypothesis_from_following_wire(self):
+        id_=self.semantics.hypothesize(
+            category="ball", property="affordance", value="playable",
+            confidence=.77, now_wall_epoch_s=self.now-1.)
+        self.assertEqual(1,len(self.questions()[1].prior_unverified_properties))
+        self.assertTrue(self.semantics.retract_hypothesis(
+            id_,reason="source_retracted"))
+        baseline=self.memory.conn.total_changes
+        now=self.questions()[1]
+        self.assertEqual((),now.prior_unverified_properties)
+        self.assertEqual([],json.loads(json.loads(
+            make_wire(now))["messages"][1]["content"])["prior_unverified_properties"])
+        self.assertEqual(baseline,self.memory.conn.total_changes)
+        self.assertIsNone(self.semantics.hypothesize(
+            category="ball", property="affordance", value="playable",
+            confidence=1., now_wall_epoch_s=self.now))
+        self.assertEqual((),self.questions()[1].prior_unverified_properties)
+
+    def test_retracted_hypothesis_stays_hidden_across_sqlite_reopen(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as d:
+            path=Path(d)/"existing-fixture.sqlite"
+            id_=self.semantics.hypothesize(
+                category="ball", property="texture", value="soft",
+                confidence=.85, now_wall_epoch_s=self.now-1.)
+            self.assertTrue(self.semantics.retract_hypothesis(
+                id_,reason="fixture_annotation_error"))
+            disk=ExperienceMemory(path)
+            try:
+                self.memory.conn.backup(disk.conn)
+            finally:
+                disk.close()
+            disk=ExperienceMemory(path)
+            try:
+                sem=CategorySemantics(disk)
+                ledger=MockExperienceLedger(disk)
+                goals=MockGoalMemory(disk,ledger)
+                baseline=disk.conn.total_changes
+                question=build_goal_question(
+                    disk,sem,goals,goal_id=self.goal_id,
+                    now_wall_epoch_s=self.now,memory_enabled=True)
+                self.assertEqual((),question.prior_unverified_properties)
+                self.assertEqual(baseline,disk.conn.total_changes)
+            finally:
+                disk.close()
+
+    def test_forged_semantics_and_people_cannot_become_qwen_context(self):
+        q=self.questions()[1]
+        for props,conflicts in (
+            ((("texture","private_note"),),()),
+            ((("unknown_type","hard"),),()),
+            ((("texture","soft"),("texture","soft")),()),
+            ((("texture","soft"),("texture","hard")),()),
+            ((("texture","hard"),),("texture",)),
+            ((("texture","hard"),)*10,()),
+            ((("texture","soft"),),("bad_property",)),
+            ([("texture","soft")],()),
+        ):
+            with self.subTest(props=props,conflicts=conflicts):
+                with self.assertRaises(ValueError):
+                    replace(q,prior_unverified_properties=props,
+                            conflicting_unverified_properties=conflicts)
+        with self.assertRaises(ValueError):
+            replace(q,category="person",
+                    prior_unverified_properties=(("affordance","playable"),))
+        with self.assertRaises(ValueError):
+            replace(q,memory_enabled=False,
+                    prior_unverified_properties=(("affordance","playable"),))
+        with self.assertRaises(ValueError):
+            replace(q,source="sensor",
+                    prior_unverified_properties=(("affordance","playable"),))
 
     def test_goal_withdrawal_age_future_and_wrong_memory_fail_closed(self):
         with self.assertRaises(ValueError):
