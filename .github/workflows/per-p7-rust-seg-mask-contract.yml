@@ -1,0 +1,47 @@
+name: PER-P7 Rust YOLO26 segmentation mask core
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/per-p7-rust-seg-mask-contract.yml"
+      - "rust/kwipi-seg-mask-core/**"
+      - "docs/per-p7-oem-seg-mask-core-prereg-2026-10-30.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-mask-contract:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 12
+    env:
+      RUSTFLAGS: "-D warnings"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Preserve pinned OEM and avoid model redistribution
+        run: |
+          set -euo pipefail
+          git ls-tree HEAD upstream/microduck | grep -F 942e58e3aa6dbb28e7037203fff11866122c7567
+          git ls-tree HEAD upstream/microduck_rl | grep -F b02fdea4902c2b93b7d34a83a6f05da4ececb7d3
+          test ! -e rust/kwipi-seg-mask-core/model.rknn
+      - uses: dtolnay/rust-toolchain@1.89.0
+        with:
+          components: clippy,rustfmt
+          targets: aarch64-unknown-linux-gnu
+      - name: Verify standalone core compiles and exercises positive and negative fixtures
+        run: |
+          set -euo pipefail
+          rustc --version
+          cargo fmt --manifest-path rust/kwipi-seg-mask-core/Cargo.toml --check
+          cargo test --manifest-path rust/kwipi-seg-mask-core/Cargo.toml --locked --offline --verbose
+          cargo clippy --manifest-path rust/kwipi-seg-mask-core/Cargo.toml --all-targets --offline --locked -- -D warnings
+      - name: Validate ARM64 compile target without running on robot
+        run: |
+          set -euo pipefail
+          cargo check --manifest-path rust/kwipi-seg-mask-core/Cargo.toml --target aarch64-unknown-linux-gnu --locked --offline
+          echo "ARM64 cross-compile only; no NPU/Yocto image/robot execution"
