@@ -32,4 +32,17 @@ Droits des binaires PP-YOLOE non établis, poids récupérés temporairement sur
 
 ## Résultat exécuté
 
-**En attente de CI** — ne pas écrire de score PP-YOLOE avant la première exécution réelle.
+**Exécution réelle — [CI dédiée #41060752664](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41060752664) et [CI générale Python #41060752672](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41060752672) vertes**. SHA de branche `2871027b4a908cf9af33b35768d915a5a525ffb7` : 13/13 fichiers publics à empreintes vérifiées ; une paire d'inférences YOLOX-Nano + PP-YOLOE-s ONNX sur chaque image publique, source Rockchip épinglée, seuil 0,25, **aucun JPEG ou poids publié comme artefact**, rapport numérique `per-p3b-public-13-image-numeric-only`. La CI a exécuté les tests de provenance et les refus, puis les modèles ; **aucune photographie privée de l'opérateur n'a été utilisée**.
+
+| Étiquette photo attendue | Images | YOLOX-Nano (catégorie proposée) | PP-YOLOE-s (catégorie proposée) |
+| --- | ---: | ---: | ---: |
+| `cat` | 4 | 3 | **4** |
+| `dog` | 2 | 2 | **2** |
+| `person` | 1 | 1 | **1** |
+| `chair` | 1 | 0 | **1** |
+| `sports_ball` | 3 | 0 | **2** |
+| `unknown` (aucune des 5 catégories ciblées attendue) | 2 | 2 sans proposition de classe cible | **2** sans proposition de classe cible |
+
+**Interprétation stricte :** propositions de **catégorie au niveau image**, sans boîtes GT : ni vrai positif, ni précision/rappel, ni IoU. Les résultats du même YOLOX sur le lot historique `yolox_baseline_results.json` rapportaient `chair=1/1`, alors que la passe appariée donne `chair=0/1` ; les images et les poids sont les mêmes mais **la conversion commune intermédiaire en JPEG 95 et le redimensionnement peuvent modifier les entrées**, et la cause précise n'est pas isolée ; ne pas parler d'une régression du modèle. La comparaison PP-YOLOE vs YOLOX ici reste appariée **dans cette passe**, non un essai de performance généralisable. PP-YOLOE voit **la chaise isolée** mais toujours **aucun fauteuil** dans la scène MuJoCo basse P3A, donc **l'échec bloquant n'est pas résolu**.
+
+**Décision finale du lot : `test_logiciel_seul`, aucune sélection de modèle.** PP-YOLOE fournit des catégories `cat/dog/person` sur ces petites photos publiques, ce qui répond à une lacune documentaire, mais ni vues bas réelles attestées, ni ensemble indépendant de scènes nouvelles, ni présence physique vs écran, ni sécurité ToF, ni coût RK3566, ni redistribution des poids. Ne pas élargir le code OEM ou ajuster les seuils pour les photos déjà vues. Reprendre la feuille de route : GT à hauteur mesurée, nouvelles séances privées et tests d'obstacle séparés. Le mode privé du même évaluateur est **prévu et protégé contre l'exécution en CI**, mais **aucune inférence sur les deux photos privées n'a été exécutée dans ce lot** (poids inaccessibles dans l'environnement local d'assistance). Le contrôle privé local existant valide seulement 2/2 JPEG intacts et sans EXIF, sous réserve de ne pas extrapoler les catégories comme obstacles réels.
