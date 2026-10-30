@@ -77,8 +77,8 @@ fn validate_frame(frame: UprightFrame) -> Result<ValidatedFrame, RegionError> {
     // Validate against the pinned OEM's actual round-to-nearest + integer-pad
     // geometry. This is not a second pixel sampler or a different resize.
     let expected = (IMAGE_SIDE as f32 / w).min(IMAGE_SIDE as f32 / h);
-    let fitted_w = ((w * expected).round() as usize).max(1).min(IMAGE_SIDE);
-    let fitted_h = ((h * expected).round() as usize).max(1).min(IMAGE_SIDE);
+    let fitted_w = ((w * expected).round() as usize).clamp(1, IMAGE_SIDE);
+    let fitted_h = ((h * expected).round() as usize).clamp(1, IMAGE_SIDE);
     let expected_px = ((IMAGE_SIDE - fitted_w) / 2) as f32;
     let expected_py = ((IMAGE_SIDE - fitted_h) / 2) as f32;
     if (frame.scale - expected).abs() > 1e-5
