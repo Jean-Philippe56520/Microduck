@@ -1,0 +1,92 @@
+name: PER-P11 pinned OEM V1 source artifact (NOT Yocto image)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/per_p11_v1_source_release.py'
+      - 'tests/test_per_p11_v1_source_release.py'
+      - '.github/workflows/per-p11-v1-source-release.yml'
+      - 'scripts/per_p10a_*'
+      - 'scripts/per_p10b_*'
+      - 'scripts/per_p10c_*'
+      - 'rust/kwipi-seg-mask-core/**'
+      - 'docs/per-p11-v1-source-release-2026-10-30.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-candidate-pinned-oem:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      RUSTFLAGS: '-D warnings'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: dtolnay/rust-toolchain@1.89.0
+        with:
+          components: clippy
+      - name: Verify pure Python positive/negative and provenance gates
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p test_per_p11_v1_source_release.py -v
+          test "$(git -C upstream/microduck rev-parse HEAD)" = '942e58e3aa6dbb28e7037203fff11866122c7567'
+          test "$(git -C upstream/microduck_rl rev-parse HEAD)" = 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
+          git diff --exit-code -- upstream/
+      - name: Export reproducible source archive twice from the pinned OEM and P10A/B/C
+        run: |
+          set -euo pipefail
+          python -m scripts.per_p11_v1_source_release \
+            --oem-checkout upstream/microduck --output-dir "$RUNNER_TEMP/p11-first"
+          python -m scripts.per_p11_v1_source_release \
+            --oem-checkout upstream/microduck --output-dir "$RUNNER_TEMP/p11-second"
+          cmp "$RUNNER_TEMP/p11-first/kwipi-v1-oem-source.tar.gz" \
+              "$RUNNER_TEMP/p11-second/kwipi-v1-oem-source.tar.gz"
+          cd "$RUNNER_TEMP/p11-first"
+          sha256sum -c kwipi-v1-oem-source.tar.gz.sha256
+          cd "$GITHUB_WORKSPACE"
+          python -m scripts.per_p11_v1_source_release --verify \
+            "$RUNNER_TEMP/p11-first/kwipi-v1-oem-source.tar.gz"
+          git diff --exit-code -- upstream/
+      - name: Compile the actual exported source, not the working overlay tree
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            pkg-config libudev-dev libglib2.0-dev libgstreamer1.0-dev \
+            libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev
+          mkdir "$RUNNER_TEMP/p11-unpacked"
+          tar -xzf "$RUNNER_TEMP/p11-first/kwipi-v1-oem-source.tar.gz" \
+            -C "$RUNNER_TEMP/p11-unpacked"
+          test ! -e "$RUNNER_TEMP/p11-unpacked/p10c-harness"
+          test ! -e "$RUNNER_TEMP/p11-unpacked/.per-p10a-throwaway-pin"
+          test ! -e "$RUNNER_TEMP/p11-unpacked/kwipi_seg.rknn"
+          test ! -e "$RUNNER_TEMP/p11-unpacked/kwipi_seg_tail.onnx"
+          cargo metadata --manifest-path "$RUNNER_TEMP/p11-unpacked/Cargo.toml" --locked \
+            --format-version 1 > /dev/null
+          cargo check --manifest-path "$RUNNER_TEMP/p11-unpacked/Cargo.toml" --locked \
+            -p mediad --lib --bin mediad
+          cargo build --manifest-path "$RUNNER_TEMP/p11-unpacked/Cargo.toml" --locked \
+            -p mediad --bin mediad
+          file "$RUNNER_TEMP/p11-unpacked/target/debug/mediad"
+          test -s "$RUNNER_TEMP/p11-unpacked/target/debug/mediad"
+          git diff --exit-code -- upstream/
+          echo 'HOST source build passed; Yocto BitBake, RAUC, model rights and robot remain BLOCKED.'
+      - name: Retain content-addressed SOURCE candidate for review (not signed release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: kwipi-v1-oem-source-review-only
+          path: |
+            ${{ runner.temp }}/p11-first/kwipi-v1-oem-source.tar.gz
+            ${{ runner.temp }}/p11-first/kwipi-v1-oem-source.tar.gz.sha256
+            ${{ runner.temp }}/p11-first/manifest.json
+          retention-days: 7
