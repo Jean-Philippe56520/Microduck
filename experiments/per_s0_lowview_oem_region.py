@@ -84,12 +84,12 @@ def _ids_and_target(segmentation, geoms: tuple[int, ...], geom_type: int):
             int(xs.max()) + 1, int(ys.max()) + 1], pixels
 
 
-def validate_preflight(cases: list[dict]) -> bool:
+def validate_preflight(cases: list[dict], *, authorized_cases=CASES) -> bool:
     """Fail closed before loading any model. No statistics from invalid GT."""
-    if (type(cases) is not list
-            or [v.get("case") for v in cases] != list(ALL_NAMES)):
+    if (type(cases) is not list or type(authorized_cases) is not tuple
+            or [v.get("case") for v in cases] != [x.name for x in authorized_cases]):
         raise BallGTError("missing/reordered PER-S0 geometry cases")
-    for original, row in zip(CASES, cases):
+    for original, row in zip(authorized_cases, cases):
         if (type(row.get("valid_geometry")) is not bool
                 or type(row.get("pose_static")) is not bool
                 or type(row.get("geom_pixels")) is not int
