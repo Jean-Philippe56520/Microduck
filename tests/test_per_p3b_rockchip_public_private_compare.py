@@ -54,7 +54,7 @@ def _private(root: Path) -> dict:
     return manifest
 
 
-class TestPerP3BProvenance(unittest.TestCase):
+# Synthetic JPEG fixtures must test the real data gates. The production CI guard\n# remains enabled except inside these fixture-only unit tests.\n@patch.dict(os.environ, {"GITHUB_ACTIONS": "false"})\nclass TestPerP3BProvenance(unittest.TestCase):
     def test_two_sanitized_private_images_only_preflight(self):
         with TemporaryDirectory() as d:
             root = Path(d)
