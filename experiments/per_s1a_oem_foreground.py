@@ -126,7 +126,7 @@ def predict_from_region(rgb, box: tuple[float, float, float, float]):
     kernel = np.ones((3,3), dtype=np.uint8)
     smooth = cv2.morphologyEx(coarse, cv2.MORPH_OPEN, kernel)
     smooth = cv2.morphologyEx(smooth, cv2.MORPH_CLOSE, kernel)
-    n, components, stats, _ = cv2.connectedComponentsWithStats(smooth, 8)
+    n, components, stats, _ = cv2.connectedComponentsWithStats(smooth, connectivity=8)
     chosen = int(components[h//2, w//2])
     if not 1 <= chosen < n:
         return None, None
@@ -210,11 +210,6 @@ def score_proposal(name: str, rgb, oracle_mask, candidates: list[dict]):
     boxes = [_validated_pixel_box(c["xyxy"]) for c in candidates]
     if any(b is None for b in boxes):
         raise BallGTError("model offered degenerate bbox")
-    top1_iou = (_iou(first["xyxy"], (tuple(np.array(
-        [np.where(oracle_mask)[1].min(),np.where(oracle_mask)[0].min(),
-         np.where(oracle_mask)[1].max()+1,np.where(oracle_mask)[0].max()+1],
-        dtype=float))))
-         if not empty else None)
     # Oracle is now used ONLY for scoring. It never selects the top1 region.
     x0,y0,x1,y1 = boxes[0]
     rect_mask = np.zeros(oracle_mask.shape, dtype=np.bool_)
