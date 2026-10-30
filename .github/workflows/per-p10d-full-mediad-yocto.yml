@@ -7,7 +7,7 @@ on:
       - ".github/workflows/per-p10d-full-mediad-yocto.yml"
       - "docs/per-p10d-full-mediad-yocto-gate-2026-10-30.md"
       - "scripts/per_p10d_yocto_source_gate.py"
-      - "tests/test_per_p10d_yocto_source_gate.py"
+      - "tests/per_p10d_yocto_source_gate_cases.py"
       - "scripts/per_p10c_*.py"
       - "scripts/per_p10c_*.rs"
       - "scripts/per_p10b_seg_tail.rs"
@@ -48,7 +48,7 @@ jobs:
       - name: Run negative provenance tests on actual checked out vendor source
         run: |
           set -euo pipefail
-          python -m unittest discover -s tests -p 'test_per_p10d_yocto_source_gate.py' -v
+          python -m unittest discover -s tests -p 'per_p10d_yocto_source_gate_cases.py' -v
           python scripts/per_p10d_yocto_source_gate.py --yocto "$KWIPI_P10D_YOCTO_ROOT" --oem "$KWIPI_P10D_OEM_ROOT"
           git diff --exit-code -- upstream/
           echo "P10D scope: Yocto source contract verified but Companion not included in a deployable Yocto release."
