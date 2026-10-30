@@ -15,7 +15,9 @@ permissions:
 
 jobs:
   pinned-kas-bitbake-parse:
-    runs-on: ubuntu-24.04
+    # Ubuntu 24.04 hosted runner blocks the unprivileged namespace check;
+    # use a supported runner without changing host AppArmor or sysctls.
+    runs-on: ubuntu-22.04
     timeout-minutes: 40
     env:
       PYTHONDONTWRITEBYTECODE: "1"
