@@ -1,0 +1,12 @@
+[package]
+name = "kwipi-seg-mask-core"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89"
+license = "Apache-2.0"
+description = "Bounded, pure Rust postprocessing for YOLO26n-seg ONNX tail outputs (PC fixtures only)"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
