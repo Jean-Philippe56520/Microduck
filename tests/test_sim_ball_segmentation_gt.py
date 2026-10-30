@@ -3,6 +3,7 @@ import importlib.util
 import unittest
 
 from microduck_companion.cata2_bbox_eval import Box
+from microduck_companion.visual_photo_baseline import PhotoBaselineError
 from microduck_companion.sim_ball_segmentation_gt import (
     BallGTError, compare_boxes, visible_geom_bbox, best_region_iou,
     S2_ATTENTION_VIEWS, FRAME_H, FRAME_W,
@@ -84,7 +85,7 @@ class BallGTContractTests(unittest.TestCase):
 
     def test_s2_invalid_nonfinite_candidate_is_not_a_valid_region(self):
         truth = Box("sports_ball", (10., 20., 40., 50.))
-        with self.assertRaises(Exception):
+        with self.assertRaises(PhotoBaselineError):
             best_region_iou(truth, [
                 {"xyxy": (float("nan"), 22., 42., 52.)}
             ])
