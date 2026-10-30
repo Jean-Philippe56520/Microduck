@@ -27,6 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           submodules: recursive
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -38,6 +39,7 @@ jobs:
       - name: Verify pure Python positive/negative and provenance gates
         run: |
           set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
           python -m unittest discover -s tests -p test_per_p11_v1_source_release.py -v
           test "$(git -C upstream/microduck rev-parse HEAD)" = '942e58e3aa6dbb28e7037203fff11866122c7567'
           test "$(git -C upstream/microduck_rl rev-parse HEAD)" = 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
