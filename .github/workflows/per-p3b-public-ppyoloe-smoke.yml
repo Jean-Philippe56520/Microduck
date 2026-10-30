@@ -1,0 +1,117 @@
+name: PER-P3B pinned YOLOX vs PP-YOLOE public 13-image smoke (host only)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/per-p3b-public-ppyoloe-smoke.yml"
+      - "experiments/per_p3b_rockchip_public_private_compare.py"
+      - "tests/test_per_p3b_rockchip_public_private_compare.py"
+      - "docs/per-p3b-ppyoloes-public-smoke-and-private-preflight-2026-10-30.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-only-paired-comparison:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONUNBUFFERED: "1"
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Confirm OEM sources still pinned without checking out models or robot
+        run: |
+          set -euo pipefail
+          git ls-tree HEAD upstream/microduck | grep -F '942e58e3aa6dbb28e7037203fff11866122c7567'
+          git ls-tree HEAD upstream/microduck_rl | grep -F 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
+          test -f tests/assets/public_vision_smoke/manifest.json
+          test ! -e kwipi_photos_privees_tests_2026-10-30.zip
+      - uses: actions/checkout@v4
+        with:
+          repository: airockchip/rknn_model_zoo
+          ref: 837db8e992815ff8647eadb709f07067f4bc3a71
+          path: rknn_model_zoo
+          sparse-checkout: |
+            examples/ppyoloe
+            py_utils
+          persist-credentials: false
+      - name: Verify official decoder pinned, no vendor modifications
+        run: |
+          set -euo pipefail
+          test "$(git -C rknn_model_zoo rev-parse HEAD)" = '837db8e992815ff8647eadb709f07067f4bc3a71'
+          test -f rknn_model_zoo/examples/ppyoloe/python/ppyoloe.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install immutable PC-only open-source runtime dependencies
+        run: |
+          python -m venv "$RUNNER_TEMP/p3b-venv"
+          "$RUNNER_TEMP/p3b-venv/bin/python" -m pip install --disable-pip-version-check \
+            'Pillow==11.3.0' 'numpy==1.26.4' \
+            'opencv-python-headless==4.9.0.80' 'onnxruntime==1.21.0' \
+            'torch==2.3.1'
+      - name: Run positive, negative, privacy-denial tests before downloading models
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/rknn_model_zoo"
+          "$RUNNER_TEMP/p3b-venv/bin/python" -m unittest discover \
+            -s tests -p test_per_p3b_rockchip_public_private_compare.py -v
+          "$RUNNER_TEMP/p3b-venv/bin/python" -m experiments.per_p3b_rockchip_public_private_compare \
+            --source public --root tests/assets/public_vision_smoke \
+            --preflight-only --report "$RUNNER_TEMP/p3b-preflight-public.json"
+      - name: Download and verify existing Megvii YOLOX-Nano by SHA256
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 120 \
+            --output "$RUNNER_TEMP/yolox_nano.onnx" \
+            'https://huggingface.co/skillsafe-ai/yolox-nano/resolve/8e308810ede488f742901a4ac597dc7796798e46/yolox_nano.onnx'
+          echo "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d  $RUNNER_TEMP/yolox_nano.onnx" | sha256sum --check
+      - name: Download and verify official Rockchip PP-YOLOE-s ONNX by SHA256
+        run: |
+          set -euo pipefail
+          export MODEL_PATH="$RUNNER_TEMP/ppyoloe_s.onnx"
+          "$RUNNER_TEMP/p3b-venv/bin/python" - <<'PY'
+          import hashlib,os
+          from urllib.parse import urlsplit
+          from urllib.request import Request,urlopen
+          url="https://ftrg.zbox.filez.com/v2/delivery/data/95f00b0fc900458ba134f8b180b3f7a1/examples/ppyoloe/ppyoloe_s.onnx"
+          digest=hashlib.sha256(); length=0
+          with urlopen(Request(url,headers={"User-Agent":"kwipi-P3B-host-readonly/1.0"}),timeout=50) as res:
+              loc=urlsplit(res.geturl())
+              if loc.scheme!="https" or loc.hostname!="ftrg.zbox.filez.com":
+                  raise SystemExit("Unapproved model redirect")
+              with open(os.environ["MODEL_PATH"],"xb") as f:
+                  while chunk:=res.read(1024*1024):
+                      length+=len(chunk)
+                      if length>64*1024*1024:
+                          raise SystemExit("Model too large")
+                      digest.update(chunk);f.write(chunk)
+          if length!=31734323 or digest.hexdigest()!="af72d05b33723f6d18f9784f6bba8e593a5554f465f1800d7ad1ba1e33e38b8a":
+              raise SystemExit("Official ONNX mismatch")
+          print("Official model validated privately inside ephemeral public-image CI runner")
+          PY
+      - name: Exactly one paired pass over the existing 13 PUBLIC photos
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/rknn_model_zoo"
+          timeout 360s "$RUNNER_TEMP/p3b-venv/bin/python" \
+            -m experiments.per_p3b_rockchip_public_private_compare \
+            --source public --root tests/assets/public_vision_smoke \
+            --yolox-model "$RUNNER_TEMP/yolox_nano.onnx" \
+            --ppyoloe-model "$RUNNER_TEMP/ppyoloe_s.onnx" \
+            --vendor-root rknn_model_zoo \
+            --report "$RUNNER_TEMP/per-p3b-public-numeric-only.json"
+      - name: Publish only PUBLIC numeric per-image candidate report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: per-p3b-public-13-image-numeric-only
+          retention-days: 7
+          if-no-files-found: warn
+          path: ${{ runner.temp }}/per-p3b-public-numeric-only.json
