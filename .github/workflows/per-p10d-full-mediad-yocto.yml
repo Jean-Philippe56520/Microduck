@@ -133,8 +133,9 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends pkg-config curl binutils tar gzip gcc-aarch64-linux-gnu
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends pkg-config curl binutils tar gzip gcc-aarch64-linux-gnu libc6-dev-arm64-cross linux-libc-dev-arm64-cross
           command -v aarch64-linux-gnu-gcc
+          echo "#include <sys/types.h>" | aarch64-linux-gnu-gcc -E -x c - >/dev/null
           sh upstream/microduck/scripts/cross-sysroot.sh
           sh upstream/microduck/scripts/cross-sysroot.sh --check
           test -f "$DUCK_SYSROOT/usr/lib/aarch64-linux-gnu/pkgconfig/gstreamer-1.0.pc"
