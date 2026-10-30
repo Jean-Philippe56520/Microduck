@@ -154,7 +154,7 @@ def inspect(root: Path, wheel: Path) -> dict:
         expected = {meta + k for k in ("METADATA", "RECORD", "WHEEL", "top_level.txt")}
         if set(members) != got | expected:
             raise ValueError("wheel includes unreviewed resources/metadata")
-        if z.read(meta + "top_level.txt") != b"microduck_companion\\n".replace(b"\\\\n", b"\\n"):
+        if z.read(meta + "top_level.txt") != b"microduck_companion\n":
             raise ValueError("wheel top_level.txt does not identify only Companion")
         m = Parser().parsestr(z.read(meta + "METADATA").decode("utf-8"))
         if m.get("Name", "").lower() != DIST_NAME or m.get("Version") != VERSION or m.get_all("Requires-Dist"):
