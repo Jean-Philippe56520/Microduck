@@ -381,12 +381,10 @@ def run(*, annotations_path: Path, weights_dir: Path) -> dict:
         models[filename] = model
         accumulators[filename] = new_accumulator()
     for index, photo in enumerate(photos, 1):
-        case = CocoCase(photo.image_id, photo.filename, photo.width, photo.height,
-                        tuple(Box({v:k for k,v in COCO_IDS.items()}[a["category_id"]],
-                                  (a["bbox"][0], a["bbox"][1],
-                                   a["bbox"][0]+a["bbox"][2],
-                                   a["bbox"][1]+a["bbox"][3]))
-                              for a in photo.target_annotations))
+        # The official JPEG fetch validates filename and dimensions; COCO GT
+        # is scored separately with clipped boxes. Do not construct an
+        # un-clipped Box when the annotation touches the frame boundary.
+        case = CocoCase(photo.image_id, photo.filename, photo.width, photo.height, ())
         raw = _official_jpeg(case)
         from PIL import Image
         with Image.open(BytesIO(raw)) as opened:
