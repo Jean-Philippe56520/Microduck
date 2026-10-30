@@ -1,0 +1,119 @@
+name: PER-P10C pinned OEM mediad single-tee segment candidates
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/per-p10c-mediad-single-tee.yml"
+      - "scripts/per_p10c_apply_oem_mediad_overlay.py"
+      - "scripts/per_p10c_mediad_segment.rs"
+      - "scripts/per_p10c_harness.rs"
+      - "scripts/per_p10c_harness.toml"
+      - "scripts/per_p10b_seg_tail.rs"
+      - "tests/test_per_p10c_overlay.py"
+      - "docs/per-p10c-mediad-single-tee-2026-10-30.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  oem-mediad-single-tee-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      RUSTFLAGS: "-D warnings"
+      PYTHONDONTWRITEBYTECODE: "1"
+      P10C_OEM: /tmp/p10c-oem-pinned
+      KWIPI_P10B_TEST_MODELS: /tmp/p10c-models
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: OEM pin and source audit (no motor, image, weight or gitlink changes)
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git -C upstream/microduck_rl rev-parse HEAD)" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          test "$(git -C upstream/microduck hash-object mediad/src/detect.rs)" = "2383f297533fe775a39b6452ed528c4087f82d89"
+          test ! -e kwipi_seg.rknn
+          test ! -e kwipi_seg_tail.onnx
+          git diff --exit-code -- upstream/
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run refusal tests and generate synthetic-only ONNX in runner scratch
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_per_p10a_overlay.py' -v
+          python -m unittest discover -s tests -p 'test_per_p10b_overlay.py' -v
+          python -m unittest discover -s tests -p 'test_per_p10c_overlay.py' -v
+          python -m pip install --disable-pip-version-check "onnx==1.16.2" "numpy==1.26.4"
+          python scripts/per_p10b_synthetic_onnx.py --output-dir "$KWIPI_P10B_TEST_MODELS"
+          test "$(find "$KWIPI_P10B_TEST_MODELS" -name '*.onnx' -type f | wc -l)" -eq 6
+
+      - name: Apply P10A, P10B, P10C only to the throwaway OEM archive
+        run: |
+          set -euo pipefail
+          mkdir -p "$P10C_OEM"
+          git -C upstream/microduck archive 942e58e3aa6dbb28e7037203fff11866122c7567 | tar -x -C "$P10C_OEM"
+          printf '%s\n' '942e58e3aa6dbb28e7037203fff11866122c7567' > "$P10C_OEM/.per-p10a-throwaway-pin"
+          python scripts/per_p10a_apply_oem_rknn_overlay.py --archive "$P10C_OEM"
+          python -m scripts.per_p10b_apply_oem_tail_overlay --archive "$P10C_OEM"
+          python -m scripts.per_p10c_apply_oem_mediad_overlay --archive "$P10C_OEM"
+          test -f "$P10C_OEM/mediad/src/detect/seg.rs"
+          test -f "$P10C_OEM/p10c-harness/src/lib.rs"
+          test "$(grep -c 'frames.next_frame()' "$P10C_OEM/mediad/src/detect.rs")" -eq 1
+          test "$(grep -c 'name("duck-detect"' "$P10C_OEM/mediad/src/detect.rs")" -eq 1
+          git diff --exit-code -- upstream/
+
+      - uses: dtolnay/rust-toolchain@1.89.0
+        with:
+          components: rustfmt,clippy
+          targets: aarch64-unknown-linux-gnu
+
+      - name: Check authored Rust, update and format ONLY the temporary OEM sources
+        run: |
+          set -euo pipefail
+          rustfmt --edition 2024 --check scripts/per_p10c_mediad_segment.rs
+          # Harness module path resolves only INSIDE the temporary OEM archive.
+          # It is checked by cargo fmt after its source is copied below.
+          rustfmt --edition 2024 --check scripts/per_p10b_seg_tail.rs
+          cargo metadata --manifest-path "$P10C_OEM/Cargo.toml" --format-version 1 > /dev/null
+          cargo fmt --manifest-path "$P10C_OEM/Cargo.toml" -p duck-detect -p p10c-harness
+          cargo fmt --manifest-path "$P10C_OEM/Cargo.toml" -p duck-detect -p p10c-harness -- --check
+
+      - name: Fetch official hash-checked x64 ONNX Runtime only for CI
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/p10c-ort"
+          curl --proto '=https' --tlsv1.2 -fsSL --retry 3 "https://github.com/microsoft/onnxruntime/releases/download/v1.28.0/onnxruntime-linux-x64-1.28.0.tgz" -o "$RUNNER_TEMP/p10c-ort.tgz"
+          echo "a3e1b79d7bb1bf09696ce675f49e4064e6c81f6202b8225624fff0e93f8d6407  $RUNNER_TEMP/p10c-ort.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/p10c-ort.tgz" -C "$RUNNER_TEMP/p10c-ort"
+          lib="$(find "$RUNNER_TEMP/p10c-ort" -name 'libonnxruntime.so.1.28.0' -type f -print -quit)"
+          test -n "$lib"
+          echo "ORT_DYLIB_PATH=$lib" >> "$GITHUB_ENV"
+
+      - name: Execute actual pinned OEM detect.rs harness, ORT, P7 and P9 and OEM regressions
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path "$P10C_OEM/Cargo.toml" --locked -p p10c-harness -p duck-detect -p uyvy --lib -- --nocapture
+          cargo clippy --manifest-path "$P10C_OEM/Cargo.toml" --locked -p p10c-harness -p duck-detect --all-targets -- -D warnings
+
+      - name: ARM64 check of same source WITHOUT executing robot or building Yocto image
+        run: |
+          set -euo pipefail
+          cargo check --manifest-path "$P10C_OEM/Cargo.toml" --locked -p p10c-harness -p duck-detect --lib --target aarch64-unknown-linux-gnu
+          echo "PER-P10C host-only: compiled original OEM mediad/src/detect.rs in a harness, not full mediad or real NPU."
+
+      - name: Final submodule/no-media/no-model source integrity
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- upstream/
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test ! -e kwipi_seg.rknn
+          test ! -e kwipi_seg_tail.onnx
