@@ -1,0 +1,66 @@
+name: PER-OEM-1 pinned UYVY and duck-detect Rust contracts (host only)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/per-oem1-pinned-contract.yml"
+      - "docs/perception-oem-rknn-2hz-plan-2026-10-29.md"
+      - "microduck_companion/oem_frame_preflight.py"
+      - "microduck_companion/passive_media_router.py"
+      - "tests/test_oem_frame_header.py"
+      - "tests/test_oem_frame_invalid.py"
+      - "tests/test_passive_media_router.py"
+      - "upstream/microduck"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-pinned-oem-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Verify exact OEM gitlinks (no upstream update)
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git -C upstream/microduck_rl rev-parse HEAD)" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          test -f upstream/microduck/Cargo.lock
+          test -f upstream/microduck/uyvy/src/lib.rs
+          test -f upstream/microduck/duck-detect/src/lib.rs
+          echo "OEM pinned source ready; test fixture-only, no camera or model requested."
+
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Run OEM Rust UYVY conversion/rotation tests from PINNED source
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path upstream/microduck/Cargo.toml --locked -p uyvy --lib
+
+      - name: Run OEM Rust mono-class decoder/NMS tests from PINNED source
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path upstream/microduck/Cargo.toml --locked -p duck-detect --lib
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Reuse Companion mock-only OEM header and notification negatives
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_oem_frame_*.py' -v
+          python -m unittest discover -s tests -p 'test_passive_media_router.py' -v
+
+      - name: State scope (explicitly not an NPU, mediad or robot test)
+        run: |
+          printf '%s\n' \
+            'PER-OEM-1 HOST CONTRACT ONLY: OEM uyvy and duck-detect Rust unit tests executed.' \
+            'No RKNN runtime/driver, GStreamer mediad, real camera, multi-class model, motor or robot tested.' \
+            'Notification fixtures retain unknown source/category; no F2 perception authorized.'
