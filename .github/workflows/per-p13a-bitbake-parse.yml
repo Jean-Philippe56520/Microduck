@@ -1,0 +1,112 @@
+name: PER-P13A real pinned BitBake metadata parse (not ARM64 build)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/per-p13a-bitbake-parse.yml"
+      - "scripts/per_p13a_bitbake_env_gate.py"
+      - "tests/test_per_p13a_bitbake_env_gate.py"
+      - "docs/per-p13a-real-bitbake-parse-2026-10-30.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-kas-bitbake-parse:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      P13_YOCTO: /tmp/p13-yocto
+      P13_SOURCE: /tmp/p13-source
+      P13_LAYER: /tmp/p13-meta-kwipi
+      KAS_WORK_DIR: /tmp/p13-kas-work
+      KAS_BUILD_DIR: /tmp/p13-kas-build
+      KAS_CLONE_DEPTH: "1"
+      P13_ENV: /tmp/p13-effective-bitbake-env.txt
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: dtolnay/rust-toolchain@1.89.0
+      - name: Pure negative tests and exact Git pins
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git -C upstream/microduck_rl rev-parse HEAD)" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          python -m unittest discover -s tests -p 'test_per_p13a_bitbake_env_gate.py' -v
+          python -m compileall -q scripts/per_p13a_bitbake_env_gate.py
+          git diff --exit-code -- upstream/
+      - name: Read-only checkout of exact OEM Yocto commit
+        run: |
+          set -euo pipefail
+          mkdir -p "$P13_YOCTO"
+          git -C "$P13_YOCTO" init -q
+          git -C "$P13_YOCTO" remote add origin https://github.com/pollen-robotics/microduck_yocto.git
+          GIT_TERMINAL_PROMPT=0 git -C "$P13_YOCTO" fetch --depth 1 origin 1ee58387810cebb67ae0d634c351d95024483bce
+          git -C "$P13_YOCTO" checkout --detach FETCH_HEAD
+          test "$(git -C "$P13_YOCTO" rev-parse HEAD)" = "1ee58387810cebb67ae0d634c351d95024483bce"
+      - name: Create the exact source layer with existing P11/P12 tools
+        run: |
+          set -euo pipefail
+          python -m scripts.per_p11_v1_source_release --oem-checkout upstream/microduck --output-dir "$P13_SOURCE"
+          python -m scripts.per_p12_yocto_layer stage \
+            --yocto "$P13_YOCTO" --source-dir "$P13_SOURCE" --output "$P13_LAYER"
+          python -m scripts.per_p12_yocto_layer verify --layer "$P13_LAYER"
+          test ! -e "$P13_LAYER/kwipi_seg.rknn"
+          git diff --exit-code -- upstream/
+      - name: Install pinned KAS and check that parser fits runner resources
+        run: |
+          set -euo pipefail
+          avail_kb="$(df -Pk /tmp | awk 'NR==2 {print $4}')"
+          echo "Host disk available KB: $avail_kb"
+          test "$avail_kb" -ge 6000000 || { echo 'P13A STOP: insufficient disk for metadata checkout'; exit 1; }
+          mkdir -p "$KAS_WORK_DIR" "$KAS_BUILD_DIR"
+          python -m venv "$RUNNER_TEMP/p13-kas-venv"
+          "$RUNNER_TEMP/p13-kas-venv/bin/pip" install --disable-pip-version-check --no-cache-dir "kas==5.2.0"
+          "$RUNNER_TEMP/p13-kas-venv/bin/kas" --version
+          echo "$RUNNER_TEMP/p13-kas-venv/bin" >> "$GITHUB_PATH"
+      - name: Add ONLY an untracked local kas overlay for the reviewed P12 layer
+        run: |
+          set -euo pipefail
+          cat > "$P13_YOCTO/kas/per-p13a-layer.yml" <<EOF
+          header:
+            version: 14
+          repos:
+            kwipi:
+              path: $P13_LAYER
+              layers:
+                .:
+          EOF
+          test "$(git -C "$P13_YOCTO" status --porcelain --untracked-files=no)" = ""
+      - name: Run real kas and BitBake parse in a bounded metadata-only job
+        run: |
+          set -euo pipefail
+          config="$P13_YOCTO/kas/microduck.yml:$P13_YOCTO/kas/per-p13a-layer.yml"
+          timeout 1500s kas shell "$config" -c "bitbake -p && bitbake -e microduck-daemon > $P13_ENV"
+          test -s "$P13_ENV"
+          echo "Real BitBake parsing finished. No compile/image/signature attempted."
+      - name: Verify exact EFFECTIVE variables without publishing full environment
+        run: |
+          set -euo pipefail
+          python -m scripts.per_p13a_bitbake_env_gate \
+            --env-file "$P13_ENV" --p12-layer "$P13_LAYER" \
+            --output "$RUNNER_TEMP/p13-result.json"
+          cat "$RUNNER_TEMP/p13-result.json"
+          test "$(git -C "$P13_YOCTO" rev-parse HEAD)" = "1ee58387810cebb67ae0d634c351d95024483bce"
+          test "$(git -C "$P13_YOCTO" status --porcelain --untracked-files=no)" = ""
+          git diff --exit-code -- upstream/
+      - name: Keep only proof metadata, never the raw effective environment
+        uses: actions/upload-artifact@v4
+        with:
+          name: kwipi-p13a-bitbake-parse-proof-only
+          path: ${{ runner.temp }}/p13-result.json
+          retention-days: 7
