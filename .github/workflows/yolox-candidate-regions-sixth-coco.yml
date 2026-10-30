@@ -6,6 +6,8 @@ on:
       - "experiments/yolox_candidate_regions_sixth_coco.py"
       - "microduck_companion/yolox_attention_candidates.py"
       - "experiments/test_yolox_candidate_regions_sixth_coco.py"
+      - "experiments/vis_att2_eighth_coco_category_vs_region.py"
+      - "experiments/test_vis_att2_eighth_coco_category_vs_region.py"
       - ".github/workflows/yolox-candidate-regions-sixth-coco.yml"
   workflow_dispatch:
 
@@ -38,6 +40,7 @@ jobs:
             "https://huggingface.co/skillsafe-ai/yolox-nano/resolve/8e308810ede488f742901a4ac597dc7796798e46/yolox_nano.onnx"
           echo "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d  $RUNNER_TEMP/yolox_nano.onnx" | sha256sum --check
       - name: Compare top 1 top 3 top 5 on sixth disjoint COCO cohort
+        if: github.event_name != 'pull_request' || github.head_ref != 'test/vis-att2-eighth-coco-category-vs-region-20261030'
         env:
           OPENBLAS_NUM_THREADS: "1"
           OMP_NUM_THREADS: "1"
@@ -45,10 +48,39 @@ jobs:
           YOLOX_MODEL: ${{ runner.temp }}/yolox_nano.onnx
           CANDIDATE_REPORT: ${{ runner.temp }}/kwipi-proposal-sixth-results.json
         run: python -m experiments.yolox_candidate_regions_sixth_coco
+      - name: VIS-ATT-2 predeclared selection and negative fixture tests
+        if: github.event_name == 'pull_request' && github.head_ref == 'test/vis-att2-eighth-coco-category-vs-region-20261030'
+        run: |
+          set -euo pipefail
+          python -m compileall -q experiments/vis_att2_eighth_coco_category_vs_region.py experiments/test_vis_att2_eighth_coco_category_vs_region.py
+          python -m unittest experiments.test_vis_att2_eighth_coco_category_vs_region -v
+
+      - name: VIS-ATT-2 eighth independent COCO category-vs-region A/B
+        if: github.event_name == 'pull_request' && github.head_ref == 'test/vis-att2-eighth-coco-category-vs-region-20261030'
+        env:
+          OMP_NUM_THREADS: "1"
+          OPENBLAS_NUM_THREADS: "1"
+        run: |
+          set -euo pipefail
+          python -m experiments.vis_att2_eighth_coco_category_vs_region \
+            --approved-public-media \
+            --annotations-path "$RUNNER_TEMP/instances_val2017.json" \
+            --model-path "$RUNNER_TEMP/yolox_nano.onnx" \
+            --output "$RUNNER_TEMP/vis-att2-eighth-result.json"
+
       - name: Preserve only predictions and numerical comparison
-        if: always()
+        if: github.event_name != 'pull_request' || github.head_ref != 'test/vis-att2-eighth-coco-category-vs-region-20261030'
         uses: actions/upload-artifact@v4
         with:
           name: kwipi-yolox-region-proposals-sixth-coco-json
           path: ${{ runner.temp }}/kwipi-proposal-sixth-results.json
           if-no-files-found: warn
+
+      - name: VIS-ATT-2 save only numeric evidence, no JPEGs or models
+        if: always() && github.event_name == 'pull_request' && github.head_ref == 'test/vis-att2-eighth-coco-category-vs-region-20261030'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kwipi-vis-att2-eighth-coco-numeric-only
+          path: ${{ runner.temp }}/vis-att2-eighth-result.json
+          if-no-files-found: warn
+          retention-days: 7
