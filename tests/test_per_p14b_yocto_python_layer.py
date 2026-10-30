@@ -19,7 +19,8 @@ class RealP14BSourceTests(unittest.TestCase):
         src = selected_bytes(ROOT)
         self.assertEqual(len(src), 20)
         self.assertEqual(len([x for x in src if x.endswith(".py")]), 19)
-        self.assertEqual(src["pyproject.toml"].count(b"setuptools"), 2)
+        self.assertIn(b'requires = ["setuptools>=68"]', src["pyproject.toml"])
+        self.assertIn(b'build-backend = "setuptools.build_meta"', src["pyproject.toml"])
         for name in src:
             self.assertFalse("qwen" in name or "mock_" in name)
         self.assertEqual(len(_tar_bytes(src)), len(_tar_bytes(src)))
