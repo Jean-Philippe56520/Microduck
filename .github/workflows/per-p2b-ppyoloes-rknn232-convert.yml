@@ -64,12 +64,16 @@ jobs:
           test "$(git -C vendor-rknn rev-parse HEAD)" = "42aa1d426c0a9e0869b6374edba009f7208a1926"
           test -f vendor-zoo/examples/ppyoloe/python/convert.py
           test -f vendor-rknn/rknn-toolkit2/packages/x86_64/rknn_toolkit2-2.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-          test "$(wc -l < vendor-zoo/datasets/COCO/coco_subset_20.txt)" -eq 20
+          # The official 20th line has NO trailing newline: wc -l returns 19.
+          test "$(awk 'END {print NR}' vendor-zoo/datasets/COCO/coco_subset_20.txt)" -eq 20
           cd vendor-zoo/datasets/COCO
-          while IFS= read -r photo; do
+          count=0
+          while IFS= read -r photo || [ -n "$photo" ]; do
             case "$photo" in ./subset/*.jpg) ;; *) echo 'unexpected calibration path'; exit 4 ;; esac
             test -f "$photo"
+            count=$((count + 1))
           done < coco_subset_20.txt
+          test "$count" -eq 20
           test "$(find subset -name '*.jpg' -type f | wc -l)" -eq 20
           echo "Calibration set: 20/20 official public COCO images; no private images."
 
