@@ -5,12 +5,15 @@ on:
       - feat/sim-vis-b-ball-groundtruth-20261029
       - feat/sim-vis-c-ball-attention-multiview-20261030
       - feat/sim-vis-d-new-oem-scene-f2-mock-20261030
+      - feat/sim-vis-e-multi-object-occlusion-20261030
     paths:
       - ".github/workflows/sim-vis-b-ball-gt.yml"
       - "microduck_companion/sim_ball_segmentation_gt.py"
       - "tests/test_sim_ball_segmentation_gt.py"
       - "microduck_companion/sim_vis_d_new_scenes_f2_fixture.py"
       - "tests/test_sim_vis_d_new_scenes_f2_fixture.py"
+      - "microduck_companion/sim_vis_e_multi_object_occlusion.py"
+      - "tests/test_sim_vis_e_multi_object_occlusion.py"
   workflow_dispatch:
 
 permissions:
@@ -111,6 +114,19 @@ jobs:
             --output "$RUNNER_TEMP/sim-vis-d-report.json" \
             --authorize-static-oem-fixtures
 
+      - name: SIM-VIS-E varied pinned OEM objects and physical chair occlusion
+        if: github.ref_name == 'feat/sim-vis-e-multi-object-occlusion-20261030'
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/upstream/microduck_rl/src"
+          "$RUNNER_TEMP/sim-vis-b-venv/bin/python" -m unittest discover \
+            -s tests -p test_sim_vis_e_multi_object_occlusion.py -v
+          "$RUNNER_TEMP/sim-vis-b-venv/bin/python" -m microduck_companion.sim_vis_e_multi_object_occlusion \
+            --scene-dir "$GITHUB_WORKSPACE/upstream/microduck_rl/src/mjlab_microduck/robot/microduck" \
+            --model-path "$RUNNER_TEMP/sim-vis-b-yolox.onnx" \
+            --output "$RUNNER_TEMP/sim-vis-e-report.json" \
+            --authorize-readonly-oem-views
+
       - name: Preserve only report, never raw images
         if: always()
         uses: actions/upload-artifact@v4
@@ -122,3 +138,4 @@ jobs:
             ${{ runner.temp }}/sim-vis-b-result.json
             ${{ runner.temp }}/sim-vis-c-result.json
             ${{ runner.temp }}/sim-vis-d-report.json
+            ${{ runner.temp }}/sim-vis-e-report.json
