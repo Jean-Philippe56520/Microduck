@@ -104,6 +104,28 @@ impl Tail {
 mod tests {
     use super::*;
     #[test]
+    fn real_ort_fixture_to_rust_regions() {
+        let Ok(name) = std::env::var("KWIPI_PER_P10B_ONNX") else {
+            return; // Only the dedicated P10B workflow provides the ORT fixture.
+        };
+        let mut tail = Tail::open(std::path::Path::new(&name)).unwrap();
+        let mut raw: [Vec<f32>;10] = std::array::from_fn(|i|
+            vec![0.0; SHAPES[i].iter().product()]);
+        raw[9][..(160*160)].fill(1.0);
+        let frame = UprightFrame { width:720,height:1280,scale:0.5,pad_x:140.0,pad_y:0.0 };
+        let regions = tail.process(raw,frame).unwrap();
+        assert_eq!(regions.len(),1);
+        assert_eq!(regions[0].visible_mask_cells,100);
+        assert_eq!(regions[0].proposed_class_id,32);
+        assert_eq!(regions[0].box_upright_xyxy,[200.0,160.0,280.0,240.0]);
+        assert_eq!(regions[0].centroid_upright_xy,[240.0,200.0]);
+        let mut blank: [Vec<f32>;10] = std::array::from_fn(|i|
+            vec![0.0; SHAPES[i].iter().product()]);
+        blank[9][..(160*160)].fill(-1.0);
+        assert!(tail.process(blank, frame).unwrap().is_empty());
+    }
+
+    #[test]
     fn p5_contract_uses_exactly_ten_bounded_shapes() {
         assert_eq!(SHAPES.iter().map(|s| s.iter().product::<usize>()).sum::<usize>(), 1_793_600);
         assert_eq!(NAMES.len(), 10);
