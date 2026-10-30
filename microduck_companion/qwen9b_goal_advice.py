@@ -16,7 +16,8 @@ import math
 import time
 import uuid
 
-from .category_semantics import CategorySemantics
+from .category_semantics import CategorySemantics, HYPOTHESIS_CATEGORIES, PROPERTIES
+from .memory_consolidation import _OPPOSITES
 from .episodic_memory import ExperienceMemory
 from .experience_ledger import MockExperienceLedger
 from .memory_recall import recall_memory, GOAL_MAX_AGE_S
@@ -40,6 +41,37 @@ CANDIDATES = frozenset(STRATEGIES) | {"abstain"}
 _GOAL_STATES = frozenset({"active", "suspended"})
 _HISTORY_STATES = frozenset({"historical_mock_only", "hypotheses_only", "unknown"})
 _CONTEXT_SOURCES = frozenset({"not_provided", "mock_fixture_only"})
+# Only the already-closed F4-A *fictional* property vocabulary may leave
+# SQLite; a category-level hypothesis is never a physical-instance memory.
+_SEMANTIC_SOURCE = "fictional_llm_hypothesis_only"
+_MAX_SEMANTIC_PROPERTIES = sum(len(values) for values in PROPERTIES.values())
+
+
+def _valid_semantic_context(
+    properties: object, conflicts: object,
+) -> bool:
+    if (type(properties) is not tuple
+            or len(properties) > _MAX_SEMANTIC_PROPERTIES
+            or any(type(item) is not tuple or len(item) != 2
+                   or type(item[0]) is not str or item[0] not in PROPERTIES
+                   or type(item[1]) is not str
+                   or item[1] not in PROPERTIES[item[0]]
+                   for item in properties)):
+        return False
+    if properties != tuple(sorted(set(properties))):
+        return False
+    if type(conflicts) is not tuple or any(
+            type(item) is not str or item not in _OPPOSITES
+            for item in conflicts):
+        return False
+    expected = tuple(sorted(
+        property for property, opposing in _OPPOSITES.items()
+        if opposing.issubset({
+            value for name, value in properties if name == property
+        })
+    ))
+    return conflicts == expected
+
 _DIAGNOSTICS = frozenset({
     "none", "transport", "deadline", "http_protocol", "envelope",
     "model_protocol", "generation_limit", "json_invalid", "schema_invalid",
@@ -77,6 +109,8 @@ class GoalQuestion:
     source: str
     category_history: str
     memory_enabled: bool
+    prior_unverified_properties: tuple[tuple[str, str], ...] = ()
+    conflicting_unverified_properties: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if (type(self.request_id) is not str
@@ -97,11 +131,18 @@ class GoalQuestion:
                 or self.source not in _CONTEXT_SOURCES
                 or self.category_history not in _HISTORY_STATES
                 or type(self.memory_enabled) is not bool
+                or not _valid_semantic_context(
+                    self.prior_unverified_properties,
+                    self.conflicting_unverified_properties)
+                or (self.prior_unverified_properties
+                    and self.category not in HYPOTHESIS_CATEGORIES)
                 or (self.memory_enabled and self.source != "mock_fixture_only")
                 or (not self.memory_enabled and (
                     self.source != "not_provided"
                     or self.prior_proposals
-                    or self.category_history != "unknown"))):
+                    or self.category_history != "unknown"
+                    or self.prior_unverified_properties
+                    or self.conflicting_unverified_properties))):
             raise ValueError("untrusted or overbroad QW-1A question")
 
 
@@ -148,6 +189,8 @@ def build_goal_question(
         raise ValueError("no current eligible mock goal")
     previous: tuple[str, ...] = ()
     history_state = "unknown"
+    semantic_properties: tuple[tuple[str, str], ...] = ()
+    semantic_conflicts: tuple[str, ...] = ()
     if memory_enabled:
         recalled = recall_memory(
             memory, semantics, category=goal.category,
@@ -158,6 +201,23 @@ def build_goal_question(
                    for g in recalled.category_goals):
             raise ValueError("goal absent from bounded corrected recall")
         history_state = recalled.category_history.status
+        hypotheses = recalled.category_history.property_hypotheses
+        if len(hypotheses) > _MAX_SEMANTIC_PROPERTIES:
+            raise ValueError("F4-A category exceeds bounded public vocabulary")
+        for item in hypotheses:
+            if (item.category != goal.category
+                    or item.source != _SEMANTIC_SOURCE
+                    or item.confirmed is not False
+                    or item.can_authorize_actions is not False
+                    or item.property not in PROPERTIES
+                    or item.value not in PROPERTIES[item.property]):
+                raise ValueError("untrusted F4-A property provenance")
+        semantic_properties = tuple(sorted(
+            (item.property, item.value) for item in hypotheses
+        ))
+        semantic_conflicts = recalled.category_history.conflicting_hypothesis_properties
+        if not _valid_semantic_context(semantic_properties, semantic_conflicts):
+            raise ValueError("untrusted or inconsistent F4-A history")
         if history_state not in _HISTORY_STATES:
             raise ValueError("untrusted category-memory status")
         attempts = goals.attempts(goal_id)
@@ -166,6 +226,7 @@ def build_goal_question(
         uuid.uuid4().hex, goal.category, goal.kind, goal.state, NEED,
         previous, "mock_fixture_only" if memory_enabled else "not_provided",
         history_state, memory_enabled,
+        semantic_properties, semantic_conflicts,
     )
 
 
@@ -206,6 +267,13 @@ def make_wire(question: GoalQuestion) -> bytes:
                 "goal_state": question.state,
                 "history_provenance": question.source,
                 "category_history": question.category_history,
+                "prior_unverified_properties": [
+                    {"property": property, "value": value,
+                     "source": _SEMANTIC_SOURCE, "verified": False}
+                    for property, value in question.prior_unverified_properties
+                ],
+                "conflicting_unverified_properties":
+                    list(question.conflicting_unverified_properties),
                 "prior_proposals": list(question.prior_proposals),
                 "physical_executions_verified": 0,
                 "effects_verified": 0,
