@@ -6,14 +6,12 @@
 //! Nothing returned is verified physical presence, identity or navigation.
 
 use std::ffi::OsStr;
-use std::path::Path;
 use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::path::Path;
 
 use anyhow::{Context, Result, bail, ensure};
-use kwipi_seg_mask_core::oem_region::{
-    ProjectedRegion2d, UprightFrame, project_to_upright,
-};
-use kwipi_seg_mask_core::{decode, MAX_MASKS_PER_FRAME, OUTPUT0_LEN, OUTPUT1_LEN};
+use kwipi_seg_mask_core::oem_region::{ProjectedRegion2d, UprightFrame, project_to_upright};
+use kwipi_seg_mask_core::{MAX_MASKS_PER_FRAME, OUTPUT0_LEN, OUTPUT1_LEN, decode};
 use ort::session::{Session, builder::GraphOptimizationLevel};
 use ort::tensor::TensorElementType;
 use ort::value::{Tensor, ValueType};
@@ -32,25 +30,35 @@ pub const P10B_HEAD_NAMES: [&str; 10] = [
 ];
 
 pub const P10B_SHAPES: [[usize; 4]; 10] = [
-    [1, 4, 80, 80], [1, 4, 40, 40], [1, 4, 20, 20],
-    [1, 80, 80, 80], [1, 80, 40, 40], [1, 80, 20, 20],
-    [1, 32, 80, 80], [1, 32, 40, 40], [1, 32, 20, 20],
+    [1, 4, 80, 80],
+    [1, 4, 40, 40],
+    [1, 4, 20, 20],
+    [1, 80, 80, 80],
+    [1, 80, 40, 40],
+    [1, 80, 20, 20],
+    [1, 32, 80, 80],
+    [1, 32, 40, 40],
+    [1, 32, 20, 20],
     [1, 32, 160, 160],
 ];
 
 const MAX_TAIL_ONNX_BYTES: u64 = 8 * 1024 * 1024;
-const EXPECTED_OUTPUTS: [(&str, &[i64]); 2] = [
-    ("output0", &[1, 300, 38]),
-    ("output1", &[1, 32, 160, 160]),
-];
+const EXPECTED_OUTPUTS: [(&str, &[i64]); 2] =
+    [("output0", &[1, 300, 38]), ("output1", &[1, 32, 160, 160])];
 
 /// Validate raw P10A tensors before constructing ONNX Runtime input buffers.
 /// A "frame" is atomic: any invalid part means zero published regions.
 pub fn validate_raw_heads(raw: &[Vec<f32>]) -> Result<()> {
-    ensure!(raw.len() == 10, "segmentation tail needs exactly 10 RKNN heads");
+    ensure!(
+        raw.len() == 10,
+        "segmentation tail needs exactly 10 RKNN heads"
+    );
     for (index, (arr, shape)) in raw.iter().zip(P10B_SHAPES).enumerate() {
         let size: usize = shape.iter().product();
-        ensure!(arr.len() == size, "RKNN raw tensor {index} has wrong length");
+        ensure!(
+            arr.len() == size,
+            "RKNN raw tensor {index} has wrong length"
+        );
         ensure!(
             arr.iter().all(|value| value.is_finite()),
             "RKNN raw tensor {index} has non-finite values"
@@ -59,13 +67,16 @@ pub fn validate_raw_heads(raw: &[Vec<f32>]) -> Result<()> {
     Ok(())
 }
 
-fn check_outlets(
-    actual: &[ort::value::Outlet],
-    expected: &[(&str, &[i64])],
-) -> Result<()> {
-    ensure!(actual.len() == expected.len(), "tail ONNX I/O count mismatch");
+fn check_outlets(actual: &[ort::value::Outlet], expected: &[(&str, &[i64])]) -> Result<()> {
+    ensure!(
+        actual.len() == expected.len(),
+        "tail ONNX I/O count mismatch"
+    );
     for (index, (outlet, (name, dims))) in actual.iter().zip(expected).enumerate() {
-        ensure!(outlet.name() == *name, "tail ONNX tensor {index} name/order mismatch");
+        ensure!(
+            outlet.name() == *name,
+            "tail ONNX tensor {index} name/order mismatch"
+        );
         match outlet.dtype() {
             ValueType::Tensor {
                 ty: TensorElementType::Float32,
@@ -103,12 +114,13 @@ impl Tail {
         let metadata = std::fs::symlink_metadata(path)
             .with_context(|| format!("cannot stat tail ONNX {}", path.display()))?;
         ensure!(
-            metadata.is_file() && !metadata.file_type().is_symlink()
+            metadata.is_file()
+                && !metadata.file_type().is_symlink()
                 && (1..=MAX_TAIL_ONNX_BYTES).contains(&metadata.len()),
             "unapproved or oversized ONNX tail file"
         );
-        let library = std::env::var_os("ORT_DYLIB_PATH")
-            .unwrap_or_else(|| "libonnxruntime.so".into());
+        let library =
+            std::env::var_os("ORT_DYLIB_PATH").unwrap_or_else(|| "libonnxruntime.so".into());
         probe_runtime(library.as_os_str())?;
 
         // The OEM's policy loader explicitly documents that ort can panic on
@@ -210,13 +222,21 @@ mod tests {
     use super::*;
 
     fn synthetic_path(name: &str) -> std::path::PathBuf {
-        Path::new(&std::env::var("KWIPI_P10B_TEST_MODELS")
-            .expect("P10B ONNX fixtures must be generated in the CI temp directory"))
-            .join(name)
+        Path::new(
+            &std::env::var("KWIPI_P10B_TEST_MODELS")
+                .expect("P10B ONNX fixtures must be generated in the CI temp directory"),
+        )
+        .join(name)
     }
 
     fn portrait() -> UprightFrame {
-        UprightFrame { width: 720, height: 1280, scale: 0.5, pad_x: 140.0, pad_y: 0.0 }
+        UprightFrame {
+            width: 720,
+            height: 1280,
+            scale: 0.5,
+            pad_x: 140.0,
+            pad_y: 0.0,
+        }
     }
 
     fn heads(score_on: bool, proto_on: bool) -> [Vec<f32>; 10] {
@@ -225,7 +245,9 @@ mod tests {
             let mut data = vec![if i == 0 && !score_on { 0.0 } else { 1.0 }; size];
             if i == 9 {
                 data.fill(0.0);
-                if proto_on { data[..160 * 160].fill(1.0); }
+                if proto_on {
+                    data[..160 * 160].fill(1.0);
+                }
             }
             data
         })
@@ -241,15 +263,26 @@ mod tests {
         assert_eq!(valid[0].visible_mask_cells, 100);
         assert_eq!(valid[0].box_upright_xyxy, [200.0, 160.0, 280.0, 240.0]);
         assert_eq!(valid[0].centroid_upright_xy, [240.0, 200.0]);
-        assert!(tail.process(heads(false, true), portrait(), 0.25).unwrap().is_empty());
-        assert!(tail.process(heads(true, false), portrait(), 0.25).unwrap().is_empty());
+        assert!(
+            tail.process(heads(false, true), portrait(), 0.25)
+                .unwrap()
+                .is_empty()
+        );
+        assert!(
+            tail.process(heads(true, false), portrait(), 0.25)
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]
     fn real_ort_graph_must_match_ten_exact_names_shapes_float_types_and_outputs() {
         for invalid in [
-            "wrong_name.onnx", "wrong_shape.onnx", "wrong_proto_dtype.onnx",
-            "wrong_output.onnx", "wrong_proto_shape.onnx"
+            "wrong_name.onnx",
+            "wrong_shape.onnx",
+            "wrong_proto_dtype.onnx",
+            "wrong_output.onnx",
+            "wrong_proto_shape.onnx",
         ] {
             assert!(
                 Tail::open(&synthetic_path(invalid)).is_err(),
@@ -279,17 +312,31 @@ mod tests {
     #[test]
     fn invalid_geometry_or_threshold_never_produces_a_region() {
         let mut tail = Tail::open(&synthetic_path("valid.onnx")).unwrap();
-        assert!(tail.process(heads(true, true), portrait(), f32::NAN).is_err());
-        assert!(tail.process(heads(true, true), UprightFrame {
-            pad_x: 139.0, ..portrait()
-        }, 0.25).is_err());
+        assert!(
+            tail.process(heads(true, true), portrait(), f32::NAN)
+                .is_err()
+        );
+        assert!(
+            tail.process(
+                heads(true, true),
+                UprightFrame {
+                    pad_x: 139.0,
+                    ..portrait()
+                },
+                0.25
+            )
+            .is_err()
+        );
     }
 
     #[test]
     fn missing_model_or_missing_native_runtime_is_an_explicit_error() {
         assert!(Tail::open(&synthetic_path("nonexistent.onnx")).is_err());
-        assert!(probe_runtime(OsStr::new(
-            "/this-path-must-not-exist/kwipi-libonnxruntime.so"
-        )).is_err());
+        assert!(
+            probe_runtime(OsStr::new(
+                "/this-path-must-not-exist/kwipi-libonnxruntime.so"
+            ))
+            .is_err()
+        );
     }
 }
