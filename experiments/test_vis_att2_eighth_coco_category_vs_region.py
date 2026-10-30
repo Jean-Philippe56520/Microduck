@@ -121,11 +121,34 @@ class EighthCategoryVsRegionTests(unittest.TestCase):
         self.assertEqual(3, score["target_free_images"])
         self.assertEqual(10, score["top3_target_images_localized"])
         self.assertEqual(12, score["top5_target_images_localized"])
-        self.assertEqual(10, score["top3_nonball_target_images_localized"])
+        self.assertEqual(9, score["top3_nonball_target_images_localized"])
         self.assertEqual(1, score["top3_nonball_rescued_from_class_miss"])
         self.assertTrue(score["top3_nonball_new_value_gate"])
         self.assertTrue(score["top3_target_recall_gate"])
         self.assertTrue(score["unmatched_annotation_gate"])
+
+    def test_nonball_metrics_include_chair_but_exclude_ball_regardless_of_order(self):
+        # Historical CATEGORIES order is person, cat, dog, sports_ball, chair.
+        # Adding a ball region may increase all-target hits, never non-ball.
+        base = study.summarize(row_set())
+        with_ball = row_set()
+        with_ball[10]["region_k3_target_hit"] = True
+        with_ball[10]["top3_matched_to_any_coco_annotation"] = 1
+        ball_score = study.summarize(with_ball)
+        self.assertEqual(base["top3_nonball_target_images_localized"],
+                         ball_score["top3_nonball_target_images_localized"])
+        self.assertEqual(base["top3_nonball_rescued_from_class_miss"],
+                         ball_score["top3_nonball_rescued_from_class_miss"])
+        # A newly localized CHAIR must count as a non-ball even though
+        # its COCO category appears AFTER sports_ball in source ordering.
+        with_chair = row_set()
+        with_chair[12]["region_k3_target_hit"] = True
+        with_chair[12]["region_k5_target_hit"] = True
+        with_chair[12]["top3_candidate_count"] = 1
+        with_chair[12]["top3_matched_to_any_coco_annotation"] = 1
+        chair_score = study.summarize(with_chair)
+        self.assertEqual(base["top3_nonball_target_images_localized"] + 1,
+                         chair_score["top3_nonball_target_images_localized"])
 
     def test_target_free_with_a_region_is_not_false_positive_by_itself(self):
         metric = study.summarize(row_set())
