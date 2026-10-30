@@ -1,0 +1,15 @@
+[package]
+name = "p10c-harness"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+anyhow = "1"
+duck-detect = { path = "../duck-detect" }
+uyvy = { path = "../uyvy" }
+tokio = { workspace = true, features = ["sync"] }
+tracing.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
