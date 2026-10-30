@@ -38,4 +38,20 @@ Cinq observations **statiques MuJoCo à caméra de tête OEM basse**, RVB et seg
 
 ## Statut
 
-**Préenregistrement uniquement, aucune qualité PP-YOLOE-s mesurée dans cette note.** Un rapport d'exécution pourra compléter cette section sans modifier a posteriori les seuils, les scènes et les critères ci-dessus.
+**Exécution réelle le 30/10/2026, après préenregistrement** : [CI P3A #41053570131](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41053570131) **verte** au SHA `6434eae42d8c7616f423039a105e25edf28677e4`, [CI Python #41053570126](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41053570126) **verte**. Les 5 oracles de géométrie et statisme ont satisfait le préflight, puis **5 inférences ONNX CPU réelles** ont été effectuées avec le code de post-traitement constructeur Rockchip inchangé ; aucun NPU ni robot utilisé. L'artefact CI `per-p3a-numeric-evidence-only` contient uniquement le JSON numérique, pas les photos ni le modèle.
+
+| Cas fixé | Oracle géométrique indépendant | PP-YOLOE-s officiel, seuil 0,25 |
+| --- | --- | --- |
+| `flat_ball_ahead` | Balle visible 1 990 px | **Balle reconnue** ; IoU de bonne classe **0,939540**, meilleur score `sports ball` **0,781675** |
+| `s2_far_right_yaw105` | Balle visible 1 089 px | **Balle reconnue** ; IoU de bonne classe **0,953601**, score `sports ball` **0,703942** |
+| `chair_near` | Fauteuil visible **171 720 px** | **0 détection toutes classes** ; IoU de classe `chair` = **0**, aucune proposition d'obstacle visuel démontrée |
+| `vslam_pillar` | Pilier visible **94 576 px** | **0 détection**, sans preuve que tout objet inconnu devrait former une région |
+| `flat_ball_behind` | **0 pixel** balle | **0** détection `sports ball` ; négatif valide pour ce cas seulement |
+
+**Temps PC du runner** : inférence ONNX p50 **159,299 ms**, p95 **171,550 ms** par image ; décodeur fournisseur p50 **3,550 ms**, p95 **1 055,893 ms**, p95 dominé par la **première exécution à 1 318,965 ms** (initialisation probable, cause non attribuée sans mesure séparée). Ces chiffres ne mesurent ni le coût du RKNN INT8 sur NPU ni l'impact réel à 2 Hz et sur le contrôle à 50 Hz.
+
+**Verdict des critères préannoncés : `visual_gate_met=false`**. Les deux balles passent et le négatif n'invente pas de balle, **mais le fauteuil échoue** : **STOP sélection, adaptation OEM, décodeur et tuning sur ces vues**. L'absence de catégorie `chair` ne démontre *ni* que le capteur ToF ne verrait pas un obstacle *ni* une politique d'évitement opérationnelle ; la chaîne ToF et la sûreté de navigation exigent des preuves distinctes. L'exemple de tête OEM reste **mono-classe et incompatible avec neuf sorties**. Les licences propres au binaire ONNX / RKNN restent **inconnues**. Ne pas répéter les mêmes scènes pour faire passer le critère.
+
+**Vie privée / reprise :** deux nouvelles photographies domestiques à faible angle ont été fournies séparément comme lot de test local ; elles montrent **une seule scène/objet sous deux angles**, hauteur exacte de l'optique non mesurée, aucune boîte GT, pas de métrique IoU/AP50 possible sur ces vues. **Aucune inférence PP-YOLOE-s ou YOLOX sur ces deux photographies n'est établie par #207**. Ne pas les publier dans GitHub ou dans les artefacts CI ; les tester uniquement dans un environnement privé autorisé. Une archive ajoutée sur le dépôt public a fait l'objet de la [PR de retrait #208](https://github.com/Jean-Philippe56520/Microduck/pull/208), sans prétendre effacer les anciens commits de GitHub.
+
+**Décision :** `insuffisant` pour P2 sélection ; `test_logiciel_seul` pour la compatibilité des neuf têtes et la mesure hôte. Aucune nouvelle capacité de perception livrée à Kwipi, aucune commande motrice, écriture SQLite, mise à jour des gitlinks ou des poids. La suite utile n'est envisageable qu'avec **nouvelles scènes réellement disjointes et licences vérifiées**, sans rajouter d'outil ou optimiser sur les anciens exemples.
