@@ -29,3 +29,9 @@ P14B ultérieur : intégration dans vraie recette Yocto, dépendances CPython/sq
 ## Résultats
 
 À compléter après une CI sur le dernier SHA.
+
+## Vérification sur vrai wheel hôte — P14A
+
+[CI P14A #41137030593](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41137030593) réussie au SHA `42ecb707161cb93dbd5fed74c87e34112808a2a3` : 8 tests P14A, 8 tests N6 et 22 tests de transport `sim_ipc` (38/38), soit vraie roue `microduck_companion_embedded_candidate-0.2.0a1-py3-none-any.whl` (**66 701 octets dans ce run**, SHA256 de cette roue `9da4834427dba5543d78a36e602ac93fc95415bc1d39ed136c0c48f5854f3b90`). Source bytes et hashes `RECORD` vérifiés, `METADATA` et `top_level.txt` exacts, 19 modules, aucun `mock_cycles`, `mock_social_cues`, `sim_bridge` ni `qwen9b_advisor_v2`. Installation offline à l'extérieur du checkout et `-I -B` hôte réussies, (a) `ExperienceMemory(":memory:")`, (b) `AutonomyBrain.propose_balanced_passive` renvoie `idle, executed=False, motor_commands_issued=0` sur capteur absent, (c) 5 méthodes `robot.move/stop/do`, `media.frame` et `tof.stream` mal ciblé refusées avant toute connexion. Artifact hôte de revue uploadé pour 7 jours. Les tests P14A initiaux ont refusé le wheel jusqu'à l'acceptation **précise et testée** du fichier `top_level.txt` automatiquement fourni par `setuptools`.
+
+**Ne pas inférer** une politique d'action, un état de santé authentifié, un vrai visage/caméra, une perception, un suivi, un robot autonome, des moteurs pilotés, une livraison `microduck-image` ou un comportement physique. Une roue hôte `py3-none-any` ne prouve ni CPython/SQLite Yocto ni environnement réel ARM64. CI générale et fusion à vérifier au dernier SHA documentaire. Le chemin `sim_ipc.py` est nommé historiquement ; la source et les données de ses sockets simulés ne deviennent pas authentifiées par ce packaging.
