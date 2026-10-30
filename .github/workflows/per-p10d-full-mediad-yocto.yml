@@ -133,7 +133,8 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends pkg-config curl binutils tar gzip
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends pkg-config curl binutils tar gzip gcc-aarch64-linux-gnu
+          command -v aarch64-linux-gnu-gcc
           sh upstream/microduck/scripts/cross-sysroot.sh
           sh upstream/microduck/scripts/cross-sysroot.sh --check
           test -f "$DUCK_SYSROOT/usr/lib/aarch64-linux-gnu/pkgconfig/gstreamer-1.0.pc"
@@ -154,6 +155,8 @@ jobs:
           export PKG_CONFIG_SYSROOT_DIR="$DUCK_SYSROOT"
           export PKG_CONFIG_LIBDIR="$DUCK_SYSROOT/usr/lib/aarch64-linux-gnu/pkgconfig:$DUCK_SYSROOT/usr/share/pkgconfig"
           export PKG_CONFIG_ALLOW_CROSS=1
+          export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
+          export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
           export RUSTFLAGS="$RUSTFLAGS -L $DUCK_SYSROOT/usr/lib/aarch64-linux-gnu"
           for mod in gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0 gstreamer-webrtc-1.0; do
             pkg-config --modversion "$mod"
