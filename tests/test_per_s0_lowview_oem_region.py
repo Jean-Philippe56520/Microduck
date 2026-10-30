@@ -6,7 +6,7 @@ import math
 import unittest
 
 from experiments.per_s0_lowview_oem_region import (
-    CASES, OUTSIDE, BallGTError, gate, validate_preflight,
+    CASES, OUTSIDE, BallGTError, _ids_and_target, gate, validate_preflight,
 )
 
 
@@ -132,6 +132,33 @@ class TestPerS0FixedDecision(unittest.TestCase):
             "outside_five", "known_ball", "empty_negative"} for c in CASES))
         self.assertTrue(all(c.free_body in (None, "obj_1", "ball_1")
                             for c in CASES))
+
+class TestPerS0MaskUnion(unittest.TestCase):
+    def test_union_of_two_separate_oem_geom_ids(self):
+        try:
+            import numpy as np
+        except ImportError:
+            self.skipTest("numpy is installed in the dedicated OEM test job")
+        seg = np.full((640, 360, 2), -1, dtype=np.int32)
+        seg[70:90, 20:40, 0] = 3
+        seg[70:90, 20:40, 1] = 5
+        seg[110:140, 60:80, 0] = 7
+        seg[110:140, 60:80, 1] = 5
+        bbox, pixels = _ids_and_target(seg, (3, 7), 5)
+        self.assertEqual(pixels, 20*20+30*20)
+        self.assertEqual(bbox, [20, 70, 80, 140])
+        self.assertEqual(_ids_and_target(seg, (99,), 5), (None, 0))
+
+    def test_bad_dimensions_or_geom_type_rejected(self):
+        try:
+            import numpy as np
+        except ImportError:
+            self.skipTest("numpy is installed in the dedicated OEM test job")
+        seg = np.zeros((640, 360, 2), dtype=np.int32)
+        with self.assertRaises(BallGTError):
+            _ids_and_target(seg[:100], (1,), 5)
+        with self.assertRaises(BallGTError):
+            _ids_and_target(seg, (1, "not integer"), 5)
 
 
 if __name__ == "__main__":
