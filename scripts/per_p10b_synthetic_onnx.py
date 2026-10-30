@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-import numpy as np
 
 HEADS = [
     "/model.23/one2one_cv2.0/one2one_cv2.0.2/Conv_output_0",
@@ -30,6 +29,7 @@ PROTOS = (1, 32, 160, 160)
 
 def build(path: Path, variant: str = "valid") -> None:
     import onnx
+    import numpy as np
     from onnx import TensorProto, helper, numpy_helper
 
     names = HEADS.copy()
