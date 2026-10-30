@@ -25,6 +25,11 @@ class TestPerP5ReadOnlyGate(unittest.TestCase):
             photo.write_bytes(b"not-a-real-photo" * 10)
             paths.append(f"./subset/{photo.name}")
         self.cal.write_text("\n".join(paths), encoding="utf-8")
+        # Pin the fixture hash so negative calibration tests reach the intended gate.
+        self.fixture_sha = __import__("hashlib").sha256(self.weights.read_bytes()).hexdigest()
+        self.fixture_patch = patch.dict(MODELS, {"yolo26n.pt": self.fixture_sha})
+        self.fixture_patch.start()
+        self.addCleanup(self.fixture_patch.stop)
 
     def test_positive_on_expected_sha_for_fixture_only(self):
         # It proves validation logic, not authenticity of a vendor model.
@@ -34,8 +39,9 @@ class TestPerP5ReadOnlyGate(unittest.TestCase):
         self.assertEqual(result["calibration_count"], 20)
 
     def test_wrong_model_sha_is_rejected(self):
-        with self.assertRaisesRegex(ValueError, "SHA mismatch"):
-            verify_sources(self.weights, self.cal)
+        with patch.dict(MODELS, {"yolo26n.pt": "0" * 64}):
+            with self.assertRaisesRegex(ValueError, "SHA mismatch"):
+                verify_sources(self.weights, self.cal)
 
     def test_unknown_model_is_rejected(self):
         other = self.root / "arbitrary.pt"
