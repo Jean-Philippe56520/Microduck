@@ -52,7 +52,7 @@ jobs:
       - name: Synthetic positive/negative contract tests first (no images, no model)
         run: |
           python -m compileall -q experiments/per_p4_yolo26_coco300.py tests/test_per_p4_yolo26_coco300.py
-          python -m unittest tests.test_per_p4_yolo26_coco300 -v
+          python -m unittest discover -s tests -p 'test_per_p4_yolo26_coco300.py' -v
       - name: Download exactly 3 reviewed official weights and immutable public GT
         shell: bash
         run: |
@@ -98,6 +98,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: per-p4-coco300-yolo-nano-public-numeric-only
-          path: /tmp/p4-coco300-numeric-only.json
+          path: ${{ runner.temp }}/p4-coco300-numeric-only.json
           if-no-files-found: warn
           retention-days: 14
