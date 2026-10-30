@@ -66,32 +66,80 @@ def _tensors(value_info):
     return result
 
 
-def run(model_path: Path, calibration_list: Path) -> dict:
+def _cropped_head_outputs(graph, head: str, task: str) -> list[str]:
+    """Select the same raw per-level outputs as Ultralytics v8.4.192 RKNN exporter.
+
+    This is an evaluation adapter to Rockchip's SAME-INSTANCE simulator, not
+    a model modification. Source: ultralytics/utils/export/rknn.py (AGPL-3.0).
+    """
+    if task not in {"detect", "segment"}:
+        raise ValueError("unexpected task")
+    cropped_consumers = {"Reshape", "Concat"}
+    direct_consumers = {
+        input_name
+        for node in graph.node if node.op_type in cropped_consumers
+        for input_name in node.input
+    }
+    other_consumers = {
+        input_name
+        for node in graph.node if node.op_type not in cropped_consumers
+        for input_name in node.input
+    }
+    direct_consumers.difference_update(other_consumers)
+    heads = [
+        node.output[0]
+        for node in graph.node
+        if node.op_type == "Conv"
+        and head in node.name
+        and "/dfl/" not in node.name
+        and node.output
+        and node.output[0] in direct_consumers
+    ]
+    expected = 9 if task == "segment" else 6
+    if len(heads) != expected or len(set(heads)) != len(heads):
+        raise RuntimeError(f"unexpected raw {task} head count {len(heads)}; expected {expected}")
+    extras = [out.name for out in graph.output if out.name != "output0"]
+    if task == "segment" and extras != ["output1"]:
+        raise RuntimeError(f"unexpected segment prototype outputs {extras}")
+    if task == "detect" and extras:
+        raise RuntimeError(f"unexpected detection outputs {extras}")
+    return heads + extras
+
+
+def _ok(rc, stage):
+    if rc not in (0, None):
+        raise RuntimeError(f"RKNN {stage} returned {rc}")
+
+
+def run(model_path: Path, calibration_list: Path, result: dict) -> None:
+    from importlib.metadata import version
     import numpy as np
     import onnx
     import torch
     import ultralytics
-    import rknn
     from rknn.api import RKNN
     from ultralytics import YOLO
-    from ultralytics.utils.export.rknn import onnx2rknn
 
     if ultralytics.__version__ != ULTRA_VERSION:
         raise RuntimeError("unpinned ultralytics runtime")
-    if not str(getattr(rknn, "__version__", SDK_VERSION)).startswith(SDK_VERSION):
+    if version("rknn-toolkit2") != SDK_VERSION:
         raise RuntimeError("unpinned RKNN toolkit version")
     if not str(torch.__version__).startswith("2.4.0"):
         raise RuntimeError("unexpected Torch version")
-    proof = verify_sources(model_path, calibration_list)
-    result = {"model": model_path.name, **proof, "platform": "rk3566",
-              "runtime": ULTRA_VERSION, "toolkit_expected": SDK_VERSION,
-              "torch": str(torch.__version__), "host_arch": platform.machine(),
-              "device": "host_only", "NPU_measured": False, "robot_validated": False,
-              "motor_commands": 0, "memory_writes": 0}
+    result.update(verify_sources(model_path, calibration_list))
+    result.update({"platform": "rk3566",
+                   "ultralytics_version": ULTRA_VERSION,
+                   "toolkit_version": SDK_VERSION,
+                   "torch": str(torch.__version__),
+                   "host_arch": platform.machine(),
+                   "test": "P5-SIM1_same_instance_sdk_host_only",
+                   "motor_commands": 0, "memory_writes": 0,
+                   "segmentation_masks_decoded": False,
+                   "tail_onnx_usable": False})
     model = YOLO(str(model_path))
-    expected = "segment" if model_path.name.endswith("-seg.pt") else "detect"
-    if model.task != expected:
-        raise RuntimeError("unexpected weight task")
+    task = "segment" if model_path.name.endswith("-seg.pt") else "detect"
+    if model.task != task:
+        raise RuntimeError("unexpected official weight task")
     head = f"/model.{len(model.model.model) - 1}/"
     start = time.perf_counter()
     onnx_path = Path(model.export(format="onnx", imgsz=INPUT_SIZE, batch=1,
@@ -102,72 +150,58 @@ def run(model_path: Path, calibration_list: Path) -> dict:
     result["onnx_bytes"] = onnx_path.stat().st_size
     result["onnx_inputs"] = _tensors(graph.graph.input)
     result["onnx_outputs"] = _tensors(graph.graph.output)
+    outputs = _cropped_head_outputs(graph.graph, head, task)
+    result["rknn_output_head_names"] = outputs
+    result["rknn_output_count_expected"] = len(outputs)
+    result["raw_output_only_no_tail_decoder"] = True
     out_dir = model_path.parent / f"{model_path.stem}_rknn_model"
-    start = time.perf_counter()
-    created = Path(onnx2rknn(
-        onnx_file=str(onnx_path), output_dir=out_dir,
-        name="rk3566", quantize=8, batch=1,
-        dataset=str(calibration_list), head=head,
-        metadata={"task": expected, "imgsz": INPUT_SIZE},
-    ))
-    result["conversion_s"] = round(time.perf_counter() - start, 3)
-    rknns = sorted(created.glob("*.rknn"))
-    if len(rknns) != 1:
-        raise RuntimeError("expected exactly one compiled RKNN file")
-    rknn_path = rknns[0]
-    nbytes = rknn_path.stat().st_size
-    if not 0 < nbytes < MAX_BYTES:
-        raise RuntimeError("invalid/oversized compiled RKNN file")
-    result["rknn_bytes"] = nbytes
-    result["rknn_sha256_not_published"] = _sha(rknn_path)
-    tail = created / "tail.onnx"
-    result["tail_present"] = tail.is_file()
-    result["tail_bytes"] = tail.stat().st_size if tail.exists() else 0
-    if result["tail_present"]:
-        tail_graph = onnx.load(str(tail))
-        onnx.checker.check_model(tail_graph)
-        result["tail_inputs"] = _tensors(tail_graph.graph.input)
-        result["tail_outputs"] = _tensors(tail_graph.graph.output)
-    result["host_conversion_passed"] = True
-    # Host simulator only, not the board's NPU or driver.
-    simulator = RKNN(verbose=False)
-    initialized = False
+    out_dir.mkdir(parents=True, exist_ok=True)
+    rknn_path = out_dir / f"{onnx_path.stem}-rk3566.rknn"
+    builder = RKNN(verbose=False)
     try:
-        rc = simulator.load_rknn(str(rknn_path))
-        if rc not in (0, None):
-            raise RuntimeError(f"load_rknn returned {rc}")
-        rc = simulator.init_runtime()  # simulator, NO target= or device_id
-        if rc not in (0, None):
-            raise RuntimeError(f"init_runtime returned {rc}")
-        initialized = True
-        # Deterministic synthetic array is a transport test, not a detection benchmark.
-        sample = np.zeros((INPUT_SIZE, INPUT_SIZE, 3), dtype=np.uint8)
+        started = time.perf_counter()
+        _ok(builder.config(mean_values=[[0, 0, 0]], std_values=[[255, 255, 255]],
+                           target_platform="rk3566", auto_hybrid_cos_thresh=0.999), "config")
+        _ok(builder.load_onnx(model=str(onnx_path), outputs=outputs), "load_onnx")
+        _ok(builder.build(do_quantization=True, dataset=str(calibration_list),
+                          auto_hybrid=True, rknn_batch_size=1), "build")
+        _ok(builder.export_rknn(str(rknn_path)), "export_rknn")
+        result["build_export_s"] = round(time.perf_counter() - started, 3)
+        size = rknn_path.stat().st_size
+        if not 0 < size < MAX_BYTES:
+            raise RuntimeError("RKNN model empty or >128 MiB")
+        result["rknn_bytes"] = size
+        result["rknn_sha256_not_published"] = _sha(rknn_path)
+        result["host_conversion_passed"] = True
+        result["status"] = "host_conversion_passed_simulation_pending"
+        # SDK 2.3.2 supports host simulation only on this builder instance,
+        # NOT after another RKNN() calls load_rknn on the export.
+        _ok(builder.init_runtime(), "init_runtime_on_builder")
+        sample = np.empty((INPUT_SIZE, INPUT_SIZE, 3), dtype=np.uint8)
         sample[:, :, 0] = 37
         sample[:, :, 1] = 109
         sample[:, :, 2] = 173
         started = time.perf_counter()
-        outputs = simulator.inference(inputs=[sample], data_format="nhwc")
-        result["simulator_inference_ms_one_sample"] = round(
+        inference = builder.inference(inputs=[sample], data_format="nhwc")
+        result["one_host_simulator_inference_ms"] = round(
             (time.perf_counter() - started) * 1000, 2)
-        if not isinstance(outputs, (list, tuple)) or not outputs:
-            raise RuntimeError("empty simulated output collection")
-        checked = []
-        for value in outputs:
-            array = np.asarray(value)
-            if array.size == 0 or not np.issubdtype(array.dtype, np.number):
-                raise RuntimeError("invalid simulated output")
-            if not np.isfinite(array).all():
-                raise RuntimeError("nonfinite simulated output")
-            checked.append({"shape": list(array.shape), "dtype": str(array.dtype),
-                            "elements": int(array.size), "bytes": int(array.nbytes)})
-        result["simulator_outputs"] = checked
-        result["simulated_output_bytes_total"] = sum(x["bytes"] for x in checked)
+        if not isinstance(inference, (list, tuple)) or len(inference) != len(outputs):
+            raise RuntimeError("unexpected number of simulator output tensors")
+        tensors = []
+        for value in inference:
+            arr = np.asarray(value)
+            if arr.size < 1 or not np.issubdtype(arr.dtype, np.number):
+                raise RuntimeError("invalid simulator output")
+            if not np.isfinite(arr).all():
+                raise RuntimeError("nonfinite simulator output")
+            tensors.append({"shape": list(arr.shape), "dtype": str(arr.dtype),
+                            "bytes": int(arr.nbytes), "elements": int(arr.size)})
+        result["simulator_outputs"] = tensors
+        result["simulator_output_bytes_total"] = sum(t["bytes"] for t in tensors)
         result["host_simulator_passed"] = True
-        result["status"] = "host_conversion_and_simulation_passed"
+        result["status"] = "host_compilation_and_raw_head_simulation_passed"
     finally:
-        simulator.release()
-    result["host_peak_rss_kib_process"] = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    return result
+        builder.release()
 
 
 def main(argv=None):
@@ -183,15 +217,15 @@ def main(argv=None):
               "OEM_multioutput_compatible": False}
     code = 0
     try:
-        outcome = run(args.model, args.calibration)
-        status.update(outcome)
+        run(args.model, args.calibration, status)
     except Exception as exc:
-        status["status"] = "conversion_or_simulation_failed"
+        status["status"] = "host_simulation_failed_after_conversion" if status["host_conversion_passed"] else "host_conversion_failed"
         status["failure_type"] = type(exc).__name__
         status["failure_text"] = str(exc)[:600]
         status["host_peak_rss_kib_process"] = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         print(traceback.format_exc(limit=8), file=sys.stderr)
         code = 1
+    status["host_peak_rss_kib_process"] = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(status, indent=2, ensure_ascii=False, sort_keys=True),
                            encoding="utf-8")
