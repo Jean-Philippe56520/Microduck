@@ -1,0 +1,115 @@
+name: PER-P14A read-only Companion Python wheel (HOST smoke, NOT Yocto)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/per-p14a-embedded-wheel.yml"
+      - "scripts/per_p14a_embedded_wheel.py"
+      - "tests/test_per_p14a_embedded_wheel.py"
+      - "microduck_companion/sim_ipc.py"
+      - "scripts/n5_host_wheel.py"
+      - "scripts/n6_no_mock_wheel.py"
+      - "docs/per-p14a-embedded-candidate-wheel-2026-10-30.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reviewed-embedded-wheel-candidate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          submodules: false
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Check exact checkout and negative/positive P14A unit tests
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          python -m unittest discover -s tests -p 'test_per_p14a_embedded_wheel.py' -v
+          python -m unittest discover -s tests -p 'test_n6_no_mock_wheel.py' -v
+          python -m unittest discover -s tests -p 'test_sim_ipc.py' -v
+          python -m compileall -q scripts/per_p14a_embedded_wheel.py
+      - name: Stage only the N6 public API plus one existing read-only OEM transport
+        run: |
+          set -euo pipefail
+          python -m scripts.per_p14a_embedded_wheel stage \
+            --stage-dir "$RUNNER_TEMP/p14a-src" --report "$RUNNER_TEMP/p14a-source-review.json"
+          test ! -e "$RUNNER_TEMP/p14a-src/microduck_companion/mock_cycles.py"
+          test ! -e "$RUNNER_TEMP/p14a-src/microduck_companion/mock_social_cues.py"
+          test ! -e "$RUNNER_TEMP/p14a-src/microduck_companion/sim_bridge.py"
+          test ! -e "$RUNNER_TEMP/p14a-src/microduck_companion/qwen9b_advisor_v2.py"
+      - name: Build true py3-none-any wheel with exact source bytes
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --no-cache-dir 'setuptools>=68' wheel
+          mkdir "$RUNNER_TEMP/p14a-wheel"
+          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/p14a-wheel" "$RUNNER_TEMP/p14a-src"
+          python - "$RUNNER_TEMP/p14a-wheel" <<'PY'
+          import pathlib, sys, zipfile
+          paths = list(pathlib.Path(sys.argv[1]).glob("*.whl"))
+          assert len(paths) == 1
+          with zipfile.ZipFile(paths[0]) as z:
+              print("P14A audited wheel inventory:", sorted(z.namelist()))
+          PY
+          python -m scripts.per_p14a_embedded_wheel inspect \
+            --wheel "$(find "$RUNNER_TEMP/p14a-wheel" -maxdepth 1 -name '*.whl' -type f -print -quit)" \
+            --report "$RUNNER_TEMP/p14a-wheel-review.json"
+      - name: Install offline into isolated target and exercise idle + deny motor RPC
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/p14a-install"
+          python -m pip install --no-index --no-deps --target "$RUNNER_TEMP/p14a-install" "$RUNNER_TEMP"/p14a-wheel/*.whl
+          python -I -B - "$RUNNER_TEMP/p14a-install" <<'PY'
+          import importlib.util
+          from pathlib import Path
+          import pkgutil
+          import sys
+          root = Path(sys.argv[1]).resolve()
+          sys.path.insert(0, str(root))
+          import microduck_companion as kwipi
+          assert Path(kwipi.__file__).resolve().is_relative_to(root)
+          assert len(list(pkgutil.iter_modules(kwipi.__path__))) == 18
+          for banned in ("mock_cycles", "mock_social_cues", "sim_bridge",
+                         "qwen9b_advisor_v2", "sim_motion", "autonomy_demo"):
+              assert importlib.util.find_spec("microduck_companion." + banned) is None, banned
+          from microduck_companion.passive_sources import PassiveRead
+          from microduck_companion.perception import PerceptionSnapshot
+          from microduck_companion.sim_ipc import ReadOnlyUnixRpc, TelemetryError
+          db = kwipi.ExperienceMemory(":memory:")
+          try:
+              brain = kwipi.AutonomyBrain(db)
+              journal = kwipi.PassiveObservationJournal(db)
+              read = PassiveRead("unavailable_or_invalid", PerceptionSnapshot("mock", (), 1.0))
+              proposal = brain.propose_balanced_passive(
+                  read, journal=journal, now_monotonic_s=1.0, now_wall_epoch_s=100.0)
+              assert (proposal.intention, proposal.executed, proposal.motor_commands_issued) == ("idle", False, 0)
+              client = ReadOnlyUnixRpc("/tmp/not-a-real-oem-socket", role="robotd")
+              for denied in ("robot.move", "robot.stop", "robot.do", "media.frame", "tof.stream"):
+                  try:
+                      client.request(denied)
+                      raise AssertionError("unreviewed RPC accepted: " + denied)
+                  except ValueError:
+                      pass
+          finally:
+              db.close()
+          print("P14A isolated wheel: 19 Python modules, idle only, no motor permission, no robot")
+          PY
+      - name: Keep only review-only source and wheel manifest, not a firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: kwipi-p14a-host-wheel-review-only
+          path: |
+            ${{ runner.temp }}/p14a-wheel/*.whl
+            ${{ runner.temp }}/p14a-source-review.json
+            ${{ runner.temp }}/p14a-wheel-review.json
+          retention-days: 7
