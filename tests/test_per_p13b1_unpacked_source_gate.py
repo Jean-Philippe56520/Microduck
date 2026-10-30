@@ -61,7 +61,7 @@ class SourceGateTests(unittest.TestCase):
         )) + "\n"
         self.patch_p12 = patch(
             "scripts.per_p13b1_unpacked_source_gate.verify_p12",
-            return_value=PINN,
+            return_value=PINNED,
         )
         self.patch_p13a = patch(
             "scripts.per_p13b1_unpacked_source_gate.validate_p13a",
