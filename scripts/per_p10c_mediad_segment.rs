@@ -23,7 +23,10 @@ pub(super) fn is_segment_model(path: &Path) -> bool {
 }
 
 pub(super) fn tail_path(path: &Path) -> Result<std::path::PathBuf> {
-    ensure!(is_segment_model(path), "not an explicitly selected Kwipi seg .rknn");
+    ensure!(
+        is_segment_model(path),
+        "not an explicitly selected Kwipi seg .rknn"
+    );
     Ok(path.with_file_name(SEG_TAIL))
 }
 
@@ -91,10 +94,16 @@ fn region_valid(region: &ProjectedRegion2d, width: u32, height: u32) -> bool {
         && region.score.is_finite()
         && (0.0..=1.0).contains(&region.score)
         && [x0, y0, x1, y1, cx, cy].iter().all(|v| v.is_finite())
-        && 0.0 <= x0 && x0 < x1 && x1 <= width as f32
-        && 0.0 <= y0 && y0 < y1 && y1 <= height as f32
-        && x0 <= cx && cx <= x1
-        && y0 <= cy && cy <= y1
+        && 0.0 <= x0
+        && x0 < x1
+        && x1 <= width as f32
+        && 0.0 <= y0
+        && y0 < y1
+        && y1 <= height as f32
+        && x0 <= cx
+        && cx <= x1
+        && y0 <= cy
+        && cy <= y1
         && region.source_mask_cells <= 25_600
         && (1..=region.source_mask_cells).contains(&region.visible_mask_cells)
 }
@@ -111,7 +120,9 @@ pub(super) fn notification(sighting: &Sighting) -> String {
         && sighting.took_ms.is_finite()
         && (0.0..=5000.0).contains(&sighting.took_ms)
         && regions.len() <= MAX_REGIONS
-        && regions.iter().all(|r| region_valid(r, sighting.width, sighting.height));
+        && regions
+            .iter()
+            .all(|r| region_valid(r, sighting.width, sighting.height));
 
     if !valid {
         return format!(
@@ -148,7 +159,12 @@ mod tests {
     #[test]
     fn exact_filename_and_missing_tail_fail_without_npu() {
         assert!(is_segment_model(Path::new("/approved/kwipi_seg.rknn")));
-        for bad in ["duck_detect.rknn", "kwipi_seg.rknn.bak", "kwipi_seg.onnx", "other_seg.rknn"] {
+        for bad in [
+            "duck_detect.rknn",
+            "kwipi_seg.rknn.bak",
+            "kwipi_seg.onnx",
+            "other_seg.rknn",
+        ] {
             assert!(!is_segment_model(Path::new(bad)));
         }
         assert_eq!(
@@ -191,8 +207,7 @@ mod tests {
             region_candidates: Some(vec![region]),
             took_ms: 25.0,
         };
-        let data: serde_json::Value =
-            serde_json::from_str(&notification(&sample)).unwrap();
+        let data: serde_json::Value = serde_json::from_str(&notification(&sample)).unwrap();
         assert_eq!(data["method"], "media.region_candidates");
         assert_eq!(data["params"]["status"], "candidate_hypotheses");
         assert_eq!(data["params"]["source"], "mediad_tee_transport_unverified");
@@ -205,8 +220,7 @@ mod tests {
 
         let mut invalid = sample.clone();
         invalid.region_candidates.as_mut().unwrap()[0].centroid_upright_xy[0] = f32::NAN;
-        let rejected: serde_json::Value =
-            serde_json::from_str(&notification(&invalid)).unwrap();
+        let rejected: serde_json::Value = serde_json::from_str(&notification(&invalid)).unwrap();
         assert_eq!(rejected["params"]["status"], "no_measurement");
         assert_eq!(rejected["params"]["regions"].as_array().unwrap().len(), 0);
     }
@@ -220,8 +234,7 @@ mod tests {
             region_candidates: Some(vec![]),
             took_ms: 2.0,
         };
-        let data: serde_json::Value =
-            serde_json::from_str(&notification(&sighting)).unwrap();
+        let data: serde_json::Value = serde_json::from_str(&notification(&sighting)).unwrap();
         assert_eq!(data["params"]["status"], "candidate_hypotheses");
         assert_eq!(data["params"]["regions"].as_array().unwrap().len(), 0);
     }
