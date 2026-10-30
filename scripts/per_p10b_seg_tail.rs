@@ -10,8 +10,8 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::Path;
 
 use anyhow::{Context, Result, bail, ensure};
-pub use kwipi_seg_mask_core::oem_region::{ProjectedRegion2d, UprightFrame};
 use kwipi_seg_mask_core::oem_region::project_to_upright;
+pub use kwipi_seg_mask_core::oem_region::{ProjectedRegion2d, UprightFrame};
 use kwipi_seg_mask_core::{MAX_MASKS_PER_FRAME, OUTPUT0_LEN, OUTPUT1_LEN, decode};
 use ort::session::{Session, builder::GraphOptimizationLevel};
 use ort::tensor::TensorElementType;
