@@ -100,7 +100,17 @@ class P10DPinnedYoctoTests(unittest.TestCase):
         )
 
     def test_unsafe_oem_default_or_fallback_is_refused(self):
-        self.check_negative("params", "enabled: false,", "enabled: true,")
+        self.check_negative(
+            "params",
+            "impl Default for DuckDetectorParams {\n"
+            "    fn default() -> Self {\n"
+            "        Self {\n"
+            "            enabled: false,",
+            "impl Default for DuckDetectorParams {\n"
+            "    fn default() -> Self {\n"
+            "        Self {\n"
+            "            enabled: true,",
+        )
         self.check_negative(
             "params",
             'return vec![path.clone()];',
