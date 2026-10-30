@@ -32,8 +32,8 @@ MODEL_SHA256 = {
 }
 LICENSE = "Ultralytics AGPL-3.0 / Enterprise; host-only exploratory comparison"
 SEED = "per-p4-300-20261030"
-PER_CLASS = 20
-NEGATIVES = 200
+PER_CLASS = 40
+NEGATIVES = 100
 MATCH_IOU = 0.50
 PRIORITY = ("person", "cat", "dog", "sports_ball")
 TARGETS = tuple(COCO_IDS)
@@ -63,7 +63,7 @@ def _bbox(ann: dict, width: int, height: int) -> tuple[float, float, float, floa
 
 def select_cases(data: dict, excluded: set[int], *,
                  per_class: int = PER_CLASS, negatives: int = NEGATIVES):
-    """Reuses official COCO/CC-BY fields and CocoCase validation; SHA checked by caller."""
+    """Reuse official COCO Creative Commons metadata and CocoCase; SHA checked by caller."""
     if (type(data) is not dict or type(excluded) is not set
             or any(type(x) is not int for x in excluded)
             or type(per_class) is not int or not 1 <= per_class <= 40
@@ -72,13 +72,35 @@ def select_cases(data: dict, excluded: set[int], *,
     cats = {x["id"]: x["name"] for x in data["categories"]}
     if any(cats.get(cid) != name.replace("_", " ") for name, cid in COCO_IDS.items()):
         raise ValueError("not the expected COCO taxonomy")
+    # Source gate first failed before any inference: CC BY alone left 1 new
+    # "cat" case after historical exclusions. We broaden only to the six
+    # explicitly declared Flickr Creative Commons 2.0 licenses in the *same*
+    # frozen COCO val2017 source for transient, noncommercial internal study.
+    # NC and ND photos are not republished, trained on, or redistributed.
+    grants = {
+        1: ("Attribution-NonCommercial-ShareAlike License",
+            "http://creativecommons.org/licenses/by-nc-sa/2.0/"),
+        2: ("Attribution-NonCommercial License",
+            "http://creativecommons.org/licenses/by-nc/2.0/"),
+        3: ("Attribution-NonCommercial-NoDerivs License",
+            "http://creativecommons.org/licenses/by-nc-nd/2.0/"),
+        4: (PHOTO_LICENSE_NAME, PHOTO_LICENSE_URL),
+        5: ("Attribution-ShareAlike License",
+            "http://creativecommons.org/licenses/by-sa/2.0/"),
+        6: ("Attribution-NoDerivs License",
+            "http://creativecommons.org/licenses/by-nd/2.0/"),
+    }
     permitted = {
         x["id"] for x in data["licenses"]
-        if x.get("name") == PHOTO_LICENSE_NAME
-        and x.get("url") in (PHOTO_LICENSE_URL, PHOTO_LICENSE_URL.replace("http:", "https:"))
+        if type(x) is dict and type(x.get("id")) is int and x["id"] in grants
+        and x.get("name") == grants[x["id"]][0]
+        and x.get("url") in (
+            grants[x["id"]][1],
+            grants[x["id"]][1].replace("http:", "https:"),
+        )
     }
     if not permitted:
-        raise ValueError("no acceptable per-image CC BY licensing")
+        raise ValueError("no acceptable per-image Creative Commons licensing")
     images: dict[int, dict] = {}
     for x in data["images"]:
         image_id = x.get("id")
@@ -325,6 +347,10 @@ def run(annotations_path: Path, weights_dir: Path) -> dict:
     if len(excluded) != 132:
         raise ValueError("historical cohort mismatch")
     cases = select_cases(data, excluded)
+    # The exact CC license of every selected image remains visible in the
+    # numerical-only report; the underlying original photos are never shared.
+    license_by_id = {img["id"]: img["license"] for img in data["images"]}
+    license_tally = dict(sorted(Counter(license_by_id[case.image_id] for case, _ in cases).items()))
     if len(cases) != NUM_IMAGES or len(set(c.image_id for c, _ in cases)) != NUM_IMAGES:
         raise ValueError("cohort cardinality mismatch")
     entries = [(case, gt, _official_jpeg(case)) for case, gt in cases]
@@ -338,11 +364,12 @@ def run(annotations_path: Path, weights_dir: Path) -> dict:
         "images": NUM_IMAGES, "target_per_class": PER_CLASS, "targetfree": NEGATIVES,
         "excluded_historical_image_ids": len(excluded),
         "overlap_historical_ids": len(set(ids)&excluded),
-        "ids": ids, "coco_annotations_sha256": ANNOTATIONS_SHA256,
+        "ids": ids, "selected_cc_license_counts_by_official_id": license_tally,
+        "coco_annotations_sha256": ANNOTATIONS_SHA256,
         "model_asset_release": "ultralytics/assets@v8.4.0",
         "ultralytics_version": ultralytics_version, "model_rights": LICENSE,
         "input_size": 640, "confidence": .25, "iou_nms_argument": .50,
-        "image_license_required": "Flickr CC BY 2.0 (per COCO record)",
+        "image_license_required": "Flickr CC 2.0 IDs 1-6 (BY, SA, NC, ND variants); internal noncommercial transient research only; no republication",
         "camera_height_verified": False, "independent_physical_scenes_verified": False,
         "actual_RK3566_or_NPU_test": False, "robot_motion": False,
         "private_media_saved": False, "memory_writes": 0, "qwen_calls": 0,
