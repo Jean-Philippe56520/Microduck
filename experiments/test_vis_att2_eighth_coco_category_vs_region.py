@@ -117,7 +117,7 @@ class EighthCategoryVsRegionTests(unittest.TestCase):
         self.assertEqual(15, score["target_images"])
         self.assertEqual(3, score["target_free_images"])
         self.assertEqual(10, score["top3_target_images_localized"])
-        self.assertEqual(10, score["top5_target_images_localized"] - 2)
+        self.assertEqual(12, score["top5_target_images_localized"])
         self.assertEqual(10, score["top3_nonball_target_images_localized"])
         self.assertEqual(1, score["top3_nonball_rescued_from_class_miss"])
         self.assertTrue(score["top3_nonball_new_value_gate"])
