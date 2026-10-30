@@ -46,8 +46,11 @@ pub struct MaskCandidate {
 
 fn checked_box(row: &[f32]) -> Result<[f32; 4], DecodeError> {
     let box_ = [row[0], row[1], row[2], row[3]];
+    // Keep finite, positive-area geometry even when the model predicts a
+    // partially out-of-frame box. The bounded mask crop intersects it with
+    // the 160x160 grid, matching the vendor's crop_mask coordinate convention.
+    // This is still just an uncertain model proposal, not verified presence.
     if box_.iter().any(|v| !v.is_finite())
-        || box_.iter().any(|v| *v < 0.0 || *v > IMAGE_SIDE as f32)
         || !(box_[0] < box_[2] && box_[1] < box_[3])
     {
         return Err(DecodeError::InvalidBox);
@@ -203,6 +206,60 @@ mod tests {
         assert_eq!(out[0].mask_160[60 * MASK_SIDE + 49], 0);
         assert_eq!(out[0].mask_160[19 * MASK_SIDE + 10], 0);
         assert_eq!(out[0].mask_160.len(), MASK_PIXELS);
+    }
+
+
+    #[test]
+    fn partially_out_of_frame_left_keeps_exact_intersection() {
+        let (mut rows, mut proto) = blank();
+        let bbox = [-40.0, 80.0, 200.0, 240.0];
+        add_candidate(&mut rows, 0, 0.9, 32.0, bbox, 0, 1.0);
+        proto[..MASK_PIXELS].fill(1.0);
+        let out = decode(&rows, &proto, 0.25, 10).unwrap();
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].box_model_xyxy, bbox);
+        assert_eq!(out[0].foreground_pixels, 2000);
+        assert_eq!(out[0].mask_160[20 * MASK_SIDE], 1);
+        assert_eq!(out[0].mask_160[59 * MASK_SIDE + 49], 1);
+        assert_eq!(out[0].mask_160[59 * MASK_SIDE + 50], 0);
+        assert_eq!(out[0].mask_160[19 * MASK_SIDE], 0);
+        assert_eq!(out[0].mask_160.len(), MASK_PIXELS);
+    }
+
+    #[test]
+    fn partially_out_of_frame_bottom_right_never_allocates_beyond_grid() {
+        let (mut rows, mut proto) = blank();
+        let bbox = [600.0, 600.0, 680.0, 680.0];
+        add_candidate(&mut rows, 0, 0.9, 1.0, bbox, 0, 1.0);
+        proto[..MASK_PIXELS].fill(1.0);
+        let out = decode(&rows, &proto, 0.25, 10).unwrap();
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].box_model_xyxy, bbox);
+        assert_eq!(out[0].foreground_pixels, 100);
+        assert_eq!(out[0].mask_160[150 * MASK_SIDE + 150], 1);
+        assert_eq!(out[0].mask_160[159 * MASK_SIDE + 159], 1);
+        assert_eq!(out[0].mask_160[149 * MASK_SIDE + 150], 0);
+        assert_eq!(out[0].mask_160[150 * MASK_SIDE + 149], 0);
+        assert_eq!(out[0].mask_160.len(), MASK_PIXELS);
+    }
+
+    #[test]
+    fn wholly_outside_box_is_not_fabricated_as_visible_mask() {
+        let (mut rows, mut proto) = blank();
+        add_candidate(
+            &mut rows,
+            0,
+            0.9,
+            1.0,
+            [700.0, 700.0, 800.0, 800.0],
+            0,
+            1.0,
+        );
+        proto[..MASK_PIXELS].fill(1.0);
+        let out = decode(&rows, &proto, 0.25, 10).unwrap();
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].foreground_pixels, 0);
+        assert!(out[0].mask_160.iter().all(|v| *v == 0));
     }
 
     #[test]
