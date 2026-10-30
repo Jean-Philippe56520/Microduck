@@ -45,4 +45,22 @@ Retour arrière : supprimer/revert branche expérimentale ; aucune installation 
 
 ## 4. Résultat exécuté
 
-**En attente** : aucun chiffre PER-S0 ni région de ces six cas n'est connu au moment du préenregistrement.
+**Exécuté le 30/10/2026, après le préenregistrement** : [CI OEM/YOLOX #41065887857](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41065887857) **verte**, tête expérimentale `92aa03afe3ef53ec31dd0067a48931d5c77156e3` : tests positifs/négatifs de contrat passés, **6/6 scènes rendues** avec caméra OEM et masques indépendants, **5/5 positifs valides** (≥80 px), négatif sans objet extérieur (ni pixels du robot visibles), et **6/6 inférences YOLOX CPU réellement réalisées** après contrôle SHA. Aucune image ni poids publiée dans l'artefact `per-s0-oem-geometry-and-onnx-numeric-only`.
+
+| Cas gelé | Pixels GT | Boîte parmi les cinq classes IoU≥0,50 | Région top1 / top3 / top5 meilleure IoU | Hypothèse de classe COCO top3 (non confirmée) |
+| --- | ---: | --- | ---: | --- |
+| `office_blue_cube` | **5 438** | Non | **0 / 0 / 0** (zéro région) | Aucune |
+| `living_plant` (cylindre OEM nommé plante) | **31 594** | Non | **0,943425 / 0,943425 / 0,943425** | Index **61 = toilet** (erroné), score **0,470296** |
+| `living_sofa` (union assise + dossier) | **52 975** | Non | **0,245016 / 0,245016 / 0,245016** | Index **6 = train** (erroné), score **0,453999** |
+| `vslam_cyan_pillar` (cylindre) | **45 746** | Non | **0,940207 / 0,940207 / 0,940207** | Index **37 = surfboard** (erroné), score **0,470187** |
+| `office_green_ball` (témoin connu) | **1 918** | Oui, **0,887870** | **0,887870** sur top1/3/5 | Index **32 = sports ball**, score **0,817301** |
+| `empty_floor` (négatif) | **0** objet extérieur, **0** pixel robot visible | Non applicable | **0 région** top1/3/5 | Aucune |
+
+**Bilan préfixé : `functional_value_gate_met=true`** — 2/4 hors cinq classes localisés top3 à IoU≥0,50, **2 récupérations complémentaires** vis-à-vis des cinq boîtes classées, zéro région forte ≥0,80 sur négatif ; balle témoin correctement localisée mais exclue du quota. **La porte de test logiciel S0 est franchie dans CES vues OEM simulées.** Les confusions `toilet`, `train`, `surfboard` sont importantes : un objet/région localisé ne justifie absolument **pas de conserver son étiquette** comme « vérité », ni d'inférer forme matérielle complète, usage ou sécurité. Le « plant » OEM est lui-même une **simple primitive cylindrique**, pas une plante botanique détaillée ; aucune démonstration de propriétés d'une vraie plante n'en découle.
+
+**Ressources CPU hôte mesurées** : inférence médiane **12,772 ms/image**, p95 **13,634 ms** ; décodage des boîtes et top1/3/5 médiane **2,855 ms**, p95 **3,146 ms** sur **six images seulement**, hors coût de rendu/MuJoCo et de modèle sur robot. Aucune mesure de consommation RKNN/NPU, RSS RK3566, 2 Hz ou 50 Hz moteur.
+
+**Décision `progres_demontre_PC_MuJoCo_borne`, et NON « objet compris » :** S0 prouve seulement une **possibilité d'attention spatiale `unknown` sur 2/4 objets hors vocabulaire prioritaire** pour ce modèle, et 2 échecs (cube, canapé) très visibles. Cela **autorise l'étude S1** des propriétés visuelles *uniquement* sur des régions réellement appariées et un témoin à masque indépendant. **S1 ne doit pas être déclaré opérationnel** ni créer une fonction de segmentation/forme avant un protocole nouveau et comparatif ; l'étiquette COCO erronée est écartée pour toute future décision. Les négatifs photo/écran, les personnes/animaux, la caméra réelle, la distinction présence physique/représentation et les objets domestiques de type trottinette **ne sont pas testés**. Un seuil passager ne prouve pas une généralisation ; ne pas retoucher/rejouer ces six scènes pour améliorer le score.
+
+**Limite importante d'indépendance :** la cohorte emploie des *poses/cibles nouvelles préenregistrées* mais les **mondes et maillages OEM déjà employés par d'autres études**. Ce n'est pas un corpus public entièrement inédit, ni un test de validité hors simulation. Les deux images privées existantes sont volontairement exclues des jobs GitHub. Aucun sous-module, moteur, caméra OEM ou stockage cognitif modifié. Retour arrière intégral : supprimer ce seul banc expérimental.
+
