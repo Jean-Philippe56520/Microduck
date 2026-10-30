@@ -2,10 +2,11 @@
 import tempfile
 from pathlib import Path
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from experiments.per_p5_yolo26_rknn_compat import (
-    CALIBRATION_COUNT, MODELS, verify_sources,
+    CALIBRATION_COUNT, MODELS, verify_sources, _cropped_head_outputs,
 )
 
 
@@ -69,6 +70,47 @@ class TestPerP5ReadOnlyGate(unittest.TestCase):
         (self.root / "subset" / "00.jpg").unlink()
         with self.assertRaisesRegex(ValueError, "missing/unsafe"):
             verify_sources(self.weights, self.cal)
+
+
+
+class TestSameBuilderRKNNHeadSelection(unittest.TestCase):
+    @staticmethod
+    def _graph(heads=6, segment=False):
+        nodes = []
+        for i in range(heads):
+            signal = f"raw_head_{i}"
+            nodes.append(SimpleNamespace(op_type="Conv",
+                                         name=f"/model.23/one2one_cv3.{i}/Conv",
+                                         output=[signal], input=[]))
+            nodes.append(SimpleNamespace(op_type="Reshape",
+                                         name=f"/tail/{i}", input=[signal],
+                                         output=[f"reshaped_{i}"]))
+        graph_outputs = [SimpleNamespace(name="output0")]
+        if segment:
+            graph_outputs.append(SimpleNamespace(name="output1"))
+        return SimpleNamespace(node=nodes, output=graph_outputs)
+
+    def test_detection_has_six_raw_heads(self):
+        g = self._graph(6)
+        self.assertEqual(len(_cropped_head_outputs(g, "/model.23/", "detect")), 6)
+
+    def test_segmentation_keeps_prototype_output_separate(self):
+        g = self._graph(9, segment=True)
+        names = _cropped_head_outputs(g, "/model.23/", "segment")
+        self.assertEqual(len(names), 10)
+        self.assertEqual(names[-1], "output1")
+
+    def test_missing_head_is_refused_not_fabricated(self):
+        with self.assertRaisesRegex(RuntimeError, "head count"):
+            _cropped_head_outputs(self._graph(5), "/model.23/", "detect")
+
+    def test_missing_segmentation_prototype_is_refused(self):
+        with self.assertRaisesRegex(RuntimeError, "prototype outputs"):
+            _cropped_head_outputs(self._graph(9), "/model.23/", "segment")
+
+    def test_unexpected_task_is_refused(self):
+        with self.assertRaisesRegex(ValueError, "unexpected task"):
+            _cropped_head_outputs(self._graph(6), "/model.23/", "depth")
 
 
 if __name__ == "__main__":
