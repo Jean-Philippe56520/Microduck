@@ -20,8 +20,8 @@ jobs:
     timeout-minutes: 30
     env:
       PYTHONDONTWRITEBYTECODE: "1"
-      KWIPI_P12_YOCTO: ${{ runner.temp }}/p12-yocto
-      KWIPI_P12_SOURCE: ${{ runner.temp }}/p12-source
+      KWIPI_P12_YOCTO: /tmp/p12-yocto
+      KWIPI_P12_SOURCE: /tmp/p12-source
     steps:
       - uses: actions/checkout@v4
         with:
