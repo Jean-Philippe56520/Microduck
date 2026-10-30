@@ -69,6 +69,10 @@ jobs:
           avail_kb="$(df -Pk /tmp | awk 'NR==2 {print $4}')"
           echo "Host disk available KB: $avail_kb"
           test "$avail_kb" -ge 6000000 || { echo 'P13A STOP: insufficient disk for metadata checkout'; exit 1; }
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends chrpath diffstat
+          command -v chrpath
+          command -v diffstat
           mkdir -p "$KAS_WORK_DIR" "$KAS_BUILD_DIR"
           python -m venv "$RUNNER_TEMP/p13-kas-venv"
           "$RUNNER_TEMP/p13-kas-venv/bin/pip" install --disable-pip-version-check --no-cache-dir "kas==5.2.0"
