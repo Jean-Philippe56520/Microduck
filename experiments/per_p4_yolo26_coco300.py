@@ -32,8 +32,8 @@ MODEL_SHA256 = {
 }
 LICENSE = "Ultralytics AGPL-3.0 / Enterprise; host-only exploratory comparison"
 SEED = "per-p4-300-20261030"
-PER_CLASS = 40
-NEGATIVES = 100
+PER_CLASS = 20
+NEGATIVES = 200
 MATCH_IOU = 0.50
 PRIORITY = ("person", "cat", "dog", "sports_ball")
 TARGETS = tuple(COCO_IDS)
@@ -67,7 +67,7 @@ def select_cases(data: dict, excluded: set[int], *,
     if (type(data) is not dict or type(excluded) is not set
             or any(type(x) is not int for x in excluded)
             or type(per_class) is not int or not 1 <= per_class <= 40
-            or type(negatives) is not int or not 1 <= negatives <= 100):
+            or type(negatives) is not int or not 1 <= negatives <= 200):
         raise ValueError("invalid cohort request")
     cats = {x["id"]: x["name"] for x in data["categories"]}
     if any(cats.get(cid) != name.replace("_", " ") for name, cid in COCO_IDS.items()):
@@ -119,7 +119,7 @@ def select_cases(data: dict, excluded: set[int], *,
         choices = order(i for i in images if i not in used
                         and any(gt.category == name for gt in by_image[i]))
         if len(choices) < per_class:
-            raise ValueError("insufficient licensed target photos: " + name)
+            raise ValueError(f"insufficient licensed target photos for {name}: {len(choices)}")
         picked.extend(choices[:per_class])
         used.update(choices[:per_class])
     empties = order(i for i in images if i not in used and not by_image[i])
@@ -268,7 +268,7 @@ def analyze(model_path: Path, entries, *,
             targetfree_pred_counts.append(sum(class_pred_counter[x] for x in TARGETS))
         if segment:
             masks = None if result.masks is None else result.masks.data.cpu().numpy()
-            for gi, pi, _ in known_pairs:
+            for gi, pi, _ in region_pairs:
                 if masks is None or pi >= len(masks):
                     raise ValueError("missing predicted instance mask")
                 mi, ri = mask_scores(targets[gi].segmentation, masks[pi],
