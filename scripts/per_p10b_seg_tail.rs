@@ -125,19 +125,10 @@ impl Tail {
         }))
         .map_err(|_| anyhow::anyhow!("ONNX Runtime panic while opening tail"))??;
 
-        let expected_inputs: Vec<(&str, &[i64])> = P10B_HEAD_NAMES
+        let expected_inputs: Vec<(&str, Vec<i64>)> = P10B_HEAD_NAMES
             .iter()
             .zip(P10B_SHAPES.iter())
-            .map(|(name, dims)| {
-                // Avoid a second model-specific preprocessing implementation.
-                // We compare the rank/shape exactly, including batch 1.
-                (*name, &dims[..])
-            })
-            .collect();
-        // Build checked i64 dimensions without using an unsafe cast from usize.
-        let expected_inputs: Vec<(&str, Vec<i64>)> = expected_inputs
-            .iter()
-            .map(|(name, dims)| (*name, dims.iter().copied().collect()))
+            .map(|(name, dims)| (*name, dims.iter().map(|&v| v as i64).collect()))
             .collect();
         let input_refs: Vec<(&str, &[i64])> = expected_inputs
             .iter()
