@@ -106,7 +106,7 @@ jobs:
           import json,os,pathlib
           report=json.loads(pathlib.Path(os.environ["RUNNER_TEMP"], "p4-coco300-numeric-only.json").read_text())
           assert report["images"] == 300
-          assert report["target_per_class"] == 20 and report["targetfree"] == 200
+          assert report["target_per_class"] == 40 and report["targetfree"] == 100
           assert report["overlap_historical_ids"] == 0
           assert report["excluded_historical_image_ids"] == 132
           assert len(set(report["ids"])) == 300
