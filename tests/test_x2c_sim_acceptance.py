@@ -109,6 +109,41 @@ class X2cAcceptanceTests(unittest.TestCase):
         self.assertIs(evidence["floor_certified"], False)
         self.assertFalse(evidence["local_pc_transport_configured"])
 
+    def test_s1_ablation_is_paired_and_does_not_claim_semantic_gain(self):
+        evidence = validate_acceptance(self.database, self.first, self.second)
+        ablation = evidence["attention_ablation"]
+        self.assertEqual(6, ablation["paired_cycles"])
+        self.assertEqual(1, ablation["memory_dependent_differences"])
+        self.assertEqual([{
+            "session": "x2c-session-a", "sequence": 2,
+            "with_memory": "observe_status", "without_memory": "idle",
+        }], ablation["difference_cycles"])
+        self.assertFalse(ablation["semantic_gain_verified"])
+        self.assertFalse(ablation["motor_effect_verified"])
+        with sqlite3.connect(self.database) as db:
+            self.assertEqual(0, db.execute(
+                "SELECT count(*) FROM intent_preferences").fetchone()[0])
+
+    def test_s1_rejects_fabricated_attention_even_if_sqlite_and_json_agree(self):
+        # The old X2-C cross-check accepted an attention label when both
+        # serialized sources contained the same fabrication.
+        with sqlite3.connect(self.database) as db:
+            db.execute(
+                "UPDATE sim_passive_cycles SET attention='observe_status' WHERE id=3")
+        altered = json.loads(json.dumps(self.first))
+        altered["cycles"][2]["attention"] = "observe_status"
+        with self.assertRaisesRegex(ValueError, "persisted attention"):
+            validate_acceptance(self.database, altered, self.second)
+
+    def test_s1_rejects_suppressed_memory_attention(self):
+        with sqlite3.connect(self.database) as db:
+            db.execute(
+                "UPDATE sim_passive_cycles SET attention='idle' WHERE id=2")
+        altered = json.loads(json.dumps(self.first))
+        altered["cycles"][1]["attention"] = "idle"
+        with self.assertRaisesRegex(ValueError, "persisted attention"):
+            validate_acceptance(self.database, altered, self.second)
+
     def test_second_report_must_prove_same_sqlite_and_a_distinct_session(self):
         for mutation in (
             {"journal_count": 3},

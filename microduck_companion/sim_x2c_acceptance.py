@@ -182,6 +182,7 @@ def validate_acceptance(database: Path, first: dict, second: dict) -> dict:
 
         by_id = {row["id"]: row for row in rows}
         links, cross_links = 0, 0
+        attention_differences: list[dict[str, object]] = []
         for position, row in enumerate(rows):
             session_index, offset = divmod(position, 3)
             from_report = reports[session_index]["cycles"][offset]
@@ -230,6 +231,37 @@ def validate_acceptance(database: Path, first: dict, second: dict) -> dict:
                          {"stable_band", "low_to_normal", "normal_to_low"},
                          "unreferenced memory is being reported as verified")
 
+            # S1: read-only counterfactual on the SAME observed battery.
+            # X2-C uses the existing AutonomyBrain's default motivations,
+            # for which a verified low->normal transition yields the only
+            # memory-dependent X2-B attention hint. These hints do not
+            # change the motor Plan, execute an OEM skill or prove usefulness.
+            battery = row["battery_pct"]
+            if battery is None:
+                without_memory = "abstain"
+            else:
+                _require(
+                    type(battery) in (int, float)
+                    and math.isfinite(battery) and 0 <= battery <= 100,
+                    "recorded battery is not a valid OEM percentage",
+                )
+                without_memory = "rest" if battery <= 15 else "idle"
+            with_memory = (
+                "observe_status" if row["comparison"] == "low_to_normal"
+                else without_memory
+            )
+            _require(
+                row["attention"] == with_memory,
+                "persisted attention contradicts the verified power context",
+            )
+            if with_memory != without_memory:
+                attention_differences.append({
+                    "session": row["session"],
+                    "sequence": row["sequence"],
+                    "with_memory": with_memory,
+                    "without_memory": without_memory,
+                })
+
     def summarize(field: str) -> dict[str, float]:
         vals = [float(s[field]) for s in samples]
         return {
@@ -254,6 +286,15 @@ def validate_acceptance(database: Path, first: dict, second: dict) -> dict:
             "linked_observations": links,
             "cross_session_links": cross_links,
             "status": "observed" if links else "not_demonstrated",
+        },
+        "attention_ablation": {
+            "scope": "X2-B_simulated_battery_attention_only",
+            "baseline": "same_fresh_battery_without_historical_context",
+            "paired_cycles": 6,
+            "memory_dependent_differences": len(attention_differences),
+            "difference_cycles": attention_differences,
+            "semantic_gain_verified": False,
+            "motor_effect_verified": False,
         },
         "host_latency": {
             "acquisition": summarize("acquisition_ms"),
