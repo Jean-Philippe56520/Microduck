@@ -50,8 +50,7 @@ fn checked_box(row: &[f32]) -> Result<[f32; 4], DecodeError> {
     // partially out-of-frame box. The bounded mask crop intersects it with
     // the 160x160 grid, matching the vendor's crop_mask coordinate convention.
     // This is still just an uncertain model proposal, not verified presence.
-    if box_.iter().any(|v| !v.is_finite()) || !(box_[0] < box_[2] && box_[1] < box_[3])
-    {
+    if box_.iter().any(|v| !v.is_finite()) || !(box_[0] < box_[2] && box_[1] < box_[3]) {
         return Err(DecodeError::InvalidBox);
     }
     Ok(box_)
