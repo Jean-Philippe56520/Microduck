@@ -105,19 +105,15 @@ pub fn decode(
             eligible.push((i, score));
         }
     }
-    eligible.sort_by(|(a, a_score), (b, b_score)| {
-        b_score.total_cmp(a_score).then_with(|| a.cmp(b))
-    });
+    eligible
+        .sort_by(|(a, a_score), (b, b_score)| b_score.total_cmp(a_score).then_with(|| a.cmp(b)));
     let mut items = Vec::with_capacity(max_det.min(eligible.len()));
 
     for (index, score) in eligible.into_iter().take(max_det) {
         let row = &output0[index * ROW_WIDTH..(index + 1) * ROW_WIDTH];
         let box_ = checked_box(row)?;
         let class = row[5];
-        if !class.is_finite()
-            || !(0.0..80.0).contains(&class)
-            || class.fract() != 0.0
-        {
+        if !class.is_finite() || !(0.0..80.0).contains(&class) || class.fract() != 0.0 {
             return Err(DecodeError::InvalidClass);
         }
         let coeff = &row[6..ROW_WIDTH];
@@ -170,7 +166,15 @@ mod tests {
         (vec![0.0; OUTPUT0_LEN], vec![0.0; OUTPUT1_LEN])
     }
 
-    fn add_candidate(rows: &mut [f32], index: usize, score: f32, class: f32, bbox: [f32; 4], k: usize, coeff: f32) {
+    fn add_candidate(
+        rows: &mut [f32],
+        index: usize,
+        score: f32,
+        class: f32,
+        bbox: [f32; 4],
+        k: usize,
+        coeff: f32,
+    ) {
         let row = &mut rows[index * ROW_WIDTH..(index + 1) * ROW_WIDTH];
         row[..4].copy_from_slice(&bbox);
         row[4] = score;
@@ -217,7 +221,15 @@ mod tests {
         let (mut rows, mut proto) = blank();
         proto[..MASK_PIXELS].fill(1.0);
         for i in 0..20 {
-            add_candidate(&mut rows, i, (60+i) as f32 / 100.0, (i % 80) as f32, [0., 0., 40., 40.], 0, 1.0);
+            add_candidate(
+                &mut rows,
+                i,
+                (60 + i) as f32 / 100.0,
+                (i % 80) as f32,
+                [0., 0., 40., 40.],
+                0,
+                1.0,
+            );
         }
         let out = decode(&rows, &proto, 0.25, 10).unwrap();
         assert_eq!(out.len(), 10);
@@ -229,35 +241,71 @@ mod tests {
     #[test]
     fn wrong_shapes_and_unbounded_limits_are_rejected() {
         let (rows, proto) = blank();
-        assert_eq!(decode(&rows[1..], &proto, 0.25, 10), Err(DecodeError::WrongDecodedShape));
-        assert_eq!(decode(&rows, &proto[1..], 0.25, 10), Err(DecodeError::WrongPrototypeShape));
-        assert_eq!(decode(&rows, &proto, 0.25, 11), Err(DecodeError::TooManyMasksRequested));
-        assert_eq!(decode(&rows, &proto, f32::NAN, 10), Err(DecodeError::InvalidThreshold));
-        assert_eq!(decode(&rows, &proto, -0.1, 10), Err(DecodeError::InvalidThreshold));
+        assert_eq!(
+            decode(&rows[1..], &proto, 0.25, 10),
+            Err(DecodeError::WrongDecodedShape)
+        );
+        assert_eq!(
+            decode(&rows, &proto[1..], 0.25, 10),
+            Err(DecodeError::WrongPrototypeShape)
+        );
+        assert_eq!(
+            decode(&rows, &proto, 0.25, 11),
+            Err(DecodeError::TooManyMasksRequested)
+        );
+        assert_eq!(
+            decode(&rows, &proto, f32::NAN, 10),
+            Err(DecodeError::InvalidThreshold)
+        );
+        assert_eq!(
+            decode(&rows, &proto, -0.1, 10),
+            Err(DecodeError::InvalidThreshold)
+        );
     }
 
     #[test]
     fn nonfinite_and_invalid_candidates_fail_closed() {
         let (mut rows, mut proto) = blank();
         rows[4] = f32::NAN;
-        assert_eq!(decode(&rows, &proto, 0.25, 10), Err(DecodeError::NonFiniteScore));
+        assert_eq!(
+            decode(&rows, &proto, 0.25, 10),
+            Err(DecodeError::NonFiniteScore)
+        );
         rows[4] = 1.1;
-        assert_eq!(decode(&rows, &proto, 0.25, 10), Err(DecodeError::InvalidScore));
+        assert_eq!(
+            decode(&rows, &proto, 0.25, 10),
+            Err(DecodeError::InvalidScore)
+        );
         rows[4] = 0.0;
         proto[0] = f32::INFINITY;
-        assert_eq!(decode(&rows, &proto, 0.25, 10), Err(DecodeError::NonFinitePrototype));
+        assert_eq!(
+            decode(&rows, &proto, 0.25, 10),
+            Err(DecodeError::NonFinitePrototype)
+        );
         proto[0] = 0.0;
         add_candidate(&mut rows, 0, 0.9, 80.0, [0., 0., 40., 40.], 0, 1.0);
-        assert_eq!(decode(&rows, &proto, 0.25, 10), Err(DecodeError::InvalidClass));
+        assert_eq!(
+            decode(&rows, &proto, 0.25, 10),
+            Err(DecodeError::InvalidClass)
+        );
         rows[5] = 1.5;
-        assert_eq!(decode(&rows, &proto, 0.25, 10), Err(DecodeError::InvalidClass));
+        assert_eq!(
+            decode(&rows, &proto, 0.25, 10),
+            Err(DecodeError::InvalidClass)
+        );
         rows[5] = 1.0;
         rows[0] = 80.0;
         rows[2] = 40.0;
-        assert_eq!(decode(&rows, &proto, 0.25, 10), Err(DecodeError::InvalidBox));
+        assert_eq!(
+            decode(&rows, &proto, 0.25, 10),
+            Err(DecodeError::InvalidBox)
+        );
         rows[0] = 0.0;
         rows[6] = f32::INFINITY;
-        assert_eq!(decode(&rows, &proto, 0.25, 10), Err(DecodeError::NonFiniteCoefficient));
+        assert_eq!(
+            decode(&rows, &proto, 0.25, 10),
+            Err(DecodeError::NonFiniteCoefficient)
+        );
     }
 
     #[test]
