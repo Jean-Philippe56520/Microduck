@@ -48,7 +48,7 @@ pub(super) fn open(path: &Path) -> Result<(Model, Tail)> {
 
 /// The OEM sampler tolerates torn frames by padding. This conservative branch
 /// must reject them instead of presenting positive hypotheses on padded data.
-pub(super) fn complete_uyvy(width: u32, height: u32, size: usize) -> bool {
+pub(crate) fn complete_uyvy(width: u32, height: u32, size: usize) -> bool {
     width > 0
         && width <= 4096
         && height > 0
@@ -62,7 +62,7 @@ pub(super) fn complete_uyvy(width: u32, height: u32, size: usize) -> bool {
 
 /// The common in-process path for NPU output and a test ONNX-only fixture.
 /// The OEM UYVY letterbox remains the unique geometry/camera sampler.
-pub(super) fn from_heads(
+pub(crate) fn from_heads(
     tail: &mut Tail,
     heads: [Vec<f32>; 10],
     fit: Letterbox,
