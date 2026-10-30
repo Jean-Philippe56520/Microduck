@@ -32,3 +32,9 @@
 ## Résultats
 
 *À compléter uniquement après CI au SHA final.*
+
+## Résultat CI sur les sources constructeur
+
+[CI P12 #41135329389](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41135329389) **verte** sur le commit candidat `4a99a144c1645b2ead44501c1b781da6fbf3a15b` : 8 tests purs et 3 tests de sources réelles, soit **11/11** ; deux générations de couche identiques au niveau fichiers, sortie `verify` réussie et refus de modifications de provenance, source et `.bbappend`. Préflight vérifie le `git archive` P11, la recette constructeur, les quatre blobs Yocto épinglés et les gitlinks ; sortie `crates_generated=568`, `crates_regenerated=true`, `archive_sha256=9f7813bf5e7a2cc92a21635c51d4b778df436d37d516fd1547f96d16956d5ce6` **pour ce seul SHA de PR**. CI générale Python et fusion à contrôler au SHA documentaire final.
+
+**Important :** la nouvelle liste de crates ne prouve pas que BitBake la parse, la télécharge ou la compile. `SRC_URI` et `require` dans le `.bbappend` sont un **candidat** à vérifier par `bitbake -e`/`-p` sur les layers officiels avant utilisation. Aucun clone constructeur, suite d'installation ou paquet publié n'est modifié. Les scripts `scripts/build-local.sh` et `daemon-release.sh` OEM continuent de résoudre des releases constructeur, **pas** notre version candidate ; ne pas flasher. Retour arrière : détruire la couche temporaire.
