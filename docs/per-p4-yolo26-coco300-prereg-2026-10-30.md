@@ -13,7 +13,7 @@ L'objectif est de choisir un candidat de **perception visuelle utile** et non d'
 - **Exclure les 132 IDs** des huit cohortes déjà publiées à l'aide du sélecteur \`eighth_disjoint\` et de l'annotation COCO exacte SHA256 vérifiée ; graine de sélection fixe \`per-p4-300-20261030\` ; une photo ne peut figurer qu'une fois. Différentes photos ≠ différentes scènes physiques ; hauteur optique et recul non connus.
 - **Comparabilité** : même JPEG, même résolution d'entrée \`imgsz=640\`, \`conf=0.25\`, \`iou=0.50\`, CPU hôte, \`max_det=100\`, ordre de classes identique, zéro ajustement après observation ; une exécution par photo et modèle. Les masques COCO ne sont **pas** fournis à la prédiction, uniquement au score.
 - **Résultats** : rappel d'instance avec **bonne classe** et IoU boîte ≥0,50 ; rappel de région **quelle que soit la classe** et IoU ≥0,50 ; ventilation par cinq catégories, personne/chat/chien/balle regroupés en **priorité cognitive** et chaise secondaire ; nombres de prédictions des cinq classes dans les 100 témoins sans annotations cibles (diagnostic, **non** faux positifs certains) ; pour \`yolo26n-seg\`, IoU des masques versus masques d'instance COCO indépendants et versus le rectangle prédit ; coût hôte médian/p95, RSS.
-- **Fuites et refus** : image invalide, provenance COCO non authentifiée, licence absente, 132 anciens IDs, GT manquante, modèle ou bibliothèque incompatible → arrêt franc ; pas de score inventé ni substitution synthétique.
+- **Fuites et refus** : image invalide, provenance COCO non authentifiée, licence absente ou non conforme au nom et à l'URL attendus, 132 anciens IDs, GT manquante, modèle ou bibliothèque incompatible → arrêt franc ; pas de score inventé ni substitution synthétique.
 
 ## Critères fixés avant essai
 
