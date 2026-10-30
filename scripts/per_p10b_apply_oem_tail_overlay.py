@@ -13,7 +13,7 @@ from pathlib import Path
 from scripts.per_p10a_apply_oem_rknn_overlay import PIN, SENTINEL, replace_once
 
 OEM_LIB_BLOB = "74ce1267322876e8394e736d3b13988ad358ea61"
-OEM_CARGO_BLOB = "466ad903d61a73358b3ecf3a5fc3808dde363a8"
+OEM_CARGO_BLOB = "466ad903d61a73358b3ecf3a5fc3808dde363a8a"
 CORE_BLOBS = {
     "Cargo.toml": "3df8a77677a6218aad8c6419210de21c6adf151c",
     "src/lib.rs": "f2aa38c8f9784b02073fbb1227eaf8cc53c2ac90",
