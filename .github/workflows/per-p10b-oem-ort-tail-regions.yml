@@ -76,6 +76,9 @@ jobs:
           set -euo pipefail
           rustfmt --edition 2024 --check scripts/per_p10b_seg_tail.rs
           cargo metadata --manifest-path "$P10B_OEM/Cargo.toml" --format-version 1 > /dev/null
+          # P10A already formats its generated rknn.rs in the throwaway archive.
+          # Keep the authored P10B source checked independently above.
+          cargo fmt --manifest-path "$P10B_OEM/Cargo.toml" -p duck-detect
           cargo fmt --manifest-path "$P10B_OEM/Cargo.toml" -p duck-detect -- --check
 
       - name: Download hash-verified official ONNX Runtime 1.28 x64 for CI only
