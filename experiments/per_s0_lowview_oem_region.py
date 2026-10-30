@@ -123,15 +123,18 @@ def _scene_dir_checked(scene_dir: Path, scene: str) -> Path:
     return src
 
 
-def render_case(scene_dir: Path, spec: Case):
-    """Return ephemeral upright RGB and a source-only geometry record."""
+def render_case(scene_dir: Path, spec: Case, *, authorized_cases=CASES,
+                with_target_mask: bool = False):
+    """Experimental renderer. Optional oracle mask is NEVER a detector input."""
     import mujoco
     import numpy as np
     from mjlab_microduck.sim.body_server import Body, HOME_TRUNK_Z, World
     from mjlab_microduck.sim.camera import Camera, HEIGHT, WIDTH
     from microduck_companion.sim_vis_f_gt_preflight import _set_free_joint
 
-    if (spec not in CASES or (WIDTH, HEIGHT) != (FRAME_W, FRAME_H)):
+    if (type(authorized_cases) is not tuple or spec not in authorized_cases
+            or type(with_target_mask) is not bool
+            or (WIDTH, HEIGHT) != (FRAME_W, FRAME_H)):
         raise BallGTError("unregistered case or OEM optical dimensions changed")
     world = World(_scene_dir_checked(scene_dir, spec.scene), 1)
     body = Body(world, 0)
@@ -223,6 +226,12 @@ def render_case(scene_dir: Path, spec: Case):
             "source_rgb_sha256": hashlib.sha256(rgb.tobytes()).hexdigest(),
             "source_mask_sha256": hashlib.sha256(seg.tobytes()).hexdigest(),
         }
+        if with_target_mask:
+            target_mask = (np.isin(segmentation[:, :, 0], ids)
+                           & (segmentation[:, :, 1] == int(mujoco.mjtObj.mjOBJ_GEOM)))
+            if int(target_mask.sum()) != pixels:
+                raise BallGTError("target mask does not reproduce independent pixel count")
+            return upright, record, target_mask
         return upright, record
     finally:
         camera.renderer.close()
