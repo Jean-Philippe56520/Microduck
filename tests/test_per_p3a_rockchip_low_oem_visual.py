@@ -1,7 +1,10 @@
 """PER-P3A host-only contracts: no ONNX, camera, NPU or robot in unit tests."""
 import unittest
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError:  # The repository-wide lightweight Python CI does not install numpy.
+    np = None
 
 from experiments.per_p3a_rockchip_low_oem_visual import (
     BallGTError, EXPECTED_SHAPES, PINNED_CASES, check_heads,
@@ -19,10 +22,12 @@ def box(cl, *, score=0.87, coords=None):
 
 
 class TestPerP3AOutputContracts(unittest.TestCase):
+    @unittest.skipUnless(np is not None, "numpy only in dedicated visual job")
     def test_official_nine_head_layout_accepted(self):
         heads = [np.zeros(shape, dtype=np.float32) for shape in EXPECTED_SHAPES]
         check_heads(heads)
 
+    @unittest.skipUnless(np is not None, "numpy only in dedicated visual job")
     def test_reject_missing_wrong_shape_or_dtype(self):
         heads = [np.zeros(shape, dtype=np.float32) for shape in EXPECTED_SHAPES]
         for bad in (heads[:-1], heads[:-1] + [np.zeros((1, 1, 81, 81), np.float32)],
@@ -31,11 +36,13 @@ class TestPerP3AOutputContracts(unittest.TestCase):
                 with self.assertRaises(BallGTError):
                     check_heads(bad)
 
+    @unittest.skipUnless(np is not None, "numpy only in dedicated visual job")
     def test_reject_non_finite_output(self):
         heads = [np.zeros(shape, dtype=np.float32) for shape in EXPECTED_SHAPES]
         heads[-1][0, 0, 0, 0] = np.nan
         with self.assertRaises(BallGTError):
             check_heads(heads)
+
 
     def test_reject_invalid_scored_box(self):
         check_predictions([box(32)])
