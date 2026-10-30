@@ -1,0 +1,64 @@
+name: PER-P2A Rockchip PP-YOLOE-s ONNX metadata preflight (host-only)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/per-p2a-ppyoloes-model-preflight.yml"
+      - "docs/per-p2-ppyoloes-onnx-metadata-2026-10-30.md"
+      - "experiments/per_p2a_onnx_contract.py"
+      - "experiments/test_per_p2a_onnx_contract.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  p2a-host-metadata:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Verify unmodified pinned OEM and MuJoCo gitlinks
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git -C upstream/microduck_rl rev-parse HEAD)" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          echo "No new model deployed; OEM controller and mediad unchanged."
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Host-only negative/positive schema and bounded download tests
+        run: |
+          set -euo pipefail
+          python -m unittest experiments.test_per_p2a_onnx_contract -v
+
+      - name: Install ONNX library only for isolated metadata inspection
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --no-cache-dir 'onnx==1.19.0'
+
+      - name: Single approved Rockchip PP-YOLOE-s public ONNX metadata probe
+        run: |
+          set -euo pipefail
+          python -m experiments.per_p2a_onnx_contract \
+            --approve-public-download > "$RUNNER_TEMP/per-p2a-metadata.json"
+          cat "$RUNNER_TEMP/per-p2a-metadata.json"
+
+      - name: Only numeric JSON evidence, never export downloaded model
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: per-p2a-model-metadata-numeric-only
+          path: ${{ runner.temp }}/per-p2a-metadata.json
+          if-no-files-found: warn
+          retention-days: 7
