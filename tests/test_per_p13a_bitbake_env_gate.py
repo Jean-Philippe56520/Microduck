@@ -76,6 +76,12 @@ class EffectiveEnvTests(unittest.TestCase):
     def test_wrong_unpack_path_is_fatal(self):
         self.check_refused('S="/tmp/p13/unpack', 'S="/tmp/p13/different')
 
+    def test_escaped_newlines_from_real_bitbake_are_normalized(self):
+        escaped = 'BBLAYERS=" /tmp/irrelevant \\n ' + str(LAYER) + ' \\n "'
+        env = fake_env().replace('BBLAYERS="' + str(LAYER) + '"', escaped)
+        report = validate(env, P12, layer=LAYER)
+        self.assertTrue(report["bitbake_parse_passed"])
+
     def test_wrong_layer_is_fatal(self):
         self.check_refused(f'BBLAYERS="{LAYER}"', 'BBLAYERS="/tmp/other-layer"')
 
