@@ -103,8 +103,9 @@ def checked_artifact(directory: Path) -> tuple[Path, dict, bytes, str]:
     with tarfile.open(archive, "r:gz") as t:
         lock = read_member(t, "Cargo.lock")
         root = read_member(t, "Cargo.toml").decode("utf-8")
+        detect_cargo = read_member(t, "duck-detect/Cargo.toml").decode("utf-8")
     if ('version = "0.17.8"' not in root or
-            '"kwipi-seg-mask-core"' not in root):
+            'kwipi-seg-mask-core = { path = "../kwipi-seg-mask-core" }' not in detect_cargo):
         raise ReleaseRefused("unknown P11 OEM Cargo workspace")
     return archive, m, lock, sha
 
