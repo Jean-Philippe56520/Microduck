@@ -140,7 +140,7 @@ def _mask_digest(decoded, proto, report, key: str) -> None:
     # Zero masks on this single public calibration image is not a quality score.
 
 
-def run(weight: Path, calibration: Path, report: dict) -> None:
+def run(weight: Path, calibration: Path, report: dict, parity_hook=None) -> None:
     import numpy as np
     import onnx
     import onnxruntime as ort
@@ -246,6 +246,8 @@ def run(weight: Path, calibration: Path, report: dict) -> None:
     report["tail_cpu_rknn_sim_ms"] = round((time.perf_counter()-started)*1000, 2)
     _mask_digest(original0, original1, report, "original_onnx")
     _mask_digest(decoded, prototype, report, "rknn_host_sim")
+    if parity_hook is not None:
+        parity_hook(decoded, prototype, report)  # P8 optional, same one SDK inference
     report["status"] = "complete_host_rknn_raw_tail_mask_pipeline_tested"
     report["host_tail_and_mask_pipeline_passed"] = True
     report["tail_only_after_sdk_simulation_not_robot"] = True
