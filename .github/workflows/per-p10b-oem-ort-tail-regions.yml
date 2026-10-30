@@ -62,7 +62,7 @@ jobs:
           git -C upstream/microduck archive 942e58e3aa6dbb28e7037203fff11866122c7567 | tar -x -C "$P10B_OEM"
           printf '%s\n' '942e58e3aa6dbb28e7037203fff11866122c7567' > "$P10B_OEM/.per-p10a-throwaway-pin"
           python scripts/per_p10a_apply_oem_rknn_overlay.py --archive "$P10B_OEM"
-          python scripts/per_p10b_apply_oem_tail_overlay.py --archive "$P10B_OEM"
+          python -m scripts.per_p10b_apply_oem_tail_overlay --archive "$P10B_OEM"
           test -f "$P10B_OEM/duck-detect/src/seg_tail.rs"
           git diff --exit-code -- upstream/
 
