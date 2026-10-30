@@ -54,6 +54,13 @@ jobs:
           python -m pip install --disable-pip-version-check --no-cache-dir 'setuptools>=68' wheel
           mkdir "$RUNNER_TEMP/p14a-wheel"
           python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/p14a-wheel" "$RUNNER_TEMP/p14a-src"
+          python - "$RUNNER_TEMP/p14a-wheel" <<'PY'
+          import pathlib, sys, zipfile
+          paths = list(pathlib.Path(sys.argv[1]).glob("*.whl"))
+          assert len(paths) == 1
+          with zipfile.ZipFile(paths[0]) as z:
+              print("P14A audited wheel inventory:", sorted(z.namelist()))
+          PY
           python -m scripts.per_p14a_embedded_wheel inspect \
             --wheel "$(find "$RUNNER_TEMP/p14a-wheel" -maxdepth 1 -name '*.whl' -type f -print -quit)" \
             --report "$RUNNER_TEMP/p14a-wheel-review.json"
