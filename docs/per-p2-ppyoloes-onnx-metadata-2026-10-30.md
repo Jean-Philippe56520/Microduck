@@ -1,0 +1,26 @@
+# PER-P2A — Vérification d'un candidat multicatégorie RKNN sans robot
+
+**Préenregistré le 30 octobre 2026 AVANT téléchargement/inférence.** Autorité : [plan directeur](plan-action.md), [perception OEM 2 Hz](perception-oem-rknn-2hz-plan-2026-10-29.md), [protocole de réemploi](development-reuse-protocol.md).
+
+## Objectif et manque prouvé
+
+Kwipi doit observer des catégories utiles et parfois seulement une région `unknown` via l'unique caméra `mediad`. Le code constructeur épinglé `upstream/microduck@942e58e3aa6dbb28e7037203fff11866122c7567` est testé Rust (PER-OEM-1, CI #41045024678) mais `duck-detect` attend **une classe et la tête [1,5,2100]**. Le YOLOX-Nano PC, [1,3549,85], n'est ni un poids RKNN ni une entrée compatible : **aucun modèle multicatégorie déployé**. Projet baseline `main@d14331a74c91f658870eb43cce99547f7366d59a` ; épingle `microduck_rl@b02fdea4902c2b93b7d34a83a6f05da4ececb7d3` inchangée. Robot absent.
+
+**Nouveau fait utile issu des sources tierces** : [Rockchip RKNN Model Zoo](https://github.com/airockchip/rknn_model_zoo/tree/837db8e992815ff8647eadb709f07067f4bc3a71) présente des **exemples RK3566 640×640 INT8 COCO 80 classes**, une méthode de conversion et des **débits NPU de référence RK3566/RK3568** (pas Kwipi). Versions exactes des sources épinglées pour cet examen :
+
+- [Rockchip PP-YOLOE-s, exemple](https://github.com/airockchip/rknn_model_zoo/blob/837db8e992815ff8647eadb709f07067f4bc3a71/examples/ppyoloe/README.md) : démo 80 catégories, 640² ; **17,6 FPS INT8** publiés sur le groupe RK3566/RK3568 (~56,8 ms par image, NPU de référence uniquement). Projet d'origine [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **sources Apache-2.0** ; **licence explicite du binaire ONNX tiers distribué séparément : non vérifiée**, réutilisation pour examen seulement, pas redistribué.
+- [Rockchip YOLOX-s, témoin](https://github.com/airockchip/rknn_model_zoo/blob/837db8e992815ff8647eadb709f07067f4bc3a71/examples/yolox/README.md) : **15,6 FPS INT8** au même banc (~64,1 ms), source [YOLOX](https://github.com/airockchip/YOLOX) Apache-2.0 ; taille/mémoire/qualité sur vues basses inconnues. NE PAS convertir ce deuxième modèle dans ce lot.
+- [Rockchip YOLOv6n](https://github.com/airockchip/rknn_model_zoo/blob/837db8e992815ff8647eadb709f07067f4bc3a71/examples/yolov6/README.md) : **49,9 FPS** (20,0 ms) mais sources fork GPL-3.0, licences de poids/obligations à étudier avant intégration. YOLOv5n : 41,7 FPS, fork GPL-3.0. YOLO11n : fork AGPL-3.0 et diagnostic PC antérieur **0/4 balles** sur 18 images indépendantes — ne pas le réintroduire comme modèle choisi.
+- **Toutes les cadences sont celles de Rockchip pour la seule inférence INT8**, sans acquisition, pré/post, RSS, éventuelle concurrence 50 Hz, température ni batterie. 2 Hz = période de 500 ms, **pas** promesse que la chaîne entière tienne avec ~1 Go annoncé sur le robot.
+
+## Essai minimal P2A — attendu, négatif, réussite / arrêt fixés
+
+**RÉUTILISER** conversion et décodeur Rockchip `ppyoloe`, outils de CI Python et contrôles de SHA/quotas ; **ADAPTER/CRÉER** uniquement une sonde de fichier ONNX sur CI hôte, aucun modèle ni pilote dans le dépôt. **Ne pas utiliser les JPEG personnels ni lancer une 9e cohorte COCO.**
+
+Sur runner GitHub éphémère (aucun secret, pas de robot), récupérer **une seule fois** l'ONNX `ppyoloe_s.onnx` par l'URL publiée dans [le script constructeur](https://github.com/airockchip/rknn_model_zoo/blob/837db8e992815ff8647eadb709f07067f4bc3a71/examples/ppyoloe/model/download_model.sh), uniquement avec l'option explicite `--approve-public-download`. Limite **64 MiB** par fichier, redirection hors domaine non approuvée refusée. Calculer SHA-256, octets, empreinte des spécifications ONNX, RSS mémoire hôte **sans publier le binaire** ni le mettre en cache. Le modèle ONNX n'est **jamais exécuté**, juste lu par la bibliothèque ONNX.
+
+**Succès du préflight** : un seul input statique `[1,3,640,640]`, trois échelles spatiales 80/40/20, avec pour chacune **au moins une sortie boîte de 4 canaux et une sortie classe de 80 canaux**, 6 ou 9 sorties statiques NCHW ; SHA et taille chiffrés, aucun média/SQLite/RKNN/robot. C'est uniquement la compatibilité **avec l'exemple Rockchip PP-YOLOE**, **pas** avec le décodeur mono-classe OEM. Le modèle reste **candidat hôte de recherche**, pas « sélectionné » pour Kwipi.
+
+**Refus préalable / négatifs** : téléchargement impossible/redirect externe, trop gros, ONNX non valide, entrée dynamique, ordre NHWC, canal classe absent, échelle manquante, sorties non bornées → STOP, `inconnu/en attente`, **sans changer les sources ou essayer un autre fichier URL après résultat**. Un `pass` CI vérifie un **contrat de métadonnées**, pas la qualité de détection, la quantification RKNN, la compatibilité `mediad`, les droits de distribution des poids ou le NPU réel.
+
+**Décision suivante si OK** : conserver le SHA du candidat et comparer une seule fois sur GT indépendante multi-vues et négatifs ; avant adaptation OEM, vérifier les droits exacts des poids, l'équivalence des sorties **ONNX↔RKNN** et les ressources sur le matériel reçu. Si tous ces critères ne sont pas réunis, ne rien installer et garder `duck_detector.enabled=false`. **Aucune nouvelle catégorie ni autorisation motrice** par ce lot.
