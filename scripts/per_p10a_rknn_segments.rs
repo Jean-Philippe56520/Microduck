@@ -294,8 +294,6 @@ mod tests {
     #[test]
     fn null_wrong_bytes_nonfinite_and_bad_order_do_not_publish_but_release() {
         let (mut buffers, expected) = owned_fake_buffers();
-        buffers[6][0] = f32::NAN;
-        let mut raw = fake_outputs(&buffers);
         for failure in 0..4 {
             let mut current = fake_outputs(&buffers);
             match failure {
@@ -314,6 +312,10 @@ mod tests {
             );
             assert_eq!(released.get(), 1);
         }
+        // Separate negative: non-finite floats must be rejected even when
+        // every output pointer, size, index and dtype is otherwise valid.
+        buffers[6][0] = f32::NAN;
+        let mut raw = fake_outputs(&buffers);
         let released = Cell::new(0);
         assert!(
             copy_then_release(&mut raw, &expected, |_| {
