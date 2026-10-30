@@ -4,7 +4,8 @@ import unittest
 
 from microduck_companion.cata2_bbox_eval import Box
 from microduck_companion.sim_ball_segmentation_gt import (
-    BallGTError, compare_boxes, visible_geom_bbox, FRAME_H, FRAME_W,
+    BallGTError, compare_boxes, visible_geom_bbox, best_region_iou,
+    S2_ATTENTION_VIEWS, FRAME_H, FRAME_W,
 )
 
 HAS_NUMPY = importlib.util.find_spec("numpy") is not None
@@ -52,6 +53,41 @@ class BallGTContractTests(unittest.TestCase):
         self.assertEqual(outcome["matched_iou_at_least_0_50"], 0)
         self.assertEqual(outcome["false_negatives"], 1)
         self.assertEqual(outcome["false_positives"], 1)
+
+    def test_s2_positions_are_fixed_distinct_from_previous_view(self):
+        self.assertEqual(3, len(S2_ATTENTION_VIEWS))
+        self.assertEqual(
+            ["s2_near_left_yaw75", "s2_mid_center_yaw90",
+             "s2_far_right_yaw105"],
+            [view[0] for view in S2_ATTENTION_VIEWS],
+        )
+        self.assertEqual([.42, .72, .95],
+                         [view[2] for view in S2_ATTENTION_VIEWS])
+        self.assertEqual([-.12, 0., .16],
+                         [view[3] for view in S2_ATTENTION_VIEWS])
+        self.assertEqual(3, len({view[1] for view in S2_ATTENTION_VIEWS}))
+        self.assertNotIn(.55, [view[2] for view in S2_ATTENTION_VIEWS])
+
+    def test_s2_region_overlap_is_geometric_not_category(self):
+        truth = Box("sports_ball", (10., 20., 40., 50.))
+        unrelated = {"xyxy": (80., 80., 110., 110.),
+                     "untrusted_coco_class_index": 0}
+        overlapping = {"xyxy": (12., 22., 42., 52.),
+                       "untrusted_coco_class_index": 56}
+        self.assertEqual(0., best_region_iou(truth, [unrelated]))
+        self.assertGreaterEqual(
+            best_region_iou(truth, [unrelated, overlapping]), 0.5,
+        )
+        self.assertEqual(0., best_region_iou(truth, []))
+        # No visible ball in independent GT: never infer one from a box.
+        self.assertIsNone(best_region_iou(None, [overlapping]))
+
+    def test_s2_invalid_nonfinite_candidate_is_not_a_valid_region(self):
+        truth = Box("sports_ball", (10., 20., 40., 50.))
+        with self.assertRaises(Exception):
+            best_region_iou(truth, [
+                {"xyxy": (float("nan"), 22., 42., 52.)}
+            ])
 
     @unittest.skipUnless(HAS_NUMPY, "numpy optional in general Python CI")
     def test_segmentation_geom_id_type_and_exclusive_pixel_boundary(self):
