@@ -329,7 +329,7 @@ mod tests {
     fn rejects_bad_masks_counts_and_candidate_metadata_without_partial_publish() {
         let mut c = from_core([240.0, 80.0, 280.0, 120.0]);
         assert_eq!(
-            project_to_upright(&[c.clone(); 11], portrait()),
+            project_to_upright(&vec![c.clone(); 11], portrait()),
             Err(RegionError::TooManyCandidates)
         );
         c.mask_160.pop();
