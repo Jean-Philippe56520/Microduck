@@ -221,8 +221,11 @@ def apply(archive: Path, project: Path) -> None:
         updated = replace_once(updated, before, after)
     root_src = cargo.read_text(encoding="utf-8")
     # Add ONLY a test harness member to the copy; no new daemon or service.
-    changed_root = replace_once(root_src, '"uyvy", "xtask"]',
-                                '"uyvy", "xtask", "p10c-harness"]')
+    changed_root = replace_once(
+        root_src,
+        '"uyvy", "xtask"]\n\n# Everything except',
+        '"uyvy", "xtask", "p10c-harness"]\n\n# Everything except',
+    )
     harness_src = project / "scripts" / "per_p10c_harness.rs"
     harness_manifest = project / "scripts" / "per_p10c_harness.toml"
     if (not harness_src.is_file() or not harness_manifest.is_file()
