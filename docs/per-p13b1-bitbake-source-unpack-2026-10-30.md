@@ -15,3 +15,9 @@
 ## Résultats
 
 En attente d'une exécution réelle du workflow GitHub.
+
+## Résultat réel du premier banc `do_fetch` / `do_unpack`
+
+[Run #41140064244](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41140064244) terminé en succès sur `22a4317247613aba4d6aced3a7ac0e4a4a08087f`. Les tâches `bitbake -c fetch microduck-daemon` et `bitbake -c unpack microduck-daemon` se sont **terminées code 0** en utilisant le `kas` constructeur réellement épinglé, et la sortie des variables effectives a été contrôlée par le validateur P13A. Six fichiers dans `S` ont été comparés **octet pour octet** à l'archive P11 : `Cargo.toml`, `Cargo.lock`, `LICENSE`, `mediad/Cargo.toml`, `duck-detect/Cargo.toml`, `kwipi-seg-mask-core/Cargo.toml`. Le checkout déballé `bmi088-rs` a été validé au SHA `bd113f317b14923f50f9a12a06678fe162b7fe06` par `git rev-parse HEAD`. Pour ce seul commit P11, le tar SHA-256 vaut `1819399813cba1ecfd66abc8ecbb0141d80e1e31bb2b9337ec6b271c39c7fe08`. Les **10 tests P13B1**, les **11 tests P13A** et l'ensemble Python ont été verts. Le premier lancement de test s'était arrêté sur une faute de nom `PINN`/`PINNED`, corrigée sans changer les sources OEM. La CI du nouveau commit documentaire doit être verte avant fusion.
+
+**État de preuve** : `bitbake_unpacked_source_verified`, 568 crates sélectionnées en métadonnées ; `do_compile`/`do_package` non exécutés, aucune ELF/aarch64 et aucune image produites. Ni Qwen 9B, ni SQLite embarquée, ni YOLO26 sous licence ni NPU, ni service moteur ajoutés. Répéter le test au SHA documentaire final et vérifier qu'il reste vert. Retour arrière : ne pas activer la couche opt-in.
