@@ -32,8 +32,8 @@ MODEL_SHA256 = {
 }
 LICENSE = "Ultralytics AGPL-3.0 / Enterprise; host-only exploratory comparison"
 SEED = "per-p4-300-20261030"
-PER_CLASS = 40
-NEGATIVES = 100
+PER_CLASS = 20
+NEGATIVES = 200
 MATCH_IOU = 0.50
 PRIORITY = ("person", "cat", "dog", "sports_ball")
 TARGETS = tuple(COCO_IDS)
@@ -66,7 +66,7 @@ def select_cases(data: dict, excluded: set[int], *,
     """Reuse official COCO Creative Commons metadata and CocoCase; SHA checked by caller."""
     if (type(data) is not dict or type(excluded) is not set
             or any(type(x) is not int for x in excluded)
-            or type(per_class) is not int or not 1 <= per_class <= 40
+            or type(per_class) is not int or not 1 <= per_class <= 20
             or type(negatives) is not int or not 1 <= negatives <= 200):
         raise ValueError("invalid cohort request")
     cats = {x["id"]: x["name"] for x in data["categories"]}
