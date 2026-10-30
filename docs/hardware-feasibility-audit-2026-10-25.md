@@ -1,5 +1,7 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**PER-P13B1 — aucun benchmark RK3566 (30/10/2026) :** [CI réelle BitBake fetch/unpack #41140064244](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41140064244) récupère 568 références crates, extrait et valide 6 manifestes OEM/Companion + BMI088. **Aucun CPU/RAM/thermie cible**, pas de compilation ARM64 `do_compile` ni paquet testé sur robot, pas de charge robotd 50 Hz. L'espace du runner standard n'autorise pas à déduire qu'une image complète Yocto (>100 Go recommandés par OEM) se construit.
+
 **PER-P13A — seul le parseur BitBake a été validé (30/10/2026, [CI #41137096228](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41137096228)) :** environnement effectif de `microduck-daemon` étudié, 568 crates et source OEM/Companion contrôlées ; ni `do_compile`, ni rootfs, ni robot physique, ni pic de RAM, température, latence ou autonomie mesurés. Le constructeur signale un `TMPDIR` Yocto pouvant dépasser 100 Go, hors capacité prouvée du runner standard ; ne pas extrapoler un benchmark PC vers RK3566.
 
 **PER-P14A — wheel hôte uniquement (30/10/2026) :** [CI #41137030593](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41137030593) crée un wheel pur 66 701 octets, 19 modules sans mock, installation hôte isolée et refus moteurs ; **ces 66,7 Ko ne représentent ni les dépendances CPython/SQLite ni la consommation de RAM sur RK3566**. Aucun package ARM64/Yocto, NPU, thermique, rythme 50 Hz ou autonomie batterie mesuré.
