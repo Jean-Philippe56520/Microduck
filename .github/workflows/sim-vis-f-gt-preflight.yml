@@ -1,0 +1,83 @@
+name: SIM-VIS-F pinned OEM geometry-only preflight
+
+on:
+  push:
+    branches:
+      - test/sim-vis-f-oem-gt-preflight-20261030
+    paths:
+      - ".github/workflows/sim-vis-f-gt-preflight.yml"
+      - "microduck_companion/sim_vis_f_gt_preflight.py"
+      - "tests/test_sim_vis_f_gt_preflight.py"
+      - "docs/sim-vis-f-oem-gt-preflight-2026-10-30.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sim-vis-f-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  geometry-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      MUJOCO_GL: osmesa
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Verify EXACT pinned OEM scene sources, no new operator or camera
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git -C upstream/microduck_rl rev-parse HEAD)" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          test -f upstream/microduck_rl/src/mjlab_microduck/robot/microduck/scene_apartment.xml
+          test -f upstream/microduck_rl/src/mjlab_microduck/robot/microduck/scene_vslam.xml
+          printf 'SIM-VIS-F uses pinned OEM static camera and segmentation only; no robotd, ONNX or mediad started\n'
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "upstream/microduck_rl/uv.lock"
+
+      - name: Isolated MuJoCo segmentation renderer only, no vision model
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libosmesa6 libgl1-mesa-dri
+          uv python install 3.12
+          uv venv --python 3.12 "$RUNNER_TEMP/sim-vis-f-venv"
+          uv pip install --python "$RUNNER_TEMP/sim-vis-f-venv/bin/python" \
+            'mujoco==3.10.0' 'numpy==2.5.4' 'PyOpenGL==3.1.10'
+
+      - name: Contract tests with valid/invalid geometry and ray fixtures
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/upstream/microduck_rl/src"
+          "$RUNNER_TEMP/sim-vis-f-venv/bin/python" -m compileall -q \
+            microduck_companion/sim_vis_f_gt_preflight.py tests/test_sim_vis_f_gt_preflight.py
+          "$RUNNER_TEMP/sim-vis-f-venv/bin/python" -m unittest discover \
+            -s tests -p test_sim_vis_f_gt_preflight.py -v
+
+      - name: Run one frozen OEM geometry-only preflight, report EVERY case
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/upstream/microduck_rl/src"
+          "$RUNNER_TEMP/sim-vis-f-venv/bin/python" -m microduck_companion.sim_vis_f_gt_preflight \
+            --scene-dir "$GITHUB_WORKSPACE/upstream/microduck_rl/src/mjlab_microduck/robot/microduck" \
+            --output "$RUNNER_TEMP/sim-vis-f-gt.json" \
+            --authorize-geometry-only
+
+      - name: Keep JSON geometry only, no raw RGB/segmentation exported
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-vis-f-preflight-geometry-evidence
+          if-no-files-found: warn
+          retention-days: 7
+          path: ${{ runner.temp }}/sim-vis-f-gt.json
