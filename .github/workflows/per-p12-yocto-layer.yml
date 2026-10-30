@@ -1,0 +1,88 @@
+name: PER-P12 audited Yocto source layer (NOT BitBake or a robot image)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/per_p12_yocto_layer.py"
+      - "tests/test_per_p12_yocto_layer.py"
+      - ".github/workflows/per-p12-yocto-layer.yml"
+      - "scripts/per_p11_v1_source_release.py"
+      - "docs/per-p12-yocto-layer-source-contract-2026-10-30.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-source-yocto-layer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      KWIPI_P12_YOCTO: ${{ runner.temp }}/p12-yocto
+      KWIPI_P12_SOURCE: ${{ runner.temp }}/p12-source
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: dtolnay/rust-toolchain@1.89.0
+      - name: Check exact PR head and pure positive/negative source rules
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git -C upstream/microduck_rl rev-parse HEAD)" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          python -m compileall -q scripts/per_p12_yocto_layer.py tests/test_per_p12_yocto_layer.py
+          python -m unittest discover -s tests -p 'test_per_p12_yocto_layer.py' -v
+          git diff --exit-code -- upstream/
+      - name: Fetch exact public Yocto commit only into scratch
+        run: |
+          set -euo pipefail
+          mkdir -p "$KWIPI_P12_YOCTO"
+          git -C "$KWIPI_P12_YOCTO" init -q
+          git -C "$KWIPI_P12_YOCTO" remote add origin https://github.com/pollen-robotics/microduck_yocto.git
+          GIT_TERMINAL_PROMPT=0 git -C "$KWIPI_P12_YOCTO" fetch --depth 1 origin 1ee58387810cebb67ae0d634c351d95024483bce
+          git -C "$KWIPI_P12_YOCTO" checkout --detach FETCH_HEAD
+          test "$(git -C "$KWIPI_P12_YOCTO" rev-parse HEAD)" = "1ee58387810cebb67ae0d634c351d95024483bce"
+      - name: Build exact P11 source from current PR head (no weights or physical I/O)
+        run: |
+          set -euo pipefail
+          python -m scripts.per_p11_v1_source_release --oem-checkout upstream/microduck --output-dir "$KWIPI_P12_SOURCE"
+          cd "$KWIPI_P12_SOURCE"
+          sha256sum -c kwipi-v1-oem-source.tar.gz.sha256
+          cd "$GITHUB_WORKSPACE"
+      - name: Test REAL pinned Yocto recipe, two identical layers and fail-closed tampering
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_per_p12_yocto_layer.py' -v
+          python -m scripts.per_p12_yocto_layer stage \
+            --yocto "$KWIPI_P12_YOCTO" --source-dir "$KWIPI_P12_SOURCE" \
+            --output "$RUNNER_TEMP/meta-kwipi-one"
+          python -m scripts.per_p12_yocto_layer stage \
+            --yocto "$KWIPI_P12_YOCTO" --source-dir "$KWIPI_P12_SOURCE" \
+            --output "$RUNNER_TEMP/meta-kwipi-two"
+          diff -rq "$RUNNER_TEMP/meta-kwipi-one" "$RUNNER_TEMP/meta-kwipi-two"
+          python -m scripts.per_p12_yocto_layer verify --layer "$RUNNER_TEMP/meta-kwipi-one"
+          python - <<'PY'
+          import json, os, pathlib
+          p = pathlib.Path(os.environ["RUNNER_TEMP"]) / "meta-kwipi-one/kwipi-layer-provenance.json"
+          d = json.loads(p.read_text())
+          assert d["bitbake_built"] is False and d["bitbake_parsed"] is False
+          assert d["signed_release"] is False and d["python_companion_installed"] is False
+          assert d["crates_regenerated"] is True
+          print("P12: Yocto source layer checked; no claim of BitBake, RAUC or deployment.")
+          PY
+          test "$(git -C "$KWIPI_P12_YOCTO" status --porcelain --untracked-files=no)" = ""
+          git diff --exit-code -- upstream/
+      - name: Retain source-only development layer for review (NOT installable firmware)
+        uses: actions/upload-artifact@v4
+        with:
+          name: kwipi-p12-yocto-source-layer-review-only
+          path: ${{ runner.temp }}/meta-kwipi-one
+          retention-days: 7
