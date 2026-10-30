@@ -29,3 +29,18 @@ Pour chaque positif : meilleur IoU de boîte **à 0,50** entre **une** boîte ca
 Cas géométriques synthétiques de non-chevauchement, rejet des sorties invalides, zéro stockage des images rendues, zéro nouveau pilote, contrôleur moteur, autorisation physique, réseau vers Qwen ou SQLite. La CI de ce lot doit exécuter le moteur MuJoCo et les poids ONNX épinglés ; une CI hôte verte pour la procédure n'implique **pas** la porte de reconnaissance. Après résultat, consigner exactement les chiffres et choisir `progres_demontré`, `insuffisant` ou `bloque_source_externe` sans retester les mêmes scènes.
 
 **Suite conditionnelle :** comparer des scènes réellement différentes et des GT indépendantes si la voie de régions apporte un bénéfice ; sinon prioriser une source de perception adaptée et licenciée sur le chemin `mediad/uyvy/duck-detect` OEM, à 2 Hz initiaux si le NPU RK3566 et les ressources permettent. Ne pas porter un modèle sur robot avant mesure ni confondre une image MuJoCo avec `media.detections`.
+
+## Résultat obtenu après préenregistrement
+
+**Mesure sur vrai modèle OEM MuJoCo (mais statique, hors `robotd`) :** [CI #41026957215](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41026957215) **réussie** au SHA `d0ebeb5c757e938050d552b31244f72e4c6cadcc` ; passage de procédure `static-oracle`, modèles OEM et digest YOLOX épinglés. Dans chaque cas la vérité terrain est la segmentation géométrique indépendante, calculée à la même pose de MuJoCo que le rendu RGB.
+
+| Cas | Pixels balle | Catégorie `sports_ball` reconnue | Meilleur IoU région top1 / top3 |
+| --- | ---: | ---: | ---: |
+| Balle absente / derrière | 0 | 0 | Non applicable |
+| A, 0,42 m gauche yaw 75° | 6 240 | 0 | 0,917916 |
+| B, 0,72 m centre yaw 90° | 1 901 | 0 | 0,874952 |
+| C, 0,95 m droite yaw 105° | 1 089 | 0 | 0,902936 |
+
+**Porte de régions franchie :** `region_attention_gate_met=true`, 3/3 localisations top3 à IoU≥0,50 (et aussi 3/3 top1), 0 fausse détection sports_ball sur négatif. Chaque région demeure une **hypothèse spatiale non vérifiée** ; il n'y a **aucune** réussite de reconnaissance catégorielle (0/3 sports_ball). La recherche a utilisé exclusivement le même modèle et décodeur gelés, sans tuning après résultat. Inférence hôte ≈19,633–22,504 ms/cas ; décodage top3 ≈0,542–0,846 ms/cas (aucune mesure NPU).
+
+**Décision :** progrès démontré **sur la localisation de régions**, et non sur la compréhension d'une balle. Les trois poses contrôlées restent dans **un seul appartement MuJoCo** : ni généralisation, ni confusion TV/photo, ni caméra `mediad`, ni catégorie valide sur le robot. Prochaine porte : scène(s) réellement nouvelle(s) et négatifs avec GT indépendante, puis éventuellement une proposition d'attention `unknown` (en lecture seule) sans promouvoir la classe prédite. Aucun code moteur, pilote ou modèle n'est autorisé par ce constat.
