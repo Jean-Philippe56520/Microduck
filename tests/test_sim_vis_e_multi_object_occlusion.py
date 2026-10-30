@@ -99,7 +99,7 @@ class SIMVISEContractTests(unittest.TestCase):
         with self.assertRaisesRegex(BallGTError, "occlusion"):
             assess_gate(sample)
 
-    def test_wrong_oracle_falsification_or missing_case_is_rejected(self):
+    def test_wrong_oracle_falsification_or_missing_case_is_rejected(self):
         for rows in (report()[:-1], list(reversed(report()))):
             with self.assertRaises(BallGTError):
                 assess_gate(rows)
