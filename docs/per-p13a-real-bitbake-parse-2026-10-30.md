@@ -23,3 +23,11 @@ Le runner standard GitHub a environ 14 Go libres et **n'a pas les ressources dé
 ## Résultats
 
 À compléter **après** l'essai dans GitHub Actions ; aucune réussite n'est présumée.
+
+## Résultats sur le parseur réel, après refus préalables
+
+[CI finale de code P13A #41137096228](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41137096228) entièrement verte sur `600fdaf015731efdfeba0c06f18aca35d8655ef0`. L'essai [#41137081873](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41137081873) précédent était déjà vert : deux runs séparés démontrent `kas==5.2.0` et `bitbake -p` / `bitbake -e microduck-daemon` réels sur les SHA officiels. La sortie du script est `real_bitbake_metadata_parsed_only`, `effective_crates=568`, `vendor_bmi088_kept=true`, `original_daemon_git_removed=true`, `oem_resources_kept=true`, `bitbake_compile_run=false`, `rauc_built=false`, `signed_release=false`, `physical_robot_verified=false`. `PV=0.17.8+kwipi.p12.<SHA-companion>` et `S=${UNPACKDIR}/${BP}` ont été vérifiés dans la sortie effective.
+
+Les échecs initiaux `HOSTTOOLS chrpath diffstat` (#41136101840), `User namespaces are not usable by BitBake, possibly due to AppArmor` sur Ubuntu 24.04 (#41136227087), puis le test trop littéral des sauts de ligne échappés dans `BBLAYERS` (#41136394863) ont été traités **dans le banc hôte et le validateur uniquement**. Aucun paramètre de sécurité AppArmor n'a été désactivé ; l'essai réussi utilise Ubuntu 22.04. Le test P13A sur `BBLAYERS` compare toujours le chemin résolu exact, pas une sous-chaîne arbitraire.
+
+**Arrêt au bord de preuve** : aucune compilation Rust ARM64 via BitBake, pas de `do_rootfs`, manifeste/signature de release OEM ou image RAUC, ni licence YOLO26/politiques nouvellement distribuées, ni Python Companion réellement installé comme service. La CI du commit documentaire/synchronisation avec P14A doit être verte avant fusion.
