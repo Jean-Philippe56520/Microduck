@@ -1,7 +1,6 @@
 """PER-P4 fixture-only positive/negative checks (not model accuracy)."""
 import unittest
-
-import numpy as np
+import importlib.util
 
 from experiments.per_p4_yolo26_coco300 import (
     COCO_IDS, TARGETS, Target, assign, box_iou, mask_scores, select_cases
@@ -69,14 +68,18 @@ class TestPerP4(unittest.TestCase):
         self.assertEqual(box_iou((2., 2., 10., 10.), (2., 2., 10., 10.)), 1.0)
         self.assertEqual(box_iou((2., 2., 10., 10.), (20., 20., 25., 25.)), 0.0)
 
+    @unittest.skipUnless(importlib.util.find_spec('numpy') and importlib.util.find_spec('pycocotools'), 'optional scientific dependencies unavailable')
     def test_predicted_mask_can_be_worse_than_box(self):
+        import numpy as np
         blank = np.zeros((40, 40), dtype=np.float32)
         mi, ri = mask_scores([[10, 10, 20, 10, 20, 20, 10, 20]],
                              blank, (10., 10., 20., 20.), 40, 40)
         self.assertEqual(mi, 0)
         self.assertGreater(ri, 0.5)
 
+    @unittest.skipUnless(importlib.util.find_spec('numpy') and importlib.util.find_spec('pycocotools'), 'optional scientific dependencies unavailable')
     def test_wrong_mask_shape_is_error(self):
+        import numpy as np
         with self.assertRaisesRegex(ValueError, "geometry"):
             mask_scores([[10, 10, 20, 10, 20, 20, 10, 20]],
                         np.zeros((20, 20), dtype=np.float32),
