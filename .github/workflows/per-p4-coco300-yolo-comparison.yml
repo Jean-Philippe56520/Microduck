@@ -1,0 +1,124 @@
+name: PER-P4 300 independent public COCO photos - pinned YOLO comparison
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "experiments/per_p4_yolo_coco300.py"
+      - "tests/test_per_p4_yolo_coco300.py"
+      - ".github/workflows/per-p4-coco300-yolo-comparison.yml"
+      - "docs/per-p4-yolo26-coco300-prereg-2026-10-30.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-coco300:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+      PYTHONUNBUFFERED: "1"
+      TORCH_HOME: ${{ runner.temp }}/per-p4-torch
+      YOLO_CONFIG_DIR: ${{ runner.temp }}/per-p4-ultralytics
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Verify unchanged OEM gitlinks, public-only and study setup
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-tree HEAD upstream/microduck | grep -F '942e58e3aa6dbb28e7037203fff11866122c7567'
+          git ls-tree HEAD upstream/microduck_rl | grep -F 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
+          test ! -e kwipi_photos_privees_tests_2026-10-30.zip
+          test -f docs/per-p4-yolo26-coco300-prereg-2026-10-30.md
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pinned CPU-only PyTorch and host benchmark dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/per-p4-venv"
+          echo "$RUNNER_TEMP/per-p4-venv/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/per-p4-venv/bin/python" -m pip install --disable-pip-version-check \
+            --index-url https://download.pytorch.org/whl/cpu \
+            'torch==2.6.0+cpu' 'torchvision==0.21.0+cpu'
+          "$RUNNER_TEMP/per-p4-venv/bin/python" -m pip install --disable-pip-version-check \
+            'ultralytics==8.4.190' 'Pillow==11.3.0' 'numpy==1.26.4' \
+            'opencv-python==4.10.0.84' 'pycocotools==2.0.10'
+
+      - name: Run deterministic unit tests before any external inference
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_per_p4_yolo_coco300.py' -v
+          python -m compileall -q experiments/per_p4_yolo_coco300.py tests/test_per_p4_yolo_coco300.py
+
+      - name: Download public COCO2017 validation GT (pinned SHA)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 120 \
+            --output "$RUNNER_TEMP/instances_val2017.json" \
+            'https://huggingface.co/datasets/LibreYOLO/coco2017/resolve/main/instances_val2017.json'
+          echo "e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aeefa635b8c810b6f  $RUNNER_TEMP/instances_val2017.json" | sha256sum --check
+
+      - name: Verify exact three Ultralytics official model assets from v8.4.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/per-p4-weights"
+          for filename in yolo11n.pt yolo26n.pt yolo26n-seg.pt; do
+            curl --fail --location --retry 3 --retry-all-errors --max-time 150 \
+              --output "$RUNNER_TEMP/per-p4-weights/$filename" \
+              "https://github.com/ultralytics/assets/releases/download/v8.4.0/$filename"
+          done
+          echo "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1  $RUNNER_TEMP/per-p4-weights/yolo11n.pt" | sha256sum --check
+          echo "9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef  $RUNNER_TEMP/per-p4-weights/yolo26n.pt" | sha256sum --check
+          echo "361fbfabab285c3237700b6bb91d7ecfa602cd945fffda8dbe1242829b71e73f  $RUNNER_TEMP/per-p4-weights/yolo26n-seg.pt" | sha256sum --check
+
+      - name: Run exactly 300 licensed and historically-disjoint COCO photos on three models
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 1700s python -m experiments.per_p4_yolo_coco300 \
+            --approved-public-media \
+            --annotations "$RUNNER_TEMP/instances_val2017.json" \
+            --weights-dir "$RUNNER_TEMP/per-p4-weights" \
+            --report "$RUNNER_TEMP/per-p4-coco300-public-numeric-only.json"
+
+      - name: Ensure published artifact contains 300 observations per model, no images
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - "$RUNNER_TEMP/per-p4-coco300-public-numeric-only.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1], encoding="utf-8") as f:
+              r = json.load(f)
+          assert r["source_image_count"] == 300
+          assert r["camera_height_known"] is False and r["robot_or_npu_verified"] is False
+          assert r["media_saved"] is False and r["no_robot_actuation"] is True
+          assert r["qwen_calls"] == 0 and r["sqlite_writes"] == 0
+          assert len(r["selected_image_ids"]) == len(set(r["selected_image_ids"])) == 300
+          assert r["cohort_images"] == {"person":40, "cat":40, "dog":40, "sports_ball":40, "chair":40, "target_free":100}
+          assert set(r["reports"]) == {"yolo11n.pt", "yolo26n.pt", "yolo26n-seg.pt"}
+          assert all(d["photos_evaluated"] == 300 for d in r["reports"].values())
+          print(json.dumps({"study": r["study"], "decision": r["decision"], "reports": r["reports"]}, sort_keys=True))
+          PY
+
+      - name: Preserve numerical evidence only - never photographs or model weights
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: per-p4-yolo26n-yolo11n-coco300-numeric-only
+          retention-days: 7
+          if-no-files-found: warn
+          path: ${{ runner.temp }}/per-p4-coco300-public-numeric-only.json
