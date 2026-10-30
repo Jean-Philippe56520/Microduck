@@ -356,7 +356,7 @@ def run(*, annotations_path: Path, weights_dir: Path) -> dict:
     import torch
     import ultralytics
     from ultralytics import YOLO
-    if ultralytics.__version__ != "8.4.190":
+    if ultralytics.__version__ != "8.4.192":
         raise ValueError("unreviewed Ultralytics package version")
     if (annotations_path.is_symlink() or not annotations_path.is_file()
             or not 128 <= annotations_path.stat().st_size <= MAX_COCO_JSON_BYTES):
