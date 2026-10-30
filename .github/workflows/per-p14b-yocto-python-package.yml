@@ -18,7 +18,7 @@ permissions:
 jobs:
   real-bitbake-python-package:
     runs-on: ubuntu-22.04
-    timeout-minutes: 46
+    timeout-minutes: 32
     env:
       PYTHONDONTWRITEBYTECODE: "1"
       P14_YOCTO: /tmp/p14b-yocto
@@ -91,11 +91,11 @@ jobs:
                 .:
           EOF
           test "$(git -C "$P14_YOCTO" status --porcelain --untracked-files=no)" = ""
-      - name: Run real BitBake parse and Python do_package only; bounded 2200s
+      - name: Run real BitBake parse and Python do_package only; bounded 1200s
         run: |
           set -euo pipefail
           config="$P14_YOCTO/kas/microduck.yml:$P14_YOCTO/kas/per-p14b-layer.yml"
-          timeout 2200s kas shell "$config" -c \
+          timeout 1200s kas shell "$config" -c \
             "bitbake -p && bitbake -e kwipi-companion > $P14_ENV && bitbake -c package kwipi-companion"
           test -s "$P14_ENV"
           echo "P14B real BitBake Python do_package completed; no rootfs or robot."
