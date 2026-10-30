@@ -40,6 +40,11 @@ jobs:
           test -f upstream/microduck_rl/src/mjlab_microduck/robot/microduck/scene_vslam.xml
           printf 'SIM-VIS-F uses pinned OEM static camera and segmentation only; no robotd, ONNX or mediad started\n'
 
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "upstream/microduck_rl/uv.lock"
+
       - name: Isolated MuJoCo segmentation renderer only, no vision model
         run: |
           set -euo pipefail
