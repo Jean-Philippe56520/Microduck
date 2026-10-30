@@ -1,0 +1,184 @@
+name: PER-P10D actual mediad daemon build and OEM Yocto source gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/per-p10d-full-mediad-yocto.yml"
+      - "docs/per-p10d-full-mediad-yocto-gate-2026-10-30.md"
+      - "scripts/per_p10d_yocto_source_gate.py"
+      - "tests/per_p10d_yocto_source_gate_cases.py"
+      - "scripts/per_p10c_*.py"
+      - "scripts/per_p10c_*.rs"
+      - "scripts/per_p10b_seg_tail.rs"
+      - "scripts/per_p10a_*.py"
+      - "rust/kwipi-seg-mask-core/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-yocto-source-and-negative-gates:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      KWIPI_P10D_YOCTO_ROOT: /tmp/p10d-official-yocto
+      KWIPI_P10D_OEM_ROOT: upstream/microduck
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Clone only the exact OEM Yocto source revision, read-only
+        run: |
+          set -euo pipefail
+          mkdir -p "$KWIPI_P10D_YOCTO_ROOT"
+          git -C "$KWIPI_P10D_YOCTO_ROOT" init -q
+          git -C "$KWIPI_P10D_YOCTO_ROOT" remote add origin https://github.com/pollen-robotics/microduck_yocto.git
+          GIT_TERMINAL_PROMPT=0 git -C "$KWIPI_P10D_YOCTO_ROOT" fetch --depth 1 origin 1ee58387810cebb67ae0d634c351d95024483bce
+          git -C "$KWIPI_P10D_YOCTO_ROOT" checkout --detach FETCH_HEAD
+          test "$(git -C "$KWIPI_P10D_YOCTO_ROOT" rev-parse HEAD)" = "1ee58387810cebb67ae0d634c351d95024483bce"
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          git diff --exit-code -- upstream/
+      - name: Run negative provenance tests on actual checked out vendor source
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'per_p10d_yocto_source_gate_cases.py' -v
+          python scripts/per_p10d_yocto_source_gate.py --yocto "$KWIPI_P10D_YOCTO_ROOT" --oem "$KWIPI_P10D_OEM_ROOT"
+          git diff --exit-code -- upstream/
+          echo "P10D scope: Yocto source contract verified but Companion not included in a deployable Yocto release."
+
+  full-mediad-native-gstreamer-no-camera:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      RUSTFLAGS: "-D warnings"
+      P10D_OEM: /tmp/p10d-full-oem
+      KWIPI_P10B_TEST_MODELS: /tmp/p10d-synthetic-onnx
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - name: Install official Ubuntu host GStreamer headers (no camera or NPU)
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            pkg-config libudev-dev libglib2.0-dev libgstreamer1.0-dev \
+            libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev
+          pkg-config --modversion gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0 gstreamer-webrtc-1.0
+      - uses: dtolnay/rust-toolchain@1.89.0
+        with:
+          components: rustfmt,clippy
+      - name: Assemble P10A/B/C on exact throwaway OEM source
+        run: |
+          set -euo pipefail
+          mkdir -p "$P10D_OEM"
+          git -C upstream/microduck archive 942e58e3aa6dbb28e7037203fff11866122c7567 | tar -x -C "$P10D_OEM"
+          printf '%s\n' '942e58e3aa6dbb28e7037203fff11866122c7567' > "$P10D_OEM/.per-p10a-throwaway-pin"
+          python scripts/per_p10a_apply_oem_rknn_overlay.py --archive "$P10D_OEM"
+          python -m scripts.per_p10b_apply_oem_tail_overlay --archive "$P10D_OEM"
+          python -m scripts.per_p10c_apply_oem_mediad_overlay --archive "$P10D_OEM"
+          test "$(grep -c 'frames.next_frame()' "$P10D_OEM/mediad/src/detect.rs")" -eq 1
+          test "$(grep -c 'name("duck-detect"' "$P10D_OEM/mediad/src/detect.rs")" -eq 1
+          cargo metadata --manifest-path "$P10D_OEM/Cargo.toml" --format-version 1 > /dev/null
+          cargo fmt --manifest-path "$P10D_OEM/Cargo.toml" -p duck-detect -p mediad -p p10c-harness
+          git diff --exit-code -- upstream/
+      - name: Compile the REAL pinned OEM mediad crate and native binary with GStreamer
+        run: |
+          set -euo pipefail
+          cargo check --manifest-path "$P10D_OEM/Cargo.toml" --locked -p mediad --lib --bins
+          cargo build --manifest-path "$P10D_OEM/Cargo.toml" --locked -p mediad --bin mediad
+          file "$P10D_OEM/target/debug/mediad"
+          test -s "$P10D_OEM/target/debug/mediad"
+          echo "This is a real x86 host binary, NOT an aarch64 Yocto image."
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Prepare actual Rust ORT test runtime and synthetic ONNX (no model weights)
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check "onnx==1.16.2" "numpy==1.26.4"
+          python scripts/per_p10b_synthetic_onnx.py --output-dir "$KWIPI_P10B_TEST_MODELS"
+          test "$(find "$KWIPI_P10B_TEST_MODELS" -name '*.onnx' -type f | wc -l)" -eq 6
+          mkdir -p "$RUNNER_TEMP/p10d-ort"
+          curl --proto '=https' --tlsv1.2 -fsSL --retry 3 "https://github.com/microsoft/onnxruntime/releases/download/v1.28.0/onnxruntime-linux-x64-1.28.0.tgz" -o "$RUNNER_TEMP/p10d-ort.tgz"
+          echo "a3e1b79d7bb1bf09696ce675f49e4064e6c81f6202b8225624fff0e93f8d6407  $RUNNER_TEMP/p10d-ort.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/p10d-ort.tgz" -C "$RUNNER_TEMP/p10d-ort"
+          lib="$(find "$RUNNER_TEMP/p10d-ort" -name 'libonnxruntime.so.1.28.0' -type f -print -quit)"
+          test -n "$lib"
+          echo "ORT_DYLIB_PATH=$lib" >> "$GITHUB_ENV"
+      - name: Run actual pinned mediad library tests and GStreamer-dependent Rust Clippy
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path "$P10D_OEM/Cargo.toml" --locked -p mediad -p duck-detect -p uyvy --lib -- --nocapture
+          cargo clippy --manifest-path "$P10D_OEM/Cargo.toml" --locked -p mediad --lib --bins -- -D warnings
+          git diff --exit-code -- upstream/
+      - name: No automatic model installation, services or hardware assertions
+        run: |
+          set -euo pipefail
+          test ! -e kwipi_seg.rknn
+          test ! -e kwipi_seg_tail.onnx
+          git diff --exit-code -- upstream/
+
+  official-oem-arm64-sysroot-mediad-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      RUSTFLAGS: "-D warnings"
+      P10D_OEM: /tmp/p10d-arm-oem
+      DUCK_SYSROOT: /tmp/p10d-debian-arm64-sysroot
+      DUCK_DEBIAN_MIRROR: https://deb.debian.org/debian
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@1.89.0
+        with:
+          components: rustfmt
+          targets: aarch64-unknown-linux-gnu
+      - name: Reuse the exact OEM trixie ARM64 sysroot generator (never host multiarch)
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends pkg-config curl binutils tar gzip gcc-aarch64-linux-gnu libc6-dev-arm64-cross linux-libc-dev-arm64-cross
+          command -v aarch64-linux-gnu-gcc
+          echo "#include <sys/types.h>" | aarch64-linux-gnu-gcc -E -x c - >/dev/null
+          sh upstream/microduck/scripts/cross-sysroot.sh
+          sh upstream/microduck/scripts/cross-sysroot.sh --check
+          test -f "$DUCK_SYSROOT/usr/lib/aarch64-linux-gnu/pkgconfig/gstreamer-1.0.pc"
+      - name: Assemble P10A/B/C only into an audited archive
+        run: |
+          set -euo pipefail
+          mkdir -p "$P10D_OEM"
+          git -C upstream/microduck archive 942e58e3aa6dbb28e7037203fff11866122c7567 | tar -x -C "$P10D_OEM"
+          printf '%s\n' '942e58e3aa6dbb28e7037203fff11866122c7567' > "$P10D_OEM/.per-p10a-throwaway-pin"
+          python scripts/per_p10a_apply_oem_rknn_overlay.py --archive "$P10D_OEM"
+          python -m scripts.per_p10b_apply_oem_tail_overlay --archive "$P10D_OEM"
+          python -m scripts.per_p10c_apply_oem_mediad_overlay --archive "$P10D_OEM"
+          cargo metadata --manifest-path "$P10D_OEM/Cargo.toml" --format-version 1 > /dev/null
+          cargo fmt --manifest-path "$P10D_OEM/Cargo.toml" -p duck-detect -p mediad -p p10c-harness
+      - name: Check true mediad ARM64 target using Debian trixie headers and GStreamer pkgconfig
+        run: |
+          set -euo pipefail
+          export PKG_CONFIG_SYSROOT_DIR="$DUCK_SYSROOT"
+          export PKG_CONFIG_LIBDIR="$DUCK_SYSROOT/usr/lib/aarch64-linux-gnu/pkgconfig:$DUCK_SYSROOT/usr/share/pkgconfig"
+          export PKG_CONFIG_ALLOW_CROSS=1
+          export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
+          export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
+          export RUSTFLAGS="$RUSTFLAGS -L $DUCK_SYSROOT/usr/lib/aarch64-linux-gnu"
+          for mod in gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0 gstreamer-webrtc-1.0; do
+            pkg-config --modversion "$mod"
+          done
+          cargo check --manifest-path "$P10D_OEM/Cargo.toml" --locked --target aarch64-unknown-linux-gnu -p mediad --lib --bin mediad
+          echo "Cross-compilation check only, not linked target binary, not BitBake/Yocto image."
+          git diff --exit-code -- upstream/
