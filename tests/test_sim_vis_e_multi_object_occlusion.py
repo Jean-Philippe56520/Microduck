@@ -1,7 +1,6 @@
 """SIM-VIS-E: positive/negative predeclared gate tests, no camera or PC."""
 from __future__ import annotations
 
-import copy
 import importlib.util
 import unittest
 
@@ -13,6 +12,7 @@ from microduck_companion.sim_vis_e_multi_object_occlusion import (
 )
 
 HAS_NUMPY = importlib.util.find_spec("numpy") is not None
+HAS_MUJOCO = importlib.util.find_spec("mujoco") is not None
 
 
 def report(*, good_nonball=True, good_ball=True):
@@ -130,7 +130,7 @@ class SIMVISEContractTests(unittest.TestCase):
                 with self.assertRaisesRegex(BallGTError, "mock F2"):
                     assess_gate(sample)
 
-    @unittest.skipUnless(HAS_NUMPY, "numpy optional in general Python CI")
+    @unittest.skipUnless(HAS_NUMPY and HAS_MUJOCO, "numpy and mujoco optional in general Python CI")
     def test_ray_oracle_rejects_nonfinite_coordinates(self):
         with self.assertRaises(BallGTError):
             ray_blocker(None, None, camera_xyz=[0., 0., 0.],
