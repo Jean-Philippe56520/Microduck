@@ -105,8 +105,8 @@ pub fn decode(
             eligible.push((i, score));
         }
     }
-    eligible
-        .sort_by(|(a, a_score), (b, b_score)| b_score.total_cmp(a_score).then_with(|| a.cmp(b)));
+    // The pinned vendor's end2end NMS keeps the FIRST passing rows,
+    // without re-sorting by confidence. Preserve exact ONNX row order.
     let mut items = Vec::with_capacity(max_det.min(eligible.len()));
 
     for (index, score) in eligible.into_iter().take(max_det) {
@@ -217,7 +217,7 @@ mod tests {
     }
 
     #[test]
-    fn top_k_is_stable_and_allocates_at_most_ten_masks() {
+    fn end2end_nms_preserves_first_ten_rows_and_bounded_masks() {
         let (mut rows, mut proto) = blank();
         proto[..MASK_PIXELS].fill(1.0);
         for i in 0..20 {
@@ -233,8 +233,9 @@ mod tests {
         }
         let out = decode(&rows, &proto, 0.25, 10).unwrap();
         assert_eq!(out.len(), 10);
-        assert_eq!(out[0].proposed_class_id, 19);
-        assert_eq!(out[9].proposed_class_id, 10);
+        // Highest confidence is last; the vendor still keeps the first ten.
+        assert_eq!(out[0].proposed_class_id, 0);
+        assert_eq!(out[9].proposed_class_id, 9);
         assert_eq!(out.iter().map(|v| v.mask_160.len()).sum::<usize>(), 256000);
     }
 
