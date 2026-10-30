@@ -107,12 +107,14 @@ jobs:
           cargo clippy --manifest-path rust/kwipi-seg-mask-core/Cargo.toml --all-targets --offline --locked -- -D warnings
           cargo build --manifest-path rust/kwipi-seg-mask-core/Cargo.toml --bin kwipi-rust-parity-probe --release --offline --locked
           python -m unittest discover -s tests -p 'test_per_p8_rust_parity.py' -v
+      # Restrict access to public-but-licensed weights and generated tensor fixtures.
       - name: Download one authorized official weight and verify SHA256
         env:
           WEIGHT: yolo26n-seg.pt
           EXPECTED: 361fbfabab285c3237700b6bb91d7ecfa602cd945fffda8dbe1242829b71e73f
         run: |
           set -euo pipefail
+          umask 077
           mkdir -p "$RUNNER_TEMP/p8-models"
           curl --fail --location --retry 2 --max-time 180 \
             --output "$RUNNER_TEMP/p8-models/$WEIGHT" \
@@ -123,6 +125,7 @@ jobs:
           WEIGHT: yolo26n-seg.pt
         run: |
           set -euo pipefail
+          umask 077
           timeout 2400s python -m experiments.per_p8_rust_parity \
             --weight "$RUNNER_TEMP/p8-models/$WEIGHT" \
             --calibration "$GITHUB_WORKSPACE/vendor-zoo/datasets/COCO/coco_subset_20.txt" \
