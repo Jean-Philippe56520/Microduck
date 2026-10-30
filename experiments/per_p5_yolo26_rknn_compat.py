@@ -80,7 +80,7 @@ def run(model_path: Path, calibration_list: Path) -> dict:
         raise RuntimeError("unpinned ultralytics runtime")
     if not str(getattr(rknn, "__version__", SDK_VERSION)).startswith(SDK_VERSION):
         raise RuntimeError("unpinned RKNN toolkit version")
-    if not str(torch.__version__).startswith("2.4.1"):
+    if not str(torch.__version__).startswith("2.4.0"):
         raise RuntimeError("unexpected Torch version")
     proof = verify_sources(model_path, calibration_list)
     result = {"model": model_path.name, **proof, "platform": "rk3566",
