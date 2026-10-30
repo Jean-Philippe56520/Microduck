@@ -1,0 +1,92 @@
+name: PER-P10A pinned OEM RKNN ten-output source contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/per-p10a-oem-rknn-seg-ten-outputs.yml"
+      - "scripts/per_p10a_apply_oem_rknn_overlay.py"
+      - "scripts/per_p10a_rknn_segments.rs"
+      - "tests/test_per_p10a_overlay.py"
+      - "docs/per-p10a-oem-rknn-ten-output-contract-2026-10-30.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  oem-multihead-source-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    env:
+      RUSTFLAGS: "-D warnings"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Verify EXACT OEM pins and no model/media redistributed
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git -C upstream/microduck_rl rev-parse HEAD)" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          test "$(git -C upstream/microduck hash-object -- duck-detect/src/rknn.rs)" = "6260c49f0df9a048d42dca229e53467c77f8139c"
+          test ! -e model.rknn
+          test ! -e tail.onnx
+          git diff --exit-code -- upstream/
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Prove overlay refusal before touching the throwaway archive
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/per_p10a_apply_oem_rknn_overlay.py tests/test_per_p10a_overlay.py
+          python -m unittest discover -s tests -p 'test_per_p10a_overlay.py' -v
+
+      - name: Archive PINNED OEM read-only, apply extension only to the archive
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/per-p10a-pinned-oem"
+          mkdir -p "$root"
+          git -C upstream/microduck archive 942e58e3aa6dbb28e7037203fff11866122c7567 | tar -x -C "$root"
+          printf '%s\n' '942e58e3aa6dbb28e7037203fff11866122c7567' > "$root/.per-p10a-throwaway-pin"
+          python scripts/per_p10a_apply_oem_rknn_overlay.py --archive "$root"
+          git diff --exit-code -- upstream/
+          test "$(git -C upstream/microduck hash-object -- duck-detect/src/rknn.rs)" = "6260c49f0df9a048d42dca229e53467c77f8139c"
+          test -f "$root/duck-detect/src/rknn/segments.rs"
+
+      - uses: dtolnay/rust-toolchain@1.89.0
+        with:
+          components: clippy,rustfmt
+          targets: aarch64-unknown-linux-gnu
+
+      - name: Check authored extension formatting
+        run: |
+          set -euo pipefail
+          rustfmt --edition 2024 --check scripts/per_p10a_rknn_segments.rs
+
+      - name: Run real OEM source Rust tests including ten-output contract
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/per-p10a-pinned-oem"
+          cargo fmt --manifest-path "$root/Cargo.toml" -p duck-detect
+          cargo fmt --manifest-path "$root/Cargo.toml" -p duck-detect -- --check
+          cargo test --manifest-path "$root/Cargo.toml" --locked -p duck-detect --lib
+          cargo clippy --manifest-path "$root/Cargo.toml" --locked -p duck-detect --lib -- -D warnings
+
+      - name: Cross-check duck-detect library on ARM64 without execution
+        run: |
+          set -euo pipefail
+          cargo check --manifest-path "$RUNNER_TEMP/per-p10a-pinned-oem/Cargo.toml" --locked -p duck-detect --lib --target aarch64-unknown-linux-gnu
+          echo "Compilation only: no Yocto image build or actual NPU/mediad/robot executed."
+
+      - name: Confirm source preservation and no physical capability claim
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- upstream/
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          echo "PER-P10A software-only source contract: 10 output buffer metadata and negative fixtures; no deployed sensor, tail inference, hardware timing or motor control."
