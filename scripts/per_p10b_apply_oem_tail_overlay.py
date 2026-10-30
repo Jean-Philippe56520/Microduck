@@ -63,8 +63,13 @@ def apply(archive: Path, source: Path, project: Path) -> None:
     # P10A's owned extension must be byte-identical, not a guessed compatible API.
     if p10a_rust.read_bytes() != p10a_ref.read_bytes():
         raise OverlayRefused("P10A wrapper differs from the audited branch")
-    if git_hash(oem_lib) != OEM_LIB_BLOB or git_hash(oem_cargo) != OEM_CARGO_BLOB:
-        raise OverlayRefused("OEM lib or Cargo source differs from pinned revision")
+    current_lib, current_cargo = git_hash(oem_lib), git_hash(oem_cargo)
+    if current_lib != OEM_LIB_BLOB or current_cargo != OEM_CARGO_BLOB:
+        raise OverlayRefused(
+            "OEM source blob differs from expected pinned version: "
+            f"lib={current_lib} expected={OEM_LIB_BLOB}, "
+            f"Cargo={current_cargo} expected={OEM_CARGO_BLOB}"
+        )
     for rel, expected in CORE_BLOBS.items():
         p = core_src / rel
         if p.is_symlink() or not p.is_file() or git_hash(p) != expected:
