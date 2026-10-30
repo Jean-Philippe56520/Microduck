@@ -36,3 +36,21 @@ Chaque lot de régions top3 est projeté dans **une fixture hôte `mock`**, avec
 4. CI Python + vraie exécution MuJoCo/ONNX sur les SHAs épinglés ; aucune image brute, photo privée, sous-module, SQLite sur disque ou rapport de caméra personnelle publié.
 
 **Décision stricte :** un résultat positif ne permet qu'une **preuve de compatibilité de la chaîne de test MuJoCo→région→F2 via mock**. Il ne permet pas le transport OEM de production, la mémoire des objets, la navigation ou une reconnaissance de balle. Un échec sur la scène indépendante stoppe ce sous-chantier ; ne pas déplacer les objets, adapter les scores ou recommencer la même évaluation pour fabriquer un succès. Si F2 s'abstient sur les scores véritables, consigner cette limitation plutôt que baisser `DETECTION_CONFIDENCE`.
+
+## Résultats mesurés — vrai rendu MuJoCo OEM, chaîne F2 mock seulement
+
+[CI constructeur et ONNX #41028975787](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41028975787) **réussie** sur le SHA de code `02c8a7bab651da95c45aa28672186c6442e7d402`. Les tests du banc MuJoCo (10 SIM-VIS-B + 7 SIM-VIS-D) ont réussi, sans modifier les deux gitlinks OEM, la caméra ou les poids YOLOX. Le verdict ci-dessous provient du JSON imprimé dans les logs de ce run, et non de fixtures fabriquées.
+
+| Cas | Pixels de la géométrie cible | Régions top3 | IoU top3 | Score candidat maximal | Réponse F2 **dans la fixture** |
+| --- | ---: | ---: | ---: | ---: | --- |
+| A `scene_ball` à 0,62 m | 1 990 | 1 | **0,931329** | **0,876814** | `inspect unknown` |
+| B `scene_ball` hors champ | 0 | 0 | n/a | aucun | `idle` |
+| C `scene_vslam` pilier | **94 576** | 0 | 0 | aucun | `idle` |
+
+Le masque indépendant confirme le pilier géométrique **visible** : son absence de région est donc un **échec de généralisation pour ce repère**, pas un problème d'invisibilité. Le cas A apporte une localisation géométrique réussie sur une scène autre que l'appartement, mais n'apporte **aucune reconnaissance de catégorie**. La borne préenregistrée de **≥1/2 positifs localisés** est atteinte (1/2) ; le témoin hors champ a zéro pixel/zéro région. **Ne pas relever** le score du pilier, déplacer le robot ou répéter ce jeu pour obtenir 2/2.
+
+Le test logiciel F2 réutilise vraiment `AutonomyBrain.propose_balanced_passive` ; son entrée est fabriquée comme `mock_fixture_unix` par le banc et **non** acquise auprès de `mediad`. Pour la seule région A, le score ONNX 0,876814 est conservé tel quel (> seuil F2 0,80), ce qui produit `inspect unknown` et non `observe ball`. B et C rendent `idle`. Tests négatifs : score <0,80, NaN, fausse catégorie, horodatages dépassés/futurs et source `sensor` illégitime sont refusés ou conduisent à l'inaction.
+
+Coût des seules trois inférences sur exécuteur CI hôte : **6,958 / 6,824 / 6,818 ms**. Ce n'est ni un échantillon significatif de p95, ni une mesure de `mediad`, RK3566, RAM totale, NPU, température, batterie ou disponibilité motrice 50 Hz. `mj_step` jamais appelé ; caméra et rendu statiques. Zéro écriture d'expérience, zéro moteur, Qwen, identité, effet ou média personnel.
+
+**Décision** : `progres_demontré` sur **une** nouvelle scène de balle et sur **le contrat logiciel F2 via fixture mock** ; `insuffisant` pour détection générale d'objets inconnus et pour intégration de perception OEM. Suite : GT inédites pour des objets variés et, si gain prouvé, audit du vrai flux `mediad`/RKNN 2 Hz sans second pilote ni attribution de catégorie à partir d'une simple région.
