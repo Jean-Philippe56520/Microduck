@@ -1,0 +1,186 @@
+name: PER-P2B one official PPYOLOE-s INT8 conversion RK3566 (PC only)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/per-p2b-ppyoloes-rknn232-convert.yml"
+      - "docs/per-p2b-ppyoloes-rknn232-host-conversion-2026-10-30.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  official-rockchip-host-conversion:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Confirm OEM pinned Gitlinks not modified
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git -C upstream/microduck_rl rev-parse HEAD)" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          echo "OEM code and existing detector remain untouched; only host conversion."
+
+      - uses: actions/checkout@v4
+        with:
+          repository: airockchip/rknn_model_zoo
+          ref: 837db8e992815ff8647eadb709f07067f4bc3a71
+          path: vendor-zoo
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /examples/ppyoloe/python/convert.py
+            /examples/ppyoloe/model/download_model.sh
+            /datasets/COCO/coco_subset_20.txt
+            /datasets/COCO/subset/
+          persist-credentials: false
+
+      - uses: actions/checkout@v4
+        with:
+          repository: airockchip/rknn-toolkit2
+          ref: 42aa1d426c0a9e0869b6374edba009f7208a1926
+          path: vendor-rknn
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /rknn-toolkit2/packages/x86_64/rknn_toolkit2-2.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+            /rknn-toolkit2/packages/x86_64/requirements_cp310-2.3.2.txt
+          persist-credentials: false
+
+      - name: Verify exact Rockchip sources and official 20-image calibration set
+        run: |
+          set -euo pipefail
+          test "$(git -C vendor-zoo rev-parse HEAD)" = "837db8e992815ff8647eadb709f07067f4bc3a71"
+          test "$(git -C vendor-rknn rev-parse HEAD)" = "42aa1d426c0a9e0869b6374edba009f7208a1926"
+          test -f vendor-zoo/examples/ppyoloe/python/convert.py
+          test -f vendor-rknn/rknn-toolkit2/packages/x86_64/rknn_toolkit2-2.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+          # The official 20th line has NO trailing newline: wc -l returns 19.
+          test "$(awk 'END {print NR}' vendor-zoo/datasets/COCO/coco_subset_20.txt)" -eq 20
+          cd vendor-zoo/datasets/COCO
+          count=0
+          while IFS= read -r photo || [ -n "$photo" ]; do
+            case "$photo" in ./subset/*.jpg) ;; *) echo 'unexpected calibration path'; exit 4 ;; esac
+            test -f "$photo"
+            count=$((count + 1))
+          done < coco_subset_20.txt
+          test "$count" -eq 20
+          test "$(find subset -name '*.jpg' -type f | wc -l)" -eq 20
+          echo "Calibration set: 20/20 official public COCO images; no private images."
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install pinned official host conversion environment (no NPU)
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --no-cache-dir \
+            'pip==24.3.1' 'numpy==1.26.4' 'protobuf==4.25.4' \
+            'onnx==1.16.2' 'onnxruntime==1.18.1' \
+            'psutil==6.0.0' 'ruamel.yaml==0.18.6' 'scipy==1.11.4' \
+            'tqdm==4.66.4' 'fast-histogram==0.14' \
+            'opencv-python-headless==4.9.0.80'
+          python -m pip install --disable-pip-version-check --no-cache-dir \
+            --index-url 'https://download.pytorch.org/whl/cpu' 'torch==2.2.2+cpu'
+          python -m pip install --disable-pip-version-check --no-cache-dir --no-deps \
+            vendor-rknn/rknn-toolkit2/packages/x86_64/rknn_toolkit2-2.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+          python -c 'import torch, onnx, rknn; from rknn.api import RKNN; print("RKNN toolkit 2.3.2, torch", torch.__version__, "onnx", onnx.__version__)'
+
+      - name: Download ONCE the same official ONNX, record actual symbolic dimensions
+        run: |
+          set -euo pipefail
+          mkdir -p vendor-zoo/examples/ppyoloe/model
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          from urllib.parse import urlsplit
+          from urllib.request import Request, urlopen
+          from onnx import load, checker
+          url = ("https://ftrg.zbox.filez.com/v2/delivery/data/"
+              "95f00b0fc900458ba134f8b180b3f7a1/examples/ppyoloe/ppyoloe_s.onnx")
+          allowed = "ftrg.zbox.filez.com"
+          dest = Path("vendor-zoo/examples/ppyoloe/model/ppyoloe_s.onnx")
+          if dest.exists():
+              raise SystemExit("Refuse replacing a weight file")
+          total = 0
+          sha = hashlib.sha256()
+          req = Request(url, headers={"User-Agent": "kwipi-rknn-pinned-conversion/1.0"})
+          with urlopen(req, timeout=50) as response:
+              actual = urlsplit(response.geturl())
+              if actual.scheme != "https" or actual.hostname != allowed:
+                  raise SystemExit("External redirect refused")
+              with dest.open("xb") as f:
+                  while True:
+                      chunk = response.read(1024 * 1024)
+                      if not chunk:
+                          break
+                      total += len(chunk)
+                      if total > 64*1024*1024:
+                          raise SystemExit("Model larger than 64 MiB")
+                      sha.update(chunk)
+                      f.write(chunk)
+          if not 128*1024 <= total <= 64*1024*1024:
+              raise SystemExit("Model unexpectedly short/long")
+          model = load(str(dest))
+          checker.check_model(model)
+          def dims(v):
+              return [int(x.dim_value) if x.HasField("dim_value")
+                      else ("symbol:" + x.dim_param if x.HasField("dim_param")
+                            else "unspecified") for x in v.type.tensor_type.shape.dim]
+          report = {
+              "study": "PER-P2B_rockchip_official_converter_before_inference",
+              "onnx_sha256": sha.hexdigest(),
+              "onnx_bytes": total,
+              "onnx_inputs_declared": [dims(v) for v in model.graph.input],
+              "onnx_outputs_declared": [dims(v) for v in model.graph.output],
+              "onnx_checker_valid": True,
+              "geometry_symbolic_is_not_RKNN_failure": True,
+              "model_published_or_inferred": False,
+          }
+          print(json.dumps(report, sort_keys=True))
+          PY
+
+      - name: Exactly ONE official RKNN toolkit 2.3.2 INT8 conversion for RK3566
+        working-directory: vendor-zoo/examples/ppyoloe/python
+        run: |
+          set -euo pipefail
+          timeout 900s python convert.py ../model/ppyoloe_s.onnx rk3566 i8 \
+            "$RUNNER_TEMP/ppyoloe_s_rk3566_int8.rknn"
+          test -s "$RUNNER_TEMP/ppyoloe_s_rk3566_int8.rknn"
+          test "$(stat -c '%s' "$RUNNER_TEMP/ppyoloe_s_rk3566_int8.rknn")" -lt 134217728
+          python - <<'PY'
+          import hashlib, json, os, resource
+          from pathlib import Path
+          p = Path(os.environ["RUNNER_TEMP"])/"ppyoloe_s_rk3566_int8.rknn"
+          print(json.dumps({
+              "study": "PER-P2B_RKNN_2.3.2_official_PPYOLOE_s_int8_host_export",
+              "conversion_exported": True,
+              "platform": "rk3566",
+              "toolkit_version": "2.3.2",
+              "calibration_photos": 20,
+              "rknn_sha256_NOT_PUBLISHED": hashlib.sha256(p.read_bytes()).hexdigest(),
+              "rknn_bytes_NOT_PUBLISHED": p.stat().st_size,
+              "runner_peak_rss_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+              "robot_or_NPU_inference_executed": False,
+              "OEM_model_compatible": "unknown",
+              "Kwipi_multicategory_quality_verified": False,
+              "weights_rights_verified_for_redistribution": False,
+          }, sort_keys=True))
+          PY
+
+      - name: Explicitly refuse to publish vendor weights or private photos
+        if: always()
+        run: |
+          echo 'No model, calibration JPEG, ONNX or RKNN artifacts uploaded.'
+          echo 'This runner is a conversion sandbox, not a Microduck or NPU.'
