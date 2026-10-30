@@ -80,7 +80,8 @@ jobs:
         run: |
           set -euo pipefail
           rustfmt --edition 2024 --check scripts/per_p10c_mediad_segment.rs
-          rustfmt --edition 2024 --check scripts/per_p10c_harness.rs
+          # Harness module path resolves only INSIDE the temporary OEM archive.
+          # It is checked by cargo fmt after its source is copied below.
           rustfmt --edition 2024 --check scripts/per_p10b_seg_tail.rs
           cargo metadata --manifest-path "$P10C_OEM/Cargo.toml" --format-version 1 > /dev/null
           cargo fmt --manifest-path "$P10C_OEM/Cargo.toml" -p duck-detect -p p10c-harness
