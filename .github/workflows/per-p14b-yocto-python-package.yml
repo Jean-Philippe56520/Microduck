@@ -1,0 +1,127 @@
+name: PER-P14B real BitBake Python package (NOT OS image or robot)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/per-p14b-yocto-python-package.yml"
+      - "scripts/per_p14b_yocto_python_layer.py"
+      - "scripts/per_p14b_yocto_package_gate.py"
+      - "tests/test_per_p14b_yocto_python_layer.py"
+      - "tests/test_per_p14b_yocto_package_gate.py"
+      - "docs/per-p14b-yocto-python-package-2026-10-30.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-bitbake-python-package:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 32
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      P14_YOCTO: /tmp/p14b-yocto
+      P14_LAYER: /tmp/p14b-meta-kwipi-python
+      P14_ENV: /tmp/p14b-effective-env.txt
+      KAS_WORK_DIR: /tmp/p14b-kas-work
+      KAS_BUILD_DIR: /tmp/p14b-kas-build
+      KAS_CLONE_DEPTH: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          submodules: false
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check exact PR head and OEM gitlinks without modifying submodules
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git ls-tree HEAD upstream/microduck | awk '{print $3}')" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git ls-tree HEAD upstream/microduck_rl | awk '{print $3}')" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          python -m compileall -q scripts/per_p14b_yocto_python_layer.py scripts/per_p14b_yocto_package_gate.py
+          python -m unittest discover -s tests -p 'test_per_p14b_yocto_python_layer.py' -v
+          python -m unittest discover -s tests -p 'test_per_p14b_yocto_package_gate.py' -v
+          python -m unittest discover -s tests -p 'test_per_p14a_embedded_wheel.py' -v
+          git diff --exit-code -- upstream/
+      - name: Stage two byte-identical candidate OE layers from same P14A allowlist
+        run: |
+          set -euo pipefail
+          python -m scripts.per_p14b_yocto_python_layer stage --output "$P14_LAYER"
+          python -m scripts.per_p14b_yocto_python_layer stage --output "$RUNNER_TEMP/p14b-second"
+          diff -rq "$P14_LAYER" "$RUNNER_TEMP/p14b-second"
+          python -m scripts.per_p14b_yocto_python_layer verify --layer "$P14_LAYER"
+          test ! -e "$P14_LAYER/recipes-kwipi/kwipi-companion/files/kwipi_seg.rknn"
+          git diff --exit-code -- upstream/
+      - name: Acquire exact pinned official Yocto checkout
+        run: |
+          set -euo pipefail
+          mkdir -p "$P14_YOCTO"
+          git -C "$P14_YOCTO" init -q
+          git -C "$P14_YOCTO" remote add origin https://github.com/pollen-robotics/microduck_yocto.git
+          GIT_TERMINAL_PROMPT=0 git -C "$P14_YOCTO" fetch --depth 1 origin 1ee58387810cebb67ae0d634c351d95024483bce
+          git -C "$P14_YOCTO" checkout --detach FETCH_HEAD
+          test "$(git -C "$P14_YOCTO" rev-parse HEAD)" = "1ee58387810cebb67ae0d634c351d95024483bce"
+      - name: Prepare genuine host kas/BitBake without lowering AppArmor
+        run: |
+          set -euo pipefail
+          available="$(df -Pk /tmp | awk 'NR==2 {print $4}')"
+          echo "Available KB before BitBake: $available"
+          test "$available" -ge 6000000 || { echo 'P14B STOP: host has insufficient disk'; exit 1; }
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends chrpath diffstat
+          mkdir -p "$KAS_WORK_DIR" "$KAS_BUILD_DIR"
+          python -m venv "$RUNNER_TEMP/kwipi-p14b-venv"
+          "$RUNNER_TEMP/kwipi-p14b-venv/bin/pip" install --disable-pip-version-check --no-cache-dir "kas==5.2.0"
+          "$RUNNER_TEMP/kwipi-p14b-venv/bin/kas" --version
+          echo "$RUNNER_TEMP/kwipi-p14b-venv/bin" >> "$GITHUB_PATH"
+      - name: Add the separate opt-in Python layer with no image modification
+        run: |
+          set -euo pipefail
+          cat > "$P14_YOCTO/kas/per-p14b-layer.yml" <<EOF
+          header:
+            version: 14
+          repos:
+            kwipipy:
+              path: $P14_LAYER
+              layers:
+                .:
+          EOF
+          test "$(git -C "$P14_YOCTO" status --porcelain --untracked-files=no)" = ""
+      - name: Run real BitBake parse and Python do_package only; bounded 1200s
+        run: |
+          set -euo pipefail
+          config="$P14_YOCTO/kas/microduck.yml:$P14_YOCTO/kas/per-p14b-layer.yml"
+          timeout 1200s kas shell "$config" -c \
+            "bitbake -p && bitbake -e kwipi-companion > $P14_ENV && bitbake -c package kwipi-companion"
+          test -s "$P14_ENV"
+          echo "P14B real BitBake Python do_package completed; no rootfs or robot."
+      - name: Inspect packaged 19 source modules and OE Python 3.14 runtime metadata
+        run: |
+          set -euo pipefail
+          python -m scripts.per_p14b_yocto_package_gate \
+            --root "$GITHUB_WORKSPACE" --layer "$P14_LAYER" \
+            --env-file "$P14_ENV" --output "$RUNNER_TEMP/p14b-package-report.json"
+          python - <<'PY'
+          import json, os, pathlib
+          f = pathlib.Path(os.environ["RUNNER_TEMP"]) / "p14b-package-report.json"
+          r = json.loads(f.read_text())
+          assert r["status"] == "bitbake_python_package_files_verified_only"
+          assert r["python_modules_packaged"] == 19
+          assert r["source_license_checked"] is False
+          assert r["package_source_bytes_verified"] is True
+          assert r["bitbake_task_execution_attested_by_this_script"] is False
+          assert not (r["rootfs_installed"] or r["systemd_installed"] or r["robot_validated"])
+          print("P14B: real BitBake do_package finished; contents verified; no image")
+          PY
+          test "$(git -C "$P14_YOCTO" status --porcelain --untracked-files=no)" = ""
+          git diff --exit-code -- upstream/
+      - name: Upload package proof only, no image, signing material or user data
+        uses: actions/upload-artifact@v4
+        with:
+          name: kwipi-p14b-yocto-python-package-proof-only
+          path: ${{ runner.temp }}/p14b-package-report.json
+          retention-days: 7
