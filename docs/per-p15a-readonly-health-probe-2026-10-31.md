@@ -1,0 +1,43 @@
+# PER-P15A — sonde de santé OEM à démarrage manuel, image de développement (31/10/2026)
+
+## Porte 0 — utilité, preuve, limites, arrêt
+
+Base de cette PR **empilée sur P14C/#231 HEAD `ae205d4d49da4412a6a040809a2d1e25d306df59`**, elle-même dépendante de P14B/#230 HEAD `514e89ef10599c9177b056d3497915d92d6c1ec9`. `main` lu : `e4a0a1268c7335a84262824cade0d5df55c9c5ce`. OEM `upstream/microduck@942e58e3aa6dbb28e7037203fff11866122c7567`, Yocto `1ee58387810cebb67ae0d634c351d95024483bce`, OE-core `ae5a301091f5b0574ea7444aab40b309b6d9f3f2`. P8/#218 non validée, Qwen #97–99 fusionnées. Robot physique absent.
+
+Le 31/10, l'opérateur a fourni **deux preuves distinctes** de P14B WSL2 : `P14B_EXIT_CODE=0` à la sortie du shell, et le validateur `status=bitbake_python_package_files_verified_only` avec **19 sources exactes vérifiées** et archive `85c583b86f0c8b5c59e9a547762a223c7ab27dee016c3ec604141907b20b2245`. Le validateur affiche **`bitbake_task_execution_attested_by_this_script=false`** : il ne se suffit pas à lui-même pour affirmer l'exécution. CI spécialisée #230 sur runner jetable demeure expirée/rouge ; #230/#231 sont brouillons. Aucun `do_rootfs` ni présence Python sur image ne découle de ce résultat.
+
+**Manque prouvé** : P14B installe seulement 19 modules, dont `sim_ipc.read_health`, et aucun point d'entrée ni unité systemd. P15 complet exige des cycles de vie et replis ; commencer par une vérification **une seule fois**, pas un cerveau autonome ou une boucle motrice. **Succès minimal préalable au portage** : couche source DEV opt-in, service `Type=oneshot` sans `[Install]` (non activable au boot), import de la télémétrie P14A existante, **exactement un** RPC `robot.health`, réponse inconnue/timeout/absente => état `idle` sans action, sans mémoire et sans journal privé. L'action manuelle de démarrage ne sera proposée qu'après contrôle explicite des permissions et `do_rootfs` sur environnement approprié.
+
+## Réutiliser / adapter / créer
+
+| Matériel inspecté | Décision |
+|---|---|
+| OEM `robotd/systemd/robotd.service` au SHA épinglé : `/run/robotd.sock`, socket 0660, groupe `robot`, seul maître moteurs, `robot.health` côté OEM | **Réutiliser**, sans modifier robotd/robotctl/permissions OEM |
+| `microduck_companion/sim_ipc.py` et 19 fichiers P14A, garde `_ALLOWED_READS` et `ReadOnlyUnixRpc(..., role='robotd')` | **Réutiliser** sans changement ; conserver la fermeture P14B |
+| OEM Yocto images `microduck-image-dev.bb` / `microduck-image.bb` et système `inherit systemd` ; couches P14B/P14C | **Adapter** via couche séparée désactivable, bbappend de **dev seulement**, recette `kwipi-readonly-probe` |
+| Nouvelle logique | **Créer uniquement** un `health_probe.py` one-shot, unité template, recette/couche DEV et fixtures tests. Ni DB ni caméra ni agent motorisé |
+
+**Risque explicite de sécurité** : le groupe Unix `robot` est nécessaire pour contacter le socket 0660 ; **ce groupe ne donne PAS une permission OS de lecture seule**, il donne accès à toutes les méthodes RPC du socket, y compris celles de mouvement. Le code de cette sonde n'envoie que `robot.health` grâce au client P14A, mais cette garde applicative n'est pas une séparation matérielle ni une garantie contre du code compromis. Pour cette raison, P15A est **DEV uniquement, non démarré par défaut, aucune autorisation de déploiement sur le robot**. Aucun nouveau broker/ACL/contrôleur n'est créé par ce lot ; le passage production demanderait une revue sécurité spécifique du chemin de lecture.
+
+## Fichiers et caractéristiques
+
+- `yocto/meta-kwipi-p15-readonly/` : une recette `allarch systemd` fermée, unité manuelle et un `microduck-image-dev.bbappend`; **jamais** de bbappend shipping.
+- Script Python en `${libexecdir}/kwipi/health_probe.py`, **en dehors** du paquet P14B, aucun 20e module installé dans `microduck_companion`; `RDEPENDS` sur `kwipi-companion` et runtime Python.
+- `Type=oneshot`, `After=robotd.service` sans `Wants`/`Requires` pour ne pas démarrer le contrôleur en cascade, `TimeoutStartSec=4s`, timeout RPC 1 s, aucune boucle ni restart, `DynamicUser`, journal d'un seul statut de catégorie, pas de pourcentage de batterie, image, identifiant, SQLite ou détail de socket.
+- Repli `idle_no_verified_telemetry` en cas de socket absent / erreur / délai ; `idle_reported_unhealthy` pour réponse OEM négative ; `reported_healthy_unverified` est **une déclaration non authentifiée**, jamais une permission de mouvement ni une validation physique.
+
+## Tests positifs et négatifs préenregistrés
+
+Positifs : un vrai socket Unix **factice** reçoit une seule méthode `robot.health` et sans paramètres ; réponse booléenne validée, pas de motor RPC ni écriture ; 19 sources P14A inchangées ; service uniquement DEV, aucun auto-enable ; comportement borné.
+
+Négatifs : socket absent, timeout, JSON faux/non booléen, état unhealthy => idle ; aucune requête `robot.do` / `robot.move` / `robot.stop`, modèle, Qwen, SQLite, caméra, boucle, redémarrage automatique ; refus test en cas d'ajout `[Install]` ou `SYSTEMD_AUTO_ENABLE=enable`. **Test PC-fixtures seulement** : même si CI passe, ne pas annoncer paquet BitBake P15 produit, rootfs, service réellement lancé, contrôle de sécurité OEM physique, RAUC ou autonomie.
+
+**Critère d'arrêt** : CI source/fixtures rouge, changement des 19 modules P14B, accès hors socket OEM, service activé en production/au boot, entrée réseau, media, mémoire, moteur ou changement de gitlink => rester brouillon, revert layer. Dépendances P14B et P14C non fusionnées => pas de tentative d'image P16 ni d'installation P15.
+
+## P16/P17, séparés
+
+P16 = vrai `do_rootfs` de l'image DEV, manifestes de paquets dont P15A **inactif**, signatures RAUC DEV, `rauc info`, retour arrière A/B ; **non exécuté**. P17 = qualification d'intégrité/version, limites/ressources et scénarios de défaillance, robot physique ensuite ; **non exécuté**. Voir `docs/per-p15-p17-v1-release-gates-2026-10-31.md` (PR #234). Aucun poids YOLO26/seg, sous-module, NPU, moteur ou clé ajouté.
+
+## Résultats
+
+En attente des tests de fixtures et de la CI au SHA final de cette PR ; **aucun BitBake P15A lancé**.
