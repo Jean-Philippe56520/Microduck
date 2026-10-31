@@ -1,5 +1,14 @@
 # P15-B0/B1 — cycle de vie passif de Kwipi sur PC, sans interface robot (31/10/2026)
 
+## Résultats réels des tests CI P15-B1 (31 octobre 2026)
+
+**Preuve GitHub Actions vérifiée sur le commit `3caecae827686f479fd4abdda034cde0a217349a`** : [PR #239](https://github.com/Jean-Philippe56520/Microduck/pull/239) ; workflow `Python companion tests` **`41240685049`**, suite `python -m unittest discover -s tests -v` : **`Ran 2006 tests in 83.097s` ; `OK (skipped=22)`**. Les **12 méthodes `tests/test_p15b_passive_fixture_runtime.py` ont chacune rendu `ok`**, y compris `test_real_sigterm_stops_a_bounded_subprocess` et `test_real_subprocess_uses_one_fixture_then_exits`. Les étapes `compileall`, audit SQLite N3, budget SQLite N4, Tk GUI, parser PowerShell, simulations fictives F1/F2/F4 ont réussi. P15A workflow `41240685028` et N1 `41240684981` également `success`.
+
+**Négatifs réellement déclenchés durant la revue** : sur un commit précédent, un cas d'entrée `chair` n'appartenait pas au `OBJECT_CATEGORIES` F1-A (remplacé par `toy`, sans extension du modèle) ; le code-test d'arrêt immédiat ciblait encore `sqlite_writer_instances` au lieu de `experience_memory_instances` (corrigé). Une fois corrigés, la **nouvelle** exécution de 2 006 tests a réussi : ne pas attribuer ces deux fautes historiques à la sûreté OEM. Aucun Qwen, robot, NPU, moteur, caméra, backend RAUC ou image Yocto construite dans le lot.
+
+**Décision à cette révision :** P15-B1 a franchi les tests PC-fixtures/CLI/signal, **pas** le portage comme service autonome. Un seul `ExperienceMemory` par processus (qui peut initialiser son fichier local), aucune seconde base SQLite. La PR demeure en brouillon sur #235 ; fusion conditionnée à CI au dernier HEAD et résolution de #230 rouge. L'image P16 déjà validée reste sur une **autre branche**, elle ne contient pas ce nouveau module.
+
+
 ## Objectif et sources de vérité
 
 **Objectif concret :** prouver qu'un *vrai processus Python hôte* peut démarrer, lire au plus 16 observations d'un **socket de fixture indépendant**, réutiliser la cognition/mémoire existantes, se dégrader en inaction et s'arrêter avec SIGTERM, sans piloter de moteurs ni capturer d'image. Le manque face aux démonstrations F1/F2 existantes est **l'acceptation d'une source fictive externe au scénario préprogrammé et un arrêt contrôlé du processus**. Ce n'est ni l'activation d'un service sur le robot ni un nouveau contrôleur.
