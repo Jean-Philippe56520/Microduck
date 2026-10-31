@@ -1,5 +1,29 @@
 # P16 — contrôle hors ligne du rootfs DEV, sans construction (31/10/2026)
 
+## P16-IMAGE-B2b — do_image_complete PASS sur WSL2, artefacts DEV finaux présents (31 octobre 2026)
+
+**Preuve opérateur WSL2 :** la commande B2b précédemment préenregistrée a franchi ses préconditions et affiché `P16_B2B_IMAGE_COMPLETE_TASK: PASS` après `bitbake -c image_complete microduck-image-dev`. Fin du journal : `Summary: There were 2 WARNING messages.` (avertissements déjà connus, détails de ce journal non transmis ici). L'opérateur a ensuite énuméré **huit entrées finales** dans `build/tmp/deploy/images/*` : quatre fichiers réels et quatre liens symboliques. La sortie communiquée n'inclut pas la ligne initiale `P16_B2B_EXIT_CODE`, mais le script qui a affiché `IMAGE_COMPLETE_TASK: PASS` exigeait un code 0. Preuve locale rapportée, pas un nouveau test robot.
+
+| Fichier physique DEV final | Taille relevée |
+| --- | ---: |
+| `microduck-image-dev-microduck-zero3.rootfs-20261031195334.wic` | 12 968 805 376 octets |
+| `microduck-image-dev-microduck-zero3.rootfs-20261031195334.wic.bmap` | 8 192 octets |
+| `microduck-image-dev-microduck-zero3.rootfs-20261031195334.wic.zst` | 310 230 800 octets |
+| `microduck-image-dev-microduck-zero3.rootfs-20261031195334.wic.zst.sha256sum` | 132 octets |
+
+Quatre alias correspondants `microduck-image-dev-microduck-zero3.rootfs.wic*` apparaissent sous forme `SYMLINK`. Le listing initial confirme leur existence, **pas** encore leur résolution, la somme du ZST final, l'identité exacte staging/final ou la validité de la carte `bmap`. `P16_B2B_FINAL_INTEGRITY_REVIEW: PENDING` est donc une porte réelle. **Décision : B2b `do_image_complete` et inventaire PASS, B2c intégrité non acquise**. Aucune relance `do_rootfs`, `do_image_wic` ou `do_image_complete` sans anomalie démontrée.
+
+### P16-IMAGE-B2c — audit privé final des artefacts, code PC-fixtures uniquement
+
+**Objectif/manque :** après publication locale Yocto `DEPLOY_DIR_IMAGE`, distinguer la présence du fichier de sa cohérence avec la WIC brute validée en B1c (taille 12 968 805 376, SHA-256 `c1140e7508559ebc9467c3f97d3c9891452228f05b3baf999ccaa3c0a5f11bc8`) et l'image compressée OEM. **Réemploi** du répertoire staging `IMGDEPLOYDIR`, des noms de la recette OEM, du fichier `.wic.zst.sha256sum` généré par OE-core, des images déjà calculées et des modules Python standard. Aucun second générateur, compresseur, outil de flash ou modification des sous-modules.
+
+**Garde conçu et testé** : `scripts/per_p16_b2c_final_artifact_gate.py`, blob Git `1f27fa42bf0b1ab0adccf4c3a5f60eeeac9cc7f3`, accompagné de `tests/test_per_p16_b2c_final_artifact_gate.py`, blob `b45df1065f3827c71adcb9db168ca3d0615dd00f`. **12/12 tests PC-fixtures positifs/négatifs PASS**, comparaison des blobs publiés aux octets testés ; CI spécialisée P16 liée au script. Le garde n'exécute **aucune** tâche BitBake, n'écrit **aucun** artefact et n'utilise pas le robot : vérifie les quatre fichiers physiques et quatre symlinks dans staging et déploiement ; refuse ambiguïtés et chemins cassés ; compare la taille, le `bmap` XML (taille image, blocs, plages non chevauchantes et compte mappé), les petits fichiers de métadonnées, les empreintes SHA-256 du ZST final/staging et celle **du WIC brut déployé** avec la preuve antérieure B1c. Le hash brut lit séquentiellement le fichier final de 12,08 Gio, sans le copier. La CI du HEAD final et l'exécution sur la véritable sortie WSL2 doivent être vérifiées séparément.
+
+**Seuil positif / arrêt préfixé :** sortie `status=p16_b2c_final_dev_artifacts_integrity_pass`, 4 fichiers physiques + 4 aliases, WIC brute `12968805376` octets, SHA-256 identique à B1c, ZST final et stage correspondant à la somme OEM, `bmap` structurel cohérent. En cas de `P16_B2C_STOP`, **ne relancer aucun build, ne supprimer aucun fichier**, examiner la divergence et conserver logs/caches. Un PASS n'atteste **pas** l'équivalence par décompression du ZST au brut (contrôle distinct), le GPT de secours, la correction des octets firmware/rootfs, un boot, le rollback, la signature RAUC, la licence de redistribution ou un robot. L'image DEV contient CA de développement et connexion root sans mot de passe ; **ne pas diffuser ou flasher**.
+
+**Commande de reprise (Ubuntu WSL2 seulement, dans `~/kwipi-build-v1`) :** checkout propre `p16-pr238` → `git fetch --no-tags origin refs/pull/238/head` → `git checkout --detach FETCH_HEAD` puis `PYTHONDONTWRITEBYTECODE=1 python3 p16-pr238/scripts/per_p16_b2c_final_artifact_gate.py --base "$PWD"`. Contrôler le SHA PR attendu avant exécution selon la commande opérateur fournie au chat. Aucune donnée binaire WIC à communiquer.
+
+
 ## P16-IMAGE-B2a — dry-run de finalisation PASS sur WSL2, 13 tâches autorisées (31 octobre 2026)
 
 **Preuve opérateur sur WSL2 :** `DISK_FREE_GIB: 846.6`, `P16_B2A_EXISTING_WIC: PASS` (taille et lien de la WIC déjà auditée), `P16_B2A_DRYRUN_EXIT_CODE=0`. Fin du journal privé `proofs/p16-image-complete-dryrun.log` : `Tasks Summary: Attempted 5696 tasks of which 5683 didn't need to be rerun and all succeeded`, **13 tâches nouvelles dans le dry-run**, aucun code de construction exécuté. Extracteur sur le journal : `TASK_LINES_PARSED: 13`, tâches image **`do_image_ext4`**, **`do_image_tar`**, **`do_image_complete`**, `UNEXPECTED_REBUILD_TASKS: 0`, `P16_B2A_PLAN_REVIEW_REQUIRED` (marqueur de relecture, pas une erreur). Les tâches natives affichées incluent `tar-native:do_configure/do_compile/do_install/do_populate_sysroot`. Aucun `do_rootfs`, `do_image_wic`, `do_fetch` ou `do_compile` **cible** n'est planifié dans ces 13 lignes. Deux warnings du poste hôte déjà classés, aucun nouveau défaut observé.
