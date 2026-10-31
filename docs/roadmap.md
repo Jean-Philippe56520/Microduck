@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-IMAGE-B2b WSL2 PASS / B2c final integrity pending (31/10/2026) :** `bitbake -c image_complete microduck-image-dev` terminé avec succès, quatre fichiers DEV physiques et quatre liens dans le répertoire final : WIC brute 12,08 Gio, zst 310 230 800 octets, bmap 8 Kio, somme 132 octets. La validité des fichiers finaux est encore à certifier : script B2c read-only et 12/12 tests PC-fixtures ajoutés, vraie exécution WSL2 en attente. Aucun rebuild ni retouche OEM ; RAUC, production, P17 et robot restent hors périmètre. [Protocole B2c](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b2c--audit-prive-final-des-artefacts-code-pc-fixtures-uniquement).
+
+
 **P16-IMAGE-B2a — dry-run finalisation PASS (31/10/2026) :** 846,6 Gio WSL2 ; WIC brute conforme, plan 5696 tâches dont 5683 à jour et 13 nouvelles (tar-native, `do_image_ext4`, `do_image_tar`, `do_image_complete`). Zéro `do_rootfs`, `do_image_wic` ou compile/fetch cible inattendu. Conversion ZST/bmap/sha256sum intégrée à la tâche WIC selon OE-core épinglé. Étape suivante : inventaire des formats déjà en staging, puis **une seule** finalisation privée par `do_image_complete` sous contrôles d'arrêt, sans reconstruire. GPT secondaire, authentification/RAUC/P17/robot non validés. [Audit](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b2a--dry-run-de-finalisation-pass-sur-wsl2-13-taches-autorisees-31-octobre-2026).
 
 
