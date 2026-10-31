@@ -30,3 +30,35 @@
 ## Résultats
 
 En attente de la CI source-only et de son inspection. `--plan` ne mesure rien, `--check` ne lance aucun build, même quand il passe.
+
+## Mode opératoire sur un hôte Yocto persistant, sans action automatique
+
+Le script n'est ni un installateur, ni un orchestrateur. Il ne lance **jamais** kas, BitBake, Docker, pip, `sudo`, SSH ou une commande de mouvement. Son `--plan` ne lit aucune ressource. Sur une machine Linux x86_64 de construction, préparer manuellement un `kas==5.2.0` officiel, un checkout propre de Companion avec ses sous-modules, un checkout OEM Yocto au SHA exact ci-dessus, trois répertoires cache existants sur des supports suffisamment dimensionnés (et éventuellement une archive de couche P12). Ne pas utiliser `scripts/build-local.sh` : il résout une nouvelle release OEM et régénère un include versionné alors que Kwipi est épinglé à un tar distinct.
+
+```sh
+cd /chemin/absolu/Microduck
+python -m scripts.per_p13b2_host_preflight --plan
+
+# Préparer les sources exactes dans des chemins de travail PRIVÉS distincts,
+# à l'extérieur des deux dépôts ; ne jamais publier le WAL, les secrets ou sstate.
+python -m scripts.per_p11_v1_source_release \
+  --oem-checkout /chemin/absolu/Microduck/upstream/microduck \
+  --output-dir /stockage/kwipi/p11-source
+python -m scripts.per_p12_yocto_layer stage \
+  --yocto /chemin/absolu/microduck_yocto \
+  --source-dir /stockage/kwipi/p11-source \
+  --output /stockage/kwipi/meta-kwipi
+
+# --check inspecte UNIQUEMENT; les six répertoires doivent déjà exister.
+python -m scripts.per_p13b2_host_preflight --check \
+  --project /chemin/absolu/Microduck \
+  --yocto /chemin/absolu/microduck_yocto \
+  --p12-layer /stockage/kwipi/meta-kwipi \
+  --build /stockage/kwipi/build \
+  --downloads /stockage/kwipi/downloads \
+  --sstate /stockage/kwipi/sstate
+```
+
+La réussite produit `host_resource_preflight_passed_only`, **jamais** `compiled` : une capacité observée aujourd'hui ne garantit pas un build futur. Ensuite, contrôler à nouveau sous kas/BitBake les variables effectives `S`, `PV`, `SRC_URI`, `SRCREV_bmi088`, `DL_DIR`, `SSTATE_DIR`, `TMPDIR`, l'enregistrement de la `microduck-daemon.bbappend`, et l'absence de git source OEM direct. Une fois ces contrôles verts sur les mêmes chemins, un essai indépendant borné `bitbake -c compile microduck-daemon` puis `-c package` pourra être proposé, sans jamais transformer `robot.do accepted` en preuve d'effet, ni supposer que le firmware RAUC est signé.
+
+**Résultats de la CI de préflight, non du host réel :** [run #41181219691](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41181219691) verte sur SHA `901e98420d1e3068147185916dc0841eccab30e7`, 14 tests P13B2-H1 (fixture nominale et rejets disque partagé, espace insuffisant, mauvais OS/CPU/RAM, code modifié, mauvais SHA gitlink, P12/Yocto altéré, lien symbolique, absence d'outil ou répertoire, lecture sans lancement de processus). La CI Python générale et celle du SHA de documentation final doivent être revérifiées avant fusion. Aucune machine privée ni robot ont été inspectés par cette CI.
