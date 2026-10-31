@@ -1,5 +1,8 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+**P16-K preuve complémentaire (31/10/2026) :** clone du dépôt cache `meta-openembedded` **shallow=true**, deux frontières répertoriées, `.git/shallow` présent ; HEAD local = distant = miroir public. L'échec de `merge-base` s'explique par l'historique Git partiel (hypothèse mécaniste cohérente, à confirmer par approfondissement ciblé). [Contrat de réparation bornée](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md) préparé sans changement de gitlinks/SHAs, sans compilation ; P16-K non franchi à ce stade.
+
+
 **Dernier diagnostic P16-K — 31/10/2026 :** HEAD local `origin/wrynose` = HEAD distant de `git.openembedded.org` = HEAD miroir public (`c734c2cb9713dbd6d50697a9f6c25ebdf3ae589e`). Le pin `f28a144...` est ancêtre selon l'API publique, mais `COMMON_ANCESTOR=UNKNOWN` en local : branche locale non périmée, hypothèse de clone shallow/déficit d'historique à tester en lecture seule. [Détails](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). Ne pas re-pin ou forcer KAS ; P16-K toujours non levé.
 
 
