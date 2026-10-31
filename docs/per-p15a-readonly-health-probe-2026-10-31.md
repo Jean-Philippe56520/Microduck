@@ -40,4 +40,4 @@ P16 = vrai `do_rootfs` de l'image DEV, manifestes de paquets dont P15A **inactif
 
 ## Résultats
 
-En attente des tests de fixtures et de la CI au SHA final de cette PR ; **aucun BitBake P15A lancé**.
+Premier test réel **PC-fixtures** : [CI spécialisée #41212996494](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41212996494) verte au commit `4b9ffab7d169a75a70abb561a6949c6879e1128b`, **9/9 tests** après correction d'une assertion qui cherchait `[Install]` jusque dans un commentaire de l'unité. Un vrai serveur Unix **factice** a reçu exclusivement `robot.health` une fois, erreurs et données invalides ont produit `idle`, les 19 modules P14A sont restés identiques, unité non activée, aucune action motrice. Au même commit, CI Python générale et N1 sont vertes. **Tests spécifiques CI du dernier commit documentaire à revérifier avant fusion**, aucun BitBake P15A, `do_rootfs`, service OEM déployé, signature ou robot testé.
