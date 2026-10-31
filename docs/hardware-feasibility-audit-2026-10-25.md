@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**P14B — validation de paquet hôte uniquement (31/10/2026) :** l'opérateur a communiqué `P14B_EXIT_CODE=0` et le validateur `bitbake_python_package_files_verified_only`, 19 modules Python 3.14 vérifiés en source. `bitbake_task_execution_attested_by_this_script=false` indique que le script de validation seul n'atteste pas l'exécution BitBake. Ni mesure RSS/CPU/thermie sur RK3566, ni runtime target/robot, ni rootfs, ni signature RAUC ; aucune extrapolation de ressource robot. La CI P14B GitHub reste arrêtée sur timeout sur runner éphémère, indépendante de cette preuve WSL2.
+
+
 **PER-P13B2 — nouvelle preuve de chaîne de compilation hôte, pas mesure matérielle robot (31/10/2026) :** sur WSL2 Ubuntu 26.04 avec `kas 5.2` et couches Yocto OEM épinglées, `bitbake -c compile microduck-daemon` a terminé 1 850 tâches (exit 0) et `bitbake -c package microduck-daemon` a terminé (exit 0). Le contrôle de `PKGDEST` a trouvé `robotd` (6 435 872 octets) et `mediad` (11 094 592 octets), en ELF AArch64. Preuves transmises depuis le terminal opérateur, non rejouées en CI et sans mesure `RSS`/thermie/latence sur RK3566. **Ces tailles de binaires ne mesurent pas la RAM disponible ni la charge en fonctionnement** ; pas d'installation, NPU, rythme 2 Hz/50 Hz, autonomie ou effet physique validé. P14B Python lancé sur le même hôte mais encore non conclu selon dernier journal `Parsing recipes...` ; cf. [plan opérationnel](plan-action.md).
 
 
