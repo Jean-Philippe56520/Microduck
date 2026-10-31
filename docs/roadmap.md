@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-IMAGE-B1a (31/10/2026) — dry-run WSL2 exit 0, image en attente :** 5683 tâches dans le plan, 4515 à jour, 1168 restantes (non exécutées). Les extraits révèlent des tâches natives WIC `do_fetch`/`do_compile` ; vérifier le journal complet pour écarter `do_rootfs` strict ou recompilation cible avant WIC. Deux avertissements hôte connus. [Diagnostic B1a](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1a--dry-run-kas-reel-reussi-plan-complet-a-examiner-31-octobre-2026). Aucun `do_image` réel/RAUC/P17/robot.
+
+
 **P16-S2 WSL2 PASS / P16-IMAGE-B1 DRY-RUN EN ATTENTE (31/10/2026) :** keyring DEV exactement 2 CA OEM, 11 champs RAUC, cinq modes de fichiers, groupe `robot` présent sur rootfs existant. CI du commit S2 verte ; WIC non construite. Nouveau lot borné : dry-run `bitbake -n -c image_wic microduck-image-dev` sur quatre fichiers KAS existants, puis WIC DEV privée sous critère d'arrêt si le plan n'exige aucune recompilation inattendue. Aucun RAUC signé, P17, licence ou robot. [Porte B1](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1--plan-de-construction-wic-dev-privee-porte-de-planification-uniquement-31102026).
 
 
