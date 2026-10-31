@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-RAUC-R0 WSL2 PASS pour les métadonnées, signature EN ATTENTE (31/10/2026) :** les deux varflags `RAUC_SLOT_rootfs[fstype]` effectivement lus via `bitbake-getvar` donnent **`ext4`**, sur les six couches KAS épinglées. La correspondance DEV/shipping, `verity`, machine et slot est confirmée ; le précédent `NOT_VISIBLE` n'était pas un défaut de recette. **Clé privée/certificat de signature DEV absents**, donc aucun bundle signé/verifié, installation, rollback ou qualification robot. Aucun nouveau build, modèle, moteur ou CA. Priorité suivante : vérifier le manque P15 de véritable processus et cycle de vie Kwipi puis constituer P17 pré-robot, sans perturber le succès P16-IMAGE-DEV. [Dossier R0](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-rauc-r0--verification-effective-des-varflags-reussie-sur-wsl2-31-octobre-2026).
+
+
 **P16-RAUC-R0 — WSL2 métadonnées partiellement PASS (31/10/2026) :** les recettes DEV/shipping OEM et leurs `MACHINE/compatible`, `verity`, slot `rootfs` et choix d'image sont conformes. `fstype=NOT_VISIBLE` est un **faux manque de l'extracteur** : flag BitBake `RAUC_SLOT_rootfs[fstype]` défini `ext4` dans la source ; interroger avec `bitbake-getvar -f fstype`. **Clé privée/cert de signature DEV absents** : aucun bundle signé, signature/installation/rollback inconnus ; la confiance de la WIC déjà produite ne peut pas être satisfaite par une CA indépendante sans la changer et reconstruire avec accord. P17 offline et P15 peuvent être préparés séparément ; aucun build supplémentaire par défaut. [R0](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-rauc-r0--resultat-wsl2-effectif-signature-dev-en-attente-31-octobre-2026).
 
 
