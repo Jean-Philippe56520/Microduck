@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-S2 WSL2 PASS / P16-IMAGE-B1 DRY-RUN EN ATTENTE (31/10/2026) :** keyring DEV exactement 2 CA OEM, 11 champs RAUC, cinq modes de fichiers, groupe `robot` présent sur rootfs existant. CI du commit S2 verte ; WIC non construite. Nouveau lot borné : dry-run `bitbake -n -c image_wic microduck-image-dev` sur quatre fichiers KAS existants, puis WIC DEV privée sous critère d'arrêt si le plan n'exige aucune recompilation inattendue. Aucun RAUC signé, P17, licence ou robot. [Porte B1](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1--plan-de-construction-wic-dev-privee-porte-de-planification-uniquement-31102026).
+
+
 **P16-S2 — vérification statique du trust RAUC et des droits DEV (31/10/2026) :** P16-S1 a PASS sur WSL2, layout OEM PASS ; code P16-S2 sur sources épinglées et 16 tests PC-fixtures réussis, exécution du vrai rootfs à obtenir. Pas de signature, WIC, boot ni robot. [Porte S2](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-s2--garde-rauc--droits-de-limage-dev-avant-wic-31-octobre-2026--fixtures-seulement).
 
 
