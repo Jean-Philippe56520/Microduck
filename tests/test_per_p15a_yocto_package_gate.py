@@ -70,34 +70,27 @@ class P15APackageGateFixtureTests(unittest.TestCase):
             self.assertFalse(r[key])
         self.assertEqual(r["motor_commands_issued"], 0)
 
-    def test_plain_unexported_directories_still_work(self):
-        # Some synthetic and custom metadata show the unexported spelling.
-        # Both supported spellings must remain valid, never silently default.
-        env = self.env.replace("export libexecdir=", "libexecdir=")
-        env = env.replace("export systemd_unitdir=", "systemd_unitdir=")
-        env = env.replace(
-            "export systemd_system_unitdir=", "systemd_system_unitdir=")
+    def test_plain_directories_allowed_without_export(self):
+        env = self.env
+        for key in ("libexecdir", "systemd_unitdir", "systemd_system_unitdir"):
+            env = env.replace("export " + key + "=", key + "=")
         self.assertEqual(
-            self.run_gate(env)["status"],
-            "bitbake_p15a_package_files_verified_only",
+            self.run_gate(env)["status"], "bitbake_p15a_package_files_verified_only"
         )
 
-    def test_exported_directory_missing_duplicate_or_unquoted_refused(self):
-        for var in (
-            "libexecdir", "systemd_unitdir", "systemd_system_unitdir",
-        ):
-            assignment = next(line for line in self.env.splitlines()
-                              if line.startswith("export " + var + "="))
-            for altered in (
-                self.env.replace(assignment + "\n", ""),
-                self.env + assignment + "\n",
-                self.env + assignment.replace("export ", "", 1) + "\n",
-                self.env.replace(assignment,
-                                 assignment.replace('="', "=")
-                                           .rstrip('"')),
-            ):
-                with self.subTest(var=var), self.assertRaises(EnvRefused):
-                    self.run_gate(altered)
+    def test_exported_directory_missing_duplicate_malformed_refused(self):
+        for key in ("libexecdir", "systemd_unitdir", "systemd_system_unitdir"):
+            line = next(s for s in self.env.splitlines()
+                        if s.startswith("export " + key + "="))
+            altered = (
+                self.env.replace(line + "\n", ""),
+                self.env + line + "\n",
+                self.env + line.replace("export ", "", 1) + "\n",
+                self.env.replace(line, line.replace('="', "=").rstrip('"')),
+            )
+            for variant in altered:
+                with self.subTest(key=key), self.assertRaises(EnvRefused):
+                    self.run_gate(variant)
 
     def test_missing_or_tampered_script_rejected(self):
         self.probe.unlink()
