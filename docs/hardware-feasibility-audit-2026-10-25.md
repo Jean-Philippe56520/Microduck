@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**P16-IMAGE-PF1 / S1 — preuve de préparation WSL2 (31/10/2026) :** préflight WIC corrigé PASS avec 850,2 Gio d'espace libre sur le PC, pas sur le RK3566. Audit S1 du service systemd testé sur 14 fixtures seulement, sans rapport du rootfs réel. Aucune mesure RAM/RSS/thermie/NPU/50 Hz/batterie, ni sûreté de l'accès `robot` au socket, image/RAUC ou validation robot. [Protocole](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-s1--audit-systemd-et-postinst-differes-31102026--rootfs-wsl2-en-attente).
+
+
 **P16-A — preuve logicielle WSL2 (31/10/2026), PAS preuve matérielle robot :** le rootfs DEV issu de 4515 tâches BitBake terminées avec code 0 a été inspecté sur disque ; `P16_AUDIT_EXIT_CODE=0`, 19 modules Python, 3 fichiers de sonde SHA-256 conformes et aucune activation par lien systemd détectée dans les chemins contrôlés. [Reprise P16-A](reprise-v1-p16a-rootfs-verified-2026-10-31.md). Cette preuve n'ajoute aucune mesure RAM/RSS/thermie/NPU/50 Hz/latence/énergie sur RK3566. 32 avertissements à classifier, référence `meta-openembedded` dans KAS à résoudre ; ni image amorçable, ni RAUC ni robot validés.
 
 
