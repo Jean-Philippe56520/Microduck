@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-IMAGE-B1c WSL2 PASS / B2a EN ATTENTE (31/10/2026) :** fichier physique WIC DEV et alias OE-core vérifiés ; **12 968 805 376 octets**, GPT principal 8/8, CRC conformes, SHA-256 `c1140e7508559ebc9467c3f97d3c9891452228f05b3baf999ccaa3c0a5f11bc8`. BitBake `do_image_wic` avait déjà réussi sans nouvelle recompilation ; faux STOP du glob expliqué. La suite est une seule planification `bitbake -n -c image_complete` puis, si tâches et pins conformes, conversions officielles OEM DEV, avant contrôle de leurs empreintes. Le GPT secondaire, contents ext4, boot, RAUC et P17 restent ouverts. [Audit P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1c--validation-reelle-de-la-wic-brute-et-preparation-b2a-31-octobre-2026).
+
+
 **P16-IMAGE-B1c (31/10/2026) — vérificateur de WIC ajouté après arrêt de cardinalité :** `do_image_wic` réel réussi, fichier physique encore à attester. Le nouveau contrôle standard-library déduplique les alias OE-core, valide huit partitions GPT + CRC et calcule SHA-256 ; neuf tests fixtures positifs/négatifs PASS, résultat réel WSL2/CI finale en attente. Aucune reconstitution `do_rootfs`/WIC, signature RAUC, P17 ou robot. [Protocole B1c](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1c--correctif-de-verification-des-artefacts-sans-reconstruction-31-octobre-2026).
 
 
