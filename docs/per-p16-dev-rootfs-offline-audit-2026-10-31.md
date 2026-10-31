@@ -1,5 +1,7 @@
 # P16 — contrôle hors ligne du rootfs DEV, sans construction (31/10/2026)
 
+## P16-S2 — garde RAUC / droits de l'image DEV avant WIC (31 octobre 2026 ; fixtures seulement)
+
 ## P16-S1 — résultat réel WSL2 : PASS (31 octobre 2026)
 
 **Preuve opérateur, non CI ni test robot :** au checkout #238 `92985a0bcd787b7ad05254439c8f356b4853beec`, `python3 yocto/scripts/check-wks-layout.py` annonce `layout ok` et une image de 12 968 787 968 octets / 12,08 Gio. L'audit hors ligne `per_p16_dev_rootfs_service_gate.py` a relu le rapport P16-A et revérifié trois SHA P15A, examiné **226 autres fichiers systemd, 17 presets**, rapporté **0 référence d'autoactivation de sonde** et **0 postinst différé dans les répertoires scannés** : `status=p16_s1_no_observed_probe_autostart_references_in_scanned_rootfs`. Champs du JSON transmis : `postinst_package_scriptlets_audited=false`, `systemd_runtime_or_boot_verified=false`, `robot_socket_group_full_rpc_access_risk_open=true`, `license_redistribution_approved=false`, `image_built=false`, `robot_validated=false` ; ne pas extrapoler. Les lignes `status:: command not found` en fin de shell proviennent du collage du JSON illustratif **après** les validations : pas un échec du garde.
