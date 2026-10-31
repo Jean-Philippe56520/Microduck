@@ -36,7 +36,7 @@ def fake_tofd(
     """A real local Unix server, never an OEM authentication fixture."""
     requests: list[dict] = []
     listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    listener.settimeout(1.25)
+    listener.settimeout(.35)
     listener.bind(str(path))
     os.chmod(path, 0o660)
     listener.listen(1)
@@ -92,6 +92,9 @@ def fake_tofd(
     finally:
         listener.close()
         thread.join(timeout=2.)
+        # Unix listener.close() does not unlink its pathname on Linux.
+        # Every subTest must own a fresh fake socket inode.
+        path.unlink(missing_ok=True)
         if thread.is_alive():
             raise AssertionError("fake ToF server did not stop")
         if errors:
