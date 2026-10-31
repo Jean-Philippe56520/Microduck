@@ -9,6 +9,31 @@ from scripts.per_p16_dev_rootfs_audit import PROBE_HASHES, Refused, validate
 # verified on WSL2. The positive check verifies only the manifest gates; real
 # P16 audit must consume the genuine rootfs and package SHA-256.
 class P16FixtureTests(unittest.TestCase):
+    def test_positive_synthetic_rootfs_only(self):
+        import hashlib
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as d:
+            r = Path(d)
+            manifest = r / "manifest"
+            manifest.write_text("".join(
+                f"{x} all 1\n" for x in
+                ("kwipi-companion", "kwipi-readonly-probe",
+                 "microduck-daemon", "microduck-data")))
+            synthetic = {}
+            for rel in PROBE_HASHES:
+                file = r / rel
+                file.parent.mkdir(parents=True, exist_ok=True)
+                file.write_bytes(("fixture:" + rel).encode())
+                synthetic[rel] = hashlib.sha256(file.read_bytes()).hexdigest()
+            with patch.dict(PROBE_HASHES, synthetic):
+                result = validate(r, manifest, builder_exit=0,
+                                  source_head="a" * 40)
+            self.assertEqual(result["status"],
+                "existing_dev_rootfs_probe_and_package_manifest_checked_only")
+            self.assertFalse(result["rauc_signed_or_verified"])
+            self.assertFalse(result["robot_validated"])
+            self.assertFalse(result["license_redistribution_approved"])
+
     def test_nonexistent_rootfs_refused(self):
         with tempfile.TemporaryDirectory() as d:
             m = Path(d) / "manifest"
