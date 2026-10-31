@@ -1,5 +1,8 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+**Complément P16-I/K (31/10/2026) :** contrôle ciblé du manifeste DEV réel **PASS** (1 manifeste, 1 334 paquets, aucun paquet `-dbg`). Le dépôt local KAS `meta-openembedded` possède le pin `f28a144...` et `origin/wrynose` mais `merge-base --is-ancestor` retourne **NO** ; la branche locale diverge de l'ascendance requise. Le miroir public GitHub atteste au contraire une branche `wrynose` **85 commits ahead, 0 behind** depuis ce pin. [Porte et diagnostic détaillés](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). Ne pas extrapoler à la branche distante exacte KAS tant que `git ls-remote` et les SHA locaux ne sont pas comparés. Aucun changement d'OEM ni nouveau build.
+
+
 **Complément P16-W — 31 octobre 2026 :** l'opérateur a transmis la classification expurgée des **32 lignes WARNING** en 8 types : 28 liées aux buildpaths des paquets `-dbg` GStreamer, explicitement traitées comme avertissements dans la recette OEM épinglée, 2 sur `S` de recettes file-only utilisant directement `${UNPACKDIR}`, 1 cache sstate partagé, 1 absence de `CONFIG_TASK_IO_ACCOUNTING` sur hôte WSL2. [Dossier P16-W](per-p16w-rootfs-warning-classification-2026-10-31.md). Aucun nouveau défaut Kwipi démontré ; P16-K (KAS) et P16-I (manifeste global, services OEM, licences) encore ouverts. Cette classification n'efface pas la limitation des droits de redistribution ni le blocage des nouvelles constructions KAS.
 
 
