@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**P16-IMAGE-B3 — preuve d'intégrité WSL2 uniquement (31/10/2026) :** `zstd -dc | cmp` confirme une WIC DEV de 12 968 805 376 octets reproductible à partir de son ZST ; `sgdisk --verify` sans erreur GPT primaire/secondaire, aucun octet modifié. Ces contrôles utilisent le disque hôte et n'apportent **aucune** mesure sur RAM/RSS RK3566, thermie NPU, moteurs à 50 Hz, système de fichiers exécuté, consommation, batterie, place restante réelle du robot ou boot. Image DEV sous root sans mot de passe et CA DEV non livrable. [Preuves P16-B3](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b3--controle-final-wsl2-pass-31-octobre-2026).
+
+
 **P16-IMAGE-PF1 / S1 — preuve de préparation WSL2 (31/10/2026) :** préflight WIC corrigé PASS avec 850,2 Gio d'espace libre sur le PC, pas sur le RK3566. Audit S1 du service systemd testé sur 14 fixtures seulement, sans rapport du rootfs réel. Aucune mesure RAM/RSS/thermie/NPU/50 Hz/batterie, ni sûreté de l'accès `robot` au socket, image/RAUC ou validation robot. [Protocole](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-s1--audit-systemd-et-postinst-differes-31102026--rootfs-wsl2-en-attente).
 
 
