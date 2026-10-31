@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-K — CONFORMITÉ METADATA RESTAURÉE (31/10/2026 à 20:13 WSL2).** Après correction bornée de l'historique Git shallow, KAS 5.2 accepte les six commits constructeurs, exécute `bitbake -e microduck-image-dev` (code zéro), affiche **`P16_K_KAS_METADATA: PASS`** et laisse `yocto@1ee583...`/`p15a-pr235@b5626a...` inchangés. [Dossier P16-I/K](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). Les portes P16-A (rootfs et 22 fichiers), P16-W (32 avertissements classifiés), P16-I (1 334 paquets, zéro `-dbg`), P16-K (KAS) sont franchies sur WSL2 dans leurs périmètres respectifs. Étape suivante : vérification hors ligne des services/postinstall/composition de l'image DEV ; puis définition séparée d'une génération WIC et contrôle RAUC/P17. Aucun robot/production/droits de redistribution validés.
+
+
 **P16-K (31/10/2026) — réparation locale mesurée :** une unique extension de l'historique shallow `meta-openembedded` de 128 commits a retourné code 0 ; `git merge-base --is-ancestor` du pin OEM fonctionne désormais, sans déplacer les SHA suivis ni modifier le worktree. [Protocole et preuve opérateur](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). **Reste à faire :** relecture `kas shell`/`bitbake -e` (sans build) ; aucun RAUC/WIC/P17 ni robot validé.
 
 
