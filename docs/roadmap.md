@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-IMAGE-PF1 — PASS sur vrai WSL2 (31/10/2026) :** `DISK_FREE_GIB=850.2`, pins Yocto/P15A conformes, unité sans en-tête `[Install]`, preset désactivé et `P16_IMAGE_PREFLIGHT: PASS`, `IMAGE_BUILT: False` ; preuve opérateur fournie dans le chat, pas CI ni validation image. Prochain lot : audit réel des références systemd/postinst/permissions du rootfs, puis génération WIC DEV distincte après porte ; ne pas refaire le rootfs. [Dossier de reprise](reprise-v1-p16a-rootfs-verified-2026-10-31.md).
+
+
 **P16-IMAGE-SR1 (31/10/2026) — source-only :** 19/19 contrôles ponctuels de sélection DEV, format WIC A/B et bundle RAUC constructeur épinglé réussis ; **aucune image construite**, aucun postinst réel examiné, aucun `P16_IMAGE_PREFLIGHT: PASS` reçu du WSL2. Étape inchangée : exécuter la commande corrigée [P16-IMAGE-PF1](reprise-v1-p16a-rootfs-verified-2026-10-31.md), puis auditer services/postinst avant tout `do_image`. [Détails source](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-sr1--revue-des-recettes-et-du-plan-wic-oem-31102026--sources-seulement). Ne pas reconstruire les preuves P16-A/W/I/K.
 
 
