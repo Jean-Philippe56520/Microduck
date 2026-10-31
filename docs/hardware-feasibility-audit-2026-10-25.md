@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**P15A-P — résultat sur hôte WSL2 uniquement, 31/10/2026 :** `bitbake -c package kwipi-readonly-probe` a réussi (643/643 tâches, 633 courantes) avec deux avertissements ; cette preuve ne mesure ni RSS, CPU, température, batterie du RK3566, ni cadence `robotd` 50 Hz ou latence du service. Le groupe OEM `robot` ouvre le socket JSON-RPC global, **pas une ACL lecture seule OS**. `PKGDEST` réel encore à vérifier, aucun `do_rootfs`, RAUC, signature ou robot testé. La réutilisation sstate limitée observée ne démontre aucune performance matérielle.
+
+
 **P15A-M — preuve BitBake hôte non matérielle (31/10/2026) :** [CI #41214303436](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41214303436) valide le parse OEM épinglé de la sonde dev-only et des deux images. Ce résultat n'exécute pas de service sur RK3566 et ne mesure **ni RSS/CPU/thermie/latence/batterie, ni impact `robotd` 50 Hz**, ni caméra/NPU ; les privilèges effectifs du groupe `robot` restent à auditer avant démarrage. Aucun `do_package`, rootfs, RAUC ou robot validé.
 
 

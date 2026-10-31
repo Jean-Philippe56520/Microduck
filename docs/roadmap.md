@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P15A-P — réussite réelle de `do_package` sur WSL2 (31/10/2026) :** code retour `0`, 643/643 tâches réussies, 633 déjà à jour, sans relance volontaire de P13B2/P14B. Le script et l'unité de la sonde OEM ont été traités par BitBake, mais les **trois octets/fichiers attendus en `packages-split` ne sont pas encore audités sur la machine**. [Validateur P15A-P et négatifs, 11/11 fixtures verts](per-p15a-readonly-health-probe-2026-10-31.md). Étape suivante : vérifier PKGDEST en lecture seule et obtenir un JSON local ; seulement ensuite réévaluer le rootfs DEV P16. Bundle RAUC, service physique, P17 et production non validés.
+
+
 **PER-P15A-M — contrôle des vraies métadonnées BitBake réussi en CI (31/10/2026, [run #41214303436](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41214303436)) :** la couche dev-only est reconnue, paquet P15A sélectionné une fois en DEV et jamais dans l'image shipping, systemd désactivé ; tests négatifs et PIN OEM passés après réconciliation de #231/#235 avec le vrai P14B `allarch`. **Aucune compilation/installation P15A, image Yocto ou bundle RAUC produite**. Voir [dossier](per-p15a-readonly-health-probe-2026-10-31.md). Prochaine porte indépendante = `do_package` P15A avec caches WSL2 et audit PKGDEST, puis `do_rootfs` DEV seulement si permis.
 
 
