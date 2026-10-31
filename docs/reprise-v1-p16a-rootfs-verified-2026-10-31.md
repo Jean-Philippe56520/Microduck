@@ -1,5 +1,12 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+## Reprise P16-S1 — validations WSL2 ajoutées (31 octobre 2026)
+
+**Entrées opérateur :** `p16-pr238@92985a0bcd787b7ad05254439c8f356b4853beec`, valideur de schéma WIC constructeur `layout ok` (12,08 Gio), et contrôle P16-S1 sur vrai rootfs : rapport P16-A réexaminé, 3 SHA P15A, 226 autres fichiers systemd, 17 presets, 0 référence de démarrage suspecte, 0 script différé dans les emplacements connus. Statut exact `p16_s1_no_observed_probe_autostart_references_in_scanned_rootfs` ; `image_built=false`, `robot_validated=false`. Aucun nouveau build exécuté. Les lignes `command not found` concernent uniquement le collage de l'exemple JSON dans Bash après les deux validations, pas les tests.
+
+**Reprise après S1 :** contrôler les effets de post-installation des paquets, la keyring/config RAUC DEV réellement installées et les droits du service, sans activation, démarrage, `do_rootfs` ou modification de configuration. Le groupe Unix `robot` demeure un privilège étendu au niveau OS ; autorisation de déploiement non acquise. Ensuite seulement envisager `do_image`/WIC privée dans un lot séparé. [Dossier P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md).
+
+
 ## P16-IMAGE-PF1 — résultat WSL2 corrigé : PASS (31 octobre 2026)
 
 **Preuve opérateur transmise après réinitialisation de conversation :** commande de préflight exacte de la section historique ci-dessous, exécutée depuis `~/kwipi-build-v1`. Sortie : `DISK_FREE_GIB: 850.2`, `YOCTO_PIN: PASS`, `P15A_PIN: PASS`, `PROBE_SECTION_CHECK: PASS (comment ignored; no actual [Install])`, `PROBE_DISABLED_PRESET: PASS`, `P16_IMAGE_PREFLIGHT: PASS`, `IMAGE_BUILT: False`. Il ne s'agit pas d'un résultat GitHub Actions ni d'un accès direct au stockage WSL2 par l'assistant. **Le STOP lié au commentaire `[Install]` est levé** ; l'espace libre dépasse le seuil préenregistré de 100 Gio. P16-A/W/I/K conservent leurs preuves, sans nouvelle recompilation ni modification des SHA ou gitlinks.
