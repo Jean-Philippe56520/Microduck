@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-IMAGE-B2c WSL2 PASS (31/10/2026) :** 4 fichiers physiques DEV finaux et 4 alias conformes, 12,08 Gio WIC brute avec SHA B1c inchangé, 310 230 800 octets ZST avec SHA-256 OEM `f63937fa15a2a9a673e08d5d106f0027a3e474d845e11622b42ac8fa5bafe218`, 263 228 blocs bmap mappés / 3 166 213 au total, métadonnées de staging identiques. **B2c clos** ; B3 lecture seule prévu (`sgdisk -v`, `zstd -dc | cmp`) pour GPT secondaire et équivalence des octets décompressés. Aucune reconstitution, RAUC signé, licence, boot/P17/robot. [P16-B3](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b2c--integrite-finale-des-artefacts-dev-pass-sur-wsl2-31-octobre-2026).
+
+
 **P16-IMAGE-B2b WSL2 PASS / B2c final integrity pending (31/10/2026) :** `bitbake -c image_complete microduck-image-dev` terminé avec succès, quatre fichiers DEV physiques et quatre liens dans le répertoire final : WIC brute 12,08 Gio, zst 310 230 800 octets, bmap 8 Kio, somme 132 octets. La validité des fichiers finaux est encore à certifier : script B2c read-only et 12/12 tests PC-fixtures ajoutés, vraie exécution WSL2 en attente. Aucun rebuild ni retouche OEM ; RAUC, production, P17 et robot restent hors périmètre. [Protocole B2c](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b2c--audit-prive-final-des-artefacts-code-pc-fixtures-uniquement).
 
 
