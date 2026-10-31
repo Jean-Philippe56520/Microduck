@@ -1,5 +1,9 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**P16-S2 — prochain essai WSL2 ciblé, code testé sur fixtures (31/10/2026) :** P16-S1 et le layout OEM sont réellement PASS. Un garde de lecture seule vérifie le keyring RAUC DEV **exactement deux CA source OEM**, 11 champs `system.conf`, cinq modes de fichiers et le groupe `robot`. **16/16 tests synthétiques positifs/négatifs réussis**, CI HEAD final à vérifier ; WSL2 S2 non exécuté. L'effet d'un postinst sur la keyring peut être observé mais n'atteste pas l'exécution d'un scriptlet en particulier ; les UID/GID cible, scripts de paquets complets, permissions RPC moteur et signatures RAUC restent non validés. [Critères, STOP et commande](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-s2--garde-rauc--droits-de-limage-dev-avant-wic-31-octobre-2026--fixtures-seulement). Après PASS réel, définir puis exécuter séparément la WIC DEV privée, **sans** `do_rootfs` ni RAUC automatique.
+
+
+
 **P16-S1 — PASS effectif sur WSL2 (31/10/2026) :** depuis le checkout PR #238 `92985a0bcd787b7ad05254439c8f356b4853beec`, validateur OEM `scripts/check-wks-layout.py` : `layout ok`, WIC prévu 12,08 Gio. Audit S1 sur rootfs DEV réel : rapport P16-A revérifié, 3 SHA exacts, **226 autres fichiers systemd + 17 presets inspectés**, zéro référence détectée de démarrage de sonde, zéro script postinst différé dans les emplacements connus, `p16_s1_no_observed_probe_autostart_references_in_scanned_rootfs`. Le JSON affiché après succès a été recollé dans le shell et a provoqué des `command not found` sans effet sur ces résultats. **Prochain contrôle limité** : scripts postinst de paquets réellement intégrés, permissions/politique du groupe `robot`, config/keyring RAUC DEV effectivement installées et composition shipping toujours séparée, sans reconstruire `do_rootfs`. Aucune image WIC, signature RAUC, P17 ni robot validés. [Dossier P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md).
 
 
