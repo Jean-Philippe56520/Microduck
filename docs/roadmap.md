@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-IMAGE-SR1 (31/10/2026) — source-only :** 19/19 contrôles ponctuels de sélection DEV, format WIC A/B et bundle RAUC constructeur épinglé réussis ; **aucune image construite**, aucun postinst réel examiné, aucun `P16_IMAGE_PREFLIGHT: PASS` reçu du WSL2. Étape inchangée : exécuter la commande corrigée [P16-IMAGE-PF1](reprise-v1-p16a-rootfs-verified-2026-10-31.md), puis auditer services/postinst avant tout `do_image`. [Détails source](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-sr1--revue-des-recettes-et-du-plan-wic-oem-31102026--sources-seulement). Ne pas reconstruire les preuves P16-A/W/I/K.
+
+
 **P16-IMAGE-PF1 (31/10/2026) — faux positif du préflight image DEV :** le contrôle ad hoc détectait naïvement la sous-chaîne `[Install]`, présente dans le *commentaire* du service P15A, pas dans une section systemd active. **Pas de défaut du rootfs démontré**, aucun correctif OEM, aucune recompilation. Motif corrigé sur ligne de section, testé **5/5 cas synthétiques positifs/négatifs**, et commande WSL2 autonome documentée [dans la reprise P16-A](reprise-v1-p16a-rootfs-verified-2026-10-31.md). Préflight WIC **en attente de réexécution et contrôle du disque**. P16-A (rootfs et fichiers), P16-W (32 warnings), P16-I (1334/0 -dbg) et P16-K (KAS metadata PASS) sont acquis localement. WIC/RAUC/P17/robot et droits de redistribution restent en attente.
 
 
