@@ -8,6 +8,35 @@
 
 **Étape B1a — dry-run uniquement** : dans KAS épinglé, `bitbake -n -c image_wic microduck-image-dev`. Le `-n` ne doit exécuter aucune tâche, fabriquer une WIC ou signer RAUC ; KAS peut néanmoins rafraîchir les références de cache. Succès : code sortie zéro, machine cible `microduck-zero3`, aucune erreur de recette ou pin et plan de tâches examiné pour vérifier que `do_rootfs`, `do_compile`, `do_fetch` ou un autre travail déjà réussi n'est pas inutilement redemandé. Une sortie non nulle, un changement de pin, `MACHINE` inattendu ou la planification d'une recompilation non expliquée impose **STOP avant toute construction**. Conserver le journal complet local et privé ; transmettre seulement des lignes expurgées pertinentes et le code retour.
 
+**Commande opérateur B1a (dry-run seulement, aucune compilation) :**
+
+```bash
+(
+  cd "$HOME/kwipi-build-v1" || exit 1
+  test "$(git -C yocto rev-parse HEAD)" = "1ee58387810cebb67ae0d634c351d95024483bce" || { echo P16_B1_STOP: YOCTO_PIN; exit 1; }
+  test "$(git -C p15a-pr235 rev-parse HEAD)" = "b5626a2cafabd0836e69685d18988360d3e86f18" || { echo P16_B1_STOP: P15A_PIN; exit 1; }
+  for f in microduck.yml kwipi-p13b2-local.yml kwipi-p14b-local.yml kwipi-p15a-local.yml; do
+    test -f "yocto/kas/$f" || { echo "P16_B1_STOP: missing $f"; exit 1; }
+  done
+  test -d build/tmp/work && test -d sstate && test -d downloads || { echo P16_B1_STOP: caches_absents; exit 1; }
+  export KAS_BUILD_DIR="$PWD/build" KAS_WORK_DIR="$PWD/kas-work" DL_DIR="$PWD/downloads" SSTATE_DIR="$PWD/sstate"
+  files="yocto/kas/microduck.yml:yocto/kas/kwipi-p13b2-local.yml:yocto/kas/kwipi-p14b-local.yml:yocto/kas/kwipi-p15a-local.yml"
+  log="$PWD/proofs/p16-wic-dryrun.log"
+  test ! -e "$log" || { echo P16_B1_STOP: journal_deja_present; exit 1; }
+  install -m 0600 /dev/null "$log" || exit 1
+  umask 022
+  timeout --signal=TERM --kill-after=60s 1800 kas shell "$files" -c 'bitbake -n -c image_wic microduck-image-dev' >"$log" 2>&1
+  rc=$?
+  printf 'P16_B1_DRYRUN_EXIT_CODE=%s\n' "$rc"
+  grep -E 'do_(rootfs|compile|fetch|image_wic)|ERROR:|WARNING:|Attempted|Tasks Summary' "$log" | tail -n 35 || true
+  tail -n 8 "$log"
+  test "$rc" -eq 0 || { echo P16_B1_STOP: dryrun_failed; exit "$rc"; }
+  echo P16_B1_DRYRUN_COMPLETE_REVIEW_REQUIRED
+)
+```
+
+**Important :** le marqueur `P16_B1_DRYRUN_COMPLETE_REVIEW_REQUIRED` signifie seulement *code retour nul*, pas autorisation automatique de construire. Lire le journal privé et les tâches planifiées avant de décider B1b. Ne pas recopier le texte du rapport ou un JSON d'exemple comme des commandes Bash.
+
 **Étape B1b — distincte et conditionnée par B1a.** Après revue du plan, une **seule** exécution privée bornée de `bitbake -c image_wic microduck-image-dev`, jamais un bundle, une image shipping ni un flash, avec sortie et code retour consignés. Avant de la lancer : contrôler l'espace réel, la liste des tâches planifiées, les artefacts préexistants et les limites de temps/disque. Succès non implicite : nouveau `.wic` DEV unique à empreinte SHA-256 calculée, taille et partitions GPT effectivement comparées au schéma OEM, présence des deux rootfs de 2 Gio et des données de 8 Gio vérifiée, aucune fuite de secrets dans le journal partagé. **Un dry-run PASS n'est pas une WIC construite**. En cas d'arrêt, garder les caches, le rootfs et les preuves ; aucune suppression/reflash automatique.
 
 **Limites distinctes après B1b :** droits `LICENSE=CLOSED` non résolus, `SupplementaryGroups=robot` donne un accès RPC OS large, UID/GID cible non vérifiés par P16-S2, causalité de chaque `postinst` de paquet non démontrée. Ces risques interdisent une qualification de déploiement/production mais n'obligent pas à recompiler les paquets pour **fabriquer une image DEV privée non installée**. Bundle RAUC, signature/vérification, rollback et P17 demeurent des lots séparés. Aucun robot disponible.
