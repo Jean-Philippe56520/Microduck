@@ -1,5 +1,12 @@
 # P16 — contrôle hors ligne du rootfs DEV, sans construction (31/10/2026)
 
+## P16-IMAGE-B1a — dry-run KAS réel réussi, plan complet à examiner (31 octobre 2026)
+
+**Preuve opérateur WSL2** : `P16_B1_DRYRUN_EXIT_CODE=0` et `P16_B1_DRYRUN_COMPLETE_REVIEW_REQUIRED`. Le journal local `proofs/p16-wic-dryrun.log` se termine par `Attempted 5683 tasks of which 4515 didn't need to be rerun and all succeeded`, soit **1 168 tâches non déjà à jour dans le plan dry-run**, **aucune tâche réellement exécutée par `bitbake -n`**. Deux avertissements connus, `SSTATE_DIR` partagé et absence de `CONFIG_TASK_IO_ACCOUNTING` sur l'hôte, n'établissent pas une panne WIC. Le filtrage transmis affiche `do_fetch` et `do_compile` de plusieurs **outils natifs** (`rk-binary-native`, `pigz`, `dosfstools`, `gptfdisk`, `parted`) et la cible `microduck-image-dev:do_rootfs_wicenv` suivie de `do_image_wic`. `do_rootfs_wicenv` est **distinct** du `do_rootfs` préalablement réussi. L'extrait (35 lignes filtrées + 8 finales) ne permet pas de garantir qu'aucun `do_rootfs` strict ni `do_compile` cible n'apparaît ailleurs dans le journal.
+
+**Décision / arrêt :** porte de parse KAS réussie mais **B1a revue du graphe NON CLOSE**. Ne pas lancer `bitbake -c image_wic`, ni `do_rootfs`/bundle RAUC, sur cette seule sortie. Réutiliser exclusivement le journal privé existant pour inventorier `do_rootfs` strict, `do_fetch`/`do_compile` *native vs cible*, tâches WIC et recompilations éventuelles des composants déjà vérifiés. Si `do_rootfs` strict ou `do_compile` des paquets cible est planifié : STOP, analyser la dépendance/stamp/sstate avant toute exécution ; aucune reconstruction automatique. L'absence de tâches dangereuses n'atteste pas encore les ressources suffisantes, ni une WIC produite ou un démarrage robot. **Aucune nouvelle couche ni sous-module ajouté.**
+
+
 ## P16-IMAGE-B1 — plan de construction WIC DEV privée, porte de planification uniquement (31/10/2026)
 
 **Objectif et manque prouvé.** Les validations opérateur P16-A/W/I/K, P16-IMAGE-PF1, P16-S1 et P16-S2 portent sur un rootfs DEV réel et des contrôles hors ligne. L'image disque WIC de 12,08 Gio prévue par l'OEM n'a pas été générée. Réutiliser le `do_rootfs` existant, les couches et l'outil WIC du constructeur ; ne pas créer un deuxième fabricant d'image.
