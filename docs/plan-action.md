@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**P16-A — vrai `do_rootfs microduck-image-dev` terminé sur WSL2, 31/10/2026 (preuve opérateur distincte, audit en attente) :** sortie BitBake : 4515 tâches tentées, 2149 non relancées, toutes réussies, 32 avertissements, `P16_ROOTFS_EXIT_CODE=0`. `P16_METADATA_GATE: PASS` reste acquis. **Prochaine porte** : lire avertissements et vérifier `IMAGE_ROOTFS`/`IMAGE_MANIFEST` effectifs avec `scripts/per_p16_dev_rootfs_audit.py` (19 sources Python et trois empreintes P15A, unit preset `disable`) sur les sorties de cet essai. Cela n'atteste pas encore l'intégrité du rootfs ni `do_image`, WIC, RAUC, P17, service sur cible ou robot ; licences CLOSED et groupe Unix `robot` toujours bloquants pour distribution/activation. [Dossier P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md).
+
+
 **P16-A / porte métadonnées effective franchie (31/10/2026, opérateur WSL2) :** `P16_METADATA_GATE: PASS`, 11/11 contrôles `bitbake -e` entre DEV et production : cible `microduck-zero3`, OEM conservé, Companion et sonde DEV une fois seulement, aucun Kwipi en shipping, sonde `disable`. Hôte déjà contrôlé 16 CPU/30 Gio RAM/880 Gio disque partagé, paquets P14B et P15A-P conformes. [Protocole P16 et preuve](per-p16-dev-rootfs-offline-audit-2026-10-31.md). Étape suivante **test privé borné de `do_rootfs microduck-image-dev`**, pas encore exécuté : conserver journal/code retour, inspecter les fichiers installés, puis seulement considérer RAUC séparément. Droits CLOSED non résolus : aucune redistribution ; aucune fusion des PR #230/#231/#235/#238 ou validation robot inférée.
 
 
