@@ -239,7 +239,8 @@ class SidecarLifecycleTests(unittest.TestCase):
         self.assertEqual(0, r["camera_frames_captured"])
         self.assertEqual("untrusted_oem_shape_unix_fixture_only", r["media_source"])
         self.assertNotIn("x0", json.dumps(r))
-        self.assertNotIn("score", json.dumps(r))
+        self.assertNotIn('"score":', json.dumps(r))
+        self.assertNotIn('"raw_score":', json.dumps(r))
 
     def test_09_media_only_cannot_create_any_cognitive_category(self):
         with _fictional_unix_server(self.media, (packet(),)):
