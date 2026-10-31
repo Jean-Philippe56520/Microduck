@@ -1,5 +1,8 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+**Dernier diagnostic P16-K — 31/10/2026 :** HEAD local `origin/wrynose` = HEAD distant de `git.openembedded.org` = HEAD miroir public (`c734c2cb9713dbd6d50697a9f6c25ebdf3ae589e`). Le pin `f28a144...` est ancêtre selon l'API publique, mais `COMMON_ANCESTOR=UNKNOWN` en local : branche locale non périmée, hypothèse de clone shallow/déficit d'historique à tester en lecture seule. [Détails](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). Ne pas re-pin ou forcer KAS ; P16-K toujours non levé.
+
+
 **Complément P16-I/K (31/10/2026) :** contrôle ciblé du manifeste DEV réel **PASS** (1 manifeste, 1 334 paquets, aucun paquet `-dbg`). Le dépôt local KAS `meta-openembedded` possède le pin `f28a144...` et `origin/wrynose` mais `merge-base --is-ancestor` retourne **NO** ; la branche locale diverge de l'ascendance requise. Le miroir public GitHub atteste au contraire une branche `wrynose` **85 commits ahead, 0 behind** depuis ce pin. [Porte et diagnostic détaillés](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). Ne pas extrapoler à la branche distante exacte KAS tant que `git ls-remote` et les SHA locaux ne sont pas comparés. Aucun changement d'OEM ni nouveau build.
 
 
