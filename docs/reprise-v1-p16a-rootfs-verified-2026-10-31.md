@@ -1,5 +1,12 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+## P16-IMAGE-PF1 — résultat WSL2 corrigé : PASS (31 octobre 2026)
+
+**Preuve opérateur transmise après réinitialisation de conversation :** commande de préflight exacte de la section historique ci-dessous, exécutée depuis `~/kwipi-build-v1`. Sortie : `DISK_FREE_GIB: 850.2`, `YOCTO_PIN: PASS`, `P15A_PIN: PASS`, `PROBE_SECTION_CHECK: PASS (comment ignored; no actual [Install])`, `PROBE_DISABLED_PRESET: PASS`, `P16_IMAGE_PREFLIGHT: PASS`, `IMAGE_BUILT: False`. Il ne s'agit pas d'un résultat GitHub Actions ni d'un accès direct au stockage WSL2 par l'assistant. **Le STOP lié au commentaire `[Install]` est levé** ; l'espace libre dépasse le seuil préenregistré de 100 Gio. P16-A/W/I/K conservent leurs preuves, sans nouvelle recompilation ni modification des SHA ou gitlinks.
+
+**Décision :** préflight clos dans ce périmètre uniquement. Avant `do_image`/WIC : auditer le contenu effectif du rootfs (références et activations systemd, presets, permissions, scripts post-installation et composants de confiance), vérifier le schéma WIC avec le validateur constructeur, puis fixer critères d'arrêt et inspection des artefacts. `IMAGE_BUILT: False` : aucun `do_image`, bundle RAUC signé/vérifié, P17, diffusion ou robot validé. L'image DEV possède un login root sans mot de passe et ne doit pas être distribuée.
+
+
 ## P16-IMAGE-PF1 — arrêt faux positif du préflight WIC, 31 octobre 2026
 
 **Dernier résultat opérateur : `P16_IMAGE_STOP: unite avec section Install`.** Cela vient **du contrôle ad hoc transmis dans le chat**, et non d'un changement du rootfs. Le code fautif utilisait `if "[Install]" in unit.read_text():` ; l'unité **constructeur Companion P15A** contient précisément le commentaire `# PER-P15A: deliberately no [Install] / WantedBy; manual DEV probe only.`. Cette mention ne constitue pas une section systemd. Le vrai template a uniquement `[Unit]` et `[Service]`, la recette `kwipi-readonly-probe_0.1.bb` déclare `SYSTEMD_AUTO_ENABLE:${PN} = "disable"`, et l'audit réel P16-A a déjà vérifié l'empreinte exacte de cette unité (`ed0c6cd92e2a76a0f687e8bf4b32a22be01a26decb47f70cb432f4eef22e5d9d`) et l'absence des liens d'activation dans son périmètre.
