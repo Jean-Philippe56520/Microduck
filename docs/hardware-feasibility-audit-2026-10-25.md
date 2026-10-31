@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**P15A — aucun résultat sur RK3566 (31/10/2026) :** nouvelle sonde Python source-only un appel `robot.health` avec délai de 1 s, sans boucle, groupe socket OEM `robot` (surface d'autorisation large, à auditer) et unité DEV inactive par défaut ; pas de mesure RSS, CPU, thermique, latence d'une image ou impact `robotd` à 50 Hz. Les tests de faux socket PC, même verts, n'autorisent aucun déploiement sur robot. [Protocole P15A](per-p15a-readonly-health-probe-2026-10-31.md).
+
+
 **PER-P13A — seul le parseur BitBake a été validé (30/10/2026, [CI #41137096228](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41137096228)) :** environnement effectif de `microduck-daemon` étudié, 568 crates et source OEM/Companion contrôlées ; ni `do_compile`, ni rootfs, ni robot physique, ni pic de RAM, température, latence ou autonomie mesurés. Le constructeur signale un `TMPDIR` Yocto pouvant dépasser 100 Go, hors capacité prouvée du runner standard ; ne pas extrapoler un benchmark PC vers RK3566.
 
 **PER-P14A — wheel hôte uniquement (30/10/2026) :** [CI #41137030593](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41137030593) crée un wheel pur 66 701 octets, 19 modules sans mock, installation hôte isolée et refus moteurs ; **ces 66,7 Ko ne représentent ni les dépendances CPython/SQLite ni la consommation de RAM sur RK3566**. Aucun package ARM64/Yocto, NPU, thermique, rythme 50 Hz ou autonomie batterie mesuré.
