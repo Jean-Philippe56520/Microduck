@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**P15A-M — porte BitBake metadata DEV franchie en CI (31/10/2026, [#41214303436](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41214303436)) :** parent #230 `allarch python3-dir` et P14C/#231 synchronisés, `bitbake -p/-e` et `bitbake-layers show-appends` réels ; `kwipi-readonly-probe` 1× DEV, 0× shipping ; `SYSTEMD_AUTO_ENABLE=disable` ; cinq sources épinglées, 8+9+11 tests adversariaux/sonde/P14C verts. **Arrêt encore actif : pas de `do_package` P15A, `do_rootfs`, service exécuté, signature RAUC ni robot.** La branche #235 reste brouillon, dépendante de #231/#230 encore ouvertes (CI BitBake P14B éphémère rouge par timeout malgré preuve locale WSL2). [Preuves et arrêts P15A](per-p15a-readonly-health-probe-2026-10-31.md) ; P16/P17 séparés.
+
+
 **P15A (candidat DEV uniquement) — lancement borné de télémétrie avant service Kwipi réel, 31/10/2026 :** après confirmation locale P14B (`P14B_EXIT_CODE=0` + 19 modules vérifiés, sans attestation BitBake incluse dans le JSON), couche opt-in `meta-kwipi-p15-readonly` et `Type=oneshot` sans installation au boot ; **une** requête `robot.health` par client P14A, défaut = idle, aucun moteur/média/mémoire. Tests sur faux socket et refus de l'auto-activation ; pas de `do_rootfs` ni vraie instance robot. Risque documenté : groupe Unix `robot` donne accès au socket global OEM, non lecture-seule au niveau système ; utilisation pour dev sans activation par défaut uniquement. [Contrat/sûreté/arrêt](per-p15a-readonly-health-probe-2026-10-31.md). P15 complet, P16, P17 attendent image/qualifications ; PR #230/#231 restent non fusionnées et #234 est un protocole documentaire.
 
 

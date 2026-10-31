@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**P15A-M — preuve BitBake hôte non matérielle (31/10/2026) :** [CI #41214303436](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41214303436) valide le parse OEM épinglé de la sonde dev-only et des deux images. Ce résultat n'exécute pas de service sur RK3566 et ne mesure **ni RSS/CPU/thermie/latence/batterie, ni impact `robotd` 50 Hz**, ni caméra/NPU ; les privilèges effectifs du groupe `robot` restent à auditer avant démarrage. Aucun `do_package`, rootfs, RAUC ou robot validé.
+
+
 **P15A — aucun résultat sur RK3566 (31/10/2026) :** nouvelle sonde Python source-only un appel `robot.health` avec délai de 1 s, sans boucle, groupe socket OEM `robot` (surface d'autorisation large, à auditer) et unité DEV inactive par défaut ; pas de mesure RSS, CPU, thermique, latence d'une image ou impact `robotd` à 50 Hz. Les tests de faux socket PC, même verts, n'autorisent aucun déploiement sur robot. [Protocole P15A](per-p15a-readonly-health-probe-2026-10-31.md).
 
 

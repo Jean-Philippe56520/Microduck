@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**PER-P15A-M — contrôle des vraies métadonnées BitBake réussi en CI (31/10/2026, [run #41214303436](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41214303436)) :** la couche dev-only est reconnue, paquet P15A sélectionné une fois en DEV et jamais dans l'image shipping, systemd désactivé ; tests négatifs et PIN OEM passés après réconciliation de #231/#235 avec le vrai P14B `allarch`. **Aucune compilation/installation P15A, image Yocto ou bundle RAUC produite**. Voir [dossier](per-p15a-readonly-health-probe-2026-10-31.md). Prochaine porte indépendante = `do_package` P15A avec caches WSL2 et audit PKGDEST, puis `do_rootfs` DEV seulement si permis.
+
+
 **PER-P15A — candidate source-only DEV (31/10/2026) :** future sonde `robot.health` P14A une fois au lancement manuel sous systemd oneshot, unité non activée au boot et layer Yocto dev opt-in. Tests de socket factice et négatifs à faire passer avant fusion ; preuve locale P14B reçue, mais P14C rootfs non construite. Groupe `robot` donne accès à toutes méthodes RPC par ACL Unix : reste un risque d'autorisation à valider pour l'usage embarqué. Aucun robot, image ou RAUC testé. [Dossier P15A](per-p15a-readonly-health-probe-2026-10-31.md).
 
 
