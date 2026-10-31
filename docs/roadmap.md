@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-I (31/10/2026) PASS ciblé :** manifeste DEV réel unique, 1 334 paquets, 0 `-dbg` ; confirme absence d'installation de débogueurs GStreamer malgré les warnings P16-W. **P16-K** : pin `f28a144...` et branche `origin/wrynose` présents localement mais pin non ancêtre ; miroir public actuel affiche pin ancêtre de `wrynose` (85 commits ahead, 0 behind). [Dossier P16-I/K](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). Diagnostiquer SHA local/distants par commande Git lecture seule ; aucune mise à jour KAS ni nouveau build tant que cause non comprise. Pas d'image WIC/RAUC/P17 ni robot.
+
+
 **P16-W (31/10/2026) — 32/32 lignes WARNING classifiées sans compilation :** 28 GStreamer `-dbg` buildpaths connus OEM, 2 recettes file-only/`${UNPACKDIR}`, 1 sstate partagé, 1 limitation I/O WSL2. [Dossier P16-W](per-p16w-rootfs-warning-classification-2026-10-31.md). Aucune erreur nouvelle démontrée sur le rootfs DEV audité (P16-A code 0), mais le manifeste global `-dbg` et la référence KAS meta-openembedded restent à contrôler. Pas de modification OEM, pas de do_image/RAUC/P17 ou robot.
 
 
