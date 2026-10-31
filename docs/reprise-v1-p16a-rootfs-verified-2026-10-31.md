@@ -1,5 +1,89 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+## P16-IMAGE-PF1 — arrêt faux positif du préflight WIC, 31 octobre 2026
+
+**Dernier résultat opérateur : `P16_IMAGE_STOP: unite avec section Install`.** Cela vient **du contrôle ad hoc transmis dans le chat**, et non d'un changement du rootfs. Le code fautif utilisait `if "[Install]" in unit.read_text():` ; l'unité **constructeur Companion P15A** contient précisément le commentaire `# PER-P15A: deliberately no [Install] / WantedBy; manual DEV probe only.`. Cette mention ne constitue pas une section systemd. Le vrai template a uniquement `[Unit]` et `[Service]`, la recette `kwipi-readonly-probe_0.1.bb` déclare `SYSTEMD_AUTO_ENABLE:${PN} = "disable"`, et l'audit réel P16-A a déjà vérifié l'empreinte exacte de cette unité (`ed0c6cd92e2a76a0f687e8bf4b32a22be01a26decb47f70cb432f4eef22e5d9d`) et l'absence des liens d'activation dans son périmètre.
+
+**Correction** : détecter uniquement une vraie ligne de section `[Install]` par `re.fullmatch(r"[ \t]*\[Install\][ \t]*", line)` sur les lignes du fichier. Ce motif ignore les lignes commentées et les mentions au milieu de valeurs ; un vrai `[Install]` est refusé. **Essais PC synthétiques positifs/négatifs : 5/5** (commentaire source, section réelle, entête commentée, section indentée, mention dans `Description`), sans preuve d'une nouvelle exécution du préflight dans WSL2.
+
+**Décision** : **ne pas toucher au service, au rootfs, au validateur P16, ni à la recette OEM ; ne pas relancer BitBake/KAS/git fetch**. Le `P16_IMAGE_PREFLIGHT: PASS` reste **en attente** parce que le script s'est arrêté avant le calcul de l'espace libre et des messages de succès. Préflight limité à la prochaine WIC **DEV privée**, pas une autorisation de `do_image`/RAUC, de diffusion ni d'installation robot. Éviter de publier le journal privé, les clés ou l'image DEV (accès root sans mot de passe, CA et clé de développement).
+
+### Commande de reprise, Ubuntu WSL2 uniquement (lecture seule ; aucune génération d'image)
+
+```bash
+cd ~/kwipi-build-v1 || exit 1
+python3 - <<'PY'
+from pathlib import Path
+import hashlib, json, re, shutil, subprocess
+
+base = Path.cwd()
+def stop(s):
+    raise SystemExit('P16_IMAGE_STOP: ' + s)
+
+pins = {
+    'yocto': '1ee58387810cebb67ae0d634c351d95024483bce',
+    'p15a-pr235': 'b5626a2cafabd0836e69685d18988360d3e86f18',
+}
+for d, sha in pins.items():
+    got = subprocess.check_output(
+        ['git', '-C', str(base / d), 'rev-parse', 'HEAD'], text=True
+    ).strip()
+    if got != sha:
+        stop(d + ' SHA changed')
+
+roots = [p for p in (base / 'build/tmp/work').glob(
+    '*/microduck-image-dev/*/rootfs') if p.is_dir() and not p.is_symlink()]
+if len(roots) != 1:
+    stop('rootfs absent or ambiguous')
+root = roots[0]
+report_path = base / 'proofs/p16-rootfs-audit.json'
+if not report_path.is_file() or report_path.is_symlink():
+    stop('validated P16 report missing')
+data = json.loads(report_path.read_text())
+if (data.get('status') != 'existing_dev_rootfs_probe_and_package_manifest_checked_only'
+    or data.get('python_modules_verified') != 19
+    or len(data.get('probe_sha256', {})) != 3
+    or data.get('probe_systemd_symlink_found') is not False):
+    stop('P16-A report not conforming')
+
+paths = {
+    'usr/lib/systemd/system/kwipi-readonly-probe.service':
+        'ed0c6cd92e2a76a0f687e8bf4b32a22be01a26decb47f70cb432f4eef22e5d9d',
+    'usr/lib/systemd/system-preset/98-kwipi-readonly-probe.preset':
+        '01a3df8c2b3bd1199c18e1ff126bc96ac818262014030beec792f463c8de8ba8',
+}
+for rel, expected in paths.items():
+    p = root / rel
+    if not p.is_file() or p.is_symlink():
+        stop('missing/symlinked file: ' + rel)
+    if hashlib.sha256(p.read_bytes()).hexdigest() != expected:
+        stop('installed file hash drift: ' + rel)
+    if data['probe_sha256'].get(rel) != expected:
+        stop('P16-A proof hash drift: ' + rel)
+
+unit = (root / 'usr/lib/systemd/system/kwipi-readonly-probe.service').read_text()
+if any(re.fullmatch(r'[ \t]*\[Install\][ \t]*', line) for line in unit.splitlines()):
+    stop('actual [Install] section exists')
+preset = (root / 'usr/lib/systemd/system-preset/98-kwipi-readonly-probe.preset').read_text()
+if preset.strip() != 'disable kwipi-readonly-probe.service':
+    stop('unexpected systemd preset')
+
+free_gib = shutil.disk_usage(base / 'build').free / (1024 ** 3)
+print('DISK_FREE_GIB:', round(free_gib, 1))
+if free_gib < 100:
+    stop('insufficient space')
+print('YOCTO_PIN: PASS')
+print('P15A_PIN: PASS')
+print('PROBE_SECTION_CHECK: PASS (comment ignored; no actual [Install])')
+print('PROBE_DISABLED_PRESET: PASS')
+print('P16_IMAGE_PREFLIGHT: PASS')
+print('IMAGE_BUILT: False')
+PY
+```
+
+**Succès** : sortie `P16_IMAGE_PREFLIGHT: PASS`, SHA toujours épinglés, aucun nouvel artefact image. **Arrêt** : n'importe quel `P16_IMAGE_STOP` ; ne pas éditer le service ou relancer une compilation pour satisfaire le garde. L'exécution du script corrigé sur WSL2 n'est **pas encore rapportée**. Avant WIC : examen séparé de post-installation/permissions/systemd OEM, image DEV strictement privée, borne stockage/temps, et critères de succès/retour arrière. La WIC et RAUC restent des jalons distincts.
+
+
 **Reprise au 31/10/2026, 20:13 — P16-K FERMÉ (métadonnées KAS validées).** Sortie opérateur réelle après un approfondissement ciblé de 128 commits : KAS 5.2 sélectionne correctement `openembedded-core@ae5a3010`, `bitbake@6e260eb6`, `meta-yocto@79b6d870`, `meta-openembedded@f28a144a`, `meta-rockchip@f2fa9fd1` et `meta-rauc@38da0e58`; `bitbake -e microduck-image-dev >/dev/null` passe, `P16_K_KAS_METADATA: PASS`. Git HEAD `yocto@1ee58387810cebb67ae0d634c351d95024483bce` et `p15a-pr235@b5626a2cafabd0836e69685d18988360d3e86f18` conservés. [Dossier complet](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). **Historique** : toutes mentions « KAS reste à vérifier » qui suivent précèdent ce nouveau résultat. P16-A/W/I/K acquis à leurs niveaux WSL2, pas de génération WIC, RAUC/P17, installation, robot ni droit de redistribution.
 
 
