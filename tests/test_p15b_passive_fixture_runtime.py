@@ -141,7 +141,7 @@ class FixtureLifecycleTests(unittest.TestCase):
 
     def test_real_subprocess_uses_one_fixture_then_exits(self):
         with _fictional_unix_server(
-            self.sock, (_frame(1, time.monotonic(), _item("chair")),)
+            self.sock, (_frame(1, time.monotonic(), _item("toy")),)
         ):
             p = subprocess.run(
                 [sys.executable, "-m", "microduck_companion.passive_fixture_runtime",
@@ -154,7 +154,7 @@ class FixtureLifecycleTests(unittest.TestCase):
         self.assertEqual(1, payload["cycles_attempted"])
         self.assertEqual(1, payload["observations_stored"])
         self.assertFalse(payload["action_executed"])
-        self.assertEqual([("chair", "mock")], self._records())
+        self.assertEqual([("toy", "mock")], self._records())
 
     @unittest.skipUnless(sys.platform.startswith("linux"), "SIGTERM on Linux only")
     def test_real_sigterm_stops_a_bounded_subprocess(self):
