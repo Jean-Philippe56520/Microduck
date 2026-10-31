@@ -2,7 +2,7 @@
 
 ## Porte 0 — utilité, preuve, limites, arrêt
 
-Base de cette PR **empilée sur P14C/#231 HEAD `ae205d4d49da4412a6a040809a2d1e25d306df59`**, elle-même dépendante de P14B/#230 HEAD `514e89ef10599c9177b056d3497915d92d6c1ec9`. `main` lu : `e4a0a1268c7335a84262824cade0d5df55c9c5ce`. OEM `upstream/microduck@942e58e3aa6dbb28e7037203fff11866122c7567`, Yocto `1ee58387810cebb67ae0d634c351d95024483bce`, OE-core `ae5a301091f5b0574ea7444aab40b309b6d9f3f2`. P8/#218 non validée, Qwen #97–99 fusionnées. Robot physique absent.
+Base de cette PR **empilée sur P14C/#231 HEAD `3bb83e3922d6a1db3d61cf2737a229bbcd99d604` (synchronisé avec le P14B final)**, elle-même dépendante de P14B/#230 HEAD `514e89ef10599c9177b056d3497915d92d6c1ec9`. `main` lu : `e4a0a1268c7335a84262824cade0d5df55c9c5ce`. OEM `upstream/microduck@942e58e3aa6dbb28e7037203fff11866122c7567`, Yocto `1ee58387810cebb67ae0d634c351d95024483bce`, OE-core `ae5a301091f5b0574ea7444aab40b309b6d9f3f2`. P8/#218 non validée, Qwen #97–99 fusionnées. Robot physique absent.
 
 Le 31/10, l'opérateur a fourni **deux preuves distinctes** de P14B WSL2 : `P14B_EXIT_CODE=0` à la sortie du shell, et le validateur `status=bitbake_python_package_files_verified_only` avec **19 sources exactes vérifiées** et archive `85c583b86f0c8b5c59e9a547762a223c7ab27dee016c3ec604141907b20b2245`. Le validateur affiche **`bitbake_task_execution_attested_by_this_script=false`** : il ne se suffit pas à lui-même pour affirmer l'exécution. CI spécialisée #230 sur runner jetable demeure expirée/rouge ; #230/#231 sont brouillons. Aucun `do_rootfs` ni présence Python sur image ne découle de ce résultat.
 
@@ -54,3 +54,10 @@ Premier test réel **PC-fixtures** : [CI spécialisée #41212996494](https://git
 **Négatifs à refuser** : couche P15A supprimée/substituée, recette hors couche, unité auto-enable, `LICENSE` modifiée, RDEPENDS absent, sélection deux fois, installation en shipping, perte de base OEM, `BBLAYERS` trompeurs, bbappend non reconnu. Toute modification d'OEM ou de ses gitlinks est interdite. **Arrêt/retour arrière** : BitBake absent, parse/echec/timeout, CI rouge ou signature de recette différente => garder #235 en brouillon, ne pas prétendre package, ne pas lancer `do_package` sur runner éphémère ni `do_rootfs`. Retrait = désélectionner la couche P15A. **P15A-M reste exclusivement un contrôle de métadonnées, jamais un paquet, un service actif ni une preuve robot.**
 
 **Résultat** : en attente du vrai parse et de la CI sur le SHA final.
+
+
+### Synchronisation P14B/P14C préalable à P15A-M
+
+L'audit de dépendances de la PR #235 a prouvé que ses anciens parents #231/#235 contenaient encore la recette P14B `python_pep517`, **différente** de celle validée sur le poste WSL2. Les branches ont été synchronisées sans réécrire les 19 modules ni toucher aux gitlinks : P14B/#230 HEAD `514e89ef10599c9177b056d3497915d92d6c1ec9`, générateur source Git blob `214c41435d98c43b3b5772161affc913deed863b`, recette `inherit allarch python3-dir`; P14C/#231 commit `3bb83e3922d6a1db3d61cf2737a229bbcd99d604`. Cette correction **ne valide pas** l'installation ni le rootfs. Les CI P14C/P15A-M doivent être rejouées sur ces nouveaux commits.
+
+La CI Python complète a aussi constaté que l'import de la sonde par une fixture déposait un `__pycache__/*.pyc` dans la couche source, faisant échouer un test de fermeture. Le test a été adapté pour empêcher cette génération transitoire ; les cinq fichiers de la recette restent strictement contrôlés et aucun `.pyc` n'est ajouté au paquet. Une faute de nom dans la première correction a provoqué un échec intermédiaire et a été corrigée ; seul le dernier SHA CI peut être utilisé comme preuve.
