@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**P16-IMAGE-B1c — contrôle de la WIC construite, sans réexécuter BitBake (31/10/2026) :** suite à `P16_B1B_EXIT_CODE=0` et `do_image_wic: Succeeded`, le garde ad hoc `len(glob('*.wic'))==1` n'a pas pu localiser/qualifier un seul nom. OE-core peut créer `IMAGE_LINK_NAME.wic` alias de `IMAGE_NAME.wic`. Nouveau validateur **read-only** vérifie noms et cible physique unique, taille ~12,08 Gio, huit partitions GPT A/B/data, CRCs puis SHA-256. **9/9 tests positifs/négatifs PC-fixtures PASS** ; WSL2 et CI finale non encore attestés. Ne pas reconstruire, lancer `do_image_complete`, signer RAUC, flasher ou livrer avant résultat effectif. [Porte B1c](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1c--correctif-de-verification-des-artefacts-sans-reconstruction-31-octobre-2026).
+
+
 **P16-IMAGE-B1b — `do_image_wic` PASS sur WSL2, garde de localisation trop strict (31/10/2026) :** preuve `DISK_FREE_GIB=850.1`, `P16_B1B_PREFLIGHT: PASS`, `P16_B1B_EXIT_CODE=0`, `do_image_wic: Succeeded`, 5683 tâches toutes réussies/à jour, deux warnings hôte. Le contrôle de suivi a échoué sur `len(glob('*.wic')) != 1` sans afficher le nombre : **zéro ou plusieurs non distingués**, et OE-core `create_symlinks` prévoit l'alias `IMAGE_LINK_NAME.wic` vers `IMAGE_NAME.wic`. Prochaine étape **uniquement lecture seule** : déterminer le vrai fichier physique et les liens dans `IMGDEPLOYDIR`/déploiement, taille, structure GPT A/B/data et SHA-256, avant promotion du jalon image. **Ne pas reconstruire**, aucune signature/RAUC/P17, distribution ni robot. [Protocole B1b](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1b--tache-wic-reelle-reussie-controle-de-cardinalite-a-corriger-31-octobre-2026).
 
 
