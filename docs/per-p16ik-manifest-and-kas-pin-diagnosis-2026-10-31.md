@@ -31,3 +31,13 @@ Sur le poste WSL2, localiser **le même** dépôt sous `kas-work` (aucun chemin 
 - **Toujours non prouvé :** `do_image`/WIC amorçable, services en exécution, image shipping, RAUC/signature/rollback, P17, matériels/moteurs/robot, droits de redistribution `LICENSE=CLOSED`. PR #230 → #231 → #235 → #238 ouvertes/drafts, aucune fusion autorisée.
 
 Pas de compilation, installation ni changement de gitlink dans ce lot.
+
+## P16-K — nouvelle preuve locale/distante : SHA identiques (31/10/2026)
+
+L'opérateur a exécuté un diagnostic sans fetch/reset : `REMOTE_HOST=git.openembedded.org`, `PIN=f28a144aa0a0ae05ca2ee91e1aef6aa05f6a12db`, `LOCAL_WRYNOSE=c734c2cb9713dbd6d50697a9f6c25ebdf3ae589e`, `REMOTE_WRYNOSE=c734c2cb9713dbd6d50697a9f6c25ebdf3ae589e`, `LOCAL_EQUALS_REMOTE=True`, `REMOTE_EQUALS_PUBLIC_MIRROR=True`, `COMMON_ANCESTOR=UNKNOWN`.
+
+**Constat :** l'hypothèse de branche locale simplement périmée est **écartée** à l'instant du test : local, origine Git effective et miroir public ont le même HEAD. L'API publique avait démontré que le SHA épinglé est bien ancêtre de ce HEAD. Le `merge-base` **local** introuvable indique donc un défaut de visibilité du graphe d'ancêtres dans le dépôt local ; **l'hypothèse prioritaire, non encore vérifiée, est un clone superficiel** (Git `shallow` marque des commits frontières comme des racines et peut rendre `merge-base` trompeur). Un dépôt partiel/missing objects ou des remplacements locaux demanderaient d'autres preuves avant conclusion.
+
+**Porte immédiate, en lecture seule :** `git rev-parse --is-shallow-repository`, chemin `git rev-parse --git-path shallow` et nombre de lignes de ce fichier, ainsi que vérification d'intégrité limitée `git status --porcelain --untracked-files=no` et `git merge-base --is-ancestor`. Ne lancer ni `git fetch`/`--unshallow`, ni `kas shell`, ni nouveau build tant que la cause ne sera pas établie. **Si clone shallow confirmé**, proposer un correctif *borné au cache Git de meta-openembedded*, avec sauvegarde de références et retour arrière prévus, sans changer les SHA des fichiers OEM, et vérifier ensuite `merge-base` puis la porte KAS. Ce n'est pas une permission de nouvelle distribution/RAUC/P17.
+
+Voir la [documentation Git sur les clones shallow](https://git-scm.com/docs/shallow), qui confirme que les frontières artificielles peuvent rendre l'ascendance invisible.
