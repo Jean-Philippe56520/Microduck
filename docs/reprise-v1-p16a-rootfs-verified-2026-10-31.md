@@ -1,5 +1,12 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+## Reprise après revue complète P16-IMAGE-B1a (31 octobre 2026)
+
+La sortie opérateur du journal dry-run existant donne `TOTAL_TASKS=5683`, `ALREADY_UP_TO_DATE=4515`, `REMAINING_TASKS=1168`, `TASK_LINES_PARSED=1166`, `NATIVE_FETCH=5`, `NATIVE_COMPILE=5`, `STRICT_DO_ROOTFS=0` et quatre seules opérations cible `do_deploy` (`u-boot-rockchip`, `linux-rockchip`, `grub-efi`, `systemd-boot`). La sortie `P16_B1_GATE: STOP_REVIEW_TARGET_TASKS` vient du prédicat conservateur, **pas d'un échec de BitBake**. La source OE-core `ae5a301...` confirme `WKS_FILE_DEPENDS_BOOTLOADERS:aarch64 = "grub-efi systemd-boot"` et `do_image_wic[recrdeptask] += "do_deploy"`; WKS OEM utilise U-Boot, pas EFI. Les deux dépendances EFI génériques ne sont pas des preuves d'une mauvaise image. Aucun paquet cible ou rootfs ne doit être recompilé à la main.
+
+**Décision opérationnelle :** un essai B1b `bitbake -c image_wic microduck-image-dev` privé, borné et journalisé peut être effectué dans le même KAS/pins et caches si espace >=100 Gio et aucun .wic DEV antérieur ; stop sur toute divergence, aucun retry automatique. `image_types_wic.bbclass` produit d'abord `IMGDEPLOYDIR/${IMAGE_NAME}.wic`, et la tâche distincte `do_image_complete` expose ensuite l'artefact final dans `tmp/deploy/images`; une réussite de B1b ne valide donc pas bmap/zst ni amorçage. Voir [protocole source/critères](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1a--quatre-do_deploy-expliques-par-openembedded-epingle--b1b-autorise-sous-conditions-31102026). P16-A/W/I/K/PF1/S1/S2 ne sont pas à rejouer ; PR #238 draft, non fusionnée ; pas de signature RAUC, robot, licence de diffusion.
+
+
 ## Reprise après P16-S2 PASS WSL2 (31 octobre 2026)
 
 **Preuve opérateur réelle, à ne pas répéter :** checkout `p16-pr238@0bbe7658deaf2a3e8c43bb9eea8c97b9690e3966`, script S2 lecture seule sur le rootfs DEV : statut `p16_s2_rauc_pinned_ca_and_rootfs_mode_gate_pass`, 2/2 CA OEM RAUC, 11/11 paramètres, cinq fichiers inspectés pour bits de permission dangereux, groupe Unix `robot` présent. Les 4 workflows GitHub Actions étaient verts sur ce commit. `image_built=false`, `rauc_bundle_signed_verified=false`, `robot_validated=false`, permissions RPC lecture seule et UID/GID cibles non attestés ; licences et scriptlets postinst exhaustifs non validés.
