@@ -12,5 +12,7 @@ jobs:
           python-version: "3.13"
       - name: P15A positive and negative source and fake-IPC tests
         run: python -m unittest discover -s tests -p 'test_per_p15a_readonly_probe.py' -v
+      - name: Verify P15A packaged file contract on synthetic positive and negative fixtures
+        run: python -m unittest discover -s tests -p 'test_per_p15a_yocto_package_gate.py' -v
       - name: Syntax of installed one-shot probe
         run: python -m py_compile yocto/meta-kwipi-p15-readonly/recipes-kwipi/kwipi-readonly-probe/files/health_probe.py
