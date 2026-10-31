@@ -17,6 +17,8 @@ jobs:
           PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -p 'test_per_p16_dev_rootfs_audit.py' -v
           PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -p 'test_per_p16_dev_rootfs_service_gate.py' -v
           PYTHONDONTWRITEBYTECODE=1 python -m compileall -q scripts/per_p16_dev_rootfs_service_gate.py
+          PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -p 'test_per_p16_s2_rauc_rootfs_gate.py' -v
+          PYTHONDONTWRITEBYTECODE=1 python -m compileall -q scripts/per_p16_s2_rauc_rootfs_gate.py
           PYTHONDONTWRITEBYTECODE=1 python -m compileall -q scripts/per_p16_dev_rootfs_audit.py
       - name: Source-only invariant
         run: |
