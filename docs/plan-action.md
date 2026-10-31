@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**P16-A — blocage KAS après `do_rootfs` réussi (31/10/2026) :** nouvelle consultation de `bitbake -e` interrompue avant BitBake : la référence `meta-openembedded/wrynose` ne contient plus, selon KAS 5.2 après actualisation locale, le SHA épinglé `f28a144aa0a0ae05ca2ee91e1aef6aa05f6a12db`. Ne pas modifier le SHA constructeur ou forcer un checkout. **Plan de reprise :** audit en lecture seule des artefacts `do_rootfs` déjà présents dans `build/tmp/work`, du manifeste et des 22 fichiers P14B/P15A, sans rappeler KAS ; voir [dossier P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md). Le succès WSL2 du rootfs reste rapporté, intégrité et 32 avertissements en attente, RAUC/P17 bloqués.
+
+
 **P16-A — vrai `do_rootfs microduck-image-dev` terminé sur WSL2, 31/10/2026 (preuve opérateur distincte, audit en attente) :** sortie BitBake : 4515 tâches tentées, 2149 non relancées, toutes réussies, 32 avertissements, `P16_ROOTFS_EXIT_CODE=0`. `P16_METADATA_GATE: PASS` reste acquis. **Prochaine porte** : lire avertissements et vérifier `IMAGE_ROOTFS`/`IMAGE_MANIFEST` effectifs avec `scripts/per_p16_dev_rootfs_audit.py` (19 sources Python et trois empreintes P15A, unit preset `disable`) sur les sorties de cet essai. Cela n'atteste pas encore l'intégrité du rootfs ni `do_image`, WIC, RAUC, P17, service sur cible ou robot ; licences CLOSED et groupe Unix `robot` toujours bloquants pour distribution/activation. [Dossier P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md).
 
 
