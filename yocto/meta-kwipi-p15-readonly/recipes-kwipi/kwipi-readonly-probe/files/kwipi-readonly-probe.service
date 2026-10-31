@@ -1,0 +1,31 @@
+# PER-P15A: deliberately no [Install] / WantedBy; manual DEV probe only.
+# OEM robotd owns all motor control and is NOT started by this unit.
+[Unit]
+Description=Kwipi passive read-only OEM health check (dev/manual only)
+After=robotd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -I -B @LIBEXECDIR@/kwipi/health_probe.py
+TimeoutStartSec=4s
+DynamicUser=yes
+# This OEM socket is 0660 root:robot, not a read-only endpoint. The group
+# permits *all* OEM RPC at the OS layer; our P14A client only sends health.
+# DEV ONLY until a restricted-read design/security review is demonstrated.
+SupplementaryGroups=robot
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+MemoryDenyWriteExecute=yes
+StandardOutput=journal
+StandardError=journal

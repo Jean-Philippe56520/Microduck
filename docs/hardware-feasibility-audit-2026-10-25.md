@@ -1,5 +1,14 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**P15A-P — résultat sur hôte WSL2 uniquement, 31/10/2026 :** `bitbake -c package kwipi-readonly-probe` a réussi (643/643 tâches, 633 courantes) avec deux avertissements ; cette preuve ne mesure ni RSS, CPU, température, batterie du RK3566, ni cadence `robotd` 50 Hz ou latence du service. Le groupe OEM `robot` ouvre le socket JSON-RPC global, **pas une ACL lecture seule OS**. `PKGDEST` réel encore à vérifier, aucun `do_rootfs`, RAUC, signature ou robot testé. La réutilisation sstate limitée observée ne démontre aucune performance matérielle.
+
+
+**P15A-M — preuve BitBake hôte non matérielle (31/10/2026) :** [CI #41214303436](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41214303436) valide le parse OEM épinglé de la sonde dev-only et des deux images. Ce résultat n'exécute pas de service sur RK3566 et ne mesure **ni RSS/CPU/thermie/latence/batterie, ni impact `robotd` 50 Hz**, ni caméra/NPU ; les privilèges effectifs du groupe `robot` restent à auditer avant démarrage. Aucun `do_package`, rootfs, RAUC ou robot validé.
+
+
+**P15A — aucun résultat sur RK3566 (31/10/2026) :** nouvelle sonde Python source-only un appel `robot.health` avec délai de 1 s, sans boucle, groupe socket OEM `robot` (surface d'autorisation large, à auditer) et unité DEV inactive par défaut ; pas de mesure RSS, CPU, thermique, latence d'une image ou impact `robotd` à 50 Hz. Les tests de faux socket PC, même verts, n'autorisent aucun déploiement sur robot. [Protocole P15A](per-p15a-readonly-health-probe-2026-10-31.md).
+
+
 **PER-P13A — seul le parseur BitBake a été validé (30/10/2026, [CI #41137096228](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41137096228)) :** environnement effectif de `microduck-daemon` étudié, 568 crates et source OEM/Companion contrôlées ; ni `do_compile`, ni rootfs, ni robot physique, ni pic de RAM, température, latence ou autonomie mesurés. Le constructeur signale un `TMPDIR` Yocto pouvant dépasser 100 Go, hors capacité prouvée du runner standard ; ne pas extrapoler un benchmark PC vers RK3566.
 
 **PER-P14A — wheel hôte uniquement (30/10/2026) :** [CI #41137030593](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41137030593) crée un wheel pur 66 701 octets, 19 modules sans mock, installation hôte isolée et refus moteurs ; **ces 66,7 Ko ne représentent ni les dépendances CPython/SQLite ni la consommation de RAM sur RK3566**. Aucun package ARM64/Yocto, NPU, thermique, rythme 50 Hz ou autonomie batterie mesuré.
