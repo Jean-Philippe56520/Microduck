@@ -1,5 +1,31 @@
 # P16 — contrôle hors ligne du rootfs DEV, sans construction (31/10/2026)
 
+## P16-S1 — audit systemd et postinst différés (31/10/2026 ; rootfs WSL2 en attente)
+
+**Objectif / manque prouvé.** P16-A vérifiait les 19 modules Python, les trois fichiers P15A et des liens systemd limités ; il n'examinait pas les références actives d'autres unités, leurs drop-ins/overrides, tous les presets ou les post-installations différées. Le préflight PF1 corrigé a depuis retourné `P16_IMAGE_PREFLIGHT: PASS` et 850,2 Gio libres sur le WSL2 de l'opérateur, mais ne constitue pas ce nouvel audit.
+
+**Réemploi / décision.** Le nouveau `scripts/per_p16_dev_rootfs_service_gate.py` relit le rapport P16-A et les trois SHA-256 installés, examine hors ligne les références non commentées et liens/overrides dans les emplacements systemd connus, contrôle les presets supplémentaires et l'absence de scripts différés dans `etc/opkg-postinsts`, `etc/rpm-postinsts`, `etc/postinsts`. Il résout les alias d'image `/lib -> /usr/lib` sans suivre les chemins du PC. Le `yocto/scripts/check-wks-layout.py` OEM épinglé reste le validateur du schéma WIC : aucun équivalent maison. Ni BitBake, ni moteur, ni service, ni source constructeur touchés.
+
+**Succès préfixé.** Rapports P16-A et empreintes exacts, sonde sans véritable `[Install]`, preset `disable`, aucune référence de démarrage inattendue dans les unités inspectées, aucun override/drop-in ni script postinst différé dans les emplacements connus. Sortie ciblée `p16_s1_no_observed_probe_autostart_references_in_scanned_rootfs`, avec `postinst_package_scriptlets_audited=false`, `systemd_runtime_or_boot_verified=false`, `robot_socket_group_full_rpc_access_risk_open=true`, `image_built=false` et `robot_validated=false`. Le script ne modifie aucun artefact.
+
+**Négatifs et arrêt préfixés.** Refus pour rapport absent, SHA erroné, vraie ligne `[Install]`, preset `enable`, symlink `*.wants`, autre unité `Wants=kwipi-readonly-probe.service`, override/drop-in, entrée postinst différée. Les références situées uniquement dans un commentaire restent permises. À chaque `P16_S1_STOP`, conserver les preuves et **ne pas lancer `do_image`**, ne pas enlever de service et ne pas recompiler automatiquement. Le groupe Unix `robot` donne accès à toutes les RPC du socket au niveau OS, pas à une ACL lecture seule.
+
+**Tests actuels.** 14 tests synthétiques positifs/négatifs et `compileall` réussis dans le conteneur de développement ; blobs exacts contrôlés lors de la publication GitHub : script `7c6646db2d72b51ffce275b5d21882f1e214d41b`, tests `933e1dc7b4eafcde49ce3ca47e29d8133ba5a7ef`. La CI du HEAD final et l'exécution sur le **vrai WSL2** doivent encore être confirmées. Cet audit n'inspecte pas le contenu des *scriptlets postinst des paquets* ni les générateurs et comportements systemd au boot ; ces contrôles et permissions restent une autre porte avant WIC/RAUC/P17.
+
+**Commande opérateur (Ubuntu WSL2, lecture seule du rootfs ; mise à jour du seul checkout P16 après contrôle de propreté) :**
+
+```bash
+cd ~/kwipi-build-v1 || exit 1
+test -z "$(git -C p16-pr238 status --porcelain)" || { echo P16_S1_STOP: checkout_local_modifie; exit 1; }
+git -C p16-pr238 fetch --no-tags origin refs/pull/238/head || exit 1
+git -C p16-pr238 checkout --detach FETCH_HEAD || exit 1
+python3 yocto/scripts/check-wks-layout.py || { echo P16_WIC_LAYOUT_STOP; exit 1; }
+PYTHONDONTWRITEBYTECODE=1 python3 p16-pr238/scripts/per_p16_dev_rootfs_service_gate.py --base "$PWD"
+```
+
+**Après S1.** Examiner séparément les scripts d'installation réellement empaquetés, les permissions et la composition DEV/shipping, puis seulement préenregistrer une génération image privée et bornée. Aucun `do_image`/WIC/RAUC/P17 ni robot validé.
+
+
 ## P16-IMAGE-PF1 — contrôle matériel WSL2 du préflight : PASS (31 octobre 2026)
 
 Le préflight corrigé a été exécuté par l'opérateur sur le rootfs DEV existant. La sortie communiquée rapporte `DISK_FREE_GIB: 850.2`, les quatre contrôles de provenance/unité/preset `PASS`, `P16_IMAGE_PREFLIGHT: PASS`, et `IMAGE_BUILT: False`. Le précédent faux positif de l'en-tête `[Install]` est levé dans le **périmètre exact du script** ; aucun rebuild ou changement OEM. Cette preuve est locale/transmise, distincte des 19 contrôles source et de la CI de fixtures. Elle ne prouve ni l'absence de toutes activations indirectes, ni les effets de tous les postinsts, ni une WIC. **Prochaine porte : audit systemd, permissions et scripts postinst du rootfs existant avant image DEV privée**. Aucun bundle RAUC ni P17 ni robot.
