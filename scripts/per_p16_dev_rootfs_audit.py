@@ -91,6 +91,9 @@ def validate(rootfs: Path, manifest: Path, *, builder_exit: int, source_head: st
     rootfs = rootfs.resolve(strict=True)
     if manifest.is_symlink() or not manifest.is_file():
         raise Refused("actual image manifest missing")
+    if not (manifest.name.startswith("microduck-image-dev-") and
+            manifest.name.endswith(".manifest")):
+        raise Refused("image manifest is not the expected OEM DEV image")
     packages = _parse_manifest(manifest)
     for name in EXPECTED + ("microduck-daemon", "microduck-data"):
         if name not in packages:
@@ -121,6 +124,7 @@ def validate(rootfs: Path, manifest: Path, *, builder_exit: int, source_head: st
         "status": "existing_dev_rootfs_probe_and_package_manifest_checked_only",
         "source_head_verified_against_checkout": source_head,
         "packages": {k: packages[k] for k in EXPECTED},
+        "dev_image_manifest_name_checked": True,
         "probe_sha256": files,
         "python_modules_verified": len(python_files),
         "p14b_archive_sha256": PINNED_P14B_ARCHIVE_SHA256,
