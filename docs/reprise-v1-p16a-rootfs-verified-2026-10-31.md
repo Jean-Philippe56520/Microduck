@@ -1,5 +1,8 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+**P16-K — résultat réparation, 31/10/2026 :** cache Git local `meta-openembedded` approfondi une fois de 128 commits ; `P16_K_FETCH_EXIT_CODE=0`, `P16_K_ANCESTRY=PASS`, `HEAD_UNCHANGED=True`, `OEM_PIN_UNCHANGED=True`, `WORKTREE_UNCHANGED=True`. Copie privée des frontières `proofs/p16k-history-1mkm0nkt`. [Dossier P16-K](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). La relecture KAS est **en attente** ; aucune compilation supplémentaire ni fusion. A/W/I toujours validés localement, P17/RAUC/image amorçable non prouvés.
+
+
 **P16-K preuve complémentaire (31/10/2026) :** clone du dépôt cache `meta-openembedded` **shallow=true**, deux frontières répertoriées, `.git/shallow` présent ; HEAD local = distant = miroir public. L'échec de `merge-base` s'explique par l'historique Git partiel (hypothèse mécaniste cohérente, à confirmer par approfondissement ciblé). [Contrat de réparation bornée](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md) préparé sans changement de gitlinks/SHAs, sans compilation ; P16-K non franchi à ce stade.
 
 
