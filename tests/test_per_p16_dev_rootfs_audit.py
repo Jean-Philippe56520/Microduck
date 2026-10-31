@@ -91,7 +91,7 @@ class P16FixtureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             r=Path(d)
             manifest=r/"manifest"
-            manifest.write_text("".join(f"{n} all 1\\n" for n in
+            manifest.write_text("".join(f"{n} all 1\n" for n in
                 ("kwipi-companion", "kwipi-readonly-probe", "microduck-daemon", "microduck-data")))
             sample={}
             for rel in PROBE_HASHES:
