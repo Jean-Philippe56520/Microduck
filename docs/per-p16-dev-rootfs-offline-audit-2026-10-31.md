@@ -1,5 +1,8 @@
 # P16 — contrôle hors ligne du rootfs DEV, sans construction (31/10/2026)
 
+**P16-K3 — 31/10/2026, 20:13 : contrôle KAS/BitBake accompli.** Sortie opérateur `P16_K_KAS_METADATA: PASS` sur `kas shell` (quatre fichiers KAS avec sources épinglées) et lecture seule `bitbake -e microduck-image-dev >/dev/null`. KAS sélectionne maintenant `meta-openembedded@f28a144...` sans erreur grâce à la réparation du graphe shallow ; SHA Yocto et P15A inchangés. [Dossier P16-I/K final](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). **Ceci remplace les statuts précédents « KAS bloque les nouveaux essais »** : le blocage d'ascendance et de chargement metadata est levé, mais l'autorisation de construire image/RAUC reste un lot distinct. P16-A rootfs et 22 fichiers audités, P16-W avertissements examinés, P16-I 1334 paquets/0 debug, P16-K PASS. Reste : analyse services/postinstall/politiques/droits et phases `do_image`/WIC et RAUC/P17, sans robot.
+
+
 **P16-K (31/10/2026) — la réparation ciblée du graphe shallow est réussie sur WSL2 :** un seul `git fetch --deepen=128` sur le dépôt cache `meta-openembedded` (exit 0), `P16_K_ANCESTRY=PASS`, HEAD/pin/worktree inchangés, backup local privé. [Résultat](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). Le `kas shell` de contrôle de métadonnées BitBake n'a pas encore été rejoué : **ne pas confondre ascendance Git restaurée et porte KAS entièrement validée**. Pas de re-pin OEM, de nouveau `do_rootfs`, WIC, RAUC, P17 ni robot.
 
 
