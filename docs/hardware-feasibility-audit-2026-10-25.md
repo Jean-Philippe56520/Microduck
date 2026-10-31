@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**P15-B1 — code et tests de cycle de vie host-only, pas de preuve matérielle (31/10/2026) :** le nouvel adaptateur fixture Unix réutilise `PassiveCycleSupervisor` avec 1–16 cycles Python bornés et arrêt SIGTERM coopératif, tests de vrais processus hôte et faux socket Unix. Pas de connexion OEM, caméra, micro, moteur ou NPU, aucune mesure fiable de RAM/RSS RK3566, température, débit, batterie ou effet sur `robotd` à 50 Hz. **Ce n'est pas encore un processus embarqué déployable** ; aucune autorisation d'activation de service `kwipi-readonly-probe` ni accès restreint au socket du groupe `robot`. [P15-B0/B1](per-p15b-passive-process-lifecycle-2026-10-31.md).
+
+
 **P15A-P — résultat sur hôte WSL2 uniquement, 31/10/2026 :** `bitbake -c package kwipi-readonly-probe` a réussi (643/643 tâches, 633 courantes) avec deux avertissements ; cette preuve ne mesure ni RSS, CPU, température, batterie du RK3566, ni cadence `robotd` 50 Hz ou latence du service. Le groupe OEM `robot` ouvre le socket JSON-RPC global, **pas une ACL lecture seule OS**. `PKGDEST` réel encore à vérifier, aucun `do_rootfs`, RAUC, signature ou robot testé. La réutilisation sstate limitée observée ne démontre aucune performance matérielle.
 
 
