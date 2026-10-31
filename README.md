@@ -1,4 +1,7 @@
 
+**REPRISE V1 — P16-A ROOTFS DEV VÉRIFIÉ SUR WSL2 (31/10/2026).** Après `P16_METADATA_GATE: PASS` (11/11), `bitbake -c rootfs microduck-image-dev` a réussi (`P16_ROOTFS_EXIT_CODE=0`, 4515 tâches dont 2149 non relancées). Audit **des vrais fichiers du rootfs** depuis `p16-pr238@c46fa4a` : `P16_AUDIT_EXIT_CODE=0`, un seul rootfs/manifeste/journal valide, **19/19 modules Python P14B** et **3/3 fichiers P15A-P** conformes SHA-256, aucun lien systemd d'activation détecté dans les emplacements contrôlés. [Dossier de reprise P16-A](docs/reprise-v1-p16a-rootfs-verified-2026-10-31.md). **Restent bloqués :** classification des 32 avertissements BitBake, décalage de branche KAS `meta-openembedded/wrynose` sur le pin OEM `f28a144...`, audit étendu des services et licences. Ni `do_image`/WIC, RAUC, P17, robot ni droit de redistribution validés. PR #230/#231/#235/#238 ouvertes et non fusionnées ; ne pas recompiler le rootfs sans motif.
+
+
 
 **P16-A — blocage de relecture KAS, pas de `do_rootfs` (31/10/2026) :** après un succès rootfs WSL2 avec code 0, une nouvelle invocation de `kas shell` a refusé le commit `f28a144...` de `meta-openembedded` comme non ancêtre de `wrynose`, avant `bitbake -e`. Ne pas modifier la sélection Yocto ni recompiler ; auditer directement les artefacts locaux et le manifeste en lecture seule. [Dossier P16](docs/per-p16-dev-rootfs-offline-audit-2026-10-31.md), PR #238 toujours draft, RAUC/P17 non validés.
 
