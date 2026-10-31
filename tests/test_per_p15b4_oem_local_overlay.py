@@ -147,11 +147,14 @@ class P15B4OverlaySafetyTests(unittest.TestCase):
         self.assertIn("mode(0o700)", source)
         self.assertIn("from_millis(500)", source)
         self.assertIn("MAX_CLIENTS: usize = 2", source)
-        self.assertNotIn("robot.do", source)
-        self.assertNotIn("robot.stop", source)
-        self.assertNotIn("media.frame", source)
-        self.assertNotIn("send_robot", source)
-        self.assertNotIn("cmd_vel", source)
+        # Test bodies intentionally contain rejected RPC strings and names;
+        # only the server implementation, never fixture assertions, is policed.
+        production = source.split("#[cfg(test)]", 1)[0]
+        self.assertNotIn("robot.do", production)
+        self.assertNotIn("robot.stop", production)
+        self.assertNotIn("media.frame", production)
+        self.assertNotIn("send_robot", production)
+        self.assertNotIn("cmd_vel", production)
 
 
 if __name__ == "__main__":
