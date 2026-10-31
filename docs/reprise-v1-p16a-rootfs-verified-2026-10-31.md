@@ -1,5 +1,12 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+## Reprise P16-IMAGE-B1c — WIC DEV vérifiée sur vrai WSL2, B2a ensuite (31 octobre 2026)
+
+**Preuve opérateur réelle, à conserver et ne pas relancer :** après checkout de #238 au commit `3af5314a36c75208dde9c96d3adac06fa6183e5d`, `scripts/per_p16_b1b_wic_artifact_gate.py` a rapporté `WIC_MATCHES: 2` pour une WIC régulière `microduck-image-dev-microduck-zero3.rootfs-20261031195334.wic` et son alias `microduck-image-dev-microduck-zero3.rootfs.wic`. Une seule cible physique ; taille `12968805376` octets ; GPT principal 8 partitions avec offsets/tailles OEM, CRC header/table conformes, `P16_B1B_STAGE_GPT: PASS`. SHA-256 réel `c1140e7508559ebc9467c3f97d3c9891452228f05b3baf999ccaa3c0a5f11bc8`, `P16_B1B_SHA256: PASS`. **La sortie `WIC absente ou multiple` d'avant est un faux positif de la cardinalité** et ne doit plus être traitée comme échec de BitBake. Tout cela reste une preuve WSL2 transmise par l'opérateur, sans accès direct à son disque depuis l'assistant. Aucune nouvelle compilation nécessaire pour recommencer ces contrôles.
+
+**Étape suivante P16-IMAGE-B2a** : relecture **dry-run seule** de `bitbake -n -c image_complete microduck-image-dev` avec les quatre fichiers KAS/caches épinglés et journal privé neuf. Contrôler que les conversions OEM `wic.zst`, `wic.bmap`, `wic.zst.sha256sum` sont prévues sans `do_rootfs` ni recompilation cible, puis autoriser B2b privé uniquement si le log est conforme. Ne pas lancer `do_image_complete` réel sans ce contrôle ; ne pas inventer la présence des artefacts, d'un boot robot ou de signatures. [Dossier B2a](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1c--validation-reelle-de-la-wic-brute-et-preparation-b2a-31-octobre-2026).
+
+
 ## Reprise après B1b : validateur de fichier WIC testé sur fixtures (31 octobre 2026)
 
 `do_image_wic` a terminé avec code 0 sur WSL2, mais le contrôleur initial attendait `len(glob('*.wic'))==1` et a affiché `WIC absente ou multiple`. Le constructeur OE-core épinglé peut créer un alias `IMAGE_LINK_NAME.wic`. La PR #238 possède désormais `scripts/per_p16_b1b_wic_artifact_gate.py`, testé 9/9 sur images creuses synthétiques. Il **recherche sans modifier** le seul fichier physique (alias tolérés), vérifie huit partitions GPT et les CRC, calcule SHA-256 une fois ces vérifications réussies. **Aucun résultat WSL2 réel n'a encore été obtenu avec ce code**. Si `P16_B1B_AUDIT_STOP`, conserver la sortie et ne pas reconstruire.
