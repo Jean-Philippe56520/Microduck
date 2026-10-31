@@ -251,8 +251,8 @@ mod tests {
         assert!(notification(&s).is_some());
     }
 
-    #[test]
-    fn unix_mode_is_owner_only_and_existing_paths_are_refused() {
+    #[tokio::test]
+    async fn unix_mode_is_owner_only_and_existing_paths_are_refused() {
         let (_tmp, path) = private_path();
         let listener = bind(&path).unwrap();
         assert_eq!(std::fs::metadata(&path).unwrap().permissions().mode() & 0o777, 0o600);
@@ -314,7 +314,16 @@ mod tests {
         client.write_all(b"{\"method\":\"robot.move\"}\n").await.unwrap();
         timeout(Duration::from_secs(1), task).await.unwrap().unwrap().unwrap();
         let mut one = [0_u8; 1];
-        assert_eq!(timeout(Duration::from_secs(1), client.read(&mut one)).await.unwrap().unwrap(), 0);
+        // Linux may report ECONNRESET rather than EOF if the peer closes
+        // immediately while unread RPC bytes remain in the socket buffer.
+        // Both outcomes mean this input channel is closed, never dispatched.
+        let closed = timeout(Duration::from_secs(1), client.read(&mut one))
+            .await.unwrap();
+        assert!(match closed {
+            Ok(0) => true,
+            Err(error) if error.kind() == std::io::ErrorKind::ConnectionReset => true,
+            _ => false,
+        });
     }
 
     #[tokio::test]
