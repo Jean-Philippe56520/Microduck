@@ -7,6 +7,7 @@ from pathlib import Path
 import socket
 import tempfile
 import threading
+import sys
 import unittest
 
 from scripts.per_p14a_embedded_wheel import current_source
@@ -23,7 +24,14 @@ DEV_APPEND = LAYER / "recipes-core/images/microduck-image-dev.bbappend"
 spec = importlib.util.spec_from_file_location("kwipi_p15_health_probe", SCRIPT)
 assert spec is not None and spec.loader is not None
 health_probe = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(health_probe)
+old_dont_write_bytecode = sys.dont_write_bytecode
+try:
+    # The global unittest suite imports modules before running tests. Avoid
+    # producing an untracked .pyc inside the five-file Yocto source layer.
+    sys.dont_write_bytecode = True
+    spec.loader.exec_module(health_probe)
+finally:
+    sys.dont_write_bytecode = old_dont_write_byte
 
 
 class SingleResponseDaemon:
