@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**P16-A / porte métadonnées effective franchie (31/10/2026, opérateur WSL2) :** `P16_METADATA_GATE: PASS`, 11/11 contrôles `bitbake -e` entre DEV et production : cible `microduck-zero3`, OEM conservé, Companion et sonde DEV une fois seulement, aucun Kwipi en shipping, sonde `disable`. Hôte déjà contrôlé 16 CPU/30 Gio RAM/880 Gio disque partagé, paquets P14B et P15A-P conformes. [Protocole P16 et preuve](per-p16-dev-rootfs-offline-audit-2026-10-31.md). Étape suivante **test privé borné de `do_rootfs microduck-image-dev`**, pas encore exécuté : conserver journal/code retour, inspecter les fichiers installés, puis seulement considérer RAUC séparément. Droits CLOSED non résolus : aucune redistribution ; aucune fusion des PR #230/#231/#235/#238 ou validation robot inférée.
+
+
 **P16-A — porte hôte WSL2 complémentaire observée le 31/10/2026 :** P14B 19 modules/source/archive et P15A-P 3 fichiers/preset `disable` ont répondu `OK` dans les rapports privés ; six chemins KAS/couches présents ; Yocto `1ee58387810cebb67ae0d634c351d95024483bce`, 16 CPU, 30 Gio RAM disponible, 880 Gio disponibles sur volume commun. Les sélections BitBake DEV/shipping doivent encore être lues effectivement avant `do_rootfs`. [Dossier P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md). Licences fermées = test local privé seulement ; PR #230/#231/#235/#238 restent drafts ; pas de rootfs/RAUC/P17/robot prouvé.
 
 
