@@ -1,5 +1,11 @@
 # Feuille de route — Microduck Companion
 
+**P15-B1 — cycle de vie fixture PC désormais testé, non embarqué (31/10/2026) :** PR #239 sur #235 ; **12/12 tests P15-B1 PASS** et CI Python complète **2 006 tests OK (22 skipped)** au SHA `3caecae827686f479fd4abdda034cde0a217349a`, avec tests SIGTERM réel et socket Unix fictif. Le processus réutilise `PassiveCycleSupervisor` et une seule `ExperienceMemory`, mais la provenance reste exclusivement `mock`. **Pas de capteur OEM, robotctl, service systemd, modèle, motricité ni portage image**, aucune performance cible mesurée. CI dernier commit/PR draft à vérifier avant fusion ; P15 réel et qualification P17 ouverts. [Dossier P15B](per-p15b-passive-process-lifecycle-2026-10-31.md).
+
+
+**P15-B0/B1 — porte de lancement PC en PR candidate (31/10/2026) :** l'inventaire GitHub confirme `PassiveCycleSupervisor` et SQLite mono-écrivain déjà codés mais seulement utilisés avec des fixtures/cycles de démonstration, et pas de service Kwipi autonome. P15B ajoute une CLI mock-only **finie et interrompable**, acceptant une source fictive Unix externe et refusant les chemins OEM; **12 tests** de démarrage, signal, source invalide, mémoire partagée et quotas présentés à la CI. Aucune caméra, robotd, action motrice, nouvelle SQLite, modèle, unité systemd ou image redéployée. Attendre CI au dernier HEAD de la PR et tests réels futurs sur une source OEM authentifiée avant de qualifier le runtime embarqué. [Dossier P15B](per-p15b-passive-process-lifecycle-2026-10-31.md).
+
+
 **P15A-P — réussite réelle de `do_package` sur WSL2 (31/10/2026) :** code retour `0`, 643/643 tâches réussies, 633 déjà à jour, sans relance volontaire de P13B2/P14B. Le script et l'unité de la sonde OEM ont été traités par BitBake, mais les **trois octets/fichiers attendus en `packages-split` ne sont pas encore audités sur la machine**. [Validateur P15A-P et négatifs, 11/11 fixtures verts](per-p15a-readonly-health-probe-2026-10-31.md). Étape suivante : vérifier PKGDEST en lecture seule et obtenir un JSON local ; seulement ensuite réévaluer le rootfs DEV P16. Bundle RAUC, service physique, P17 et production non validés.
 
 
