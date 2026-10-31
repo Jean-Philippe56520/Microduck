@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-K (31/10/2026) — clone `meta-openembedded` superficiel confirmé (2 frontières shallow), pin Yocto conservé ; branche locale/serveur officiel/mirroir public au SHA `c734c2cb...`. La réparation (approfondissement ciblé de 128 commits, avec sauvegarde et contrôle d'ascendance) est **préparée mais pas exécutée**. [Critères/retour arrière](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). P16-A/W/I terminés localement, aucun nouveau build/RAUC/P17 autorisé sans contrôle de reprise.
+
+
 **P16-K (31/10/2026) :** contrôle local et distant de `git.openembedded.org/meta-openembedded/wrynose` : SHA **identiques** `c734c2cb...`, également celui du miroir public, où le pin OEM `f28a144...` est ancêtre ; aucun ancêtre commun visible en Git local. Hypothèse prioritaire : historique tronqué (*shallow*), non prouvée ; vérifier uniquement `--is-shallow-repository`/frontière Git avant toute opération correctrice. [P16-I/K](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). Aucune nouvelle construction/RAUC/P17.
 
 
