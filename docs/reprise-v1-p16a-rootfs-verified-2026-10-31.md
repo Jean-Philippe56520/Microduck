@@ -1,5 +1,12 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+## Reprise P16-IMAGE-B1b — do_image_wic WSL2 réussi, garde d'artefact STOP (31 octobre 2026)
+
+**Nouvelle preuve opérateur** : `P16_B1B_PREFLIGHT: PASS` (850,1 Gio), `P16_B1B_EXIT_CODE=0`, `microduck-image-dev:do_image_wic: Succeeded`, `Attempted 5683 tasks of which 4515 didn't need to be rerun and all succeeded`, deux warnings connus. L'étape Python suivante s'est arrêtée sur `P16_B1B_STOP: WIC absente ou multiple` parce qu'elle exigeait `len(list(glob('*.wic'))) == 1`, sans distinguer fichier régulier et lien symbolique. Le code OE-core épinglé prévoit `IMAGE_LINK_NAME.wic` → `IMAGE_NAME.wic` si l'alias est activé. **C'est une hypothèse de faux positif, pas encore une preuve du fichier réel.** Ne pas relancer ni WIC ni rootfs, ne pas nettoyer les caches.
+
+**Prochaine preuve** : sous le seul WORKDIR de `microduck-image-dev`, inventorier de manière bornée les `*.wic` dans `deploy-microduck-image-dev-image-complete`, et contrôler l'emplacement final si nécessaire, ainsi que les liens/cibles ; ensuite taille/GPT/SHA-256 en lecture seule. Le retour `do_image_wic` n'est pas à lui seul une attestation de partitionnement ou de démarrage ; **ni RAUC, ni production ni robot**. [Autorité P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1b--tache-wic-reelle-reussie-controle-de-cardinalite-a-corriger-31-octobre-2026).
+
+
 ## Reprise après revue complète P16-IMAGE-B1a (31 octobre 2026)
 
 La sortie opérateur du journal dry-run existant donne `TOTAL_TASKS=5683`, `ALREADY_UP_TO_DATE=4515`, `REMAINING_TASKS=1168`, `TASK_LINES_PARSED=1166`, `NATIVE_FETCH=5`, `NATIVE_COMPILE=5`, `STRICT_DO_ROOTFS=0` et quatre seules opérations cible `do_deploy` (`u-boot-rockchip`, `linux-rockchip`, `grub-efi`, `systemd-boot`). La sortie `P16_B1_GATE: STOP_REVIEW_TARGET_TASKS` vient du prédicat conservateur, **pas d'un échec de BitBake**. La source OE-core `ae5a301...` confirme `WKS_FILE_DEPENDS_BOOTLOADERS:aarch64 = "grub-efi systemd-boot"` et `do_image_wic[recrdeptask] += "do_deploy"`; WKS OEM utilise U-Boot, pas EFI. Les deux dépendances EFI génériques ne sont pas des preuves d'une mauvaise image. Aucun paquet cible ou rootfs ne doit être recompilé à la main.
