@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-IMAGE-B1b (31/10/2026) — WIC task réussie, fichier non attesté :** `bitbake -c image_wic microduck-image-dev` WSL2 code 0, do_image_wic réussi, 5683 tâches, 2 avertissements connus. Vérificateur ad hoc `len(glob('*.wic')) != 1` a bloqué après BitBake ; OE-core crée éventuellement un alias `IMAGE_LINK_NAME.wic`, donc diagnostic réel de cardinalité nécessaire **sans nouveau build**. Seules la localisation du fichier, la GPT réelle et la SHA restent ouvertes ; shipping, RAUC/P17/robot hors périmètre. [Dossier](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1b--tache-wic-reelle-reussie-controle-de-cardinalite-a-corriger-31-octobre-2026).
+
+
 **P16-IMAGE-B1a — plan WIC expliqué, 31/10/2026 :** journal réel 5683 tâches, `STRICT_DO_ROOTFS=0`, `TARGET_BUILD_OPERATIONS=4` toutes de type `do_deploy` (noyau, U-Boot, GRUB EFI, systemd-boot). Les deux derniers proviennent de dépendances **génériques AArch64** dans `image_types_wic.bbclass` OE-core épinglé, pas du WKS Rockchip sans EFI. **B1b autorisé :** un seul essai privé `bitbake -c image_wic microduck-image-dev` avec logs et stop, vérification du résultat brut dans `IMGDEPLOYDIR`. Zéro code moteur/sous-module modifié ; pas de WIC réalisée, RAUC/P17/robot/redistribution encore en attente. [Dossier](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1a--quatre-do_deploy-expliques-par-openembedded-epingle--b1b-autorise-sous-conditions-31102026).
 
 
