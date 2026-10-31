@@ -114,7 +114,7 @@ def _result(cycles: int, stored: int, scored: int, events: int,
         "oem_sensor_validated": False,
         "robot_validated": False,
         "action_executed": False,
-        "new_database_created": False,  # reuses ExperienceMemory; may initialize its file
+        "sqlite_writer_instances": 1 if cycles > 0 else 0,  # one existing ExperienceMemory instance
     }
 
 
