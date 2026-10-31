@@ -93,16 +93,15 @@ class FixtureLifecycleTests(unittest.TestCase):
         self.assertFalse(self.db.exists())
 
     def test_stop_during_wait_does_not_read_a_second_frame(self):
-        stop = threading.Event()
-        timer = threading.Timer(0.15, stop.set)
-        timer.start()
-        try:
-            r = run_fixture_lifecycle(
-                self.sock, self.db, cycles=16, interval_s=0.5,
-                stop_event=stop,
-            )
-        finally:
-            timer.join(timeout=2)
+        class StopOnFirstWait(threading.Event):
+            def wait(self, timeout=None):
+                self.set()
+                return True
+
+        r = run_fixture_lifecycle(
+            self.sock, self.db, cycles=16, interval_s=0.5,
+            stop_event=StopOnFirstWait(),
+        )
         self.assertEqual("fixture_stop_requested", r["status"])
         self.assertEqual(1, r["cycles_attempted"])
         self.assertEqual(0, r["observations_stored"])
