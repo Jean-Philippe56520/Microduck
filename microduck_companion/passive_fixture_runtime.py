@@ -62,7 +62,7 @@ def run_fixture_lifecycle(socket_path: Path, database: Path, *,
         raise TypeError("stop_event must be a threading.Event")
     stop = stop_event if stop_event is not None else threading.Event()
     if stop.is_set():
-        return _result(0, 0, 0, 0, {}, True)
+        return _result(0, 0, 0, 0, {}, True, memory_opened=False)
 
     memory = ExperienceMemory(database)
     try:
@@ -92,14 +92,14 @@ def run_fixture_lifecycle(socket_path: Path, database: Path, *,
         return _result(
             metrics.cycles_attempted, metrics.stored_observations,
             metrics.scored_consequences, metrics.source_events_accepted,
-            dict(metrics.status_counts), stop.is_set(),
+            dict(metrics.status_counts), stop.is_set(), memory_opened=True,
         )
     finally:
         memory.close()
 
 
 def _result(cycles: int, stored: int, scored: int, events: int,
-            statuses: dict[str, int], stopped: bool) -> dict:
+            statuses: dict[str, int], stopped: bool, *, memory_opened: bool) -> dict:
     return {
         "status": "fixture_stop_requested" if stopped else "fixture_cycles_finished",
         "source": "untrusted_mock_fixture_unix_only",
@@ -114,7 +114,7 @@ def _result(cycles: int, stored: int, scored: int, events: int,
         "oem_sensor_validated": False,
         "robot_validated": False,
         "action_executed": False,
-        "sqlite_writer_instances": 1 if cycles > 0 else 0,  # one existing ExperienceMemory instance
+        "experience_memory_instances": 1 if memory_opened else 0,  # never a second SQLite
     }
 
 
