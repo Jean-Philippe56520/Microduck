@@ -1,5 +1,8 @@
 # Microduck Companion / Kwipi — reprise V1 au 31 octobre 2026
 
+**P16-IMAGE-B1c — vérificateur d'artefact WIC corrigé, essais PC-fixtures PASS (31/10/2026) :** après `do_image_wic` réussi mais arrêt du vérificateur de cardinalité `*.wic`, ajout d'une lecture du répertoire `IMGDEPLOYDIR` qui distingue fichier réel/lien symbolique (`IMAGE_LINK_NAME` OE-core), valide huit partitions GPT et leurs CRC, puis SHA-256 du fichier physique. **9/9 tests synthétiques réussis**, CI HEAD et contrôle sur WSL2 encore à vérifier. **Aucune reconstruction ni suppression ne sont demandées** ; ne pas publier/installer l'image DEV. [Protocole et limites](docs/per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1c--correctif-de-verification-des-artefacts-sans-reconstruction-31-octobre-2026).
+
+
 **P16-IMAGE-B1b — tâche WIC réelle réussie, recherche d'artefact en attente (31/10/2026) :** sur WSL2, préflight 850,1 Gio / PASS, `bitbake -c image_wic microduck-image-dev` code **0**, `do_image_wic: Succeeded`, 5683 tâches toutes réussies ou à jour, deux warnings hôte connus. **Le vérificateur Python suivant s'est arrêté** sur `WIC absente ou multiple`, sans préciser 0 ou plusieurs `*.wic` ; cela n'invalide pas BitBake. OE-core épinglé `image.bbclass` peut créer `IMAGE_LINK_NAME.wic` comme alias de `IMAGE_NAME.wic`, donc `glob('*.wic')` peut compter deux noms pour une image ; hypothèse à vérifier sur le disque. **Ne relancer ni WIC ni rootfs.** Prochaine porte : inventorier les fichiers réels/alias, puis taille, GPT, SHA-256 ; aucun artefact bootable, RAUC ni robot validé. [Protocole](docs/per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1b--tache-wic-reelle-reussie-controle-de-cardinalite-a-corriger-31-octobre-2026).
 
 
