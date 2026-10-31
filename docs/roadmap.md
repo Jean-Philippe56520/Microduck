@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**État documentaire réconcilié après #236 (31/10/2026) :** P15A-P WSL2 **vérifié** par le code de sortie du packaging et le contrôle indépendant du PKGDEST (trois empreintes et preset `disable`), dossier [P15A-P](reprise-v1-p15a-package-verified-2026-10-31.md). Dans la branche P16/#238, audit statique d'un futur rootfs DEV avec comparaison des 19 fichiers P14B et de la sonde P15A ; tests fixtures uniquement, CI à contrôler au HEAD. Les mentions plus bas « fichiers P15A encore en attente » sont historiques et dépassées. Aucun nouveau build image, bundle/signature RAUC, P17 ou test sur robot.
+
+
 **P16 (31/10/2026) — audit rootfs DEV seulement codé, non exécuté sur image réelle :** vérification fail-closed source-only du manifeste, des 3 fichiers SHA-256 P15A-P et du service non activé ; fixtures CI à confirmer. [Protocole](per-p16-dev-rootfs-offline-audit-2026-10-31.md). Aucune image, signature RAUC, qualification P17 ni validation robot.
 
 
