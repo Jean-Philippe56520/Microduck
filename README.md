@@ -1,5 +1,8 @@
 # Microduck Companion / Kwipi — reprise V1 au 31 octobre 2026
 
+**P16-IMAGE-SR1 — revue des sources avant WIC (31/10/2026) :** 19 contrôles ponctuels (15 positifs, 4 négatifs) réussis sur les recettes P14C/P15A et le Yocto OEM épinglé : unité sans véritable `[Install]`, sonde désactivée, WIC A/B 2 Gio par rootfs et partition persistante 8 Gio, bundles DEV/shipping distincts, RAUC DEV `verity/ext4` avec hook de compatibilité. [Détails et limites](docs/per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-sr1--revue-des-recettes-et-du-plan-wic-oem-31102026--sources-seulement). **Ce n'est ni une CI, ni la réexécution de P16-IMAGE-PF1 sur WSL2** ; `P16_IMAGE_PREFLIGHT: PASS`, audit postinst réel, image WIC, RAUC et P17 demeurent en attente. Ne pas reconstruire les étapes déjà franchies.
+
+
 ## État de reprise prioritaire — fin de conversation du 31/10/2026
 
 **Source de vérité : [docs/plan-action.md](docs/plan-action.md).** Les mentions historiques plus bas (« P16-K bloqué », « rootfs non audité » ou « avertissements non classifiés ») ont été dépassées par les preuves suivantes. Elles restent conservées comme historique, et ne doivent **pas** réouvrir les mêmes essais.
