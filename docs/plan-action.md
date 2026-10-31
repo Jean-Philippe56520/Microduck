@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**V1 / état de reprise vérifié avant P16-A (31/10/2026) :** P13B2, P14B et P15A-P réussis localement sur WSL2, dont le rapport P15A `bitbake_p15a_package_files_verified_only` (3 fichiers réels, modes `0644`, SHA-256, preset `disable`) ; [preuve consolidée](reprise-v1-p15a-package-verified-2026-10-31.md). Les mentions historiques « PKGDEST en attente » plus bas sont dépassées. P16/#238 audite ensuite 19 modules Python/P14B et les 3 fichiers P15A **si et seulement si un rootfs DEV réel est construit** ; la vérification n'exécute pas BitBake et son code retour `--do-rootfs-exit 0` n'est qu'une déclaration opérateur. CI #230 BitBake toujours rouge par timeout, #230/#231/#235 non fusionnées, droits `LICENSE=CLOSED` / `source_license_checked=false` non levés. Aucun rootfs, RAUC, robot ou P17 attestés.
+
+
 **P16 — prochain jalon, contrôle hors ligne préparé (31/10/2026) :** branche empilée sur #235/#231/#230, script de vérification du rootfs DEV *après* un vrai `do_rootfs`, manifeste de paquets, 3 empreintes P15A-P et absence de lien systemd d'activation, avec cas négatifs fixtures. Pas de construction, pas de bundle RAUC, pas de P17 qualifié, pas de robot ; [porte d'arrêt et protocole](per-p16-dev-rootfs-offline-audit-2026-10-31.md). #230 CI BitBake distante rouge par timeout et droits de redistribution ouverts : **aucune fusion ni activation**.
 
 
