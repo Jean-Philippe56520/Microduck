@@ -1,0 +1,149 @@
+name: PER-P14C BitBake dev-only image selection (NOT rootfs/RAUC)
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature/per-p14b-real-yocto-python-package
+    paths:
+      - ".github/workflows/per-p14c-dev-image-selection.yml"
+      - "yocto/meta-kwipi-dev-image/**"
+      - "scripts/per_p14c_dev_image_env_gate.py"
+      - "tests/test_per_p14c_dev_image_env_gate.py"
+      - "docs/per-p14c-dev-image-only-2026-10-30.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-bitbake-dev-versus-shipping-metadata:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 38
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      P14C_YOCTO: /tmp/p14c-yocto
+      P14C_SOURCE: /tmp/p14c-p11-source
+      P14C_OEM: /tmp/p14c-meta-kwipi
+      P14C_PY: /tmp/p14c-meta-kwipi-python
+      KAS_WORK_DIR: /tmp/p14c-kas-work
+      KAS_BUILD_DIR: /tmp/p14c-kas-build
+      KAS_CLONE_DEPTH: "1"
+      P14C_DEV_ENV: /tmp/p14c-effective-dev-image-env.txt
+      P14C_SHIP_ENV: /tmp/p14c-effective-shipping-image-env.txt
+      P14C_APPENDS: /tmp/p14c-effective-appends.txt
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: dtolnay/rust-toolchain@1.89.0
+      - name: Verify pins, source-only tests and strict negative image-selection cases
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git -C upstream/microduck_rl rev-parse HEAD)" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          python -m unittest discover -s tests -p 'test_per_p14c_dev_image_env_gate.py' -v
+          python -m unittest discover -s tests -p 'test_per_p14b_yocto_package_gate.py' -v
+          python -m unittest discover -s tests -p 'test_per_p14b_yocto_python_layer.py' -v
+          git diff --exit-code -- upstream/
+      - name: Acquire exact pinned official Yocto checkout
+        run: |
+          set -euo pipefail
+          mkdir -p "$P14C_YOCTO"
+          git -C "$P14C_YOCTO" init -q
+          git -C "$P14C_YOCTO" remote add origin https://github.com/pollen-robotics/microduck_yocto.git
+          GIT_TERMINAL_PROMPT=0 git -C "$P14C_YOCTO" fetch --depth 1 origin 1ee58387810cebb67ae0d634c351d95024483bce
+          git -C "$P14C_YOCTO" checkout --detach FETCH_HEAD
+          test "$(git -C "$P14C_YOCTO" rev-parse HEAD)" = "1ee58387810cebb67ae0d634c351d95024483bce"
+      - name: Assemble source-only P12 daemon and audited P14B Python without new image
+        run: |
+          set -euo pipefail
+          python -m scripts.per_p11_v1_source_release \
+            --oem-checkout upstream/microduck --output-dir "$P14C_SOURCE"
+          python -m scripts.per_p12_yocto_layer stage \
+            --yocto "$P14C_YOCTO" --source-dir "$P14C_SOURCE" --output "$P14C_OEM"
+          python -m scripts.per_p14b_yocto_python_layer stage \
+            --output "$P14C_PY"
+          python -m scripts.per_p12_yocto_layer verify --layer "$P14C_OEM"
+          python -m scripts.per_p14b_yocto_python_layer verify --layer "$P14C_PY"
+          test "$(git -C "$P14C_YOCTO" status --porcelain --untracked-files=no)" = ""
+      - name: Install official BitBake host prerequisites without disabling any sandbox
+        run: |
+          set -euo pipefail
+          free_kb="$(df -Pk /tmp | awk 'NR==2 {print $4}')"
+          echo "Disk available before metadata parse: $free_kb KB"
+          test "$free_kb" -ge 6000000 || { echo "P14C STOP: insufficient disk"; exit 1; }
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends chrpath diffstat
+          python -m venv "$RUNNER_TEMP/kwipi-p14c-kas-venv"
+          "$RUNNER_TEMP/kwipi-p14c-kas-venv/bin/pip" install --no-cache-dir --disable-pip-version-check 'kas==5.2.0'
+          mkdir -p "$KAS_WORK_DIR" "$KAS_BUILD_DIR"
+          echo "$RUNNER_TEMP/kwipi-p14c-kas-venv/bin" >> "$GITHUB_PATH"
+      - name: Compose three explicit temporary layers without editing OEM repositories
+        run: |
+          set -euo pipefail
+          cat > "$P14C_YOCTO/kas/per-p14c-opt-in.yml" <<EOF
+          header:
+            version: 14
+          repos:
+            kwipi:
+              path: $P14C_OEM
+              layers:
+                .:
+            kwipipy:
+              path: $P14C_PY
+              layers:
+                .:
+            kwipidev:
+              path: $GITHUB_WORKSPACE/yocto/meta-kwipi-dev-image
+              layers:
+                .:
+          EOF
+          test "$(git -C "$P14C_YOCTO" status --porcelain --untracked-files=no)" = ""
+      - name: Run real BitBake -p, -e dev and -e shipping, show-appends; never build a rootfs
+        run: |
+          set -euo pipefail
+          cfg="$P14C_YOCTO/kas/microduck.yml:$P14C_YOCTO/kas/per-p14c-opt-in.yml"
+          timeout 1650s kas shell "$cfg" -c \
+            "bitbake -p && bitbake -e microduck-image-dev > $P14C_DEV_ENV && bitbake -e microduck-image > $P14C_SHIP_ENV && bitbake-layers show-appends > $P14C_APPENDS"
+          test -s "$P14C_DEV_ENV"
+          test -s "$P14C_SHIP_ENV"
+          test -s "$P14C_APPENDS"
+      - name: Verify dev-only inclusion and zero production changes via real effective variables
+        run: |
+          set -euo pipefail
+          python -m scripts.per_p14c_dev_image_env_gate \
+            --dev-env "$P14C_DEV_ENV" \
+            --shipping-env "$P14C_SHIP_ENV" \
+            --appends "$P14C_APPENDS" \
+            --dev-layer "$GITHUB_WORKSPACE/yocto/meta-kwipi-dev-image" \
+            --py-layer "$P14C_PY" \
+            --yocto "$P14C_YOCTO" \
+            --root "$GITHUB_WORKSPACE" \
+            --report "$RUNNER_TEMP/p14c-image-selection-report.json"
+          python - <<'PY'
+          import json, os, pathlib
+          file = pathlib.Path(os.environ["RUNNER_TEMP"]) / "p14c-image-selection-report.json"
+          report = json.loads(file.read_text())
+          assert report["status"] == "real_bitbake_dev_only_image_selection_verified"
+          assert report["dev_image_package_count"] == 1
+          assert report["shipping_image_package_count"] == 0
+          assert not report["packaged_in_rootfs"]
+          assert not report["service_installed"]
+          assert not report["production_shipping_approved"]
+          print("P14C OEM dev metadata only: no rootfs or RAUC generated")
+          PY
+          git diff --exit-code -- upstream/
+          test "$(git -C "$P14C_YOCTO" status --porcelain --untracked-files=no)" = ""
+      - name: Keep only bounded, nonprivate BitBake selection proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: kwipi-p14c-dev-only-selection-proof
+          path: ${{ runner.temp }}/p14c-image-selection-report.json
+          retention-days: 7
