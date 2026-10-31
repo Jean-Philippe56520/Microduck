@@ -1,5 +1,8 @@
 # P16 — contrôle hors ligne du rootfs DEV, sans construction (31/10/2026)
 
+**Préflight WSL2 complémentaire transmis (31/10/2026) :** les cinq contrôles indépendants de rapport sont `OK` : P14B 19 fichiers, source identique, archive SHA-256 attendue, P15A 3 fichiers, preset `disable`. Les six entrées attendues existent (`yocto/kas/microduck.yml`, trois overlays KAS P13B2/P14B/P15A, `meta-kwipi`, `meta-kwipi-python`). `yocto@1ee58387810cebb67ae0d634c351d95024483bce`, 16 CPU, 30 Gio de RAM disponible, swap 8 Gio ; espace disponible partagé 880 Gio. Les deux chemins déclarés dans l'overlay P15A pointent vers `p15a-pr235/yocto/meta-kwipi-dev-image` et `p15a-pr235/yocto/meta-kwipi-p15-readonly`. **Preuve : affichage opérateur WSL2 ; pas un rapport CI ni une mesure cible.** Il reste avant `do_rootfs` la vérification effective sur l'hôte de `IMAGE_INSTALL` DEV/production, `MACHINE`, activation systemd et de la composition KAS complète. `LICENSE=CLOSED` et droit de redistribution P14B non levé : **construction pour usage privé de développement uniquement**, aucune distribution, signature/installation ou autorité moteur. Après ces contrôles et succès BitBake réels, auditer le rootfs puis reprendre RAUC/P17 séparément.
+
+
 ## Pré-enregistrement
 
 **But :** inspecter une image DEV *réellement construite* avant toute proposition de RAUC ou P17. Aucun `do_rootfs`, signature, service cible ou test robot exécuté par ce lot. Branche empilée sur #235 → #231 → #230 ; `main@eab73e9435dbd217c0e50b9e9ecfd59730a6e068`. OEM `942e58e3`, Yocto `1ee58387`, OE `ae5a3010` ; gitlinks inchangés. Les SHA réels P15A-P sont ceux de `docs/reprise-v1-p15a-package-verified-2026-10-31.md`.
