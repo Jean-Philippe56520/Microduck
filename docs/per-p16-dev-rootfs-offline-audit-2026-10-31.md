@@ -12,6 +12,48 @@
 
 **Succès/arrêt préfixés :** SHA et taille nominaux B2c contrôlés au niveau métadonnées, les deux chemins `.wic` et `.wic.zst` existants **dans `build/tmp/deploy/images/microduck-zero3/`**, tous deux physiques, pas de symlink de sortie ; `sgdisk --verify` retourne code 0 et aucun problème de CRC/mismatch GPT, `zstd -dc` et `cmp` retournent chacun code 0 avec `set -o pipefail`. Succès `P16_B3_SECONDARY_GPT: PASS` et `P16_B3_ZST_BYTE_EQ_WIC: PASS`. En cas de non-zéro, outil absent, taille dérivée ou fichier modifié : **STOP** sans corriger disque, réinstaller, recomprimer, écraser, nettoyer ni rebâtir ; conserver sorties expurgées et examiner. Une vérification des empreintes par plage bmap ou de la présence/autorité du firmware est séparée si réellement nécessaire pour le prochain objectif.
 
+**Commande opérateur B3 (Ubuntu WSL2 uniquement ; lecture seule, sans fichier décompressé intermédiaire) :**
+
+```bash
+(
+  cd "$HOME/kwipi-build-v1" || exit 1
+  set -o pipefail
+
+  dir="$PWD/build/tmp/deploy/images/microduck-zero3"
+  stem="microduck-image-dev-microduck-zero3.rootfs-20261031195334"
+  wic="$dir/$stem.wic"
+  zst="$dir/$stem.wic.zst"
+
+  for file in "$wic" "$zst"; do
+    test -f "$file" && test ! -L "$file" || { echo "P16_B3_STOP: fichier absent ou lien"; exit 1; }
+  done
+  test "$(stat -c %s "$wic")" = "12968805376" || { echo "P16_B3_STOP: taille WIC"; exit 1; }
+  test "$(stat -c %s "$zst")" = "310230800" || { echo "P16_B3_STOP: taille ZST"; exit 1; }
+
+  for tool in zstd cmp timeout; do
+    command -v "$tool" >/dev/null || { echo "P16_B3_STOP: outil absent: $tool"; exit 1; }
+  done
+
+  if timeout --signal=TERM --kill-after=60s 3600 bash -c       'set -o pipefail; zstd -q -d -c -- "$1" | cmp - "$2"'       _ "$zst" "$wic"; then
+    echo "P16_B3_ZST_BYTE_EQ_WIC: PASS"
+  else
+    echo "P16_B3_STOP: flux compresse different du WIC brut"
+    exit 1
+  fi
+
+  command -v sgdisk >/dev/null || { echo "P16_B3_GPT_PENDING: sgdisk absent"; exit 2; }
+  if sgdisk --verify "$wic"; then
+    echo "P16_B3_SECONDARY_GPT: PASS"
+    echo "P16_B3_READONLY: PASS"
+  else
+    echo "P16_B3_STOP: verifier la GPT sans la reparer"
+    exit 1
+  fi
+)
+```
+
+En cas d'outil absent, conserver les preuves B2c et ne pas installer/compresser/recompiler automatiquement. Le code retour 2 signale uniquement l'outil `sgdisk` absent **après** un éventuel PASS ZST, pas une erreur prouvée de la GPT. Ne coller que le bloc shell et transmettre la sortie, jamais l'image.
+
 **Après B3**, P16 reste limité à une image DEV privée construite/testée localement : pas d'essai de boot, disponibilité ressources/RSS/thermie, rollback RAUC, signature, licence de redistribution, OS shipping, ni P17 (gel et batteries de tests). Les PR #230/#231/#235/#238 sont encore des dépendances empilées/non fusionnées, à revoir avec CI et droits séparément.
 
 
