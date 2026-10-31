@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**P16 — prochain jalon, contrôle hors ligne préparé (31/10/2026) :** branche empilée sur #235/#231/#230, script de vérification du rootfs DEV *après* un vrai `do_rootfs`, manifeste de paquets, 3 empreintes P15A-P et absence de lien systemd d'activation, avec cas négatifs fixtures. Pas de construction, pas de bundle RAUC, pas de P17 qualifié, pas de robot ; [porte d'arrêt et protocole](per-p16-dev-rootfs-offline-audit-2026-10-31.md). #230 CI BitBake distante rouge par timeout et droits de redistribution ouverts : **aucune fusion ni activation**.
+
+
 **P15A-P — nouvelle preuve de packaging WSL2 (31/10/2026, opérateur local) :** `bitbake -c package kwipi-readonly-probe` terminé, `P15A_EXIT_CODE=0`, 643 tâches toutes réussies, 633 sans relance, `do_install/do_package` verts, 2 warnings non bloquants. **Reste obligatoire avant P16 :** comparer les trois fichiers réels de `PKGDEST` aux cinq sources épinglées P15A, vérifier le preset `disable`, les modes `0644` et l'absence d'activation. Le validateur source-only [P15A-P](per-p15a-readonly-health-probe-2026-10-31.md) et ses 11 tests positifs/négatifs sont [verts en CI](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41216639928), mais il n'a pas inspecté le WSL2. `do_package` ≠ rootfs ≠ service opérationnel. P15 complet, P16 (rootfs dev/RAUC) et P17 (qualification) restent en attente ; aucun nouveau poids, motorisation, sous-module ou modèle. La CI finale de la PR #235 et les dépendances #230/#231 doivent être examinées avant fusion.
 
 
