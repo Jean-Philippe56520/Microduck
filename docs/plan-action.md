@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**P16-S1 — prochaine porte systemd/postinst du rootfs (31/10/2026) :** P16-IMAGE-PF1 a PASS sur WSL2 (850,2 Gio). Un petit audit **lecture seule**, réutilisant P16-A, recherche les dépendances actives, symlinks, overrides/drop-ins et presets de la sonde et les postinsts différés. 14/14 tests PC-fixtures réussis ; examen du rootfs réel en attente, CI finale à revoir. Les *corps des postinsts des paquets*, permissions et image DEV/shipping restent à examiner après ce contrôle ; ce script **n'autorise pas la WIC** à lui seul. Utiliser `yocto/scripts/check-wks-layout.py` OEM pour le layout. [Protocole et commande WSL2](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-s1--audit-systemd-et-postinst-differes-31102026--rootfs-wsl2-en-attente). Ne pas recompiler P13B2/P14B/P15A/rootfs.
+
+
 **P16-IMAGE-PF1 — PASS WSL2 (31/10/2026, nouvelle preuve opérateur) :** la commande de préflight corrigée, déjà documentée et testée sur fixtures, a été réexécutée sur `~/kwipi-build-v1`. Sorties : `DISK_FREE_GIB: 850.2`, `YOCTO_PIN/P15A_PIN/PROBE_SECTION_CHECK/PROBE_DISABLED_PRESET: PASS`, `P16_IMAGE_PREFLIGHT: PASS`, `IMAGE_BUILT: False`. **Seul le préflight est franchi** : ce n'est ni une WIC produite, ni l'audit étendu services/postinst, ni RAUC/P17/robot. La prochaine porte, sans recompilation, est un examen effectif des activations indirectes systemd, permissions et scripts post-installation du rootfs DEV ; ensuite seulement lot `do_image`/WIC borné et privé. [Dossier de reprise](reprise-v1-p16a-rootfs-verified-2026-10-31.md).
 
 
