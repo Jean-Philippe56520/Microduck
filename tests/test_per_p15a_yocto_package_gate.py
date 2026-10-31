@@ -89,9 +89,9 @@ class P15APackageGateFixtureTests(unittest.TestCase):
             assignment = next(line for line in self.env.splitlines()
                               if line.startswith("export " + var + "="))
             for altered in (
-                self.env.replace(assignment + "\\n", ""),
-                self.env + assignment + "\\n",
-                self.env + assignment.replace("export ", "", 1) + "\\n",
+                self.env.replace(assignment + "\n", ""),
+                self.env + assignment + "\n",
+                self.env + assignment.replace("export ", "", 1) + "\n",
                 self.env.replace(assignment,
                                  assignment.replace('="', "=")
                                            .rstrip('"')),

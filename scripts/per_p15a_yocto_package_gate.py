@@ -52,7 +52,21 @@ def _effective_directory(env: str, name: str) -> str:
     if name not in EXPORTED_DIRECTORIES:
         raise EnvRefused("unexpected exported directory key")
     found = re.findall(
-        r"^(?:export[ \\t]+)?" + re.escape(name) + r'="(.*)"
+        r"^(?:export[ \t]+)?" + re.escape(name) + r'="(.*)"$',
+        env, re.M,
+    )
+    if len(found) != 1:
+        raise EnvRefused(
+            "effective BitBake exported directory missing/duplicate: " + name)
+    return found[0]
+
+
+def _effective(env: str, layer: Path) -> dict[str, str]:
+    values = {
+        key: (_effective_directory(env, key)
+              if key in EXPORTED_DIRECTORIES else bbvar(env, key))
+        for key in REQUIRED
+    }
     if (values["PN"] != PN or values["PV"] != "0.1"
             or values["LICENSE"] != "CLOSED"):
         raise EnvRefused("P15A recipe identity or closed license changed")
