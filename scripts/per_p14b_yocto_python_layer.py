@@ -93,21 +93,33 @@ def conf() -> str:
 def recipe(archive_sha: str) -> str:
     if len(archive_sha) != 64 or any(x not in "0123456789abcdef" for x in archive_sha):
         raise PackageRefused("invalid Python source archive checksum")
+    modules = sorted(Path(p).name for p in p14a.SELECTED)
+    if (len(modules) != 19 or len(set(modules)) != 19
+            or any(p != "microduck_companion/" + Path(p).name
+                   or not p.endswith(".py") for p in p14a.SELECTED)):
+        raise PackageRefused("P14A source paths are no longer flat/strict Python modules")
     return (
         'SUMMARY = "Kwipi Companion read-only Python cognitive candidate"\n'
-        'DESCRIPTION = "Only the preaudited P14A N6+OEM read-only telemetry Python slice. '
-        'No motors, startup unit, policy or model."\n'
+        'DESCRIPTION = "Only 19 audited P14A Python modules, no motors or model."\n'
         'HOMEPAGE = "https://github.com/Jean-Philippe56520/Microduck"\n'
-        '# No explicit software redistribution license in the source checkout: '
-        'private development only.\n'
+        '# No explicit source redistribution license: private development only.\n'
         'LICENSE = "CLOSED"\n'
-        'inherit python_pep517\n'
-        'DEPENDS += "python3-setuptools-native"\n'
+        '# The wheel was built/checked in P14A. Install the identical pure-Python '
+        'sources here without rebuilding native setuptools/Python toolchains.\n'
+        'inherit allarch python3-dir\n'
         'SRC_URI = "file://' + SRC_NAME + ';subdir=${BP};name=kwipipy"\n'
         'SRC_URI[kwipipy.sha256sum] = "' + archive_sha + '"\n'
-        '# Default OE-core S is ${UNPACKDIR}/${BP}; never use WORKDIR in S.\n'
+        '# Default pinned OE S is ${UNPACKDIR}/${BP}; never use WORKDIR in S.\n'
         'RDEPENDS:${PN} += "' + " ".join(sorted(RUNTIME)) + '"\n'
-        '# NOT added to any image. No service, entry point, writable DB or auto-start.\n'
+        'do_install() {\n'
+        '    install -d "${D}${PYTHON_SITEPACKAGES_DIR}/microduck_companion"\n'
+        '    for module in ' + " ".join(modules) + '; do\n'
+        '        install -m 0644 "${S}/microduck_companion/$module" '
+        '"${D}${PYTHON_SITEPACKAGES_DIR}/microduck_companion/$module"\n'
+        '    done\n'
+        '}\n'
+        'FILES:${PN} += "${PYTHON_SITEPACKAGES_DIR}/microduck_companion"\n'
+        '# NOT added to any image. No service, entry point, DB, model or auto-start.\n'
     )
 
 
