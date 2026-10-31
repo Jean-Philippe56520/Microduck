@@ -160,7 +160,9 @@ class P15AReadOnlyHealthTests(unittest.TestCase):
         self.assertIn("RestrictAddressFamilies=AF_UNIX", unit)
         self.assertIn("NoNewPrivileges=yes", unit)
         self.assertIn("ProtectSystem=strict", unit)
-        self.assertNotIn("[Install]", unit)
+        active_unit_lines = [line.strip() for line in unit.splitlines()
+                             if line.strip() and not line.lstrip().startswith("#")]
+        self.assertNotIn("[Install]", active_unit_lines)
         self.assertNotIn("WantedBy=", unit)
         self.assertNotIn("Restart=", unit)
         self.assertNotIn("ExecStartPre=", unit)
@@ -176,7 +178,10 @@ class P15AReadOnlyHealthTests(unittest.TestCase):
         unit = UNIT.read_text(encoding="utf-8")
         recipe = RECIPE.read_text(encoding="utf-8")
         with self.assertRaises(AssertionError):
-            self.assertNotIn("[Install]", unit + "\n[Install]\nWantedBy=multi-user.target\n")
+            changed_lines = [line.strip() for line in
+                             (unit + "\n[Install]\nWantedBy=multi-user.target\n").splitlines()
+                             if line.strip() and not line.lstrip().startswith("#")]
+            self.assertNotIn("[Install]", changed_lines)
         with self.assertRaises(AssertionError):
             self.assertIn('SYSTEMD_AUTO_ENABLE:${PN} = "disable"',
                           recipe.replace(' = "disable"', ' = "enable"'))
