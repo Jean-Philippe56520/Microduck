@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**P16-A — preuve logicielle WSL2 (31/10/2026), PAS preuve matérielle robot :** le rootfs DEV issu de 4515 tâches BitBake terminées avec code 0 a été inspecté sur disque ; `P16_AUDIT_EXIT_CODE=0`, 19 modules Python, 3 fichiers de sonde SHA-256 conformes et aucune activation par lien systemd détectée dans les chemins contrôlés. [Reprise P16-A](reprise-v1-p16a-rootfs-verified-2026-10-31.md). Cette preuve n'ajoute aucune mesure RAM/RSS/thermie/NPU/50 Hz/latence/énergie sur RK3566. 32 avertissements à classifier, référence `meta-openembedded` dans KAS à résoudre ; ni image amorçable, ni RAUC ni robot validés.
+
+
 **P16-A (31/10/2026) :** P15A-P est **vérifié sur l'hôte WSL2**, pour les trois fichiers et leurs empreintes dans [le dossier de reprise](reprise-v1-p15a-package-verified-2026-10-31.md). L'audit P16 en PR #238 reste source-only/fixtures, même si les CI passent ; aucun rootfs ni mesures RK3566/thermie/RSS/NPU/moteurs, pas de licence de redistribution ni RAUC. Les notes historiques ci-dessous évoquant un PKGDEST non vérifié sont désormais dépassées.
 
 
