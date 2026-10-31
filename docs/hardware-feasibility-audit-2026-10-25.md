@@ -1,5 +1,7 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**P15A-P — résultat réel de packaging WSL2, aucune mesure du robot (31/10/2026) :** `bitbake -c package kwipi-readonly-probe` `P15A_EXIT_CODE=0`, 643 tâches réussies ; validation ultérieure du `PKGDEST` réel `bitbake_p15a_package_files_verified_only`, 3/3 fichiers à permissions `0644`, preset systemd `disable`, 5/5 sources revues. [Preuves, SHA-256 et répertoire WSL2](reprise-v1-p15a-package-verified-2026-10-31.md). Zéro `do_rootfs`, aucun démarrage sur RK3566, aucune mesure RSS/CPU/chaleur/batterie/NPU/50 Hz ou sûreté physique ; `robot_validated=false`. Le groupe Unix `robot` autorise le socket RPC complet au niveau OS : le code de la sonde restreint ses appels, pas l'ACL Unix. Ne pas extrapoler les performances à partir des 633 tâches de build conservées.
+
 **P14B — validation de paquet hôte uniquement (31/10/2026) :** l'opérateur a communiqué `P14B_EXIT_CODE=0` et le validateur `bitbake_python_package_files_verified_only`, 19 modules Python 3.14 vérifiés en source. `bitbake_task_execution_attested_by_this_script=false` indique que le script de validation seul n'atteste pas l'exécution BitBake. Ni mesure RSS/CPU/thermie sur RK3566, ni runtime target/robot, ni rootfs, ni signature RAUC ; aucune extrapolation de ressource robot. La CI P14B GitHub reste arrêtée sur timeout sur runner éphémère, indépendante de cette preuve WSL2.
 
 

@@ -1,5 +1,7 @@
 # Feuille de route — Microduck Companion
 
+**Distribution V1 — preuve P15A-P validée sur WSL2, 31/10/2026 (dernier état) :** P13B2 Rust AArch64 et P14B Python 19/19 restent validés localement ; P14C DEV-only parse CI validé. P15A : 643/643 tâches BitBake réussies (`P15A_EXIT_CODE=0`), suivi du validateur de `PKGDEST` `bitbake_p15a_package_files_verified_only` (`P15A_PACKAGE_VERIFY_EXIT_CODE=0`) : 3/3 fichiers en `0644`, preset systemd `disable`, 5 sources revues, empreintes complètes dans [dossier de reprise](reprise-v1-p15a-package-verified-2026-10-31.md). **Ceci n'installe ni ne démarre la sonde sur la cible ; P15 complet n'est pas testé.** P16 `do_rootfs` DEV, bundle RAUC/signature DEV et P17 qualification ne sont ni exécutés ni validés. #230/#231/#235 encore en brouillon : revue CI finale/risque licence et socket-groupe `robot` avant fusion. N'effectuer aucune nouvelle compilation P13B2/P14B/P15A sans changement prouvé.
+
 **P15–P17 — plan V1 acté sur preuve P14B WSL2 du 31/10/2026 :** [portes détaillées](per-p15-p17-v1-release-gates-2026-10-31.md). P14B local réussi selon shell+validateur 19/19, pas de rootfs ; #230/#231 restent brouillons. P15A (#235) propose uniquement une sonde manuelle DEV (tests PC), P16 rootfs+RAUC et P17 qualification non exécutés, robot absent. Pas de signature/autorité moteur/autonomie annoncée.
 
 
