@@ -1,5 +1,12 @@
 # P16 — contrôle hors ligne du rootfs DEV, sans construction (31/10/2026)
 
+## P16-S1 — résultat réel WSL2 : PASS (31 octobre 2026)
+
+**Preuve opérateur, non CI ni test robot :** au checkout #238 `92985a0bcd787b7ad05254439c8f356b4853beec`, `python3 yocto/scripts/check-wks-layout.py` annonce `layout ok` et une image de 12 968 787 968 octets / 12,08 Gio. L'audit hors ligne `per_p16_dev_rootfs_service_gate.py` a relu le rapport P16-A et revérifié trois SHA P15A, examiné **226 autres fichiers systemd, 17 presets**, rapporté **0 référence d'autoactivation de sonde** et **0 postinst différé dans les répertoires scannés** : `status=p16_s1_no_observed_probe_autostart_references_in_scanned_rootfs`. Champs du JSON transmis : `postinst_package_scriptlets_audited=false`, `systemd_runtime_or_boot_verified=false`, `robot_socket_group_full_rpc_access_risk_open=true`, `license_redistribution_approved=false`, `image_built=false`, `robot_validated=false` ; ne pas extrapoler. Les lignes `status:: command not found` en fin de shell proviennent du collage du JSON illustratif **après** les validations : pas un échec du garde.
+
+**Décision :** P16-S1 franchi dans son périmètre. Ne pas relancer son contrôle, BitBake, le rootfs ou le validateur de partitions sans preuve de régression. Porte restante : inspecter la configuration et la keyring RAUC DEV réellement installées, les modes de fichier et les scripts postinst de paquets pertinents, notamment `rauc-conf-dev-ca` (dont la recette OEM prévoit un `pkg_postinst` qui ajoute la CA DEV). L'absence de postinst différé S1 ne constitue pas la preuve du contenu ou de l'exécution de chaque scriptlet. Le risque de privilèges `SupplementaryGroups=robot` reste explicitement non résolu, donc aucune activation ni installation sur robot. Pas encore de WIC/RAUC/P17.
+
+
 ## P16-S1 — audit systemd et postinst différés (31/10/2026 ; rootfs WSL2 en attente)
 
 **Objectif / manque prouvé.** P16-A vérifiait les 19 modules Python, les trois fichiers P15A et des liens systemd limités ; il n'examinait pas les références actives d'autres unités, leurs drop-ins/overrides, tous les presets ou les post-installations différées. Le préflight PF1 corrigé a depuis retourné `P16_IMAGE_PREFLIGHT: PASS` et 850,2 Gio libres sur le WSL2 de l'opérateur, mais ne constitue pas ce nouvel audit.
