@@ -44,7 +44,7 @@ class FixtureLifecycleTests(unittest.TestCase):
         self.assertEqual(1, r["cycles_attempted"])
         self.assertEqual(1, r["observations_stored"])
         self.assertEqual(1, r["events_accepted"])
-        self.assertEqual(1, r["sqlite_writer_instances"])
+        self.assertEqual(1, r["experience_memory_instances"])
         self.assertEqual([("ball", "mock")], self._records())
         self.assertEqual(0, r["motor_commands_issued"])
         self.assertFalse(r["robot_validated"])
