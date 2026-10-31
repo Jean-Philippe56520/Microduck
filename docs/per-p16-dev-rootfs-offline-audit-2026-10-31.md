@@ -1,5 +1,16 @@
 # P16 — contrôle hors ligne du rootfs DEV, sans construction (31/10/2026)
 
+## P16-IMAGE-B1c — correctif de vérification des artefacts, sans reconstruction (31 octobre 2026)
+
+**Objectif lié au vrai manque** : B1b `do_image_wic` s'est terminé avec `P16_B1B_EXIT_CODE=0`, mais le contrôle Python temporaire `len(glob('*.wic')) == 1` a refusé **zéro ou plusieurs noms** après la tâche sans en donner le nombre. Dans OE-core épinglé `image.bbclass`, `create_symlinks` peut ajouter `IMAGE_LINK_NAME.wic` à côté du fichier `IMAGE_NAME.wic`. Le nombre et la localisation réels restent **inconnus** sans nouvelle inspection WSL2. Réutiliser le WORKDIR et la règle GPT du WKS OEM épinglé, sans reconstruire ni modifier la couche ou le service.
+
+**Solution bornée** : `scripts/per_p16_b1b_wic_artifact_gate.py` (Git blob `76d9c972870d6c4fe01645c359e5199dc88fb4e7`) lit un unique `rootfs` DEV existant et le répertoire `deploy-microduck-image-dev-image-complete`. Il **affiche le nombre de noms** `*.wic`, la nature fichier/lien, résout les liens sans sortir de ce répertoire, exige **une seule cible physique régulière** et une taille compatible avec la WIC OEM (~12,08 Gio), puis contrôle **CRC32 d'en-tête GPT, CRC32 de table et huit offsets/tailles/étiquettes** fixes (v_storage, uboot_env, uboot, boot, boot_b, rootfs_a/b, data). Seulement si tout passe, il calcule l'empreinte SHA-256 du fichier réel **en lecture séquentielle de blocs de 8 Mio**, sans créer ni modifier de copie. Ce n'est ni une preuve de tous les octets des partitions, ni une validation du GPT de secours, ni un essai de boot.
+
+**Tests préannoncés** : 9 cas synthétiques PC **9/9 PASS** avec fichier réel seul, fichier réel + lien symbolique valide, répertoire absent, deux WIC physiques, lien cassé, partition GPT déplacée, CRC erroné, fichier absent et taille incohérente. Les fixtures sont creuses (`truncate`), ne copient aucune image OEM ni média privé. Git blob des tests `c2bf0f84f2c44893684f2e9e790766012b1a70ef`, CI spécialisée P16 ajoutée sur cette PR ; **résultat CI du HEAD à vérifier**, et **aucune exécution WSL2 encore rapportée** pour ce garde. Le même script retourne `P16_B1B_AUDIT_STOP` en cas d'anomalie ; **ne pas relancer BitBake**.
+
+**Commande WSL2 en lecture seule, après récupération du dernier HEAD de #238 et contrôle du SHA local** : `cd ~/kwipi-build-v1 && PYTHONDONTWRITEBYTECODE=1 python3 p16-pr238/scripts/per_p16_b1b_wic_artifact_gate.py`. Ne partager que le résultat texte/empreinte, jamais la WIC DEV, ni les certificats privés, ni une copie de rootfs. Si une WIC régulière unique est trouvée et ses huit partitions conformes, le garde indique `P16_B1B_STAGE_GPT: PASS` puis `WIC_SHA256` et `P16_B1B_SHA256: PASS`. **Un succès du garde ne signifie pas `do_image_complete`, `.wic.zst`, `.bmap`, image signée/bootable, licence approuvée ou robot validé**.
+
+
 ## P16-IMAGE-B1b — tâche WIC réelle réussie, contrôle de cardinalité à corriger (31 octobre 2026)
 ## P16-IMAGE-B1a — quatre `do_deploy` expliqués par OpenEmbedded épinglé ; B1b autorisé sous conditions (31/10/2026)
 
