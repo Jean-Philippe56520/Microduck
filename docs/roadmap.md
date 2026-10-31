@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-S1 — audit DEV hors ligne avant image (31/10/2026) :** préflight PF1 réel PASS, 850,2 Gio WSL2. Script de recherche des activations indirectes systemd et postinsts différés, 14/14 tests synthétiques réussis, exécution réelle WSL2 en attente. Les scriptlets de paquets et permissions restent à auditer avant WIC ; RAUC/P17/robot absents. [Dossier P16-S1](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-s1--audit-systemd-et-postinst-differes-31102026--rootfs-wsl2-en-attente).
+
+
 **P16-IMAGE-PF1 — PASS sur vrai WSL2 (31/10/2026) :** `DISK_FREE_GIB=850.2`, pins Yocto/P15A conformes, unité sans en-tête `[Install]`, preset désactivé et `P16_IMAGE_PREFLIGHT: PASS`, `IMAGE_BUILT: False` ; preuve opérateur fournie dans le chat, pas CI ni validation image. Prochain lot : audit réel des références systemd/postinst/permissions du rootfs, puis génération WIC DEV distincte après porte ; ne pas refaire le rootfs. [Dossier de reprise](reprise-v1-p16a-rootfs-verified-2026-10-31.md).
 
 
