@@ -15,7 +15,7 @@ class P16FixtureTests(unittest.TestCase):
         from unittest.mock import patch
         with tempfile.TemporaryDirectory() as d:
             r = Path(d)
-            manifest = r / "manifest"
+            manifest = r / "microduck-image-dev-microduck-zero3.rootfs.manifest"
             manifest.write_text("".join(
                 f"{x} all 1\n" for x in
                 ("kwipi-companion", "kwipi-readonly-probe",
@@ -80,16 +80,25 @@ class P16FixtureTests(unittest.TestCase):
                 with self.assertRaises(Refused):
                     _verify_python_slice(root, source, "b" * 40)
 
+
+    def test_shipping_or_renamed_manifest_refused(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            manifest = root / "microduck-image-microduck-zero3.rootfs.manifest"
+            manifest.write_text("microduck-daemon aarch64 0.17.8\n")
+            with self.assertRaisesRegex(Refused, "expected OEM DEV"):
+                validate(root, manifest, builder_exit=0, source_head="a"*40)
+
     def test_nonexistent_rootfs_refused(self):
         with tempfile.TemporaryDirectory() as d:
-            m = Path(d) / "manifest"
+            m = Path(d) / "microduck-image-dev-microduck-zero3.rootfs.manifest"
             m.write_text("kwipi-companion all 0.2.0a1\n")
             with self.assertRaises(Refused):
                 validate(Path(d)/"not-built", m, builder_exit=0, source_head="a"*40)
     def test_nonzero_build_refused(self):
         with tempfile.TemporaryDirectory() as d:
             r = Path(d)
-            m = r/"manifest"; m.write_text("")
+            m = r/"microduck-image-dev-microduck-zero3.rootfs.manifest"; m.write_text("")
             with self.assertRaisesRegex(Refused,"exit"):
                 validate(r,m,builder_exit=1,source_head="a"*40)
     def test_missing_manifest_refused(self):
@@ -102,24 +111,24 @@ class P16FixtureTests(unittest.TestCase):
                 validate(Path(d),Path(d)/"absent",builder_exit=0,source_head="unknown")
     def test_incomplete_package_list_refused(self):
         with tempfile.TemporaryDirectory() as d:
-            r=Path(d);m=r/"manifest";m.write_text("kwipi-companion all 0.2.0a1\n")
+            r=Path(d);m=r/"microduck-image-dev-microduck-zero3.rootfs.manifest";m.write_text("kwipi-companion all 0.2.0a1\n")
             with self.assertRaisesRegex(Refused,"required"):
                 validate(r,m,builder_exit=0,source_head="a"*40)
     def test_duplicate_package_refused(self):
         with tempfile.TemporaryDirectory() as d:
-            r=Path(d);m=r/"manifest";m.write_text("kwipi-companion all 0.2.0a1\n"*2)
+            r=Path(d);m=r/"microduck-image-dev-microduck-zero3.rootfs.manifest";m.write_text("kwipi-companion all 0.2.0a1\n"*2)
             with self.assertRaisesRegex(Refused,"duplicate"):
                 validate(r,m,builder_exit=0,source_head="a"*40)
     def test_unexpected_package_refused(self):
         with tempfile.TemporaryDirectory() as d:
-            r=Path(d);m=r/"manifest";m.write_text("".join(
+            r=Path(d);m=r/"microduck-image-dev-microduck-zero3.rootfs.manifest";m.write_text("".join(
                 f"{x} all 1\n" for x in
                 ("kwipi-companion","kwipi-readonly-probe","microduck-daemon","microduck-data","kwipi-motor")))
             with self.assertRaisesRegex(Refused,"unexpected"):
                 validate(r,m,builder_exit=0,source_head="a"*40)
     def test_missing_actual_rootfs_file_refused(self):
         with tempfile.TemporaryDirectory() as d:
-            r=Path(d);m=r/"manifest";m.write_text("".join(
+            r=Path(d);m=r/"microduck-image-dev-microduck-zero3.rootfs.manifest";m.write_text("".join(
                 f"{x} all 1\n" for x in
                 ("kwipi-companion","kwipi-readonly-probe","microduck-daemon","microduck-data")))
             with self.assertRaisesRegex(Refused,"missing file"):
@@ -130,7 +139,7 @@ class P16FixtureTests(unittest.TestCase):
         from unittest.mock import patch
         with tempfile.TemporaryDirectory() as d:
             r=Path(d)
-            manifest=r/"manifest"
+            manifest=r/"microduck-image-dev-microduck-zero3.rootfs.manifest"
             manifest.write_text("".join(f"{n} all 1\n" for n in
                 ("kwipi-companion", "kwipi-readonly-probe", "microduck-daemon", "microduck-data")))
             sample={}
