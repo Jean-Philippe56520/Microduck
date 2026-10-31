@@ -31,7 +31,7 @@ try:
     sys.dont_write_bytecode = True
     spec.loader.exec_module(health_probe)
 finally:
-    sys.dont_write_bytecode = old_dont_write_byte
+    sys.dont_write_bytecode = old_dont_write_bytecode
 
 
 class SingleResponseDaemon:
