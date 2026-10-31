@@ -1,5 +1,8 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+**Reprise au 31/10/2026, 20:13 — P16-K FERMÉ (métadonnées KAS validées).** Sortie opérateur réelle après un approfondissement ciblé de 128 commits : KAS 5.2 sélectionne correctement `openembedded-core@ae5a3010`, `bitbake@6e260eb6`, `meta-yocto@79b6d870`, `meta-openembedded@f28a144a`, `meta-rockchip@f2fa9fd1` et `meta-rauc@38da0e58`; `bitbake -e microduck-image-dev >/dev/null` passe, `P16_K_KAS_METADATA: PASS`. Git HEAD `yocto@1ee58387810cebb67ae0d634c351d95024483bce` et `p15a-pr235@b5626a2cafabd0836e69685d18988360d3e86f18` conservés. [Dossier complet](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). **Historique** : toutes mentions « KAS reste à vérifier » qui suivent précèdent ce nouveau résultat. P16-A/W/I/K acquis à leurs niveaux WSL2, pas de génération WIC, RAUC/P17, installation, robot ni droit de redistribution.
+
+
 **P16-K — résultat réparation, 31/10/2026 :** cache Git local `meta-openembedded` approfondi une fois de 128 commits ; `P16_K_FETCH_EXIT_CODE=0`, `P16_K_ANCESTRY=PASS`, `HEAD_UNCHANGED=True`, `OEM_PIN_UNCHANGED=True`, `WORKTREE_UNCHANGED=True`. Copie privée des frontières `proofs/p16k-history-1mkm0nkt`. [Dossier P16-K](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). La relecture KAS est **en attente** ; aucune compilation supplémentaire ni fusion. A/W/I toujours validés localement, P17/RAUC/image amorçable non prouvés.
 
 
