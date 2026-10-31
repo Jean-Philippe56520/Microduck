@@ -1,5 +1,12 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+## Reprise P16-IMAGE-B2a — dry-run finalisation réussi (31 octobre 2026)
+
+**Preuve WSL2 opérateur :** le contrôle de WIC brute existante réussit (`P16_B2A_EXISTING_WIC: PASS`), 846,6 Gio libres ; `bitbake -n -c image_complete microduck-image-dev` renvoie `P16_B2A_DRYRUN_EXIT_CODE=0` et `Attempted 5696 tasks of which 5683 didn't need to be rerun and all succeeded`. Analyse du log : 13 lignes de tâches nouvelles dont `do_image_ext4`, `do_image_tar`, `do_image_complete` et outillage `tar-native` ; `UNEXPECTED_REBUILD_TASKS=0`. `P16_B2A_PLAN_REVIEW_REQUIRED` exigeait une revue, pas une correction. OE-core au pin exact insère `CONVERSION_CMD:zst/bmap/sha256sum` dans `do_image_wic` déjà PASS ; pas de task `do_image_wic_zst` séparée attendue.
+
+**Prochaine porte P16-IMAGE-B2b :** inventorier la présence réelle des fichiers staging `.wic`, `.wic.zst`, `.wic.bmap`, `.wic.zst.sha256sum` (un physique par type, liens valides), vérifier la somme du ZST. Si tous PASS et pins/caches/disque intacts, exécuter une unique tâche `bitbake -c image_complete microduck-image-dev` avec journal privé, sans refaire rootfs/WIC. Vérifier ensuite la sortie en `tmp/deploy/images`, checksum et formats, avant toute étape RAUC/P17. [Protocole](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b2a--dry-run-de-finalisation-pass-sur-wsl2-13-taches-autorisees-31-octobre-2026).
+
+
 ## Reprise P16-IMAGE-B1c — WIC DEV vérifiée sur vrai WSL2, B2a ensuite (31 octobre 2026)
 
 **Preuve opérateur réelle, à conserver et ne pas relancer :** après checkout de #238 au commit `3af5314a36c75208dde9c96d3adac06fa6183e5d`, `scripts/per_p16_b1b_wic_artifact_gate.py` a rapporté `WIC_MATCHES: 2` pour une WIC régulière `microduck-image-dev-microduck-zero3.rootfs-20261031195334.wic` et son alias `microduck-image-dev-microduck-zero3.rootfs.wic`. Une seule cible physique ; taille `12968805376` octets ; GPT principal 8 partitions avec offsets/tailles OEM, CRC header/table conformes, `P16_B1B_STAGE_GPT: PASS`. SHA-256 réel `c1140e7508559ebc9467c3f97d3c9891452228f05b3baf999ccaa3c0a5f11bc8`, `P16_B1B_SHA256: PASS`. **La sortie `WIC absente ou multiple` d'avant est un faux positif de la cardinalité** et ne doit plus être traitée comme échec de BitBake. Tout cela reste une preuve WSL2 transmise par l'opérateur, sans accès direct à son disque depuis l'assistant. Aucune nouvelle compilation nécessaire pour recommencer ces contrôles.
