@@ -1,3 +1,7 @@
+# Reprise P16-K — historique Git superficiel prouvé
+
+**P16-K — origine du refus KAS diagnostiquée (31/10/2026) :** `meta-openembedded` sous `kas-work` est effectivement **shallow** : `IS_SHALLOW=true`, fichier `.git/shallow` existant avec **deux frontières**. Le HEAD `origin/wrynose` local est identique à celui de `git.openembedded.org` et du miroir GitHub ; le pin constructeur est ancêtre sur le miroir public, mais pas démontrable avec le graphe local incomplet. [Dossier P16-I/K et unique réparation bornée proposée](docs/per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). Pas encore de réparation exécutée ; si elle réussit, relire seulement les métadonnées KAS, sans recompiler rootfs. P16-A/W/I restent validés dans leur périmètre ; RAUC/P17/robot non validés.
+
 # État P16-K — branche officielle et locale concordantes (31 octobre 2026)
 
 **P16-K — origine Git effective identifiée, 31/10/2026 :** `git.openembedded.org` pointe `meta-openembedded/wrynose@c734c2cb...`, **identique** à `origin/wrynose` local et au miroir GitHub. Le pin Yocto `f28a144...` est ancêtre selon le miroir, mais le Git local ne voit pas d'ancêtre commun : suspicion d'historique **shallow** ou incomplet, **pas encore prouvée**. Diagnostic en lecture seule (`git rev-parse --is-shallow-repository`) avant tout éventuel approfondissement ciblé ; aucun changement de SHA/OEM, pas de nouveau build. [Dossier P16-I/K](docs/per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). P16-I a bien 1334 paquets sans `-dbg`; RAUC/P17 toujours bloqués.
