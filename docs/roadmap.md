@@ -1,5 +1,9 @@
 # Feuille de route — Microduck Companion
 
+**P16-S2 — vérification statique du trust RAUC et des droits DEV (31/10/2026) :** P16-S1 a PASS sur WSL2, layout OEM PASS ; code P16-S2 sur sources épinglées et 16 tests PC-fixtures réussis, exécution du vrai rootfs à obtenir. Pas de signature, WIC, boot ni robot. [Porte S2](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-s2--garde-rauc--droits-de-limage-dev-avant-wic-31-octobre-2026--fixtures-seulement).
+
+
+
 **P16-S1 — validation WSL2 réelle (31/10/2026) :** `layout ok` du validateur OEM pour 12,08 Gio et audit S1 du vrai rootfs : 3/3 SHA P15A recontrôlés, 226 autres fichiers systemd, 17 presets, 0 référence de démarrage indirect de sonde, 0 postinst différé dans les emplacements scannés. Prochaine porte : effets/installations de paquets, permissions réelles et confiance RAUC DEV avant WIC privée. WIC/RAUC/P17/robot non exécutés. [Dossier P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md).
 
 
