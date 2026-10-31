@@ -1,5 +1,8 @@
 # Microduck Companion / Kwipi — reprise V1 au 31 octobre 2026
 
+**P16-IMAGE-PF1 — préflight WIC réel PASS (31/10/2026, preuve opérateur WSL2) :** réexécution de la commande corrigée sur `~/kwipi-build-v1` après le faux positif `[Install]`. Sortie communiquée : `DISK_FREE_GIB: 850.2`, `YOCTO_PIN: PASS`, `P15A_PIN: PASS`, `PROBE_SECTION_CHECK: PASS`, `PROBE_DISABLED_PRESET: PASS`, `P16_IMAGE_PREFLIGHT: PASS` et `IMAGE_BUILT: False`. Le contrôle de disque est maintenant prouvé au périmètre du préflight. **Aucun `do_image`, WIC, RAUC, P17, service démarré ni robot validé** ; la suite prévue reste revue effective services/postinstall/permissions puis contrôle WIC séparé. Ne pas recompiler P13B2/P14B/P15A ou `do_rootfs`. [Reprise](docs/reprise-v1-p16a-rootfs-verified-2026-10-31.md).
+
+
 **P16-IMAGE-SR1 — revue des sources avant WIC (31/10/2026) :** 19 contrôles ponctuels (15 positifs, 4 négatifs) réussis sur les recettes P14C/P15A et le Yocto OEM épinglé : unité sans véritable `[Install]`, sonde désactivée, WIC A/B 2 Gio par rootfs et partition persistante 8 Gio, bundles DEV/shipping distincts, RAUC DEV `verity/ext4` avec hook de compatibilité. [Détails et limites](docs/per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-sr1--revue-des-recettes-et-du-plan-wic-oem-31102026--sources-seulement). **Ce n'est ni une CI, ni la réexécution de P16-IMAGE-PF1 sur WSL2** ; `P16_IMAGE_PREFLIGHT: PASS`, audit postinst réel, image WIC, RAUC et P17 demeurent en attente. Ne pas reconstruire les étapes déjà franchies.
 
 
