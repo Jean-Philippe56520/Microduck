@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-W (31/10/2026) — 32/32 lignes WARNING classifiées sans compilation :** 28 GStreamer `-dbg` buildpaths connus OEM, 2 recettes file-only/`${UNPACKDIR}`, 1 sstate partagé, 1 limitation I/O WSL2. [Dossier P16-W](per-p16w-rootfs-warning-classification-2026-10-31.md). Aucune erreur nouvelle démontrée sur le rootfs DEV audité (P16-A code 0), mais le manifeste global `-dbg` et la référence KAS meta-openembedded restent à contrôler. Pas de modification OEM, pas de do_image/RAUC/P17 ou robot.
+
+
 **V1 / P16-A ROOTFS DEV audité sur WSL2 (31/10/2026).** Le `do_rootfs` DEV a réussi (`P16_ROOTFS_EXIT_CODE=0`, 4515 tâches réussies), puis le validateur P16 sur les **véritables artefacts** (`rootfs`/manifest/journal uniques) retourne `P16_AUDIT_EXIT_CODE=0`, **19/19 sources P14B et 3/3 fichiers P15A** conformes, aucun lien d'activation systemd détecté dans son périmètre. [Dossier de reprise P16-A](reprise-v1-p16a-rootfs-verified-2026-10-31.md). 32 warnings non catégorisés et pin `meta-openembedded/wrynose` non résolu après relecture KAS : prochain lot lecture seule. Pas de `do_image`/WIC, bundle RAUC, P17 ni robot. PR #238 toujours draft/empilée.
 
 
