@@ -1,0 +1,100 @@
+name: PER-P15-B4 OEM mediad local metadata (HOST ONLY, not robot)
+on:
+  pull_request:
+    paths:
+      - 'scripts/per_p15b4_apply_oem_local_detections.py'
+      - 'scripts/per_p15b4_local_detections.rs'
+      - 'tests/test_per_p15b4_oem_local_overlay.py'
+      - 'docs/per-p15b4-oem-mediad-local-detections-2026-10-31.md'
+      - '.github/workflows/per-p15b4-oem-local-detections.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-negative-gates:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run fail-closed source overlay test cases without any robot or camera
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          python -m unittest discover -s tests -p 'test_per_p15b4_oem_local_overlay.py' -v
+          git diff --exit-code -- upstream/
+
+  compile-real-pinned-mediad:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      RUSTFLAGS: "-D warnings"
+      P15B4_OEM: /tmp/p15b4-oem-copy
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - name: Install actual host GStreamer headers, not camera/NPU
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            pkg-config libudev-dev libglib2.0-dev libgstreamer1.0-dev \
+            libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev
+          pkg-config --modversion gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0 gstreamer-webrtc-1.0
+      - uses: dtolnay/rust-toolchain@1.89.0
+        with:
+          components: rustfmt,clippy
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Assemble exact OEM P10A/B/C plus P15-B4 in disposable source tree
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          mkdir -p "$P15B4_OEM"
+          git -C upstream/microduck archive 942e58e3aa6dbb28e7037203fff11866122c7567 | tar -x -C "$P15B4_OEM"
+          printf '%s\n' '942e58e3aa6dbb28e7037203fff11866122c7567' > "$P15B4_OEM/.per-p10a-throwaway-pin"
+          python scripts/per_p10a_apply_oem_rknn_overlay.py --archive "$P15B4_OEM"
+          python -m scripts.per_p10b_apply_oem_tail_overlay --archive "$P15B4_OEM"
+          python -m scripts.per_p10c_apply_oem_mediad_overlay --archive "$P15B4_OEM"
+          python -m scripts.per_p15b4_apply_oem_local_detections --archive "$P15B4_OEM"
+          test -f "$P15B4_OEM/mediad/src/local_detections.rs"
+          grep -Fq 'kwipi_local_detections: bool' "$P15B4_OEM/mediad/src/main.rs"
+          grep -Fq 'region_candidates: None' "$P15B4_OEM/mediad/src/local_detections.rs"
+          test "$(grep -c 'frames.next_frame()' "$P15B4_OEM/mediad/src/detect.rs")" -eq 1
+          git diff --exit-code -- upstream/
+      - name: Compile actual OEM mediad and the new Rust module
+        run: |
+          set -euo pipefail
+          cargo metadata --manifest-path "$P15B4_OEM/Cargo.toml" --format-version 1 >/dev/null
+          cargo fmt --manifest-path "$P15B4_OEM/Cargo.toml" -p mediad
+          cargo fmt --manifest-path "$P15B4_OEM/Cargo.toml" -p mediad -- --check
+          cargo check --manifest-path "$P15B4_OEM/Cargo.toml" --locked -p mediad --lib --bin mediad
+          cargo build --manifest-path "$P15B4_OEM/Cargo.toml" --locked -p mediad --bin mediad
+          test -s "$P15B4_OEM/target/debug/mediad"
+          "$P15B4_OEM/target/debug/mediad" --help | grep -F -- '--kwipi-local-detections'
+          echo "P15-B4: native OEM mediad binary built on Linux PC, not RK3566 or Yocto."
+      - name: Run actual Rust Unix broadcast and permission tests, no sensor or motor
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path "$P15B4_OEM/Cargo.toml" --locked -p mediad --lib local_detections::tests -- --nocapture
+          cargo clippy --manifest-path "$P15B4_OEM/Cargo.toml" --locked -p mediad --lib --bin mediad -- -D warnings
+          git diff --exit-code -- upstream/
+      - name: Validate same OEM metadata shape with existing Companion reader
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_passive_media_router.py' -v
+          git diff --exit-code -- upstream/
+          echo 'No camera, model, motor, media.frame, DB or systemd was started.'
