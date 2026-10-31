@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-A WSL2 `do_rootfs` exécuté (31/10/2026) :** après contrôle `P16_METADATA_GATE: PASS`, la tâche `bitbake -c rootfs microduck-image-dev` a terminé (4515 tâches réussies dont 2149 réutilisées, 32 avertissements, code retour `0` communiqué par l'opérateur). **Audits des avertissements, chemins réels, manifest, 19 modules et 3 fichiers P15A non encore réalisés** ; aucun `do_image`, WIC, bundle RAUC, P17 ni robot testé. [Porte et critères](per-p16-dev-rootfs-offline-audit-2026-10-31.md).
+
+
 **P16-A — porte de sélection des images franchie sur WSL2 (31/10/2026) :** onze vérifications `bitbake -e` DEV/shipping ont donné `P16_METADATA_GATE: PASS` : OEM présent, P14B/P15A-P uniques en DEV et absents en shipping, sonde inactive, machine `microduck-zero3`. [Dossier P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md). Suite : unique essai privé de `do_rootfs` DEV et audit indépendant ; pas encore de rootfs, RAUC, P17, robot ni permission de redistribuer.
 
 
