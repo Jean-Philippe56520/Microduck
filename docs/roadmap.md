@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-IMAGE-PF1 (31/10/2026) — faux positif du préflight image DEV :** le contrôle ad hoc détectait naïvement la sous-chaîne `[Install]`, présente dans le *commentaire* du service P15A, pas dans une section systemd active. **Pas de défaut du rootfs démontré**, aucun correctif OEM, aucune recompilation. Motif corrigé sur ligne de section, testé **5/5 cas synthétiques positifs/négatifs**, et commande WSL2 autonome documentée [dans la reprise P16-A](reprise-v1-p16a-rootfs-verified-2026-10-31.md). Préflight WIC **en attente de réexécution et contrôle du disque**. P16-A (rootfs et fichiers), P16-W (32 warnings), P16-I (1334/0 -dbg) et P16-K (KAS metadata PASS) sont acquis localement. WIC/RAUC/P17/robot et droits de redistribution restent en attente.
+
+
 **P16-K — CONFORMITÉ METADATA RESTAURÉE (31/10/2026 à 20:13 WSL2).** Après correction bornée de l'historique Git shallow, KAS 5.2 accepte les six commits constructeurs, exécute `bitbake -e microduck-image-dev` (code zéro), affiche **`P16_K_KAS_METADATA: PASS`** et laisse `yocto@1ee583...`/`p15a-pr235@b5626a...` inchangés. [Dossier P16-I/K](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). Les portes P16-A (rootfs et 22 fichiers), P16-W (32 avertissements classifiés), P16-I (1 334 paquets, zéro `-dbg`), P16-K (KAS) sont franchies sur WSL2 dans leurs périmètres respectifs. Étape suivante : vérification hors ligne des services/postinstall/composition de l'image DEV ; puis définition séparée d'une génération WIC et contrôle RAUC/P17. Aucun robot/production/droits de redistribution validés.
 
 
