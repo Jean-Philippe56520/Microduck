@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-RAUC-R0 — WSL2 métadonnées partiellement PASS (31/10/2026) :** les recettes DEV/shipping OEM et leurs `MACHINE/compatible`, `verity`, slot `rootfs` et choix d'image sont conformes. `fstype=NOT_VISIBLE` est un **faux manque de l'extracteur** : flag BitBake `RAUC_SLOT_rootfs[fstype]` défini `ext4` dans la source ; interroger avec `bitbake-getvar -f fstype`. **Clé privée/cert de signature DEV absents** : aucun bundle signé, signature/installation/rollback inconnus ; la confiance de la WIC déjà produite ne peut pas être satisfaite par une CA indépendante sans la changer et reconstruire avec accord. P17 offline et P15 peuvent être préparés séparément ; aucun build supplémentaire par défaut. [R0](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-rauc-r0--resultat-wsl2-effectif-signature-dev-en-attente-31-octobre-2026).
+
+
 **P16-IMAGE-B3 WSL2 PASS (31/10/2026) :** `zstd -dc | cmp` démontre que la décompression ZST reproduit exactement la WIC brute ; `sgdisk --verify` code 0 sans erreur GPT primaire/secondaire, 23 967 secteurs libres informatifs. P16-IMAGE-DEV (construction, WIC, formats, SHA, GPT, comparaison) **terminé sur PC WSL2**, robot absent. Suite : préflight des métadonnées RAUC DEV/shipping et disponibilité de clés DEV hors dépôt ; aucune signature, installation, rollback, droits `LICENSE=CLOSED` ou boot matériel validés. [Dossier B3/R0](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b3--controle-final-wsl2-pass-31-octobre-2026).
 
 
