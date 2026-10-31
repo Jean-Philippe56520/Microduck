@@ -1,5 +1,12 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+## Reprise P16-IMAGE-B2c : validation réelle WSL2 PASS (31 octobre 2026)
+
+**Dernière preuve opérateur à ne pas répéter :** checkout PR #238 au SHA `eca7e003f626021238366301f3e00503e3b50419`, sortie JSON `status=p16_b2c_final_dev_artifacts_integrity_pass` de `scripts/per_p16_b2c_final_artifact_gate.py`. Quatre fichiers physiques et quatre symlinks en déploiement DEV : WIC brute 12 968 805 376 octets SHA-256 `c1140e7508559ebc9467c3f97d3c9891452228f05b3baf999ccaa3c0a5f11bc8`, ZST 310 230 800 octets SHA-256 `f63937fa15a2a9a673e08d5d106f0027a3e474d845e11622b42ac8fa5bafe218`, staging/final métadonnées égales et ZST conforme, bmap **block_size=4096 / block_count=3166213 / mapped_blocks=263228** (contrôle structurel uniquement). Les faux arrêts précédents et B1c/B2a/B2b sont historiquement résolus. Ne pas relancer BitBake, rootfs, WIC, finalisation ni B2c.
+
+**Étape suivante utile sans écrire ni compiler :** B3 compare les **octets décompressés** de `wic.zst` à la WIC déjà vérifiée par flux `zstd -dc | cmp`, et contrôle l'intégrité GPT primaire/secondaire avec `sgdisk --verify` (si outils présents). Réaliser ces tests seulement sur les fichiers privés immuables, ne pas réparer une GPT à l'aveugle, pas de nettoyage. [Critères d'arrêt](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b2c--integrite-finale-des-artefacts-dev-pass-sur-wsl2-31-octobre-2026). Non prouvés : boot/rollback RAUC, signature, bmap par plage, redistribution CLOSED, autonomie et robot ; PR #230/#231/#235/#238 encore en pile, CI et fusion indépendantes.
+
+
 ## Reprise P16-IMAGE-B2b fini, B2c intégrité finale en attente (31 octobre 2026)
 
 **Preuve opérateur WSL2 :** `P16_B2B_IMAGE_COMPLETE_TASK: PASS` après `bitbake -c image_complete microduck-image-dev`, deux avertissements déjà classés. Quatre artefacts physiques DEV présents : `microduck-image-dev-microduck-zero3.rootfs-20261031195334.wic` 12 968 805 376 octets, `.wic.zst` 310 230 800, `.wic.bmap` 8 192, `.wic.zst.sha256sum` 132 ; quatre alias `rootfs.wic*` en `SYMLINK`, soit 8 entrées. `P16_B2B_FINAL_INTEGRITY_REVIEW: PENDING` : ne pas confondre présence et checksum. Le code B2c `scripts/per_p16_b2c_final_artifact_gate.py` compare, en lecture seule, SHA WIC brute déjà attestée en B1c, somme du ZST final et stage, liens et bmap XML ; **12/12 tests positifs/négatifs fixtures PASS** (CI dernière révision à consulter), résultat WSL2 encore inconnu. Aucun modèle, commande moteur, sous-module ou clé modifié.
