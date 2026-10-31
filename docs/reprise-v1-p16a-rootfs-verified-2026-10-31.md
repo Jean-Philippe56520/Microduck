@@ -1,5 +1,12 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+## Reprise après P16-S2 PASS WSL2 (31 octobre 2026)
+
+**Preuve opérateur réelle, à ne pas répéter :** checkout `p16-pr238@0bbe7658deaf2a3e8c43bb9eea8c97b9690e3966`, script S2 lecture seule sur le rootfs DEV : statut `p16_s2_rauc_pinned_ca_and_rootfs_mode_gate_pass`, 2/2 CA OEM RAUC, 11/11 paramètres, cinq fichiers inspectés pour bits de permission dangereux, groupe Unix `robot` présent. Les 4 workflows GitHub Actions étaient verts sur ce commit. `image_built=false`, `rauc_bundle_signed_verified=false`, `robot_validated=false`, permissions RPC lecture seule et UID/GID cibles non attestés ; licences et scriptlets postinst exhaustifs non validés.
+
+**Prochaine action concrète P16-IMAGE-B1a :** dry-run de `bitbake -n -c image_wic microduck-image-dev` depuis le KAS OEM + overlays locaux P13B2/P14B/P15A déjà vérifiés. Ne pas construire WIC tant que le plan réel des tâches et l'absence de reconstruction de `do_rootfs`/`do_compile` non nécessaire ne sont pas lus. Aucun flash ni signature RAUC, image DEV strictement privée, notes/rollback dans le [protocole B1](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1--plan-de-construction-wic-dev-privee-porte-de-planification-uniquement-31102026). Pas de nouvel outil, pas de sous-module modifié.
+
+
 ## Reprise P16-S1 — validations WSL2 ajoutées (31 octobre 2026)
 
 **Entrées opérateur :** `p16-pr238@92985a0bcd787b7ad05254439c8f356b4853beec`, valideur de schéma WIC constructeur `layout ok` (12,08 Gio), et contrôle P16-S1 sur vrai rootfs : rapport P16-A réexaminé, 3 SHA P15A, 226 autres fichiers systemd, 17 presets, 0 référence de démarrage suspecte, 0 script différé dans les emplacements connus. Statut exact `p16_s1_no_observed_probe_autostart_references_in_scanned_rootfs` ; `image_built=false`, `robot_validated=false`. Aucun nouveau build exécuté. Les lignes `command not found` concernent uniquement le collage de l'exemple JSON dans Bash après les deux validations, pas les tests.
