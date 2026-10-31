@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-A / vérification opérateur WSL2 (31/10/2026) :** 5 contrôles de rapport `OK` (P14B 19 sources/archive, P15A-P 3 fichiers/preset `disable`), sources KAS présentes, Yocto SHA épinglé, 16 CPU, 30 Gio RAM disponible et 880 Gio de disque partagé. [Compte rendu P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md). Métadonnées d'image DEV/shipping à vérifier avant un `do_rootfs` privé ; aucun build image, bundle RAUC ou P17 réalisé.
+
+
 **État documentaire réconcilié après #236 (31/10/2026) :** P15A-P WSL2 **vérifié** par le code de sortie du packaging et le contrôle indépendant du PKGDEST (trois empreintes et preset `disable`), dossier [P15A-P](reprise-v1-p15a-package-verified-2026-10-31.md). Dans la branche P16/#238, audit statique d'un futur rootfs DEV avec comparaison des 19 fichiers P14B et de la sonde P15A ; tests fixtures uniquement, CI à contrôler au HEAD. Les mentions plus bas « fichiers P15A encore en attente » sont historiques et dépassées. Aucun nouveau build image, bundle/signature RAUC, P17 ou test sur robot.
 
 
