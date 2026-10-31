@@ -1,5 +1,8 @@
 # P16-W — examen des 32 avertissements du rootfs DEV WSL2 (31 octobre 2026)
 
+**Suite P16-I (31/10/2026) :** le manifeste réel `microduck-image-dev-*.manifest` a été contrôlé sur WSL2 : **1 334 paquets, zéro nom finissant par `-dbg`**, `P16_I=PASS`. Les avertissements de GStreamer concernent donc des paquets de débogage **non installés dans ce rootfs DEV**. Cette preuve porte sur le manifeste audité, pas sur la shipping image ou l'absence totale de chemins debug dans d'autres fichiers. [P16-I/K](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md).
+
+
 ## Provenance, objectif et décision
 
 **Lot borné** : classifier sans compilation les 32 lignes d'avertissement communiquées par l'opérateur sur `bitbake -c rootfs microduck-image-dev`. Le journal local n'a pas été copié sur GitHub ; la synthèse ci-dessous contient huit types expurgés des chemins privés. La tâche d'origine s'est terminée par `P16_ROOTFS_EXIT_CODE=0` (4515 tâches toutes réussies, 2149 non relancées). Audit du rootfs réel déjà réussi : `P16_AUDIT_EXIT_CODE=0`, 19/19 modules P14B, 3/3 empreintes P15A et aucune activation par lien systemd dans le périmètre contrôlé ([reprise P16-A](reprise-v1-p16a-rootfs-verified-2026-10-31.md)).
