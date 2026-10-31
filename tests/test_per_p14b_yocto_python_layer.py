@@ -25,18 +25,26 @@ class RealP14BSourceTests(unittest.TestCase):
             self.assertFalse("qwen" in name or "mock_" in name)
         self.assertEqual(len(_tar_bytes(src)), len(_tar_bytes(src)))
 
-    def test_exact_recipe_uses_pinned_OE_PEP517_not_an_invented_installer(self):
+    def test_exact_recipe_uses_official_allarch_python_dir_and_bounded_copy(self):
         text = recipe("a" * 64)
-        self.assertIn("inherit python_pep517\n", text)
-        self.assertIn('DEPENDS += "python3-setuptools-native"', text)
+        self.assertIn("inherit allarch python3-dir\n", text)
+        self.assertNotIn("python_pep517", text)
+        self.assertNotIn("setuptools-native", text)
         self.assertIn('LICENSE = "CLOSED"\n', text)
         self.assertIn('SRC_URI[kwipipy.sha256sum] = "' + "a" * 64 + '"', text)
-        self.assertNotIn("do_install()", text)
+        self.assertIn('FILES:${PN} += "${PYTHON_SITEPACKAGES_DIR}/microduck_companion"', text)
+        self.assertIn('do_install() {\n', text)
+        self.assertIn("    for module in ", text)
+        self.assertNotIn("*.py", text)
+        self.assertNotIn("cp -r", text)
         self.assertNotIn("systemd", text)
         self.assertNotIn("IMAGE_INSTALL", text)
         for name in RUNTIME:
             self.assertIn(name, text)
         self.assertNotIn("robot.move", text)
+        for name in selected_bytes(ROOT):
+            if name.endswith(".py"):
+                self.assertEqual(text.count(" " + Path(name).name), 1)
 
     def test_invalid_digest_cannot_be_declared(self):
         for digest in ("", "g" * 64, "a" * 63):
