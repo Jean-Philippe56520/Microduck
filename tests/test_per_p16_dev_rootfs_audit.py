@@ -42,6 +42,16 @@ class P16FixtureTests(unittest.TestCase):
             self.assertTrue(result["do_rootfs_exit_zero_operator_declared_not_independently_attested"])
 
 
+    def test_p14b_actual_source_archive_is_still_identical(self):
+        """Run the *real* P14B generator on this P16 checkout, not a fake source."""
+        from scripts.per_p14b_yocto_python_layer import staged_files
+        root = Path(__file__).resolve().parents[1]
+        _layer_files, proof = staged_files(root)
+        self.assertEqual(proof["source_archive_sha256"], PINNED_P14B_ARCHIVE_SHA256)
+        self.assertEqual(len([p for p in proof["source_sha256"]
+                              if p.endswith(".py")]), 19)
+        self.assertFalse(proof["source_license_checked"])
+
     def test_p14b_19_installed_modules_positive_negative(self):
         import hashlib
         from unittest.mock import patch
