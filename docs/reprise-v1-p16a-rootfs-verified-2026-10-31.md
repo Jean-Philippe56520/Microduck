@@ -1,5 +1,12 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+## Reprise P16-IMAGE-B2b fini, B2c intégrité finale en attente (31 octobre 2026)
+
+**Preuve opérateur WSL2 :** `P16_B2B_IMAGE_COMPLETE_TASK: PASS` après `bitbake -c image_complete microduck-image-dev`, deux avertissements déjà classés. Quatre artefacts physiques DEV présents : `microduck-image-dev-microduck-zero3.rootfs-20261031195334.wic` 12 968 805 376 octets, `.wic.zst` 310 230 800, `.wic.bmap` 8 192, `.wic.zst.sha256sum` 132 ; quatre alias `rootfs.wic*` en `SYMLINK`, soit 8 entrées. `P16_B2B_FINAL_INTEGRITY_REVIEW: PENDING` : ne pas confondre présence et checksum. Le code B2c `scripts/per_p16_b2c_final_artifact_gate.py` compare, en lecture seule, SHA WIC brute déjà attestée en B1c, somme du ZST final et stage, liens et bmap XML ; **12/12 tests positifs/négatifs fixtures PASS** (CI dernière révision à consulter), résultat WSL2 encore inconnu. Aucun modèle, commande moteur, sous-module ou clé modifié.
+
+**Pour reprendre :** checkout propre `p16-pr238`, fetch PR #238, contrôler HEAD, puis `PYTHONDONTWRITEBYTECODE=1 python3 p16-pr238/scripts/per_p16_b2c_final_artifact_gate.py --base "$PWD"` depuis `~/kwipi-build-v1`. En cas de `P16_B2C_STOP`, conserver les caches et l'image, aucun rebuild ni flash ; n'envoyer aucun binaire privé. Si B2c PASS, poursuivre uniquement aux portes OEM restantes (signature RAUC et boot/robot à valider séparément, licence non acquise). [Dossier B2c](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b2c--audit-prive-final-des-artefacts-code-pc-fixtures-uniquement).
+
+
 ## Reprise P16-IMAGE-B2a — dry-run finalisation réussi (31 octobre 2026)
 
 **Preuve WSL2 opérateur :** le contrôle de WIC brute existante réussit (`P16_B2A_EXISTING_WIC: PASS`), 846,6 Gio libres ; `bitbake -n -c image_complete microduck-image-dev` renvoie `P16_B2A_DRYRUN_EXIT_CODE=0` et `Attempted 5696 tasks of which 5683 didn't need to be rerun and all succeeded`. Analyse du log : 13 lignes de tâches nouvelles dont `do_image_ext4`, `do_image_tar`, `do_image_complete` et outillage `tar-native` ; `UNEXPECTED_REBUILD_TASKS=0`. `P16_B2A_PLAN_REVIEW_REQUIRED` exigeait une revue, pas une correction. OE-core au pin exact insère `CONVERSION_CMD:zst/bmap/sha256sum` dans `do_image_wic` déjà PASS ; pas de task `do_image_wic_zst` séparée attendue.
