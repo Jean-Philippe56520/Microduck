@@ -181,6 +181,12 @@ Qwen sur PC peut proposer catégorie, usage probable et expériences **à examin
 
 Ces invariants limitent les conséquences graves, **pas la curiosité ni la variété des questions et essais non dangereux**.
 
+### MEM/EX3 — consolidation différée entre concepts (31/10/2026, PRÉVU, NON CODÉ)
+
+Sans nouveau service ni deuxième base, l'unique boucle F2 peut, lorsqu'elle autorise le repos, proposer un **besoin de recherche de relations** indépendant d'une image fraîche ou d'un mouvement. Le lecteur MEM-2A/C1/C2/EX réunit quelques souvenirs sourcés, datés et incertains de catégories et contextes différents ; QW-2 peut facultativement consulter le 9B sur PC avec cette sélection expurgée et strictement bornée. Le modèle peut émettre des **liens hypothétiques** de propriété, usage, contenance, interaction ou conséquence à vérifier ; il n'accède jamais à la SQLite entière, au SQL libre, à l'identité individuelle ni aux moteurs. L'unique écrivain EX3 ne conserve une relation rétractable que si provenance/format/pertinence/déduplication sont contrôlés, avec source `pc_qwen_unverified`, corrections conservées et aucune promotion en fait physique/causal sans preuves indépendantes. Une relation générale (`humain` + `balle` → jeu possible) n'atteste ni volonté d'un humain précis ni permission d'envoyer un objet vers lui ; `ground_pick` n'atteste ni prise ni transport de chaussette.
+
+**Validation préalable attendue** : sur souvenirs inédits, comparer rappel seul vs Qwen, mémoire off/on et récupération après redémarrage. Positifs : relation inter-objets utile, vérifiable et réutilisée sans PC ; négatifs : deux objets seulement semblables, concepts sans relation, contradiction, souvenir rétracté, affichage TV/photo, identité supposée, répétition stérile, indisponibilité PC/consentement, JSON malformé et proposition de geste. Mesurer fausses associations, abstentions, corrections, latence/RSS, répétitions et effet sur un choix F2 sûr ; **STOP si aucun gain vérifiable ou augmentation des certitudes erronées**. Aucun nouveau schéma/cron/agent/commande OEM autorisé par cette note. Priorité de livraison inchangée : P16/P17 avant raccordement de ce comportement.
+
 ## 7. Phases EX proposées, une PR par responsabilité
 
 | Lot | Livrable vérifiable | Critères de sortie et dépendances |
