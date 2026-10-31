@@ -10,9 +10,29 @@
 
 1. Avant toute nouvelle commande BitBake sur WSL2, consulter les preuves déjà conservées (`proofs/p14b-package.json`, `proofs/p15a-package-verify.json`) et vérifier les HEAD, sstate, disque, sources, droits `LICENSE=CLOSED` / `source_license_checked=false` et la présence des couches parentales. Une erreur, incompatibilité, manque de retour arrière, service activé ou contamination shipping = **STOP**.
 2. Après autorisation et exécution réelle, séparée, de `do_rootfs microduck-image-dev`, collecter séparément le code de sortie **0**, `IMAGE_ROOTFS` et le véritable manifeste `microduck-image-dev-*.manifest` correspondant au même build. Ne pas fabriquer les chemins ni les extraire du chat ; aucune image n'existe dans GitHub pour ce contrôle.
-3. Exécuter `python -m scripts.per_p16_dev_rootfs_audit --rootfs <chemin IMAGE_ROOTFS> --manifest <chemin image.manifest> --do-rootfs-exit 0 --source-head <SHA40 exact> --report <nouveau rapport privé>`. Les chemins doivent être les sorties réelles de la tâche. Le validateur refuse overwrite et toute anomalie dans ses fichiers contrôlés.
-4. Le validateur vérifie la présence de 4 paquets, les 3 empreintes immuables P15A-P et l'absence de lien d'activation `kwipi-readonly-probe.service` dans les emplacements systemd contrôlés. Ce **n'est pas** un audit exhaustif des dépendances, des scripts post-install, de toutes les unités systemd ni de l'image shipping ; ces contrôles indépendants restent obligatoires.
+3. Exécuter `python -m scripts.per_p16_dev_rootfs_audit --rootfs <chemin IMAGE_ROOTFS> --manifest <chemin image.manifest> --do-rootfs-exit 0 --source-head <SHA40 exact> --source-root <checkout Microduck au SHA exact> --report <nouveau rapport privé>`. Les chemins doivent être les sorties réelles de la tâche. Le validateur refuse overwrite et toute anomalie dans ses fichiers contrôlés.
+4. Le validateur vérifie la présence de 4 paquets, les 19 fichiers Python P14B (comparés à l'archive reproductible au SHA-256 épinglé), les 3 empreintes immuables P15A-P et l'absence de lien d'activation `kwipi-readonly-probe.service` dans les emplacements systemd contrôlés. L'argument `--do-rootfs-exit 0` **ne prouve pas** que BitBake a réellement exécuté la tâche : le journal et la sortie de l'opérateur sont une attestation indépendante à joindre. Ce **n'est pas** un audit exhaustif des dépendances, des scripts post-install, de toutes les unités systemd ni de l'image shipping ; ces contrôles indépendants restent obligatoires.
 5. **RAUC étape distincte**, jamais déduite du rootfs : contrôler `bitbake -e` des bundles dev/shipping, compatibilité `MACHINE`, hook install-check OEM, verity, paire de développement *hors dépôt*, `rauc info`/signature et repli A/B avant toute installation. L'image DEV OEM autorise root sans mot de passe : **jamais livraison shipping**.
 6. P17 reste ensuite une qualification distincte : manifeste de provenance source/OEM/Yocto/paquets/image, comparaison shipping, démarrage/repli sur cible autorisée, ressources, journaux et permissions. Robot/NPU/50 Hz/locomotion non validés ; aucun essai robot avant réception et supervision.
 
-**Résultat à l'ouverture :** validateur source-only et cas négatifs fixtures, `rootfs_built=false`, `rauc_signed=false`, `p17_validated=false`. Un validateur positif ultérieur ne prouve pas le démarrage ni la sûreté du service sur RK3566.
+**Résultat de la PR #238 (31/10/2026) :** 11 tests de fixtures P16 verts sur CI [#41225584674](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41225584674) après réparation d'un manifeste de fixture ; le contrôle de provenance des 19 sources est intégré, mais non exécuté sur rootfs WSL2 réel. Les scripts ne lancent jamais BitBake. `rootfs_built=false`, `rauc_signed=false`, `p17_validated=false`. Un validateur positif ultérieur ne prouve pas le démarrage ni la sûreté du service sur RK3566.
+
+## Démarche WSL2 opérateur, après préflight et autorisation du lot image
+
+La présente PR **ne lance aucune de ces commandes**, et n'atteste pas le disque ni l'état du PC de l'opérateur. Réutiliser les preuves et caches WSL2 existants, sans reconstruire P13B2/P14B/P15A. Contrôler d'abord les HEAD #230/#231/#235/#238, les SHA OEM, l'espace hôte et les cinq fichiers source P15A. Garder le manifeste de sortie de BitBake privé. Les fichiers `yocto/kas/*.yml` combinés doivent résider dans le même dépôt Yocto, comme indiqué dans le dossier de reprise. Ne pas utiliser `scripts/build-local.sh` qui peut sélectionner une version constructeur différente.
+
+Après un **do_rootfs DEV** explicitement autorisé et terminé avec code retour 0, obtenir ses chemins effectifs **dans le même environnement BitBake** : `IMAGE_ROOTFS`, `IMAGE_MANIFEST`, `MACHINE`, `TMPDIR`, `IMAGE_INSTALL` (DEV et production), plutôt que deviner des chemins dans le shell. Ne pas publier la sortie brute de `bitbake -e`. Archiver séparément journal de l'exécution `do_rootfs`, code retour, provenance des couches et rapport de contrôle.
+
+Puis, dans le checkout complet de la branche P16 au SHA exact, le paquet Python et les fichiers de la sonde seront comparés aux empreintes locales :
+
+```sh
+python -m scripts.per_p16_dev_rootfs_audit \
+  --rootfs "$IMAGE_ROOTFS" \
+  --manifest "$IMAGE_MANIFEST" \
+  --do-rootfs-exit 0 \
+  --source-root "$P16_SOURCE_CHECKOUT" \
+  --source-head "$(git -C "$P16_SOURCE_CHECKOUT" rev-parse HEAD)" \
+  --report "$P16_PRIVATE_REPORT"
+```
+
+Ces variables sont des **emplacements à résoudre par une vérification préalable** et non des variables inventées ou garanties dans le shell. Sans valeurs effectives, preuve d'exécution, espace hôte, licence et retour arrière, **STOP** ; ne pas lancer `do_rootfs`, RAUC ou P17. La sonde reste sans activation et son groupe Unix `robot` ne constitue pas une ACL lecture-seule.
