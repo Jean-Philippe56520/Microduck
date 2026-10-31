@@ -1,5 +1,8 @@
 # P16 — contrôle hors ligne du rootfs DEV, sans construction (31/10/2026)
 
+**P16-I : vérification des paquets de débogage franchie le 31/10/2026 :** manifeste DEV réel unique, **1 334 paquets, 0 `-dbg`**, `P16_I=PASS` ; [diagnostic P16-I/K](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). **P16-K toujours STOP pour nouvelles constructions** : pin constructeur présent et branche locale `origin/wrynose` présente, mais pin non ancêtre ; miroir public GitHub `openembedded/meta-openembedded` conserve l'ascendance (85 ahead/0 behind). Différence locale/distant exact à déterminer sans `fetch`, `reset`, re-pin ou nouvelle exécution KAS. P16-A rootfs et 22 fichiers vérifiés, P16-W warnings expliqués ; pas encore de WIC, RAUC, P17 ou robot.
+
+
 **P16-W — classification des avertissements terminée le 31/10/2026 (remplace l'ancien statut historique « 32 warnings à examiner ») :** [diagnostic exhaustif](per-p16w-rootfs-warning-classification-2026-10-31.md) : 28 avertissements GStreamer Rust buildpaths de `-dbg`, volontairement rétrogradés en warnings par la recette OEM, 2 `do_unpack` de recettes file-only, 1 sstate partagé et 1 compteur IO non disponible. Pas de nouveau build motivé. **Reste à constater l'absence de `-dbg` dans le manifeste réel et à résoudre le refus KAS de `meta-openembedded/wrynose`**, sans modifier les pins OEM. P16-I/P16-K puis RAUC/P17 strictement séparés.
 
 
