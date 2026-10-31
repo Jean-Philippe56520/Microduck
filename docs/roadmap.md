@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16 (31/10/2026) — audit rootfs DEV seulement codé, non exécuté sur image réelle :** vérification fail-closed source-only du manifeste, des 3 fichiers SHA-256 P15A-P et du service non activé ; fixtures CI à confirmer. [Protocole](per-p16-dev-rootfs-offline-audit-2026-10-31.md). Aucune image, signature RAUC, qualification P17 ni validation robot.
+
+
 **P15A-P — réussite réelle de `do_package` sur WSL2 (31/10/2026) :** code retour `0`, 643/643 tâches réussies, 633 déjà à jour, sans relance volontaire de P13B2/P14B. Le script et l'unité de la sonde OEM ont été traités par BitBake, mais les **trois octets/fichiers attendus en `packages-split` ne sont pas encore audités sur la machine**. [Validateur P15A-P et négatifs, 11/11 fixtures verts](per-p15a-readonly-health-probe-2026-10-31.md). Étape suivante : vérifier PKGDEST en lecture seule et obtenir un JSON local ; seulement ensuite réévaluer le rootfs DEV P16. Bundle RAUC, service physique, P17 et production non validés.
 
 
