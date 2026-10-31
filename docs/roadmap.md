@@ -1,5 +1,96 @@
 # Feuille de route — Microduck Companion
 
+**P16-RAUC-R0 WSL2 PASS pour les métadonnées, signature EN ATTENTE (31/10/2026) :** les deux varflags `RAUC_SLOT_rootfs[fstype]` effectivement lus via `bitbake-getvar` donnent **`ext4`**, sur les six couches KAS épinglées. La correspondance DEV/shipping, `verity`, machine et slot est confirmée ; le précédent `NOT_VISIBLE` n'était pas un défaut de recette. **Clé privée/certificat de signature DEV absents**, donc aucun bundle signé/verifié, installation, rollback ou qualification robot. Aucun nouveau build, modèle, moteur ou CA. Priorité suivante : vérifier le manque P15 de véritable processus et cycle de vie Kwipi puis constituer P17 pré-robot, sans perturber le succès P16-IMAGE-DEV. [Dossier R0](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-rauc-r0--verification-effective-des-varflags-reussie-sur-wsl2-31-octobre-2026).
+
+
+**P16-RAUC-R0 — WSL2 métadonnées partiellement PASS (31/10/2026) :** les recettes DEV/shipping OEM et leurs `MACHINE/compatible`, `verity`, slot `rootfs` et choix d'image sont conformes. `fstype=NOT_VISIBLE` est un **faux manque de l'extracteur** : flag BitBake `RAUC_SLOT_rootfs[fstype]` défini `ext4` dans la source ; interroger avec `bitbake-getvar -f fstype`. **Clé privée/cert de signature DEV absents** : aucun bundle signé, signature/installation/rollback inconnus ; la confiance de la WIC déjà produite ne peut pas être satisfaite par une CA indépendante sans la changer et reconstruire avec accord. P17 offline et P15 peuvent être préparés séparément ; aucun build supplémentaire par défaut. [R0](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-rauc-r0--resultat-wsl2-effectif-signature-dev-en-attente-31-octobre-2026).
+
+
+**P16-IMAGE-B3 WSL2 PASS (31/10/2026) :** `zstd -dc | cmp` démontre que la décompression ZST reproduit exactement la WIC brute ; `sgdisk --verify` code 0 sans erreur GPT primaire/secondaire, 23 967 secteurs libres informatifs. P16-IMAGE-DEV (construction, WIC, formats, SHA, GPT, comparaison) **terminé sur PC WSL2**, robot absent. Suite : préflight des métadonnées RAUC DEV/shipping et disponibilité de clés DEV hors dépôt ; aucune signature, installation, rollback, droits `LICENSE=CLOSED` ou boot matériel validés. [Dossier B3/R0](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b3--controle-final-wsl2-pass-31-octobre-2026).
+
+
+**P16-IMAGE-B2c WSL2 PASS (31/10/2026) :** 4 fichiers physiques DEV finaux et 4 alias conformes, 12,08 Gio WIC brute avec SHA B1c inchangé, 310 230 800 octets ZST avec SHA-256 OEM `f63937fa15a2a9a673e08d5d106f0027a3e474d845e11622b42ac8fa5bafe218`, 263 228 blocs bmap mappés / 3 166 213 au total, métadonnées de staging identiques. **B2c clos** ; B3 lecture seule prévu (`sgdisk -v`, `zstd -dc | cmp`) pour GPT secondaire et équivalence des octets décompressés. Aucune reconstitution, RAUC signé, licence, boot/P17/robot. [P16-B3](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b2c--integrite-finale-des-artefacts-dev-pass-sur-wsl2-31-octobre-2026).
+
+
+**P16-IMAGE-B2b WSL2 PASS / B2c final integrity pending (31/10/2026) :** `bitbake -c image_complete microduck-image-dev` terminé avec succès, quatre fichiers DEV physiques et quatre liens dans le répertoire final : WIC brute 12,08 Gio, zst 310 230 800 octets, bmap 8 Kio, somme 132 octets. La validité des fichiers finaux est encore à certifier : script B2c read-only et 12/12 tests PC-fixtures ajoutés, vraie exécution WSL2 en attente. Aucun rebuild ni retouche OEM ; RAUC, production, P17 et robot restent hors périmètre. [Protocole B2c](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b2c--audit-prive-final-des-artefacts-code-pc-fixtures-uniquement).
+
+
+**P16-IMAGE-B2a — dry-run finalisation PASS (31/10/2026) :** 846,6 Gio WSL2 ; WIC brute conforme, plan 5696 tâches dont 5683 à jour et 13 nouvelles (tar-native, `do_image_ext4`, `do_image_tar`, `do_image_complete`). Zéro `do_rootfs`, `do_image_wic` ou compile/fetch cible inattendu. Conversion ZST/bmap/sha256sum intégrée à la tâche WIC selon OE-core épinglé. Étape suivante : inventaire des formats déjà en staging, puis **une seule** finalisation privée par `do_image_complete` sous contrôles d'arrêt, sans reconstruire. GPT secondaire, authentification/RAUC/P17/robot non validés. [Audit](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b2a--dry-run-de-finalisation-pass-sur-wsl2-13-taches-autorisees-31-octobre-2026).
+
+
+**P16-IMAGE-B1c WSL2 PASS / B2a EN ATTENTE (31/10/2026) :** fichier physique WIC DEV et alias OE-core vérifiés ; **12 968 805 376 octets**, GPT principal 8/8, CRC conformes, SHA-256 `c1140e7508559ebc9467c3f97d3c9891452228f05b3baf999ccaa3c0a5f11bc8`. BitBake `do_image_wic` avait déjà réussi sans nouvelle recompilation ; faux STOP du glob expliqué. La suite est une seule planification `bitbake -n -c image_complete` puis, si tâches et pins conformes, conversions officielles OEM DEV, avant contrôle de leurs empreintes. Le GPT secondaire, contents ext4, boot, RAUC et P17 restent ouverts. [Audit P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1c--validation-reelle-de-la-wic-brute-et-preparation-b2a-31-octobre-2026).
+
+
+**P16-IMAGE-B1c (31/10/2026) — vérificateur de WIC ajouté après arrêt de cardinalité :** `do_image_wic` réel réussi, fichier physique encore à attester. Le nouveau contrôle standard-library déduplique les alias OE-core, valide huit partitions GPT + CRC et calcule SHA-256 ; neuf tests fixtures positifs/négatifs PASS, résultat réel WSL2/CI finale en attente. Aucune reconstitution `do_rootfs`/WIC, signature RAUC, P17 ou robot. [Protocole B1c](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1c--correctif-de-verification-des-artefacts-sans-reconstruction-31-octobre-2026).
+
+
+**P16-IMAGE-B1b (31/10/2026) — WIC task réussie, fichier non attesté :** `bitbake -c image_wic microduck-image-dev` WSL2 code 0, do_image_wic réussi, 5683 tâches, 2 avertissements connus. Vérificateur ad hoc `len(glob('*.wic')) != 1` a bloqué après BitBake ; OE-core crée éventuellement un alias `IMAGE_LINK_NAME.wic`, donc diagnostic réel de cardinalité nécessaire **sans nouveau build**. Seules la localisation du fichier, la GPT réelle et la SHA restent ouvertes ; shipping, RAUC/P17/robot hors périmètre. [Dossier](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1b--tache-wic-reelle-reussie-controle-de-cardinalite-a-corriger-31-octobre-2026).
+
+
+**P16-IMAGE-B1a — plan WIC expliqué, 31/10/2026 :** journal réel 5683 tâches, `STRICT_DO_ROOTFS=0`, `TARGET_BUILD_OPERATIONS=4` toutes de type `do_deploy` (noyau, U-Boot, GRUB EFI, systemd-boot). Les deux derniers proviennent de dépendances **génériques AArch64** dans `image_types_wic.bbclass` OE-core épinglé, pas du WKS Rockchip sans EFI. **B1b autorisé :** un seul essai privé `bitbake -c image_wic microduck-image-dev` avec logs et stop, vérification du résultat brut dans `IMGDEPLOYDIR`. Zéro code moteur/sous-module modifié ; pas de WIC réalisée, RAUC/P17/robot/redistribution encore en attente. [Dossier](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1a--quatre-do_deploy-expliques-par-openembedded-epingle--b1b-autorise-sous-conditions-31102026).
+
+
+**P16-IMAGE-B1a (31/10/2026) — dry-run WSL2 exit 0, image en attente :** 5683 tâches dans le plan, 4515 à jour, 1168 restantes (non exécutées). Les extraits révèlent des tâches natives WIC `do_fetch`/`do_compile` ; vérifier le journal complet pour écarter `do_rootfs` strict ou recompilation cible avant WIC. Deux avertissements hôte connus. [Diagnostic B1a](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1a--dry-run-kas-reel-reussi-plan-complet-a-examiner-31-octobre-2026). Aucun `do_image` réel/RAUC/P17/robot.
+
+
+**P16-S2 WSL2 PASS / P16-IMAGE-B1 DRY-RUN EN ATTENTE (31/10/2026) :** keyring DEV exactement 2 CA OEM, 11 champs RAUC, cinq modes de fichiers, groupe `robot` présent sur rootfs existant. CI du commit S2 verte ; WIC non construite. Nouveau lot borné : dry-run `bitbake -n -c image_wic microduck-image-dev` sur quatre fichiers KAS existants, puis WIC DEV privée sous critère d'arrêt si le plan n'exige aucune recompilation inattendue. Aucun RAUC signé, P17, licence ou robot. [Porte B1](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1--plan-de-construction-wic-dev-privee-porte-de-planification-uniquement-31102026).
+
+
+**P16-S2 — vérification statique du trust RAUC et des droits DEV (31/10/2026) :** P16-S1 a PASS sur WSL2, layout OEM PASS ; code P16-S2 sur sources épinglées et 16 tests PC-fixtures réussis, exécution du vrai rootfs à obtenir. Pas de signature, WIC, boot ni robot. [Porte S2](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-s2--garde-rauc--droits-de-limage-dev-avant-wic-31-octobre-2026--fixtures-seulement).
+
+
+
+**P16-S1 — validation WSL2 réelle (31/10/2026) :** `layout ok` du validateur OEM pour 12,08 Gio et audit S1 du vrai rootfs : 3/3 SHA P15A recontrôlés, 226 autres fichiers systemd, 17 presets, 0 référence de démarrage indirect de sonde, 0 postinst différé dans les emplacements scannés. Prochaine porte : effets/installations de paquets, permissions réelles et confiance RAUC DEV avant WIC privée. WIC/RAUC/P17/robot non exécutés. [Dossier P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md).
+
+
+**P16-S1 — audit DEV hors ligne avant image (31/10/2026) :** préflight PF1 réel PASS, 850,2 Gio WSL2. Script de recherche des activations indirectes systemd et postinsts différés, 14/14 tests synthétiques réussis, exécution réelle WSL2 en attente. Les scriptlets de paquets et permissions restent à auditer avant WIC ; RAUC/P17/robot absents. [Dossier P16-S1](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-s1--audit-systemd-et-postinst-differes-31102026--rootfs-wsl2-en-attente).
+
+
+**P16-IMAGE-PF1 — PASS sur vrai WSL2 (31/10/2026) :** `DISK_FREE_GIB=850.2`, pins Yocto/P15A conformes, unité sans en-tête `[Install]`, preset désactivé et `P16_IMAGE_PREFLIGHT: PASS`, `IMAGE_BUILT: False` ; preuve opérateur fournie dans le chat, pas CI ni validation image. Prochain lot : audit réel des références systemd/postinst/permissions du rootfs, puis génération WIC DEV distincte après porte ; ne pas refaire le rootfs. [Dossier de reprise](reprise-v1-p16a-rootfs-verified-2026-10-31.md).
+
+
+**P16-IMAGE-SR1 (31/10/2026) — source-only :** 19/19 contrôles ponctuels de sélection DEV, format WIC A/B et bundle RAUC constructeur épinglé réussis ; **aucune image construite**, aucun postinst réel examiné, aucun `P16_IMAGE_PREFLIGHT: PASS` reçu du WSL2. Étape inchangée : exécuter la commande corrigée [P16-IMAGE-PF1](reprise-v1-p16a-rootfs-verified-2026-10-31.md), puis auditer services/postinst avant tout `do_image`. [Détails source](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-sr1--revue-des-recettes-et-du-plan-wic-oem-31102026--sources-seulement). Ne pas reconstruire les preuves P16-A/W/I/K.
+
+
+**P16-IMAGE-PF1 (31/10/2026) — faux positif du préflight image DEV :** le contrôle ad hoc détectait naïvement la sous-chaîne `[Install]`, présente dans le *commentaire* du service P15A, pas dans une section systemd active. **Pas de défaut du rootfs démontré**, aucun correctif OEM, aucune recompilation. Motif corrigé sur ligne de section, testé **5/5 cas synthétiques positifs/négatifs**, et commande WSL2 autonome documentée [dans la reprise P16-A](reprise-v1-p16a-rootfs-verified-2026-10-31.md). Préflight WIC **en attente de réexécution et contrôle du disque**. P16-A (rootfs et fichiers), P16-W (32 warnings), P16-I (1334/0 -dbg) et P16-K (KAS metadata PASS) sont acquis localement. WIC/RAUC/P17/robot et droits de redistribution restent en attente.
+
+
+**P16-K — CONFORMITÉ METADATA RESTAURÉE (31/10/2026 à 20:13 WSL2).** Après correction bornée de l'historique Git shallow, KAS 5.2 accepte les six commits constructeurs, exécute `bitbake -e microduck-image-dev` (code zéro), affiche **`P16_K_KAS_METADATA: PASS`** et laisse `yocto@1ee583...`/`p15a-pr235@b5626a...` inchangés. [Dossier P16-I/K](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). Les portes P16-A (rootfs et 22 fichiers), P16-W (32 avertissements classifiés), P16-I (1 334 paquets, zéro `-dbg`), P16-K (KAS) sont franchies sur WSL2 dans leurs périmètres respectifs. Étape suivante : vérification hors ligne des services/postinstall/composition de l'image DEV ; puis définition séparée d'une génération WIC et contrôle RAUC/P17. Aucun robot/production/droits de redistribution validés.
+
+
+**P16-K (31/10/2026) — réparation locale mesurée :** une unique extension de l'historique shallow `meta-openembedded` de 128 commits a retourné code 0 ; `git merge-base --is-ancestor` du pin OEM fonctionne désormais, sans déplacer les SHA suivis ni modifier le worktree. [Protocole et preuve opérateur](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). **Reste à faire :** relecture `kas shell`/`bitbake -e` (sans build) ; aucun RAUC/WIC/P17 ni robot validé.
+
+
+**P16-K (31/10/2026) — clone `meta-openembedded` superficiel confirmé (2 frontières shallow), pin Yocto conservé ; branche locale/serveur officiel/mirroir public au SHA `c734c2cb...`. La réparation (approfondissement ciblé de 128 commits, avec sauvegarde et contrôle d'ascendance) est **préparée mais pas exécutée**. [Critères/retour arrière](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). P16-A/W/I terminés localement, aucun nouveau build/RAUC/P17 autorisé sans contrôle de reprise.
+
+
+**P16-K (31/10/2026) :** contrôle local et distant de `git.openembedded.org/meta-openembedded/wrynose` : SHA **identiques** `c734c2cb...`, également celui du miroir public, où le pin OEM `f28a144...` est ancêtre ; aucun ancêtre commun visible en Git local. Hypothèse prioritaire : historique tronqué (*shallow*), non prouvée ; vérifier uniquement `--is-shallow-repository`/frontière Git avant toute opération correctrice. [P16-I/K](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). Aucune nouvelle construction/RAUC/P17.
+
+
+**P16-I (31/10/2026) PASS ciblé :** manifeste DEV réel unique, 1 334 paquets, 0 `-dbg` ; confirme absence d'installation de débogueurs GStreamer malgré les warnings P16-W. **P16-K** : pin `f28a144...` et branche `origin/wrynose` présents localement mais pin non ancêtre ; miroir public actuel affiche pin ancêtre de `wrynose` (85 commits ahead, 0 behind). [Dossier P16-I/K](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). Diagnostiquer SHA local/distants par commande Git lecture seule ; aucune mise à jour KAS ni nouveau build tant que cause non comprise. Pas d'image WIC/RAUC/P17 ni robot.
+
+
+**P16-W (31/10/2026) — 32/32 lignes WARNING classifiées sans compilation :** 28 GStreamer `-dbg` buildpaths connus OEM, 2 recettes file-only/`${UNPACKDIR}`, 1 sstate partagé, 1 limitation I/O WSL2. [Dossier P16-W](per-p16w-rootfs-warning-classification-2026-10-31.md). Aucune erreur nouvelle démontrée sur le rootfs DEV audité (P16-A code 0), mais le manifeste global `-dbg` et la référence KAS meta-openembedded restent à contrôler. Pas de modification OEM, pas de do_image/RAUC/P17 ou robot.
+
+
+**V1 / P16-A ROOTFS DEV audité sur WSL2 (31/10/2026).** Le `do_rootfs` DEV a réussi (`P16_ROOTFS_EXIT_CODE=0`, 4515 tâches réussies), puis le validateur P16 sur les **véritables artefacts** (`rootfs`/manifest/journal uniques) retourne `P16_AUDIT_EXIT_CODE=0`, **19/19 sources P14B et 3/3 fichiers P15A** conformes, aucun lien d'activation systemd détecté dans son périmètre. [Dossier de reprise P16-A](reprise-v1-p16a-rootfs-verified-2026-10-31.md). 32 warnings non catégorisés et pin `meta-openembedded/wrynose` non résolu après relecture KAS : prochain lot lecture seule. Pas de `do_image`/WIC, bundle RAUC, P17 ni robot. PR #238 toujours draft/empilée.
+
+
+**P16-A WSL2 `do_rootfs` exécuté (31/10/2026) :** après contrôle `P16_METADATA_GATE: PASS`, la tâche `bitbake -c rootfs microduck-image-dev` a terminé (4515 tâches réussies dont 2149 réutilisées, 32 avertissements, code retour `0` communiqué par l'opérateur). **Audits des avertissements, chemins réels, manifest, 19 modules et 3 fichiers P15A non encore réalisés** ; aucun `do_image`, WIC, bundle RAUC, P17 ni robot testé. [Porte et critères](per-p16-dev-rootfs-offline-audit-2026-10-31.md).
+
+
+**P16-A — porte de sélection des images franchie sur WSL2 (31/10/2026) :** onze vérifications `bitbake -e` DEV/shipping ont donné `P16_METADATA_GATE: PASS` : OEM présent, P14B/P15A-P uniques en DEV et absents en shipping, sonde inactive, machine `microduck-zero3`. [Dossier P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md). Suite : unique essai privé de `do_rootfs` DEV et audit indépendant ; pas encore de rootfs, RAUC, P17, robot ni permission de redistribuer.
+
+
+**P16-A / vérification opérateur WSL2 (31/10/2026) :** 5 contrôles de rapport `OK` (P14B 19 sources/archive, P15A-P 3 fichiers/preset `disable`), sources KAS présentes, Yocto SHA épinglé, 16 CPU, 30 Gio RAM disponible et 880 Gio de disque partagé. [Compte rendu P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md). Métadonnées d'image DEV/shipping à vérifier avant un `do_rootfs` privé ; aucun build image, bundle RAUC ou P17 réalisé.
+
+
+**État documentaire réconcilié après #236 (31/10/2026) :** P15A-P WSL2 **vérifié** par le code de sortie du packaging et le contrôle indépendant du PKGDEST (trois empreintes et preset `disable`), dossier [P15A-P](reprise-v1-p15a-package-verified-2026-10-31.md). Dans la branche P16/#238, audit statique d'un futur rootfs DEV avec comparaison des 19 fichiers P14B et de la sonde P15A ; tests fixtures uniquement, CI à contrôler au HEAD. Les mentions plus bas « fichiers P15A encore en attente » sont historiques et dépassées. Aucun nouveau build image, bundle/signature RAUC, P17 ou test sur robot.
+
+
+**P16 (31/10/2026) — audit rootfs DEV seulement codé, non exécuté sur image réelle :** vérification fail-closed source-only du manifeste, des 3 fichiers SHA-256 P15A-P et du service non activé ; fixtures CI à confirmer. [Protocole](per-p16-dev-rootfs-offline-audit-2026-10-31.md). Aucune image, signature RAUC, qualification P17 ni validation robot.
+
+
 **P15A-P — réussite réelle de `do_package` sur WSL2 (31/10/2026) :** code retour `0`, 643/643 tâches réussies, 633 déjà à jour, sans relance volontaire de P13B2/P14B. Le script et l'unité de la sonde OEM ont été traités par BitBake, mais les **trois octets/fichiers attendus en `packages-split` ne sont pas encore audités sur la machine**. [Validateur P15A-P et négatifs, 11/11 fixtures verts](per-p15a-readonly-health-probe-2026-10-31.md). Étape suivante : vérifier PKGDEST en lecture seule et obtenir un JSON local ; seulement ensuite réévaluer le rootfs DEV P16. Bundle RAUC, service physique, P17 et production non validés.
 
 

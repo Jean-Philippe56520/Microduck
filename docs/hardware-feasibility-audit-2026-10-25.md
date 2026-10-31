@@ -1,5 +1,17 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**P16-IMAGE-B3 — preuve d'intégrité WSL2 uniquement (31/10/2026) :** `zstd -dc | cmp` confirme une WIC DEV de 12 968 805 376 octets reproductible à partir de son ZST ; `sgdisk --verify` sans erreur GPT primaire/secondaire, aucun octet modifié. Ces contrôles utilisent le disque hôte et n'apportent **aucune** mesure sur RAM/RSS RK3566, thermie NPU, moteurs à 50 Hz, système de fichiers exécuté, consommation, batterie, place restante réelle du robot ou boot. Image DEV sous root sans mot de passe et CA DEV non livrable. [Preuves P16-B3](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b3--controle-final-wsl2-pass-31-octobre-2026).
+
+
+**P16-IMAGE-PF1 / S1 — preuve de préparation WSL2 (31/10/2026) :** préflight WIC corrigé PASS avec 850,2 Gio d'espace libre sur le PC, pas sur le RK3566. Audit S1 du service systemd testé sur 14 fixtures seulement, sans rapport du rootfs réel. Aucune mesure RAM/RSS/thermie/NPU/50 Hz/batterie, ni sûreté de l'accès `robot` au socket, image/RAUC ou validation robot. [Protocole](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-s1--audit-systemd-et-postinst-differes-31102026--rootfs-wsl2-en-attente).
+
+
+**P16-A — preuve logicielle WSL2 (31/10/2026), PAS preuve matérielle robot :** le rootfs DEV issu de 4515 tâches BitBake terminées avec code 0 a été inspecté sur disque ; `P16_AUDIT_EXIT_CODE=0`, 19 modules Python, 3 fichiers de sonde SHA-256 conformes et aucune activation par lien systemd détectée dans les chemins contrôlés. [Reprise P16-A](reprise-v1-p16a-rootfs-verified-2026-10-31.md). Cette preuve n'ajoute aucune mesure RAM/RSS/thermie/NPU/50 Hz/latence/énergie sur RK3566. 32 avertissements à classifier, référence `meta-openembedded` dans KAS à résoudre ; ni image amorçable, ni RAUC ni robot validés.
+
+
+**P16-A (31/10/2026) :** P15A-P est **vérifié sur l'hôte WSL2**, pour les trois fichiers et leurs empreintes dans [le dossier de reprise](reprise-v1-p15a-package-verified-2026-10-31.md). L'audit P16 en PR #238 reste source-only/fixtures, même si les CI passent ; aucun rootfs ni mesures RK3566/thermie/RSS/NPU/moteurs, pas de licence de redistribution ni RAUC. Les notes historiques ci-dessous évoquant un PKGDEST non vérifié sont désormais dépassées.
+
+
 **P15A-P — résultat sur hôte WSL2 uniquement, 31/10/2026 :** `bitbake -c package kwipi-readonly-probe` a réussi (643/643 tâches, 633 courantes) avec deux avertissements ; cette preuve ne mesure ni RSS, CPU, température, batterie du RK3566, ni cadence `robotd` 50 Hz ou latence du service. Le groupe OEM `robot` ouvre le socket JSON-RPC global, **pas une ACL lecture seule OS**. `PKGDEST` réel encore à vérifier, aucun `do_rootfs`, RAUC, signature ou robot testé. La réutilisation sstate limitée observée ne démontre aucune performance matérielle.
 
 
