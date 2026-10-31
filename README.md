@@ -1,5 +1,8 @@
 ## Reprise V1 — preuves BitBake sur PC WSL2 (31 octobre 2026)
 
+**V1 — P15–P17 préenregistrés après validation locale de P14B (31/10/2026) :** [contrat opérationnel P15 service, P16 image dev/RAUC, P17 qualification](docs/per-p15-p17-v1-release-gates-2026-10-31.md). P13B2 et P14B ont des preuves WSL2 transmises par l'opérateur, documentées dans #233 fusionnée. Les PR #230/#231 sont toujours brouillons ; le succès local n'efface pas la CI BitBake GitHub rouge par timeout. Aucun rootfs, service installé, signature, robot ni droits YOLO26 validés. PR #235 prépare une **sonde P15A source-only DEV**, pas P15 complet.
+
+
 **PER-P14B — preuve locale WSL2 communiquée le 31/10/2026, après le dernier état de la PR #233 :** `P14B_EXIT_CODE=0` et rapport `schema=kwipi-p14b-real-bitbake-package-proof-v1`, `status=bitbake_python_package_files_verified_only`, `python_modules_packaged=19`, `package_source_bytes_verified=true`. Cible `/usr/lib/python3.14/site-packages`, archive SHA256 `85c583b86f0c8b5c59e9a547762a223c7ab27dee016c3ec604141907b20b2245`, source `514e89ef10599c9177b056d3497915d92d6c1ec9`, 7 dépendances Python du manifeste OE. **Porte P14B locale franchie selon sortie opérateur**, aucun nouveau build nécessaire ; `bitbake_task_execution_attested_by_this_script=false` : la sortie du validateur n'atteste pas isolément BitBake, et les journaux restent sur WSL2. #230 est toujours en brouillon et sa CI paquet éphémère a expiré, donc pas de fusion avant CI conforme ou décision explicitement documentée. Ni `do_rootfs`, service P15, RAUC, licence de redistribution ou robot validés. [P15–P17 : portes distinctes](docs/per-p15-p17-v1-release-gates-2026-10-31.md) (PR #234 en brouillon).
 
 

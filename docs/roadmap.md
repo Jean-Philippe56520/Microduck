@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P15–P17 — plan V1 acté sur preuve P14B WSL2 du 31/10/2026 :** [portes détaillées](per-p15-p17-v1-release-gates-2026-10-31.md). P14B local réussi selon shell+validateur 19/19, pas de rootfs ; #230/#231 restent brouillons. P15A (#235) propose uniquement une sonde manuelle DEV (tests PC), P16 rootfs+RAUC et P17 qualification non exécutés, robot absent. Pas de signature/autorité moteur/autonomie annoncée.
+
+
 **P14B local — porte Python empaqueté franchie selon preuves WSL2 du 31/10/2026 :** shell `P14B_EXIT_CODE=0`, validateur `bitbake_python_package_files_verified_only`, 19/19 modules Python 3.14 sources vérifiées, archive source et HEAD #230 correspondants. La preuve de code de sortie BitBake est distincte du validateur (`bitbake_task_execution_attested_by_this_script=false`). Aucune image/RAUC, aucun service P15, aucune licence redistribution, aucun robot ; #230 CI paquet rouge par timeout et #231 dépendante brouillon. Ne pas relancer P13B2/P14B sans motif. [Contrat P15–P17](per-p15-p17-v1-release-gates-2026-10-31.md) en PR #234 draft.
 
 
