@@ -1,5 +1,10 @@
 # P16 — contrôle hors ligne du rootfs DEV, sans construction (31/10/2026)
 
+## P16-IMAGE-PF1 — contrôle matériel WSL2 du préflight : PASS (31 octobre 2026)
+
+Le préflight corrigé a été exécuté par l'opérateur sur le rootfs DEV existant. La sortie communiquée rapporte `DISK_FREE_GIB: 850.2`, les quatre contrôles de provenance/unité/preset `PASS`, `P16_IMAGE_PREFLIGHT: PASS`, et `IMAGE_BUILT: False`. Le précédent faux positif de l'en-tête `[Install]` est levé dans le **périmètre exact du script** ; aucun rebuild ou changement OEM. Cette preuve est locale/transmise, distincte des 19 contrôles source et de la CI de fixtures. Elle ne prouve ni l'absence de toutes activations indirectes, ni les effets de tous les postinsts, ni une WIC. **Prochaine porte : audit systemd, permissions et scripts postinst du rootfs existant avant image DEV privée**. Aucun bundle RAUC ni P17 ni robot.
+
+
 ## P16-IMAGE-SR1 — revue des recettes et du plan WIC OEM (31/10/2026 ; sources seulement)
 
 **Objectif/gain :** avant toute tâche d'image coûteuse, contrôler la composition cible WIC et le chemin RAUC constructeur à leurs révisions épinglées, sans recompiler P13B2/P14B/P15A ou le rootfs déjà réussi. **Portée :** inspection de contenus GitHub et contrôles textuels ad hoc, **pas un test WSL2, pas une CI, pas une image générée**.
