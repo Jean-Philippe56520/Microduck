@@ -496,7 +496,7 @@ def _read_tof_once(
     provenance = ("oem_local_unix_peer_not_hardware"
                   if trusted_path else "untrusted_local_fixture")
     refused = OemTofSample("unavailable_or_unverified", provenance)
-    if (type(sock_path) is not Path or type(identity_path) is not Path
+    if (not isinstance(sock_path, Path) or not isinstance(identity_path, Path)
             or not sock_path.is_absolute() or not identity_path.is_absolute()
             or type(uid) is not int or uid < 0
             or type(gid) is not int or gid < 0
