@@ -17,9 +17,10 @@ import time
 import unittest
 from unittest import mock
 
-from microduck_companion import sim_ipc
-from microduck_companion.sim_ipc import (
-    OemTofSample, ReadOnlyUnixRpc, TelemetryError, _read_tof_once,
+from microduck_companion import oem_tof_readonly
+from microduck_companion.sim_ipc import ReadOnlyUnixRpc, TelemetryError
+from microduck_companion.oem_tof_readonly import (
+    OemTofSample, _read_tof_once, _peer_credentials,
     read_verified_local_tof_once,
 )
 
@@ -167,7 +168,7 @@ class P15B2TofReadTests(unittest.TestCase):
     def test_server_process_identity_pid_is_from_kernel(self) -> None:
         with fake_tofd(self.socket):
             with ReadOnlyUnixRpc(self.socket, role="tofd") as rpc:
-                pid, uid, gid = rpc.peer_credentials()
+                pid, uid, gid = _peer_credentials(rpc)
                 self.assertEqual((self.pid, self.uid, self.gid), (pid, uid, gid))
                 self.assertTrue(rpc.request("tof.stream")["accepted"])
 
@@ -287,7 +288,7 @@ class P15B2TofReadTests(unittest.TestCase):
         with mock.patch("pwd.getpwnam") as uid, mock.patch(
             "grp.getgrnam"
         ) as gid, mock.patch.object(
-            sim_ipc, "_read_tof_once",
+            oem_tof_readonly, "_read_tof_once",
             return_value=OemTofSample("unavailable_or_unverified", "untrusted"),
         ) as read:
             uid.return_value.pw_uid = 108
@@ -303,7 +304,7 @@ class P15B2TofReadTests(unittest.TestCase):
     def test_read_only_role_rejects_motor_and_camera_before_any_send(self) -> None:
         reader = ReadOnlyUnixRpc(str(self.socket), role="tofd")
         with self.assertRaises(TelemetryError):
-            reader.peer_credentials()
+            _peer_credentials(reader)
         for method in ("robot.do", "robot.move", "robot.stop",
                        "media.frame", "robot.health"):
             with self.subTest(method=method), self.assertRaises(ValueError):
