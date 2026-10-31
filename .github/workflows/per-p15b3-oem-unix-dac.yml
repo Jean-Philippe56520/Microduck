@@ -37,6 +37,6 @@ jobs:
           set -euo pipefail
           # ONLY temporary fake Unix sockets. Never /run, robotd RPC, camera,
           # user accounts/groups, or hardware. Forked clients drop uid/gid.
-          sudo -n python3 -m unittest discover -s tests -p 'test_per_p15b3_oem_unix_dac.py' -v
+          sudo -n env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_per_p15b3_oem_unix_dac.py' -v
       - name: Check Python syntax without external dependency
-        run: python3 -m py_compile tests/test_per_p15b3_oem_unix_dac.py
+        run: python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("tests/test_per_p15b3_oem_unix_dac.py").read_text()); print("Python syntax OK, no pycache writes")'
