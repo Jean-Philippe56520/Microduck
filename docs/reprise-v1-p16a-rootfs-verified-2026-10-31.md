@@ -1,5 +1,8 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+**Complément P16-W — 31 octobre 2026 :** l'opérateur a transmis la classification expurgée des **32 lignes WARNING** en 8 types : 28 liées aux buildpaths des paquets `-dbg` GStreamer, explicitement traitées comme avertissements dans la recette OEM épinglée, 2 sur `S` de recettes file-only utilisant directement `${UNPACKDIR}`, 1 cache sstate partagé, 1 absence de `CONFIG_TASK_IO_ACCOUNTING` sur hôte WSL2. [Dossier P16-W](per-p16w-rootfs-warning-classification-2026-10-31.md). Aucun nouveau défaut Kwipi démontré ; P16-K (KAS) et P16-I (manifeste global, services OEM, licences) encore ouverts. Cette classification n'efface pas la limitation des droits de redistribution ni le blocage des nouvelles constructions KAS.
+
+
 ## Constat et degré de preuve
 
 **Porte franchie :** compilation du rootfs de développement et audit des fichiers réellement présents dans le système de fichiers Yocto, **localement sur WSL2**, à partir de preuves communiquées par l'opérateur. Ce résultat est distinct des tests de fixtures PC/CI, d'un artefact image amorçable et de tout test sur le robot.
