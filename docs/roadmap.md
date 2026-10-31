@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-K (31/10/2026) :** contrôle local et distant de `git.openembedded.org/meta-openembedded/wrynose` : SHA **identiques** `c734c2cb...`, également celui du miroir public, où le pin OEM `f28a144...` est ancêtre ; aucun ancêtre commun visible en Git local. Hypothèse prioritaire : historique tronqué (*shallow*), non prouvée ; vérifier uniquement `--is-shallow-repository`/frontière Git avant toute opération correctrice. [P16-I/K](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). Aucune nouvelle construction/RAUC/P17.
+
+
 **P16-I (31/10/2026) PASS ciblé :** manifeste DEV réel unique, 1 334 paquets, 0 `-dbg` ; confirme absence d'installation de débogueurs GStreamer malgré les warnings P16-W. **P16-K** : pin `f28a144...` et branche `origin/wrynose` présents localement mais pin non ancêtre ; miroir public actuel affiche pin ancêtre de `wrynose` (85 commits ahead, 0 behind). [Dossier P16-I/K](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). Diagnostiquer SHA local/distants par commande Git lecture seule ; aucune mise à jour KAS ni nouveau build tant que cause non comprise. Pas d'image WIC/RAUC/P17 ni robot.
 
 
