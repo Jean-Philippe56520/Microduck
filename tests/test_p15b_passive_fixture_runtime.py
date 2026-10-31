@@ -89,7 +89,7 @@ class FixtureLifecycleTests(unittest.TestCase):
         )
         self.assertTrue(r["stop_requested"])
         self.assertEqual(0, r["cycles_attempted"])
-        self.assertEqual(0, r["sqlite_writer_instances"])
+        self.assertEqual(0, r["experience_memory_instances"])
         self.assertFalse(self.db.exists())
 
     def test_stop_during_wait_does_not_read_a_second_frame(self):
