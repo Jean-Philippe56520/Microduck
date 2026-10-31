@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-IMAGE-B1a — plan WIC expliqué, 31/10/2026 :** journal réel 5683 tâches, `STRICT_DO_ROOTFS=0`, `TARGET_BUILD_OPERATIONS=4` toutes de type `do_deploy` (noyau, U-Boot, GRUB EFI, systemd-boot). Les deux derniers proviennent de dépendances **génériques AArch64** dans `image_types_wic.bbclass` OE-core épinglé, pas du WKS Rockchip sans EFI. **B1b autorisé :** un seul essai privé `bitbake -c image_wic microduck-image-dev` avec logs et stop, vérification du résultat brut dans `IMGDEPLOYDIR`. Zéro code moteur/sous-module modifié ; pas de WIC réalisée, RAUC/P17/robot/redistribution encore en attente. [Dossier](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1a--quatre-do_deploy-expliques-par-openembedded-epingle--b1b-autorise-sous-conditions-31102026).
+
+
 **P16-IMAGE-B1a (31/10/2026) — dry-run WSL2 exit 0, image en attente :** 5683 tâches dans le plan, 4515 à jour, 1168 restantes (non exécutées). Les extraits révèlent des tâches natives WIC `do_fetch`/`do_compile` ; vérifier le journal complet pour écarter `do_rootfs` strict ou recompilation cible avant WIC. Deux avertissements hôte connus. [Diagnostic B1a](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1a--dry-run-kas-reel-reussi-plan-complet-a-examiner-31-octobre-2026). Aucun `do_image` réel/RAUC/P17/robot.
 
 
