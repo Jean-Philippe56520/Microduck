@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-A — porte de sélection des images franchie sur WSL2 (31/10/2026) :** onze vérifications `bitbake -e` DEV/shipping ont donné `P16_METADATA_GATE: PASS` : OEM présent, P14B/P15A-P uniques en DEV et absents en shipping, sonde inactive, machine `microduck-zero3`. [Dossier P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md). Suite : unique essai privé de `do_rootfs` DEV et audit indépendant ; pas encore de rootfs, RAUC, P17, robot ni permission de redistribuer.
+
+
 **P16-A / vérification opérateur WSL2 (31/10/2026) :** 5 contrôles de rapport `OK` (P14B 19 sources/archive, P15A-P 3 fichiers/preset `disable`), sources KAS présentes, Yocto SHA épinglé, 16 CPU, 30 Gio RAM disponible et 880 Gio de disque partagé. [Compte rendu P16](per-p16-dev-rootfs-offline-audit-2026-10-31.md). Métadonnées d'image DEV/shipping à vérifier avant un `do_rootfs` privé ; aucun build image, bundle RAUC ou P17 réalisé.
 
 
