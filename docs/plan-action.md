@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**V1 / P15–P17 — préenregistrement et décision après preuve locale P14B (31/10/2026) :** [critères d'arrêt, de sûreté et de qualification](per-p15-p17-v1-release-gates-2026-10-31.md). P14B WSL2 : `P14B_EXIT_CODE=0` + `bitbake_python_package_files_verified_only`, 19 sources ; le JSON ne prouve pas isolément l'exécution BitBake. Préparer P15 (PR #235 : une sonde santé OEM inactive, DEV, fixtures seulement), P16 (`do_rootfs` DEV puis RAUC vérifié) et P17 (qualification) séparément ; **aucune de ces trois portes complètes franchie**, pas de nouveau build sans gate/ressources et accord. PR #233 fusionnée, #230/#231 drafts.
+
+
 **PER-P14B — résultat réel WSL2 reçu après la PR #233 (31/10/2026, preuve opérateur locale) :** `P14B_EXIT_CODE=0` associé au rapport exact `bitbake_python_package_files_verified_only`, 19 modules sous `/usr/lib/python3.14/site-packages`, `package_source_bytes_verified=true`, archive `85c583b86f0c8b5c59e9a547762a223c7ab27dee016c3ec604141907b20b2245`, source #230 HEAD `514e89ef10599c9177b056d3497915d92d6c1ec9`. **P14B est franchi localement**, pas en CI (`#230` vrai BitBake a expiré sur runner standard) ni sur robot. `bitbake_task_execution_attested_by_this_script=false` : la réussite BitBake se fonde sur le code de sortie rapporté séparément. Aucun `do_rootfs`/systemd/RAUC/licence signée ; #230/#231 restent brouillons sans fusion tant que CI rouge, pas de relance automatique de build. Les mentions « en cours » ci-dessous sont historiques (avant retour du validateur). [Portes P15–P17](per-p15-p17-v1-release-gates-2026-10-31.md), PR #234 en brouillon.
 
 
