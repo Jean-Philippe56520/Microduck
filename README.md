@@ -1,5 +1,9 @@
 # Microduck Companion / Kwipi — reprise V1 au 31 octobre 2026
 
+**P16-S2 — vérification RAUC / permissions DEV préparée (31/10/2026) :** après le WSL2 `layout ok` et l'audit S1 positif, ajout d'un garde lecture seule pour comparer les deux CA OEM au keyring effectif, 11 champs RAUC et cinq modes de fichiers ainsi que le groupe `robot`. **16/16 tests synthétiques réussis** en développement, CI de branche et exécution WSL2 à vérifier. Aucun scriptlet exécuté, image WIC ou bundle RAUC produit ; les privilèges OS `robot` ne sont pas résolus. [Protocole et commande WSL2](docs/per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-s2--garde-rauc--droits-de-limage-dev-avant-wic-31-octobre-2026--fixtures-seulement).
+
+
+
 **P16-S1 — PASS sur vrai WSL2 (31/10/2026, preuve opérateur) :** `yocto/scripts/check-wks-layout.py` OEM affiche `layout ok` pour 12,08 Gio (rootfs A/B de 2 Gio, data 8 Gio). Le validateur S1 au HEAD `92985a0bcd787b7ad05254439c8f356b4853beec` a relu le rapport P16-A, revérifié 3 empreintes P15A, examiné **226 autres fichiers systemd et 17 presets**, trouvé **0 référence d'autoactivation suspecte de la sonde** et **0 postinst différé dans les emplacements contrôlés** : `status=p16_s1_no_observed_probe_autostart_references_in_scanned_rootfs`. **Pas de WIC construite, de scriptlet RPM complet audité, de boot, RAUC ou robot**. Les `command not found` finaux proviennent du JSON d'exemple collé comme commandes shell, après le succès des deux validations ; ils n'invalident pas S1. [Dossier P16](docs/per-p16-dev-rootfs-offline-audit-2026-10-31.md).
 
 
