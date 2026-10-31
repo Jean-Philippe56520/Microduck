@@ -1,5 +1,8 @@
 # Microduck Companion / Kwipi — reprise V1 au 31 octobre 2026
 
+**P16-S2 — PASS WSL2 réel ; passage à P16-IMAGE-B1 (31/10/2026) :** sur `p16-pr238@0bbe7658deaf2a3e8c43bb9eea8c97b9690e3966`, le garde RAUC DEV a confirmé 2/2 CA OEM dans la keyring, 11/11 champs de `system.conf`, cinq modes de fichiers sûrs au niveau vérifié et groupe `robot` présent ; statut `p16_s2_rauc_pinned_ca_and_rootfs_mode_gate_pass`. Les 4 CI du HEAD de ce test sont vertes. **Aucune WIC créée.** Étape suivante préenregistrée : `bitbake -n -c image_wic microduck-image-dev` via les quatre fichiers KAS épinglés et les caches WSL2, avant une éventuelle construction limitée de WIC DEV privée. [Portes et arrêt P16-IMAGE-B1](docs/per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1--plan-de-construction-wic-dev-privee-porte-de-planification-uniquement-31102026). Pas de retour à P13B2/P14B/P15A/rootfs ; robot, RAUC signé, licences et droits RPC non validés.
+
+
 **P16-S2 — vérification RAUC / permissions DEV préparée (31/10/2026) :** après le WSL2 `layout ok` et l'audit S1 positif, ajout d'un garde lecture seule pour comparer les deux CA OEM au keyring effectif, 11 champs RAUC et cinq modes de fichiers ainsi que le groupe `robot`. **16/16 tests synthétiques réussis** en développement, CI de branche et exécution WSL2 à vérifier. Aucun scriptlet exécuté, image WIC ou bundle RAUC produit ; les privilèges OS `robot` ne sont pas résolus. [Protocole et commande WSL2](docs/per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-s2--garde-rauc--droits-de-limage-dev-avant-wic-31-octobre-2026--fixtures-seulement).
 
 
