@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**P15-B2 — aucune nouvelle mesure RK3566, candidat hôte ToF limité (31/10/2026) :** [porte et négatifs](per-p15b2-oem-tof-readonly-gate-2026-10-31.md). Le codec OEM `tof.frame` transporte 64 distances et 64 statuts, avec `CLOCK_MONOTONIC`, mais aucune exécution ToF physique n'est disponible. Le nouveau préflight logiciel ne capture pas de trame caméra et ne contacte pas les moteurs. Une fixture Unix sur PC ne certifie ni UID Unix ni réel capteur de robot ; un capteur OEM déclaré `VL53L8CX` ne certifie pas son montage. Pour le P15 réel, auditer avant activation les permissions `robot` (socket robotd motorisé), `identity.json`, PID et révision exacts du binaire effectivement livré, batterie, RSS/CPU/température, fonctionnement hors ligne et impact sur `robotd` 50 Hz. Aucun 2 Hz NPU, thermique, RAM, durée de vie, action ni robot validé ; pas de deuxième caméra/service/base. CI host en attente ; WIC déjà construite, inutile de la régénérer.
+
+
 **P15-B1 — preuve de 12 tests host-only réussis, aucune preuve matérielle (31/10/2026) :** sur PR #239 `3caecae827686f479fd4abdda034cde0a217349a`, le processus fixture Unix et son arrêt SIGTERM sont validés (12/12 nouveaux tests ; suite globale 2 006 tests OK, 22 ignorés). Les délais et allocations de ce runner sont **sur runner CI Linux**, pas sur RK3566 ; le groupe Unix `robot` reste une autorisation large au socket `robotd` et aucune permission OS lecture seule, CPU/RSS/thermie/NPU/capteurs/50 Hz sur robot n'a été mesurée. Aucun service réel ni nouvelle WIC n'est installé. [Preuve P15B](per-p15b-passive-process-lifecycle-2026-10-31.md).
 
 
