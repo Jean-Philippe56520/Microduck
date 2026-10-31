@@ -1,0 +1,16 @@
+name: PER-P15A dev-only read-only health probe (NOT robot or rootfs)
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  source-fixtures:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: P15A positive and negative source and fake-IPC tests
+        run: python -m unittest discover -s tests -p 'test_per_p15a_readonly_probe.py' -v
+      - name: Syntax of installed one-shot probe
+        run: python -m py_compile yocto/meta-kwipi-p15-readonly/recipes-kwipi/kwipi-readonly-probe/files/health_probe.py
