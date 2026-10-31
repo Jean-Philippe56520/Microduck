@@ -1,5 +1,8 @@
 # Plan directeur opérationnel — Microduck Companion
 
+**P16-I / P16-K — décision de chantier (31/10/2026) :** [audit ciblé du manifeste et diagnostic Git](per-p16ik-manifest-and-kas-pin-diagnosis-2026-10-31.md). P16-I **PASS** sur rootfs DEV réel : 1 manifeste, 1 334 paquets, **0 `-dbg`** (confirme non-installation des paquets debug GStreamer). P16-K **non levé** : dépôt local `meta-openembedded` trouvé, pin OEM `f28a144...` présent, `refs/remotes/origin/wrynose` présente mais pin **non ancêtre**. Miroir public GitHub `openembedded/meta-openembedded` : `wrynose@c734c2cb...`, comparaison depuis pin = 85 commits ahead/0 behind, donc discordance locale vs miroir ; serveur exact utilisé par KAS encore à diagnostiquer par `ls-remote` sans mutation. **STOP sur nouveaux builds et RAUC/P17**, ne pas modifier pin OEM/submodules. P16-A rootfs et 22 fichiers vérifiés ; P16-W 32 warnings expliqués ; aucun robot/licence de diffusion validé.
+
+
 **P16-W — 32 avertissements classifiés (31/10/2026, lecture seule du journal WSL2 et recettes épinglées).** 28 avertissements de chemins debug GStreamer connus explicitement dans la recette OEM (25 lignes + 65 autres occurrences signalées sur 1 ligne + 2 QA), 2 avertissements `do_unpack` de recettes `file://` avec `do_install` utilisant `${UNPACKDIR}`, 1 cache sstate partagé, 1 absence de compteurs I/O noyau WSL2. Aucun échec démontré des 19 modules P14B ou 3 fichiers P15A et aucune nouvelle compilation justifiée ; [diagnostic P16-W](per-p16w-rootfs-warning-classification-2026-10-31.md). **Restent ouverts P16-K** (pin KAS meta-openembedded/wrynose) **et P16-I** (manifeste global, pas de `-dbg`, services OEM, licences). Interdit de sauter à RAUC/P17 ou de modifier le pin amont sans audit/accord.
 
 
