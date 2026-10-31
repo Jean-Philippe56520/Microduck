@@ -3,7 +3,8 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
-from scripts.per_p16_dev_rootfs_audit import PROBE_HASHES, Refused, validate
+from scripts.per_p16_dev_rootfs_audit import (PROBE_HASHES, PINNED_P14B_ARCHIVE_SHA256,
+    PYTHON_PREFIX, Refused, validate, _verify_python_slice)
 
 # This suite uses predeclared immutable fixture bytes, not the actual package
 # verified on WSL2. The positive check verifies only the manifest gates; real
@@ -39,6 +40,45 @@ class P16FixtureTests(unittest.TestCase):
             self.assertFalse(result["license_redistribution_approved"])
             self.assertEqual(result["python_modules_verified"], 19)
             self.assertTrue(result["do_rootfs_exit_zero_operator_declared_not_independently_attested"])
+
+
+    def test_p14b_19_installed_modules_positive_negative(self):
+        import hashlib
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "rootfs"
+            source = Path(d) / "source"
+            source.mkdir()
+            entries = {"pyproject.toml": "metadata"}
+            for i in range(19):
+                name = "verified_%02d.py" % i
+                rel = "microduck_companion/" + name
+                p = root / PYTHON_PREFIX / rel
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_bytes(("P14B fixture " + name).encode("ascii"))
+                entries[rel] = hashlib.sha256(p.read_bytes()).hexdigest()
+            proof = {
+                "source_revision": "b" * 40,
+                "source_archive_sha256": PINNED_P14B_ARCHIVE_SHA256,
+                "source_sha256": entries,
+            }
+            with patch("scripts.per_p16_dev_rootfs_audit.staged_files",
+                       return_value=({}, proof)):
+                result = _verify_python_slice(root, source, "b" * 40)
+                self.assertEqual(len(result), 19)
+                with self.assertRaisesRegex(Refused, "source head"):
+                    _verify_python_slice(root, source, "c" * 40)
+                p = root / PYTHON_PREFIX / "microduck_companion/verified_00.py"
+                p.write_bytes(b"tampered")
+                with self.assertRaisesRegex(Refused, "module bytes"):
+                    _verify_python_slice(root, source, "b" * 40)
+                p.write_bytes(b"P14B fixture verified_00.py")
+                p.unlink()
+                with self.assertRaises(Refused):
+                    _verify_python_slice(root, source, "b" * 40)
+                p.symlink_to(source)
+                with self.assertRaises(Refused):
+                    _verify_python_slice(root, source, "b" * 40)
 
     def test_nonexistent_rootfs_refused(self):
         with tempfile.TemporaryDirectory() as d:
