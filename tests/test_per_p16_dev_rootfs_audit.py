@@ -25,14 +25,20 @@ class P16FixtureTests(unittest.TestCase):
                 file.parent.mkdir(parents=True, exist_ok=True)
                 file.write_bytes(("fixture:" + rel).encode())
                 synthetic[rel] = hashlib.sha256(file.read_bytes()).hexdigest()
-            with patch.dict(PROBE_HASHES, synthetic):
+            with patch.dict(PROBE_HASHES, synthetic), patch(
+                    "scripts.per_p16_dev_rootfs_audit._verify_python_slice",
+                    return_value={"synthetic_module_%02d.py" % i: "synthetic"
+                                  for i in range(19)},
+                ):
                 result = validate(r, manifest, builder_exit=0,
-                                  source_head="a" * 40)
+                                  source_head="a" * 40, source_root=r)
             self.assertEqual(result["status"],
                 "existing_dev_rootfs_probe_and_package_manifest_checked_only")
             self.assertFalse(result["rauc_signed_or_verified"])
             self.assertFalse(result["robot_validated"])
             self.assertFalse(result["license_redistribution_approved"])
+            self.assertEqual(result["python_modules_verified"], 19)
+            self.assertTrue(result["do_rootfs_exit_zero_operator_declared_not_independently_attested"])
 
     def test_nonexistent_rootfs_refused(self):
         with tempfile.TemporaryDirectory() as d:
@@ -78,6 +84,24 @@ class P16FixtureTests(unittest.TestCase):
                 ("kwipi-companion","kwipi-readonly-probe","microduck-daemon","microduck-data")))
             with self.assertRaisesRegex(Refused,"missing file"):
                 validate(r,m,builder_exit=0,source_head="a"*40)
+
+    def test_python_provenance_not_skipped_with_no_source_checkout(self):
+        import hashlib
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as d:
+            r=Path(d)
+            manifest=r/"manifest"
+            manifest.write_text("".join(f"{n} all 1\\n" for n in
+                ("kwipi-companion", "kwipi-readonly-probe", "microduck-daemon", "microduck-data")))
+            sample={}
+            for rel in PROBE_HASHES:
+                p=r/rel
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_bytes(rel.encode())
+                sample[rel]=hashlib.sha256(p.read_bytes()).hexdigest()
+            with patch.dict(PROBE_HASHES, sample), self.assertRaisesRegex(Refused, "source checkout"):
+                validate(r,manifest,builder_exit=0,source_head="a"*40)
+
     def test_no_implied_success(self):
         self.assertEqual(len(PROBE_HASHES),3)
         self.assertNotIn("rootfs_built",PROBE_HASHES)
