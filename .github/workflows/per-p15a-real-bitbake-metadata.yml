@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: \${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           submodules: recursive
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -46,7 +46,7 @@ jobs:
       - name: Check reviewed source and negative fixtures without BitBake
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "\${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
           test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
           test "$(git -C upstream/microduck_rl rev-parse HEAD)" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
           python -m unittest discover -s tests -p 'test_per_p15a_bitbake_env_gate.py' -v
@@ -154,5 +154,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: kwipi-p15a-pinned-bitbake-metadata-only
-          path: \${{ runner.temp }}/p15a-metadata-only-proof.json
+          path: ${{ runner.temp }}/p15a-metadata-only-proof.json
           retention-days: 7
