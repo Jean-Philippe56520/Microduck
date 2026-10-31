@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P16-IMAGE-B1c (31/10/2026) — vérificateur de WIC ajouté après arrêt de cardinalité :** `do_image_wic` réel réussi, fichier physique encore à attester. Le nouveau contrôle standard-library déduplique les alias OE-core, valide huit partitions GPT + CRC et calcule SHA-256 ; neuf tests fixtures positifs/négatifs PASS, résultat réel WSL2/CI finale en attente. Aucune reconstitution `do_rootfs`/WIC, signature RAUC, P17 ou robot. [Protocole B1c](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1c--correctif-de-verification-des-artefacts-sans-reconstruction-31-octobre-2026).
+
+
 **P16-IMAGE-B1b (31/10/2026) — WIC task réussie, fichier non attesté :** `bitbake -c image_wic microduck-image-dev` WSL2 code 0, do_image_wic réussi, 5683 tâches, 2 avertissements connus. Vérificateur ad hoc `len(glob('*.wic')) != 1` a bloqué après BitBake ; OE-core crée éventuellement un alias `IMAGE_LINK_NAME.wic`, donc diagnostic réel de cardinalité nécessaire **sans nouveau build**. Seules la localisation du fichier, la GPT réelle et la SHA restent ouvertes ; shipping, RAUC/P17/robot hors périmètre. [Dossier](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1b--tache-wic-reelle-reussie-controle-de-cardinalite-a-corriger-31-octobre-2026).
 
 
