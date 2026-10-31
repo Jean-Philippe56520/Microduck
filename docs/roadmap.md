@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**V1 / P16-A ROOTFS DEV audité sur WSL2 (31/10/2026).** Le `do_rootfs` DEV a réussi (`P16_ROOTFS_EXIT_CODE=0`, 4515 tâches réussies), puis le validateur P16 sur les **véritables artefacts** (`rootfs`/manifest/journal uniques) retourne `P16_AUDIT_EXIT_CODE=0`, **19/19 sources P14B et 3/3 fichiers P15A** conformes, aucun lien d'activation systemd détecté dans son périmètre. [Dossier de reprise P16-A](reprise-v1-p16a-rootfs-verified-2026-10-31.md). 32 warnings non catégorisés et pin `meta-openembedded/wrynose` non résolu après relecture KAS : prochain lot lecture seule. Pas de `do_image`/WIC, bundle RAUC, P17 ni robot. PR #238 toujours draft/empilée.
+
+
 **P16-A WSL2 `do_rootfs` exécuté (31/10/2026) :** après contrôle `P16_METADATA_GATE: PASS`, la tâche `bitbake -c rootfs microduck-image-dev` a terminé (4515 tâches réussies dont 2149 réutilisées, 32 avertissements, code retour `0` communiqué par l'opérateur). **Audits des avertissements, chemins réels, manifest, 19 modules et 3 fichiers P15A non encore réalisés** ; aucun `do_image`, WIC, bundle RAUC, P17 ni robot testé. [Porte et critères](per-p16-dev-rootfs-offline-audit-2026-10-31.md).
 
 
