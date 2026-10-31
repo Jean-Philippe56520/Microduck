@@ -54,9 +54,15 @@ class P15B6ClosureTests(unittest.TestCase):
         self.assertIn('RDEPENDS:' + '$' + '{PN} += "kwipi-companion"', recipe)
         self.assertIn('LICENSE = "CLOSED"', recipe)
         self.assertIn('inherit allarch python3-dir', recipe)
+        # Audit executable BitBake statements, not comments explicitly
+        # documenting the absence of an image bbappend or service.
+        instructions = "\n".join(
+            line for line in recipe.splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        )
         for banned in ("IMAGE_INSTALL", "SYSTEMD_AUTO_ENABLE", "robotd",
                        "media.frame", "bbappend", "useradd", "groupadd"):
-            self.assertNotIn(banned, recipe)
+            self.assertNotIn(banned, instructions)
         self.assertIn('LAYERDEPENDS_kwipipassive = "core kwipipy"',
                       files["conf/layer.conf"].decode())
         with tarfile.open(fileobj=io.BytesIO(files[b6.ARCHIVE]), mode="r:gz") as t:
