@@ -36,3 +36,9 @@ python -m scripts.per_p16_dev_rootfs_audit \
 ```
 
 Ces variables sont des **emplacements à résoudre par une vérification préalable** et non des variables inventées ou garanties dans le shell. Sans valeurs effectives, preuve d'exécution, espace hôte, licence et retour arrière, **STOP** ; ne pas lancer `do_rootfs`, RAUC ou P17. La sonde reste sans activation et son groupe Unix `robot` ne constitue pas une ACL lecture-seule.
+
+## Porte hôte WSL2 partiellement vérifiée, 31/10/2026
+
+Sortie opérateur communiquée après P15A-P : `proofs/p14b-package.json` = `bitbake_python_package_files_verified_only`, `proofs/p15a-package-verify.json` = `bitbake_p15a_package_files_verified_only`, checkout `p15a-pr235` = `b5626a2cafabd0836e69685d18988360d3e86f18`. `df -h build downloads sstate` renvoie pour les trois chemins le même support `/dev/sdd`, 1007 Gio de capacité, 77 Gio occupés et **880 Gio disponibles**. Budget préenregistré sur volume partagé = 290 Gio, donc **porte disque satisfaite au moment de la mesure** (pas une garantie de ressources au terme de la construction).
+
+Cette sortie ne vérifie pas le contenu JSON complet, la RAM/CPU actuels, le SHA du checkout Yocto, les quatre couches KAS effectives, `IMAGE_INSTALL` DEV vs shipping, les licences et les conditions de retour arrière. **La porte complète P16 `do_rootfs` reste en attente**, et aucune commande `bitbake -c rootfs` n'a été attestée. Le validateur P16 présente désormais **13/13 tests fixtures** et la [CI spécialisée #41225751042](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41225751042) verte sur `ef89d48274ad229b88022872a25356b375681e6a` ; CI Python générale, P15A et N1 également vertes au même HEAD. Cela ne remplace pas la preuve hôte.
