@@ -29,3 +29,10 @@ La licence des sources du projet Companion n'est pas explicite ; P14B maintient 
 ## Résultats
 
 En attente des CI et de la réussite indépendante P14B.
+
+
+## Réconciliation de dépendance P14B — 31/10/2026
+
+La PR #231 avait été créée depuis la première version `python_pep517` de P14B. **Cette version n'est pas celle que l'opérateur a validée sur WSL2.** Après audit des blobs, le parent P14B/#230 HEAD `514e89ef10599c9177b056d3497915d92d6c1ec9` a été intégré à la branche P14C, au commit de synchronisation `6129c971f46e5a449a3031fb78886bd9a9ad352d`, sans changer les six fichiers P14C. Le code P14B hérité est désormais exactement `inherit allarch python3-dir` (blob de recette-générateur `214c41435d98c43b3b5772161affc913deed863b`) et **non** `python_pep517`.
+
+Preuves indépendantes : sur WSL2, l'opérateur a fourni `P14B_EXIT_CODE=0` et `bitbake_python_package_files_verified_only` pour les 19 sources du SHA #230, avec `bitbake_task_execution_attested_by_this_script=false`. La CI P14B éphémère est encore rouge par délai ; sa réussite locale ne constitue pas une signature, une licence ni un paquet installé. La CI P14C originale [#41142993543](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41142993543) avait prouvé seulement le choix de l'image sur l'ancien parent ; **revalider le parse P14C sur la branche réconciliée avant fusion.** Aucun `do_rootfs`, `.wic`, unité, RAUC ou robot testé. La PR P15A/#235 doit hériter de ce nouveau parent ; pas de fusion dans le désordre.
