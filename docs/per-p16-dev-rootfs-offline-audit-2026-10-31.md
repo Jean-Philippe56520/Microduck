@@ -1,5 +1,6 @@
 # P16 — contrôle hors ligne du rootfs DEV, sans construction (31/10/2026)
 
+## P16-IMAGE-B1b — tâche WIC réelle réussie, contrôle de cardinalité à corriger (31 octobre 2026)
 ## P16-IMAGE-B1a — quatre `do_deploy` expliqués par OpenEmbedded épinglé ; B1b autorisé sous conditions (31/10/2026)
 
 **Observation opérateur sur le journal P16-B1a complet, lecture seule** (après `P16_B1_DRYRUN_EXIT_CODE=0`) : `TOTAL_TASKS=5683`, `ALREADY_UP_TO_DATE=4515`, `REMAINING_TASKS=1168`, `TASK_LINES_PARSED=1166`, `NATIVE_FETCH=5`, `NATIVE_COMPILE=5`, `STRICT_DO_ROOTFS=0`, `TARGET_BUILD_OPERATIONS=4`. Les **quatre opérations cible uniquement `do_deploy`** sont `u-boot-rockchip.bb`, `grub-efi_2.14.bb`, `systemd-boot_259.5.bb` et `linux-rockchip_6.1.bb`. La sortie `P16_B1_GATE: STOP_REVIEW_TARGET_TASKS` est le résultat du prédicat prudent « toute opération cible non native » ; **pas une erreur BitBake**, pas une recompilation démontrée. Deux lignes de tâches du décompte ne sont pas reprises par l'extracteur de lignes `Running task` ; aucune conclusion sur leur nature au-delà du périmètre effectivement parsé.
