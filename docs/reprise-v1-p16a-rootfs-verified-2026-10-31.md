@@ -1,5 +1,12 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+## Reprise après B1b : validateur de fichier WIC testé sur fixtures (31 octobre 2026)
+
+`do_image_wic` a terminé avec code 0 sur WSL2, mais le contrôleur initial attendait `len(glob('*.wic'))==1` et a affiché `WIC absente ou multiple`. Le constructeur OE-core épinglé peut créer un alias `IMAGE_LINK_NAME.wic`. La PR #238 possède désormais `scripts/per_p16_b1b_wic_artifact_gate.py`, testé 9/9 sur images creuses synthétiques. Il **recherche sans modifier** le seul fichier physique (alias tolérés), vérifie huit partitions GPT et les CRC, calcule SHA-256 une fois ces vérifications réussies. **Aucun résultat WSL2 réel n'a encore été obtenu avec ce code**. Si `P16_B1B_AUDIT_STOP`, conserver la sortie et ne pas reconstruire.
+
+Après récupération de #238, exécuter depuis `~/kwipi-build-v1` : `PYTHONDONTWRITEBYTECODE=1 python3 p16-pr238/scripts/per_p16_b1b_wic_artifact_gate.py` ; voir [P16-B1c](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-image-b1c--correctif-de-verification-des-artefacts-sans-reconstruction-31-octobre-2026). Ne jamais joindre la WIC ou les données privées. `do_image_complete` et la qualification de l'image publiée/RAUC/robot restent séparés.
+
+
 ## Reprise P16-IMAGE-B1b — do_image_wic WSL2 réussi, garde d'artefact STOP (31 octobre 2026)
 
 **Nouvelle preuve opérateur** : `P16_B1B_PREFLIGHT: PASS` (850,1 Gio), `P16_B1B_EXIT_CODE=0`, `microduck-image-dev:do_image_wic: Succeeded`, `Attempted 5683 tasks of which 4515 didn't need to be rerun and all succeeded`, deux warnings connus. L'étape Python suivante s'est arrêtée sur `P16_B1B_STOP: WIC absente ou multiple` parce qu'elle exigeait `len(list(glob('*.wic'))) == 1`, sans distinguer fichier régulier et lien symbolique. Le code OE-core épinglé prévoit `IMAGE_LINK_NAME.wic` → `IMAGE_NAME.wic` si l'alias est activé. **C'est une hypothèse de faux positif, pas encore une preuve du fichier réel.** Ne pas relancer ni WIC ni rootfs, ne pas nettoyer les caches.
