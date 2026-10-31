@@ -39,3 +39,6 @@ Préenregistrer avant essais un manifeste reproductible (SHA de code, gitlinks i
 ## Statut de cette PR documentaire
 
 Préenregistrement **uniquement**. Aucun code, couche, sous-module, modèle, clé, moteur, média, robot, BitBake ou image modifié. Les tests des futures étapes sont des **critères à exécuter**, et non des tests passés. Ce document ne dépend pas d'un résultat supposé de P14B.
+## Premier jalon P15A en branche dépendante, preuve PC uniquement
+
+La [PR #235](https://github.com/Jean-Philippe56520/Microduck/pull/235) ajoute une **sonde `robot.health` ponctuelle** et une unité systemd **désactivée** dans une couche Yocto **réservée à l'image DEV** (empilée sur #231). Les tests de faux socket, de refus et de source P14A ont une [CI spécialisée verte](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41212996494) après correction d'une assertion confondant commentaire et véritable section `[Install]`. Python général et inventaire N1 sont verts au HEAD `4b9ffab7d169a75a70abb561a6949c6879e1128b`. Cela prouve du code testé **PC-fixtures**, ni un paquet BitBake P15, ni une unité installée, ni la sûreté OS des privilèges du groupe `robot`, ni le cycle de vie d'un compagnon actif. Les portes P16/P17 demeurent bloquées par les preuves `do_rootfs`/RAUC/robot manquantes.
