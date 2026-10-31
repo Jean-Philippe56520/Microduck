@@ -1,5 +1,12 @@
 # Reprise V1 — P16-A rootfs DEV vérifié sur WSL2 (31 octobre 2026)
 
+## Reprise P16-RAUC-R0 — préflight réel, absence de clés (31 octobre 2026)
+
+**Sortie opérateur WSL2 (non robot) :** `RAUC_OEM_SOURCE: PASS` ; `bitbake -e microduck-bundle` et `microduck-bundle-shipping` exposent `MACHINE=microduck-zero3`, `RAUC_BUNDLE_COMPATIBLE=microduck-zero3`, `RAUC_BUNDLE_FORMAT=verity`, `RAUC_BUNDLE_SLOTS=rootfs`, DEV→`microduck-image-dev` et shipping→`microduck-image`. `RAUC_SLOT_rootfs[fstype]=NOT_VISIBLE` provient du regex qui confond varflag `[fstype]` et variable normale ; `ext4` est inscrit dans les recettes OEM épinglées, interrogation effective restante via `bitbake-getvar -f fstype`. `DEV_PRIVATE_KEY: ABSENT`, `DEV_SIGNING_CERT: ABSENT` sous `build/rauc-keys`, donc **aucun build/signature RAUC**, et `BUNDLE_BUILT: False`, `SIGNATURE_VERIFIED: False`. L'image WIC DEV déjà validée fait confiance aux CA publiques OEM ; un nouveau certificat arbitraire ne satisfera pas cette confiance. [R0 diagnostic](per-p16-dev-rootfs-offline-audit-2026-10-31.md#p16-rauc-r0--resultat-wsl2-effectif-signature-dev-en-attente-31-octobre-2026).
+
+**Reprise :** reprendre deux requêtes `bitbake-getvar -r <recette> -f fstype --value RAUC_SLOT_rootfs` sur les KAS épinglés **sans redémarrer de compilation**, confirmer `ext4` pour les deux. Si PASS, préparer indépendamment P17 et P15 pré-robot. Pas de génération/installation d'autorité, clés privées, patch OEM ou WIC/RAUC ; le traitement d'une CA DEV alternative nécessite accord et nouveau périmètre de validation. CI et fusions des PR #230 → #231 → #235 → #238 restent distinctes.
+
+
 ## Reprise P16-IMAGE-B3 — WIC/ZST/GPT complets PASS sur WSL2 (31 octobre 2026)
 
 **Dernière preuve opérateur, ne pas rejouer :** `P16_B3_ZST_BYTE_EQ_WIC: PASS`, `sgdisk --verify` code 0 et « No problems found. 23967 free sectors (11.7 MiB) available in 5 segments, the largest of which is 8192 (4.0 MiB) in size. », `P16_B3_SECONDARY_GPT: PASS`, `P16_B3_READONLY: PASS`. Le ZST décompressé est **octet-à-octet identique** au WIC brut déjà validé (12 968 805 376 octets, SHA-256 `c1140e7508559ebc9467c3f97d3c9891452228f05b3baf999ccaa3c0a5f11bc8`) ; le GPT primaire et sa copie secondaire sont cohérents. Aucun nouveau calcul de somme ou BitBake ni écriture. B1/B2/B3 clôturés pour l'image DEV locale PC ; les secteurs libres sont normaux dans la disposition construite.
