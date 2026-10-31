@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**P16-A (31/10/2026) :** P15A-P est **vérifié sur l'hôte WSL2**, pour les trois fichiers et leurs empreintes dans [le dossier de reprise](reprise-v1-p15a-package-verified-2026-10-31.md). L'audit P16 en PR #238 reste source-only/fixtures, même si les CI passent ; aucun rootfs ni mesures RK3566/thermie/RSS/NPU/moteurs, pas de licence de redistribution ni RAUC. Les notes historiques ci-dessous évoquant un PKGDEST non vérifié sont désormais dépassées.
+
+
 **P15A-P — résultat sur hôte WSL2 uniquement, 31/10/2026 :** `bitbake -c package kwipi-readonly-probe` a réussi (643/643 tâches, 633 courantes) avec deux avertissements ; cette preuve ne mesure ni RSS, CPU, température, batterie du RK3566, ni cadence `robotd` 50 Hz ou latence du service. Le groupe OEM `robot` ouvre le socket JSON-RPC global, **pas une ACL lecture seule OS**. `PKGDEST` réel encore à vérifier, aucun `do_rootfs`, RAUC, signature ou robot testé. La réutilisation sstate limitée observée ne démontre aucune performance matérielle.
 
 
