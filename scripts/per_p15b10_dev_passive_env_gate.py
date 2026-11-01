@@ -51,6 +51,27 @@ def _real_layer(path: Path) -> Path:
     return path.resolve(strict=True)
 
 
+
+def _baseline_19_match(base_provenance: dict, addon_provenance: dict) -> bool:
+    """Compare the 19 Python modules, not P14B's extra pyproject.toml.
+
+    P14B deliberately archives 19 modules PLUS the packaging metadata
+    pyproject.toml; P15-B6 records exactly the 19 source modules. Both
+    inventories must be complete and their 19 SHA-256 values identical.
+    """
+    base = base_provenance.get("source_sha256")
+    addon = addon_provenance.get("base_sha256")
+    selected = p14b.p14a.SELECTED
+    return (
+        isinstance(base, dict)
+        and isinstance(addon, dict)
+        and set(base) == set(selected) | {"pyproject.toml"}
+        and set(addon) == set(selected)
+        and all(base[name] == addon[name] for name in selected)
+    )
+
+
+
 def source_gate(project: Path, *, selection_layer: Path,
                 addon_layer: Path, python_layer: Path) -> tuple[dict, dict]:
     """Validate byte-exact selection and both existing packaged source layers."""
@@ -75,7 +96,7 @@ def source_gate(project: Path, *, selection_layer: Path,
             or addon.get("schema") != b6.SCHEMA
             or addon.get("addon_modules") != 5
             or addon.get("base_modules") != 19
-            or addon.get("base_sha256") != base.get("source_sha256")
+            or not _baseline_19_match(base, addon)
             or addon.get("oem_yocto_sha") != base.get("oem_yocto_sha")
             or addon.get("source_revision") != base.get("source_revision")):
         raise EnvRefused("passive add-on does not match the 19-module baseline")
@@ -87,11 +108,17 @@ def validate(dev_env: str, shipping_env: str, appends: str, *,
              python_layer: Path, account_layer: Path,
              base_provenance: dict, addon_provenance: dict) -> dict:
     """Only effective DEV selection, never an image or real OEM service claim."""
-    if (addon_provenance.get("schema") != b6.SCHEMA
+    if (base_provenance.get("schema") != p14b.SCHEMA
+            or base_provenance.get("selected_python_modules") != 19
+            or base_provenance.get("license_recipe_closed") is not True
+            or base_provenance.get("source_license_checked") is not False
+            or addon_provenance.get("schema") != b6.SCHEMA
             or addon_provenance.get("status") != "host_addon_source_candidate_not_bitbake"
             or addon_provenance.get("addon_modules") != 5
             or addon_provenance.get("base_modules") != 19
-            or addon_provenance.get("base_sha256") != base_provenance.get("source_sha256")
+            or not _baseline_19_match(base_provenance, addon_provenance)
+            or addon_provenance.get("oem_yocto_sha") != base_provenance.get("oem_yocto_sha")
+            or addon_provenance.get("source_revision") != base_provenance.get("source_revision")
             or addon_provenance.get("dev_image_selected") is not False
             or addon_provenance.get("shipping_image_selected") is not False
             or addon_provenance.get("systemd_installed") is not False
