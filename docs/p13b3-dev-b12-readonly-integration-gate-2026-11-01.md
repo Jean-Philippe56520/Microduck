@@ -80,6 +80,32 @@ PY
 
 Ne pas conclure une absence à partir d'un seul manifeste ancien : un `*.manifest` du répertoire `deploy/images` peut provenir d'une image antérieure. Relier d'abord la version du rootfs aux fichiers réellement présents et à sa provenance de build.
 
+## Quatrième diagnostic opérateur — empreinte B6 historique retrouvée (01/11/2026)
+
+**Sortie WSL2 reçue, lecture seule, sans exécution distante GitHub :**
+
+```text
+B6_RPM_COUNT: 0
+B6_PKGDATA_COUNT: 0
+B6_PACKAGE_STAMPS_COUNT: 0
+B6_KAS_OR_STAGE_PATHS_COUNT: 4
+B6_KAS_OR_STAGE: kwipi-build-v1/p15b6p-cache-scratch-20261101/meta-kwipi-passive
+B6_KAS_OR_STAGE: kwipi-build-v1/p15b6p-cache-scratch-20261101/p15b6p-offline.yml
+B6_KAS_OR_STAGE: kwipi-build-v1/p15b6p-cache-scratch-20261101-b/meta-kwipi-passive
+B6_KAS_OR_STAGE: kwipi-build-v1/p15b6p-cache-scratch-20261101-b/p15b6p-offline.yml
+B6_CANDIDATE_PROOFS_COUNT: 1
+B6_PROOF: package-proof.json status= bitbake_passive_addon_package_files_verified_only package_split_files_verified= True source_revision= 702115e44e919178007a46d1ff10a8ab787a6c18
+B6_DISCOVERY: READ_ONLY_ONLY_NO_BITBAKE
+```
+
+**Preuve indépendante GitHub :** les **19 fichiers P14B** (sélection explicite `n5.APPROVED_FILES - n6.OMITTED + sim_ipc.py`) et les **5 fichiers supplémentaires P15-B6** ont **exactement les mêmes SHA de blobs Git (24/24)** aux commits `702115e44e919178007a46d1ff10a8ab787a6c18`, `e2e9bfef7d7c4f46fe51924937e7939d78d00383` (B12) et `c6d0344ee35c49830ac104fe9d07062b2b2764cc` (main). **Pas de dérive des 24 sources Python sélectionnées entre ces trois commits.** Cela ne remplace pas la vérification des fichiers dans les archives et paquets locaux, ni une preuve de fermeture/dépendances/installation sur cible.
+
+**Interprétation stricte :** deux anciens dossiers de staging sont trouvés ; un rapport privé affirme le contrôle exact de cinq fichiers du **`packages-split` B6 à sa date**. Sa propre source `scripts/per_p15b6_bitbake_package_gate.py` annonce explicitement `bitbake_task_execution_attested_by_this_script=false` : le rapport à lui seul n'atteste pas qu'une tâche `do_package` a été réellement exécutée, et **n'atteste pas la présence actuelle** de `packages-split`. Le `0 RPM` n'est pas un échec `do_package` : cette tâche ne force pas `do_package_write_rpm`. Les recherches `tmp/pkgdata` et `tmp/stamps` sont bornées aux motifs précédents ; absence dans ces motifs ≠ disparition de tous les caches. Ne pas faire de `bitbake -c clean*`, ni copier aveuglément une archive historique dans une recette de la nouvelle image.
+
+**Prochaine étape avant toute écriture :** retrouver le `package-proof.json` exact dans les deux `scratch`, vérifier son `packaged_sha256` (5 clés) contre le `kwipi-passive-source-provenance.json` de la **même** couche, son archive `kwipi-passive-fixture-0.1.0.tar.gz`, et, si le `recipe-env.txt` privé subsiste, lire uniquement la variable effective `PKGDEST` en mémoire pour vérifier ce répertoire et les cinq `.py` sans exposer de `bitbake -e` brut. STOP si preuve absente/altérée, fichiers manquants, couche étrangère, permissions douteuses ; ne pas reconstruire automatiquement. Si les artefacts de paquet ont été éliminés, les **sources B6 restent disponibles et inchangées** ; un éventuel `do_package` ciblé serait un lot ultérieur avec justification explicite, après qualification de la composition DEV/shipping.
+
+---
+
 ## Troisième préflight opérateur — BBLAYERS et B6 (01/11/2026)
 
 **Sortie transmise, audit en lecture seule d'un `bblayers.conf` et d'un chemin `packages-split` précis :**
