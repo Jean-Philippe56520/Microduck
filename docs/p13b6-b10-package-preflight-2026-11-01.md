@@ -238,6 +238,79 @@ PY
 
 La relecture de motifs est **non exhaustive** : elle ne prouve pas que la signature et le runqueue d'une exécution ultérieure sont identiques. Le journal reste privé. Ne pas lancer le vrai `do_package_write_rpm` tant que la revue n'a pas été examinée.
 
+## Second retour P13B6 — STOP borné sur deux tâches de déploiement/image (01/11/2026)
+
+**Sortie WSL2 transmise par l'opérateur, après relecture du journal précédent et des métadonnées privées :**
+
+```text
+P13B6_LOG_LINES: 71
+P13B6_TASK_REFERENCES: 23
+P13B6_OEM_COMPILE_OR_PACKAGE_REFERENCES: 0
+P13B6_IMAGE_REFERENCES: 2
+P13B6_ERROR_MARKERS: 0
+P13B6_TASK_SUMMARY_PRESENT: True
+P13B6_METADATA_AND_FILE_PERMISSIONS: PASS_READ_ONLY
+P13B6_REVIEW: STOP_ANOMALY
+P13B6_PACKAGE_RUN: false
+```
+
+**Décision : arrêt correct.** Deux références dans le journal correspondent au **filtre combiné** `task.startswith(("do_rootfs", "do_image", "do_deploy"))` ; elles ne sont **pas identifiées** et le résultat **ne démontre pas** que `do_rootfs` ou `do_image` sont planifiés. En particulier, `do_deploy` peut être une tâche normale de publication d'artefacts BitBake ; la présence d'un tel nom doit être expliquée par la recette et par sa place dans le plan, non assimilée automatiquement à une image livrable. À l'inverse, un `-n` sorti 0 ne garantit jamais l'absence de nouvelles tâches lors d'une exécution réelle ultérieure. Aucun `package_write_rpm` réel ni `do_rootfs` n'a été lancé. Statut `P13B6_DRYRUN = CODE0`, `P13B6_TASK_PLAN = STOP_CLASSIFICATION_PENDING`.
+
+**Seule prochaine opération :** classifier **en lecture seule le même journal**, sans afficher d'environnement BitBake ni de chemin complet privé. Le préflight doit retrouver exactement les 23 références annoncées et les deux anomalies, vérifier l'intégrité/privacy du fichier, présenter les deux couples `recette.bb / nom de tâche` sous forme filtrée, plus les compilations éventuelles. **Le résultat ne donne pas d'autorisation d'empaquetage**.
+
+```bash
+python3 -B - <<'PY'
+from pathlib import Path
+import re
+import stat
+
+log = Path("/home/jp/kwipi-build-v1/p13b5-dev-metadata-20261101/p13b6-package-rpm-dryrun.log")
+if (not log.is_file() or log.is_symlink()
+        or stat.S_IMODE(log.stat().st_mode) & 0o077
+        or not 0 < log.stat().st_size <= 32 * 1024**2):
+    raise SystemExit("P13B6_CLASSIFY_STOP: log_missing_nonprivate_or_size_invalid")
+
+text = log.read_text(encoding="utf-8", errors="replace")
+regex = re.compile(r'([^\s()]+\.bb):(do_[A-Za-z0-9_]+)')
+refs = []
+for line in text.splitlines():
+    for match in regex.finditer(line):
+        recipe = Path(match.group(1)).name
+        task = match.group(2)
+        if not re.fullmatch(r'[A-Za-z0-9_.+-]{1,120}', recipe):
+            raise SystemExit("P13B6_CLASSIFY_STOP: unusual_recipe_label")
+        scheduled = "Running task" in line or "Executing task" in line
+        refs.append((recipe, task, scheduled))
+
+suspects = [(r, t, active) for r, t, active in refs
+            if t.startswith(("do_rootfs", "do_image", "do_deploy"))]
+print("P13B6_CLASSIFY_TOTAL_REFS:", len(refs))
+print("P13B6_CLASSIFY_SUSPECTS:", len(suspects))
+if len(refs) != 23 or len(suspects) != 2:
+    raise SystemExit("P13B6_CLASSIFY_STOP: journal_has_changed_or_parser_differs")
+
+for recipe, task, scheduled in suspects:
+    print("P13B6_TASK_REVIEW:", recipe, task,
+          "scheduled" if scheduled else "reference_only")
+
+compile_refs = [(r, t) for r, t, _ in refs if t.startswith("do_compile")]
+print("P13B6_COMPILE_REFS:", len(compile_refs))
+for recipe, task in sorted(set(compile_refs)):
+    print("P13B6_COMPILE_REVIEW:", recipe, task)
+
+print("P13B6_ROOTFS_REFS:",
+      sum(t.startswith("do_rootfs") for _, t, _ in refs))
+print("P13B6_IMAGE_REFS:",
+      sum(t.startswith("do_image") for _, t, _ in refs))
+print("P13B6_DEPLOY_REFS:",
+      sum(t.startswith("do_deploy") for _, t, _ in refs))
+print("P13B6_CLASSIFY: READ_ONLY_NO_BITBAKE")
+print("P13B6_PACKAGE_RUN: false")
+PY
+```
+
+**STOP si `do_rootfs`, `do_image`, recette OEM inattendue, référence sans contexte compréhensible, journal modifié, ou recompilation inconnue**. Ne pas requalifier le STOP en PASS sur la seule absence de `do_rootfs` : les deux recettes/tâches doivent être examinées individuellement. Toujours aucune suppression du cache, aucune tâche réelle, WIC/RAUC/robot.
+
 ## Statut à ce SHA documentaire
 
 `P13B5_METADATA = PASS` (preuve opérateur WSL2) ; `P13B6_PACKAGE_WRITE = NON_EXECUTE` ; `P16_B10_ROOTFS_24_MODULES = EN_ATTENTE` ; `WIC/RAUC/ROBOT = NON_VALIDES`.
