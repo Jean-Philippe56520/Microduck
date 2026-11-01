@@ -274,7 +274,7 @@ class ServiceGateFixtureTests(unittest.TestCase):
     def test_b10_detects_live_systemd_reference(self):
         path = self._make_b10_report()
         service = self.root / "usr/lib/systemd/system/live.service"
-        service.write_text("[Unit]\\nWants=kwipi-readonly-probe.service\\n")
+        service.write_text("[Unit]\nWants=kwipi-readonly-probe.service\n")
         with self.assertRaisesRegex(gate.Stop, "live probe reference"):
             self._validate_b10(path)
 
