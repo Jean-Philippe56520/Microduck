@@ -192,7 +192,8 @@ def validate(base: Path, *, report_path: Path | None = None,
         try:
             b10._installed_modules(root, python_hashes)
             b10._binary_checks(root)
-        except b10.Refused as exc:
+        except (ValueError, OSError) as exc:
+            # B10 also calls the P16-A helper which has its own Refused type.
             raise Stop("current rootfs differs from pinned B10 proof: " + str(exc)) from exc
 
     if (report.get("python_modules_verified") != modules
