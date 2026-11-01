@@ -56,12 +56,23 @@ class P15B8OverlayOnly(unittest.TestCase):
         changed = self.local.read_text()
         for anchor in ("include!(\"local_detections_acl.rs\")",
                        "bind_with_uid(&private.join(\"detections.sock\"), uid)",
-                       "acl_policy::grant_private_dir(parent, uid)",
+                       "acl_policy::hide_private_dir_before_bind(parent, uid)",
                        "acl_policy::grant_socket(path, uid)",
+                       "acl_policy::grant_private_dir(parent, uid)",
                        "fn bind_checked("):
             self.assertIn(anchor, changed)
         self.assertEqual(changed.count("mod acl_policy"), 1)
         self.assertEqual(changed.count("grant_socket(path, uid)"), 1)
+        # No ACL traversal grant may happen before UnixListener::bind/chmod.
+        self.assertLess(
+            changed.index("hide_private_dir_before_bind(parent, uid)"),
+            changed.index("let listener = UnixListener::bind(path)"))
+        self.assertLess(
+            changed.index("std::fs::set_permissions(path,"),
+            changed.index("grant_socket(path, uid)"))
+        self.assertLess(
+            changed.index("grant_socket(path, uid)"),
+            changed.index("grant_private_dir(parent, uid)"))
 
     def test_02_repeat_overlay_refuses_without_mutation(self):
         b8.apply(self.archive, self.project)
