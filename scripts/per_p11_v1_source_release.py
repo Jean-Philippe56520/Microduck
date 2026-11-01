@@ -329,6 +329,8 @@ def verify_archive(path: Path) -> dict:
 
 
 def build(project: Path, oem: Path, output_dir: Path, *, with_p15b8_source: bool = False) -> dict:
+    if type(with_p15b8_source) is not bool:
+        raise ReleaseRefused("P15-B8 source selection must be an explicit boolean")
     project = project.resolve(strict=True)
     oem = oem.resolve(strict=True)
     project_sha = check_revisions(project, oem)
@@ -341,8 +343,6 @@ def build(project: Path, oem: Path, output_dir: Path, *, with_p15b8_source: bool
         apply_a(source, project / "scripts/per_p10a_rknn_segments.rs")
         apply_b(source, project / "scripts/per_p10b_seg_tail.rs", project)
         apply_c(source, project)
-        if type(with_p15b8_source) is not bool:
-            raise ReleaseRefused("P15-B8 source selection must be an explicit boolean")
         if with_p15b8_source:
             apply_b4(source, project)
             apply_b8(source, project)
