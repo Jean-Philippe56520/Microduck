@@ -1,3 +1,20 @@
+## P16-S1 — sélection explicite du rapport B10 pour audit systemd hors ligne (02/11/2026, code/fixtures en PR)
+
+**Objectif / manque constaté :** le validateur `scripts/per_p16_dev_rootfs_service_gate.py` analysait systématiquement `proofs/p16-rootfs-audit.json` (rapport **historique P16-A, 19 modules**). Il acceptait théoriquement le statut B10, mais ne pouvait pas sélectionner le **nouveau** rapport privé de 24 modules sans remplacer l'ancien. Ce remplacement est interdit. La correction **réutilise le contrôleur P16-S1 existant** ; aucun service, pilote ou sous-module OEM n'est modifié.
+
+**Porte explicite B10 :** les options `--report /chemin/absolu/rapport-b10.json` et `--report-sha256 <64 caractères hexadécimaux minuscules>` doivent être fournies ensemble. Le chemin doit exister comme fichier régulier, non symbolique, distinct du rapport historique ; les octets doivent correspondre exactement au SHA-256 fourni ; statut/schéma/source B12, 19+5 modules, hashes B6, deux binaires B12, versions de paquets DEV, identité Kwipi et trois fichiers P15A sont revérifiés dans le rapport avant inspection des fichiers du rootfs. Mode sans `--report` : **P16-A historique uniquement**, avec un résultat clairement étiqueté. Le script ne crée ni ne modifie de rapport.
+
+**Empreintes privées de référence :** nouveau rapport B10 `51f2888533dc7869885b2e57e54f4d182cf810d02921d13e30f5691b89ec6fd3` ; ancien rapport P16-A `24738ac85480ad4e74f2ed1ccad0b0d5b4275feaef680d2c7b1ecd4ac1feaf90`. **Chemin du nouveau rapport non attesté sur cette machine** : identifier localement ce fichier et confirmer son SHA avant essai. Exemple, après vérification du chemin (lecture seule, aucun BitBake) :
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -B -m scripts.per_p16_dev_rootfs_service_gate \
+  --base /home/jp/kwipi-build-v1 \
+  --report /CHEMIN/ABSOLU/VERIFIE/rapport-b10.json \
+  --report-sha256 51f2888533dc7869885b2e57e54f4d182cf810d02921d13e30f5691b89ec6fd3
+```
+
+**Comparateur et arrêts préétablis :** P16-A sans sélection explicite reste historique ; B10 doit refuser SHA faux/absent, rapport symlink, chemin relatif, mauvais statut/schéma/version, compte ou nombre de modules incorrect, référence systemd active, preset inattendu ou postinst différé. Le seul résultat positif permis est *zéro référence d'autostart P15A dans les répertoires inspectés*, avec vérification des trois empreintes installées. **Tests GitHub = fixtures, pas résultat du rootfs réel.** Tant que le chemin réel et le SHA ne sont pas confirmés par WSL2, résultat réel P16-S1 = **EN ATTENTE**. Les scriptlets RPM, le boot systemd, les ACL sockets, WIC/RAUC, shipping, robot et sûreté des moteurs restent **non validés**. Aucun BitBake, écriture dans le rootfs, service, moteur ni signature requis.
+
 ## P16-B10 — audit OFFICIEL du rootfs DEV réel réussi sur WSL2 (02/11/2026) — priorité de reprise
 
 **Preuve fournie par l'opérateur WSL2, et non par GitHub CI ni par un robot :** `P16B10_OFFICIAL_ROOTFS_AUDIT: PASS_FILES_ONLY`, `OFFICIAL_AUDIT_EXIT: 0`. Le lanceur a vérifié : checkout source B12 épinglé `e2e9bfef7d7c4f46fe51924937e7939d78d00383` ; journal réel `bitbake -c rootfs microduck-image-dev` (exit 0, 28/28 tâches, pas de recompilation Rust OEM) SHA-256 `b3e19991ecc9e76a58198bb5c628b9b72a8722be33430a2722872d544e9b18eb` ; sauvegarde TAR de l'ancien rootfs SHA-256 `0ff26355f9f125c3fb8e1f86b7775338a0f8e658b8461f02064abbf351012fce` ; fichier régulier de manifeste DEV horodaté SHA-256 `7e9267fb626fa66573ec8421893e81a560e3cf6bd1999023a8d3cad20c33bd82` ; empreinte Git du validateur officiel fusionné. Aucun de ces contrôles n'a lancé de nouveau BitBake.
