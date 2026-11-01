@@ -54,7 +54,7 @@ class P11V1SourceTests(unittest.TestCase):
                 "system.posix_acl_access\ngetpwnam_r\nlsetxattr\n"
                 "hide_private_dir_before_bind\ngrant_socket\ngrant_private_dir\n"
             ),
-            "mediad/src/detect/seg.rs": "captured_at_monotonic_ns: None; captured_at_unix_us: None;",
+            "mediad/src/detect/seg.rs": "captured_at_monotonic_ns: None, captured_at_unix_us: None,",
             "mediad/src/pipeline.rs": ("pub captured_at_monotonic_ns: u64; "
                                        "captured_at_monotonic_ns: proto::clock::monotonic_ns(),"),
             "duck-detect/src/rknn/segments.rs": "fixture",
