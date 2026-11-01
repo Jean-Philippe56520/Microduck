@@ -154,16 +154,22 @@ def require_local_detection_contract(parts: dict[str, bytes]) -> None:
         (local, B8_RETURN_TO),
         (local, "const MAX_CLIENTS: usize = 2;"),
         (local, "const MAX_LINE_BYTES: usize = 4096;"),
+        (detect, "pub region_candidates: Option"),
+    )
+    # The Rust helper legitimately mentions certain functions more than once,
+    # and the OEM parameter source has several unrelated "enabled: false".
+    # Exact-once is reserved for structural insertion anchors.
+    present = (
         (acl, "system.posix_acl_access"),
         (acl, "getpwnam_r"),
         (acl, "lsetxattr"),
         (acl, "hide_private_dir_before_bind"),
         (acl, "grant_socket"),
         (acl, "grant_private_dir"),
-        (detect, "pub region_candidates: Option"),
         (params, "enabled: false"),
     )
-    if any(source.count(anchor) != 1 for source, anchor in required):
+    if (any(source.count(anchor) != 1 for source, anchor in required)
+            or any(anchor not in source for source, anchor in present)):
         raise ReleaseRefused("P15-B4/B8 opt-in, one-detector or strict ACL contract changed")
     if (main.count("kwipi_local_detections: bool") != 1
             or main.count("if args.kwipi_local_detections {") != 1
