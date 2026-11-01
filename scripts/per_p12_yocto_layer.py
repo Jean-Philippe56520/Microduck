@@ -155,7 +155,11 @@ def render_crates(rows: list[tuple[str, str, str]]) -> str:
 
 def layer_files(manifest: dict, digest: str, rows: list[tuple[str, str, str]]) -> dict[str, str]:
     revision = manifest["companion_sha"]
-    v = "0.17.8+kwipi.p12." + revision[:12]
+    # The opted-in B4/B8 source is a DISTINCT development build identity.
+    profile = manifest.get("local_detections_acl_candidate", False)
+    if type(profile) is not bool:
+        raise ReleaseRefused("invalid local metadata source profile")
+    v = "0.17.8+kwipi.p12." + revision[:12] + (".b8" if profile else "")
     conf = (
         'BBPATH .= ":${LAYERDIR}"\n'
         'BBFILES += "${LAYERDIR}/recipes-*/*/*.bbappend"\n'
@@ -173,6 +177,9 @@ def layer_files(manifest: dict, digest: str, rows: list[tuple[str, str, str]]) -
         'FILESEXTRAPATHS:prepend := "${THISDIR}/files:"\n'
         f'MICRODUCK_DAEMON_VERSION = "{v}"\n'
         f'MICRODUCK_DAEMON_SRCREV = "{revision}"\n'
+        # OEM duck-ipc-proto build_info! reads option_env!("DUCK_REVISION")
+        # in the compiled daemon, not the BitBake package-version variable.
+        f'export DUCK_REVISION = "{revision}"\n'
         'PV = "${MICRODUCK_DAEMON_VERSION}"\n'
         'SRC_URI = " \\\n'
         f'    file://{MODEL_NAME};subdir=${{BP}};name=kwipisrc \\\n'
@@ -207,7 +214,10 @@ def verify(layer: Path) -> dict:
         raise ReleaseRefused("P12 staged source absent")
     m = verify_archive(archive)
     if (hashlib.sha256(archive.read_bytes()).hexdigest() != p["archive_sha256"]
-            or m.get("companion_sha") != p["companion_sha"]):
+            or m.get("companion_sha") != p["companion_sha"]
+            or m.get("local_detections_acl_candidate", False)
+               != p.get("local_detections_acl_candidate", False)
+            or p.get("duck_revision_export_declared") is not True):
         raise ReleaseRefused("P12 source SHA/revision changed")
     with tarfile.open(archive, "r:gz") as tar:
         rows = crates(read_member(tar, "Cargo.lock"))
@@ -244,7 +254,9 @@ def stage(yocto: Path, source_dir: Path, output: Path) -> dict:
             "schema": SCHEMA, "source_only": True,
             "yocto_sha": YOCTO_SHA, "oem_sha": OEM_SHA,
             "companion_sha": manifest["companion_sha"],
-            "archive_sha256": sha, "crates_generated": len(rows),
+            "archive_sha256": sha,
+            "local_detections_acl_candidate": manifest.get("local_detections_acl_candidate", False),
+            "duck_revision_export_declared": True, "crates_generated": len(rows),
             "original_crates": len(upstream), "crates_regenerated": upstream != {(n, v) for n, v, _ in rows},
             "bitbake_parsed": False, "bitbake_built": False, "rauc_built": False,
             "signed_release": False, "python_companion_installed": False,
