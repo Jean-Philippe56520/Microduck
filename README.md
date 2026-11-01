@@ -1,3 +1,11 @@
+## P15-B11 — pont source OEM optionnel (candidat PC, non livré sur robot)
+
+**Base GitHub contrôlée :** `main@db2e138a81cf1126b9b1a1daecd9efef48136c27` ; [PR #252](https://github.com/Jean-Philippe56520/Microduck/pull/252) de développement, **ouverte en brouillon au moment de la rédaction**. L'audit a constaté que P11 appliquait **P10A/B/C seulement** et que P12 empaquetait cette archive, donc les adaptateurs **P15-B4/B8** fusionnés n'étaient **pas** dans cette chaîne. Le macro OEM `duck_ipc_proto::build_info!()` lit `DUCK_REVISION` au compile-time, sans export explicite dans l'ancien P12.
+
+La branche B11 propose uniquement `--with-p15b8-source` **opt-in** : P11 historique inchangé par défaut, archive optionnelle B4/B8 avec manifeste de provenance strict, P12 version distincte `.b8` et export de la révision de source, P13A refusant un `DUCK_REVISION` incohérent. Compilation de l'archive opt-in et tests Rust `mediad` **sur PC Linux** obtenus sur un premier SHA ; **CI du SHA final à revérifier avant fusion**. Aucun `mediad` d'image WIC modifié, aucun accès `/run` installé, aucune activation `--kwipi-local-detections`, aucun service, robot, modèle ou moteur. `Sighting` ne porte ni horodatage de capture ni séquence ; **pas d'observation authentifiée utilisable par Kwipi**. [Préenregistrement, négatifs et retour arrière](docs/per-p15b11-opt-in-mediad-source-provenance-2026-11-01.md).
+
+---
+
 ## Reprise V1 actualisée — 1er novembre 2026 (après fusion P15-B10)
 
 **État du code vérifié :** [`main@89c6472fdf4afe472a41df9e4bd63186eb31d94f`](https://github.com/Jean-Philippe56520/Microduck/tree/89c6472fdf4afe472a41df9e4bd63186eb31d94f) après consolidation. Les PR **#230, #231, #235, #238–#241 et #242–#248** sont **toutes fusionnées** ; [#249](https://github.com/Jean-Philippe56520/Microduck/pull/249) a corrigé le point de reprise précédent. Les anciennes mentions « #242 à #248 ouvertes », « P14B à compiler » et « rootfs absent », conservées plus bas, sont **historiques et non opératoires**. À chaque reprise, revérifier SHA `main`, gitlinks, PR et CI sur GitHub ; le [plan d'action](docs/plan-action.md) fait foi.
