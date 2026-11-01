@@ -24,12 +24,12 @@ class B10RootfsFixtures(unittest.TestCase):
         self.root.mkdir()
         self.source = Path(self.tmp.name) / "source"
         self.source.mkdir()
-        self.manifest = Path(self.tmp.name) / "microduck-image-dev-microduck-zero3.rootfs.manifest"
+        self.manifest = Path(self.tmp.name) / "microduck-image-dev-microduck-zero3.rootfs-20261101230446.manifest"
         self.packages = {
             "kwipi-companion": "0.2.0a1-r0",
             "kwipi-passive-fixture": "0.1.0-r0",
-            "kwipi-readonly-probe": "0.1.0-r0",
-            "microduck-daemon": gate.B12_VERSION + "-r0",
+            "kwipi-readonly-probe": "0.1",
+            "microduck-daemon": gate.B12_PKG_VERSION,
             "microduck-data": "0.17.8-r0",
         }
         self._write_manifest()
@@ -222,10 +222,70 @@ class B10RootfsFixtures(unittest.TestCase):
         self._write_manifest()
         with self.assertRaisesRegex(gate.Refused, "version"):
             self.run_gate()
-        self.packages["microduck-daemon"] = gate.B12_VERSION + "-r0"
-        self.manifest.rename(self.manifest.with_name("microduck-image-microduck-zero3.rootfs.manifest"))
-        with self.assertRaisesRegex(gate.Refused, "manifest"):
+        self.packages["microduck-daemon"] = gate.B12_PKG_VERSION
+        self._write_manifest()
+        self.manifest = self.manifest.rename(
+            self.manifest.with_name("microduck-image-microduck-zero3.rootfs.manifest"))
+        with self.assertRaisesRegex(gate.Refused, "not an OEM DEV rootfs manifest"):
             self.run_gate()
+
+    def test_real_timestamped_manifest_pkgv_and_legacy_name(self):
+        proof = self.run_gate()
+        self.assertEqual(proof["packages"]["microduck-daemon"], gate.B12_PKG_VERSION)
+        old = self.manifest.with_name(
+            "microduck-image-dev-microduck-zero3.rootfs.manifest")
+        self.manifest.rename(old)
+        self.manifest = old
+        self.assertEqual(self.run_gate()["python_modules_verified"], 24)
+
+    def test_manifest_deploy_symlink_refused(self):
+        link = self.manifest.with_name(
+            "microduck-image-dev-microduck-zero3.rootfs.manifest")
+        link.symlink_to(self.manifest.name)
+        self.manifest = link
+        with self.assertRaisesRegex(gate.Refused, "missing or linked"):
+            self.run_gate()
+
+    def test_unpinned_daemon_pkgv_refused(self):
+        original = self.packages["microduck-daemon"]
+        bad = (
+            gate.B12_VERSION,
+            gate.B12_VERSION + "-r0",
+            gate.B12_VERSION + "0+bd113f317c",
+            gate.B12_PKG_VERSION + "-r0",
+            gate.B12_PKG_VERSION + ".unsafe",
+        )
+        for version in bad:
+            with self.subTest(version=version):
+                self.packages["microduck-daemon"] = version
+                self._write_manifest()
+                with self.assertRaisesRegex(gate.Refused, "version mismatch: microduck-daemon"):
+                    self.run_gate()
+        self.packages["microduck-daemon"] = original
+
+    def test_unpinned_probe_version_refused(self):
+        self.packages["kwipi-readonly-probe"] = "0.1.0"
+        self._write_manifest()
+        with self.assertRaisesRegex(gate.Refused, "version mismatch: kwipi-readonly-probe"):
+            self.run_gate()
+
+    def test_unreviewed_manifest_name_refused(self):
+        original = self.manifest
+        names = (
+            "microduck-image-microduck-zero3.rootfs-20261101230446.manifest",
+            "microduck-image-dev-other.rootfs-20261101230446.manifest",
+            "microduck-image-dev-microduck-zero3.rootfs-2026110123044.manifest",
+            "microduck-image-dev-microduck-zero3.rootfs-20261101230446.manifest.bak",
+        )
+        for name in names:
+            with self.subTest(name=name):
+                moved = original.with_name(name)
+                original.rename(moved)
+                self.manifest = moved
+                with self.assertRaisesRegex(gate.Refused, "not an OEM DEV rootfs manifest"):
+                    self.run_gate()
+                moved.rename(original)
+                self.manifest = original
 
     def test_missing_b6_and_unknown_kwipi_package_refused(self):
         del self.packages["kwipi-passive-fixture"]

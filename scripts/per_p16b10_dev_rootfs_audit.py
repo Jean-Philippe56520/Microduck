@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 import stat
 
@@ -19,6 +20,9 @@ from scripts.per_p15b9_rootfs_identity_gate import verify_rootfs as verify_ident
 
 SOURCE_HEAD = "e2e9bfef7d7c4f46fe51924937e7939d78d00383"
 B12_VERSION = "0.17.8+kwipi.p12.e2e9bfef7d7c"
+# OE-core package_setup_pkgv appends pinned BMI088 SRCREV to PKGV.
+# Verified against actual WSL2 runtime pkgdata and DEV rootfs manifest.
+B12_PKG_VERSION = B12_VERSION + "0+bd113f317b"
 B12_BINARIES = {
     "mediad": (11160240, "2e1319a17072f0c4a7ae1594a785aa987873d15e01d50a435b6772c873c99c1f"),
     "robotd": (6435872, "0aa212501839d766d7f138bae25db85949b8eb7a1dac72d70cd7d8db147982dc"),
@@ -46,20 +50,27 @@ def _hash(path: Path) -> str:
 def _manifest(rootfs: Path, manifest: Path) -> dict[str, str]:
     if manifest.is_symlink() or not manifest.is_file():
         raise Refused("DEV image manifest missing or linked")
-    if (not manifest.name.startswith("microduck-image-dev-")
-            or not manifest.name.endswith(".rootfs.manifest")):
+    # Only the pinned DEV image and target machine, with optional 14-digit
+    # Yocto timestamp. The deploy symlink is still refused above.
+    if not re.fullmatch(
+            r"microduck-image-dev-microduck-zero3\.rootfs(?:-[0-9]{14})?\.manifest",
+            manifest.name):
         raise Refused("not an OEM DEV rootfs manifest")
     packages = p16a._parse_manifest(manifest)
     if any(x not in packages for x in REQUIRED_PACKAGES):
         raise Refused("missing P16-B10 or OEM package")
     if any(x.startswith("kwipi-") and x not in KWIPI_PACKAGES for x in packages):
         raise Refused("unexpected Kwipi package")
-    for name, version in {
-        "microduck-daemon": B12_VERSION,
-        "kwipi-companion": "0.2.0a1",
-        "kwipi-passive-fixture": "0.1.0",
-    }.items():
-        if packages[name] not in (version, version + "-r0"):
+    # The real RPM PKGV includes the pinned BMI088 source revision suffix.
+    # Refuse arbitrary Git/SRCREV suffixes rather than prefix matching.
+    allowed_versions = {
+        "microduck-daemon": (B12_PKG_VERSION,),
+        "kwipi-companion": ("0.2.0a1", "0.2.0a1-r0"),
+        "kwipi-passive-fixture": ("0.1.0", "0.1.0-r0"),
+        "kwipi-readonly-probe": ("0.1", "0.1-r0"),
+    }
+    for name, versions in allowed_versions.items():
+        if packages[name] not in versions:
             raise Refused("package version mismatch: " + name)
     return packages
 
