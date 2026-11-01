@@ -145,7 +145,7 @@ def _check_kas() -> None:
     version = subprocess.run(
         ["kas", "--version"], check=True, capture_output=True,
         text=True, timeout=15).stdout.strip()
-    if not re.search(r"\b5\.2(?:\.0)?\b", version):
+    if not re.search(r"(?<![\d.])5\.2(?:\.0)?(?![\d.])", version):
         raise Refused("kas must be pinned to version 5.2: " + version)
 
 

@@ -10,6 +10,8 @@ from unittest.mock import patch
 
 from scripts import per_p15b6_cached_package_runner as runner
 
+REAL_CHECK_KAS = runner._check_kas
+
 
 class CachedOperatorTests(unittest.TestCase):
     def setUp(self):
@@ -205,7 +207,22 @@ class CachedOperatorTests(unittest.TestCase):
                         runner.preflight(self.cfg)
             self.assertFalse(self.cfg.scratch.exists())
 
-    def test_14_pin_fails_if_staged_tree_dirty(self):
+    def test_14_kas_minor_version_is_not_false_positive(self):
+        with patch.object(runner.shutil, "which",
+                          side_effect=lambda name: "/usr/bin/" + name):
+            for version in ("kas 5.2.1", "kas 5.2.12", "kas 5.20", "kas 15.2.0"):
+                with self.subTest(version=version):
+                    with patch.object(runner.subprocess, "run",
+                                      return_value=SimpleNamespace(stdout=version)):
+                        with self.assertRaises(runner.Refused):
+                            REAL_CHECK_KAS()
+            for version in ("kas 5.2.0", "kas 5.2"):
+                with self.subTest(version=version):
+                    with patch.object(runner.subprocess, "run",
+                                      return_value=SimpleNamespace(stdout=version)):
+                        REAL_CHECK_KAS()
+
+    def test_15_pin_fails_if_staged_tree_dirty(self):
         def dirty(path, *cmd):
             if path == self.cfg.project and cmd == (
                     "status", "--porcelain", "--untracked-files=no"):
