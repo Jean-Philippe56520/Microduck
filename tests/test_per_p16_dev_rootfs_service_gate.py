@@ -225,6 +225,14 @@ class ServiceGateFixtureTests(unittest.TestCase):
         with self.assertRaisesRegex(gate.Stop, "current rootfs differs from pinned B10 proof"):
             self._validate_b10(path)
 
+    def test_b10_refuses_missing_oem_binary_with_explicit_stop(self):
+        path = self._make_b10_report()
+        binary = (self.root / "opt/robot/daemon/releases" /
+                  b10.B12_VERSION / "bin/robotd")
+        binary.unlink()
+        with self.assertRaisesRegex(gate.Stop, "current rootfs differs from pinned B10 proof"):
+            self._validate_b10(path)
+
     def test_b10_report_with_wrong_binary_digest_refused(self):
         path = self._make_b10_report()
         report = json.loads(path.read_text())
