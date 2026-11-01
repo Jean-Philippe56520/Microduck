@@ -1,0 +1,201 @@
+name: P15-B10 DEV-only passive add-on effective BitBake metadata (NO rootfs)
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature/per-p15b9-dev-kwipi-account
+    paths:
+      - ".github/workflows/per-p15b10-dev-passive-selection.yml"
+      - "yocto/meta-kwipi-p15-passive-selection/**"
+      - "scripts/per_p15b10_dev_passive_env_gate.py"
+      - "tests/test_per_p15b10_dev_passive_selection.py"
+      - "docs/per-p15b10-dev-passive-selection-2026-11-01.md"
+  workflow_dispatch:
+
+concurrency:
+  group: p15b10-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  dev-shipping-selection-pinned-metadata:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 38
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      P15B10_YOCTO: /tmp/p15b10-yocto
+      P15B10_SOURCE: /tmp/p15b10-p11-source
+      P15B10_OEM: /tmp/p15b10-meta-kwipi
+      P15B10_BASE: /tmp/p15b10-meta-kwipi-python
+      P15B10_ADDON: /tmp/p15b10-meta-kwipi-passive
+      P15B10_DEV_ENV: /tmp/p15b10-dev-env-private.txt
+      P15B10_SHIP_ENV: /tmp/p15b10-shipping-env-private.txt
+      P15B10_APPENDS: /tmp/p15b10-show-appends.txt
+      KAS_WORK_DIR: /tmp/p15b10-kas-work
+      KAS_BUILD_DIR: /tmp/p15b10-kas-build
+      KAS_CLONE_DEPTH: "1"
+    steps:
+      - name: Checkout exact candidate and pinned OEM gitlinks
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: dtolnay/rust-toolchain@1.89.0
+      - name: Exercise source-only positive and negative gates BEFORE host setup
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git ls-tree HEAD upstream/microduck | awk '{print $3}')" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git ls-tree HEAD upstream/microduck_rl | awk '{print $3}')" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git -C upstream/microduck_rl rev-parse HEAD)" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          python -m unittest discover -s tests -p 'test_per_p15b10_dev_passive_selection.py' -v
+          python -m unittest discover -s tests -p 'test_per_p15b9_dev_account_env_gate.py' -v
+          python -m unittest discover -s tests -p 'test_per_p14c_dev_image_env_gate.py' -v
+          git diff --exit-code -- upstream/
+      - name: Obtain exact pinned Yocto OEM checkout (no branch updates)
+        run: |
+          set -euo pipefail
+          mkdir -p "$P15B10_YOCTO"
+          git -C "$P15B10_YOCTO" init -q
+          git -C "$P15B10_YOCTO" remote add origin https://github.com/pollen-robotics/microduck_yocto.git
+          GIT_TERMINAL_PROMPT=0 git -C "$P15B10_YOCTO" fetch --depth 1 origin 1ee58387810cebb67ae0d634c351d95024483bce
+          git -C "$P15B10_YOCTO" checkout --detach FETCH_HEAD
+          test "$(git -C "$P15B10_YOCTO" rev-parse HEAD)" = "1ee58387810cebb67ae0d634c351d95024483bce"
+          test "$(git -C "$P15B10_YOCTO" hash-object meta-microduck/recipes-core/images/microduck-image.bb)" = "6ee5d14f7a8ebca2441bdff525ce41705bec935e"
+          test "$(git -C "$P15B10_YOCTO" hash-object meta-microduck/recipes-core/images/microduck-image-dev.bb)" = "ec7fa8f82b7685a7da1807c2fee597f9e98e4f8d"
+      - name: Stage unchanged P11/P12 daemon and exact P14B/P15-B6 source layers
+        run: |
+          set -euo pipefail
+          python -m scripts.per_p11_v1_source_release \
+            --oem-checkout upstream/microduck --output-dir "$P15B10_SOURCE"
+          python -m scripts.per_p12_yocto_layer stage \
+            --yocto "$P15B10_YOCTO" --source-dir "$P15B10_SOURCE" --output "$P15B10_OEM"
+          python -m scripts.per_p14b_yocto_python_layer stage --output "$P15B10_BASE"
+          python -m scripts.per_p15b6_passive_python_addon stage --output "$P15B10_ADDON"
+          python -m scripts.per_p12_yocto_layer verify --layer "$P15B10_OEM"
+          python -m scripts.per_p14b_yocto_python_layer verify --layer "$P15B10_BASE"
+          python -m scripts.per_p15b6_passive_python_addon verify --layer "$P15B10_ADDON"
+          git diff --exit-code -- upstream/
+          test "$(git -C "$P15B10_YOCTO" status --porcelain --untracked-files=no)" = ""
+      - name: Install only pinned metadata-parser prerequisites, no image build
+        run: |
+          set -euo pipefail
+          test "$(df -Pk /tmp | awk 'NR==2 {print $4}')" -ge 6000000 || {
+            echo "P15-B10 STOP: insufficient disk for metadata parse" >&2
+            exit 1
+          }
+          timeout 120s sudo apt-get update -qq
+          timeout 240s sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends chrpath diffstat
+          python -m venv "$RUNNER_TEMP/p15b10-kas-venv"
+          timeout 120s "$RUNNER_TEMP/p15b10-kas-venv/bin/pip" install --no-cache-dir --disable-pip-version-check 'kas==5.2.0'
+          mkdir -p "$KAS_WORK_DIR" "$KAS_BUILD_DIR"
+          echo "$RUNNER_TEMP/p15b10-kas-venv/bin" >> "$GITHUB_PATH"
+      - name: Compose optional DEV-only source layers; OEM tracked files untouched
+        run: |
+          set -euo pipefail
+          cat > "$P15B10_YOCTO/kas/per-p15b10-opt-in.yml" <<EOF
+          header:
+            version: 14
+          repos:
+            kwipi:
+              path: $P15B10_OEM
+              layers:
+                .:
+            kwipipy:
+              path: $P15B10_BASE
+              layers:
+                .:
+            kwipipassive:
+              path: $P15B10_ADDON
+              layers:
+                .:
+            kwipidev:
+              path: $GITHUB_WORKSPACE/yocto/meta-kwipi-dev-image
+              layers:
+                .:
+            kwipip15:
+              path: $GITHUB_WORKSPACE/yocto/meta-kwipi-p15-readonly
+              layers:
+                .:
+            kwipiaccount:
+              path: $GITHUB_WORKSPACE/yocto/meta-kwipi-p15-account
+              layers:
+                .:
+            kwipib10:
+              path: $GITHUB_WORKSPACE/yocto/meta-kwipi-p15-passive-selection
+              layers:
+                .:
+          EOF
+          test "$(git -C "$P15B10_YOCTO" status --porcelain --untracked-files=no)" = ""
+      - name: Parse REAL pinned BitBake -p, DEV and shipping -e, and selected appends ONLY
+        run: |
+          set -euo pipefail
+          # BitBake requires normal umask 022; sensitive evaluated env files are
+          # created 0600 BEFORE shell redirection, never made world-readable.
+          umask 022
+          for private_env in "$P15B10_DEV_ENV" "$P15B10_SHIP_ENV"; do
+            if [ -e "$private_env" ] || [ -L "$private_env" ]; then
+              echo "P15-B10 STOP: private env path already exists" >&2
+              exit 1
+            fi
+          done
+          (umask 077; : > "$P15B10_DEV_ENV"; : > "$P15B10_SHIP_ENV")
+          test "$(stat -c %a "$P15B10_DEV_ENV")" = 600
+          test "$(stat -c %a "$P15B10_SHIP_ENV")" = 600
+          cfg="$P15B10_YOCTO/kas/microduck.yml:$P15B10_YOCTO/kas/per-p15b10-opt-in.yml"
+          timeout 1650s kas shell "$cfg" -c \
+            "bitbake -p && bitbake -e microduck-image-dev > $P15B10_DEV_ENV && bitbake -e microduck-image > $P15B10_SHIP_ENV && bitbake-layers show-appends > $P15B10_APPENDS"
+          test -s "$P15B10_DEV_ENV"
+          test -s "$P15B10_SHIP_ENV"
+          test -s "$P15B10_APPENDS"
+          test "$(stat -c %a "$P15B10_DEV_ENV")" = 600
+          test "$(stat -c %a "$P15B10_SHIP_ENV")" = 600
+      - name: Verify 19+5 source closure, secure Kwipi identity and DEV-only selection
+        run: |
+          set -euo pipefail
+          python -m scripts.per_p15b10_dev_passive_env_gate \
+            --project "$GITHUB_WORKSPACE" \
+            --selection-layer "$GITHUB_WORKSPACE/yocto/meta-kwipi-p15-passive-selection" \
+            --addon-layer "$P15B10_ADDON" \
+            --dev-layer "$GITHUB_WORKSPACE/yocto/meta-kwipi-dev-image" \
+            --python-layer "$P15B10_BASE" \
+            --account-layer "$GITHUB_WORKSPACE/yocto/meta-kwipi-p15-account" \
+            --dev-env "$P15B10_DEV_ENV" \
+            --shipping-env "$P15B10_SHIP_ENV" \
+            --appends "$P15B10_APPENDS" \
+            --report "$RUNNER_TEMP/p15b10-metadata-proof.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path(os.environ["RUNNER_TEMP"]) / "p15b10-metadata-proof.json"
+          r = json.loads(p.read_text())
+          assert r["status"] == "dev_only_passive_selection_effective_metadata_verified"
+          assert (r["dev_base_package_count"], r["dev_passive_package_count"]) == (1, 1)
+          assert (r["shipping_base_package_count"], r["shipping_passive_package_count"]) == (0, 0)
+          assert r["kwipi_identity_dev_only_without_motor_group"]
+          assert (r["base_modules"], r["addon_modules"]) == (19, 5)
+          assert r["oem_packages_preserved"]
+          assert not any(r[k] for k in (
+              "bitbake_executed_by_gate", "rootfs_built_by_gate",
+              "package_installed_in_new_rootfs", "systemd_service_activated",
+              "oem_socket_acl_verified", "robot_validated", "motor_commands_issued",
+          ))
+          print("P15-B10: effective pinned BitBake metadata ONLY; no rootfs/WIC/RAUC/robot")
+          PY
+          test "$(git -C "$P15B10_YOCTO" status --porcelain --untracked-files=no)" = ""
+          git diff --exit-code -- upstream/
+      - name: Upload sanitized metadata proof only, never -e files or credentials
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kwipi-p15b10-pinned-bitbake-dev-only-selection
+          path: ${{ runner.temp }}/p15b10-metadata-proof.json
+          retention-days: 7
