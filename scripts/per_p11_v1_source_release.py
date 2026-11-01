@@ -21,6 +21,8 @@ import tempfile
 from scripts.per_p10a_apply_oem_rknn_overlay import PIN, SENTINEL, apply as apply_a, replace_once
 from scripts.per_p10b_apply_oem_tail_overlay import apply as apply_b
 from scripts.per_p10c_apply_oem_mediad_overlay import apply as apply_c
+from scripts.per_p15b4_apply_oem_local_detections import apply as apply_b4
+from scripts.per_p15b8_apply_oem_acl_binder import apply as apply_b8
 
 RL_PIN = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
 ARCHIVE_NAME = "kwipi-v1-oem-source.tar.gz"
@@ -169,12 +171,67 @@ def source_index(source: Path) -> list[dict[str, str]]:
     return entries
 
 
+LOCAL_SOURCE_FILES = (
+    "mediad/src/main.rs", "mediad/src/lib.rs",
+    "mediad/src/local_detections.rs", "mediad/src/local_detections_acl.rs",
+)
+
+
+def local_detections_profile(files: dict[str, bytes]) -> bool:
+    """Audit P15-B4/B8 source *presence*, not runtime or sensor provenance.
+
+    Fail closed on half patches, a missing opt-in default or an unexpected
+    source profile. No caller may infer that a board is running this code.
+    """
+    main = files.get(LOCAL_SOURCE_FILES[0], b"").decode("utf-8")
+    lib = files.get(LOCAL_SOURCE_FILES[1], b"").decode("utf-8")
+    local = files.get(LOCAL_SOURCE_FILES[2])
+    acl = files.get(LOCAL_SOURCE_FILES[3])
+    if (local is None) != (acl is None):
+        raise ReleaseRefused("partial P15-B4/B8 OEM source profile")
+    active = local is not None
+    if not active:
+        if ("kwipi_local_detections: bool" in main
+                or "pub mod local_detections;" in lib):
+            raise ReleaseRefused("P15-B4 option present without the exact B8 helper")
+        return False
+    body = local.decode("utf-8")
+    policy = acl.decode("utf-8")
+    if (main.count("kwipi_local_detections: bool") != 1
+            or main.count("if args.kwipi_local_detections") != 1
+            or not 'default_value_t = false' in main
+            or lib.count("pub mod local_detections;") != 1
+            or 'include!("local_detections_acl.rs")' not in body
+            or "acl_policy::observer_uid()?" not in body
+            or "acl_policy::hide_private_dir_before_bind" not in body
+            or "acl_policy::grant_socket(path, uid)" not in body
+            or "acl_policy::grant_private_dir(parent, uid)" not in body
+            or "system.posix_acl_access" not in policy
+            or "getpwnam_r(" not in policy):
+        raise ReleaseRefused("P15-B4/B8 source profile is incomplete or not opt-in")
+    return True
+
+
+def local_profile_from_source(source: Path) -> bool:
+    files = {}
+    for name in LOCAL_SOURCE_FILES:
+        path = source / name
+        if path.is_symlink():
+            raise ReleaseRefused("P15 source symlink refused: " + name)
+        if path.is_file():
+            files[name] = path.read_bytes()
+    return local_detections_profile(files)
+
+
 def manifest_for(source: Path, project_sha: str) -> dict:
+    profile = local_profile_from_source(source)
     return {
         "format": "kwipi-oem-source-v1", "companion_sha": project_sha,
         "oem_sha": PIN, "mujoco_sha": RL_PIN,
         "status": SOURCE_STATUS,
-        "code": "P10A_P10B_P10C_without_test_harness",
+        "code": ("P10A_P10B_P10C_P15B4_P15B8_without_test_harness" if profile
+                 else "P10A_P10B_P10C_without_test_harness"),
+        "local_detections_acl_candidate": profile,
         "kwipi_seg_weights_included": False, "oem_onnx_sources_preserved": True,
         "detector_enabled_by_default": False,
         "bitbake_built": False, "robot_validated": False,
@@ -249,10 +306,29 @@ def verify_archive(path: Path) -> dict:
                 actual.append({"path": m.name, "link": m.linkname})
         if sorted(actual, key=lambda x: x["path"]) != records:
             raise ReleaseRefused("source content differs from provenance hashes")
+        inspected = {}
+        for name in LOCAL_SOURCE_FILES:
+            if name not in names:
+                continue
+            member = tar.getmember(name)
+            if not member.isfile() or member.size > 150_000:
+                raise ReleaseRefused("unsafe P15 source member: " + name)
+            fp = tar.extractfile(member)
+            if fp is None:
+                raise ReleaseRefused("unreadable P15 source member: " + name)
+            inspected[name] = fp.read()
+        detected = local_detections_profile(inspected)
+        expected = obj.get("local_detections_acl_candidate", False)
+        if type(expected) is not bool or expected != detected:
+            raise ReleaseRefused("P15-B8 source profile manifest mismatch")
+        code = ("P10A_P10B_P10C_P15B4_P15B8_without_test_harness" if detected
+                else "P10A_P10B_P10C_without_test_harness")
+        if obj.get("code") != code:
+            raise ReleaseRefused("P15 source code profile marker mismatch")
         return obj
 
 
-def build(project: Path, oem: Path, output_dir: Path) -> dict:
+def build(project: Path, oem: Path, output_dir: Path, *, with_p15b8_source: bool = False) -> dict:
     project = project.resolve(strict=True)
     oem = oem.resolve(strict=True)
     project_sha = check_revisions(project, oem)
@@ -265,6 +341,11 @@ def build(project: Path, oem: Path, output_dir: Path) -> dict:
         apply_a(source, project / "scripts/per_p10a_rknn_segments.rs")
         apply_b(source, project / "scripts/per_p10b_seg_tail.rs", project)
         apply_c(source, project)
+        if type(with_p15b8_source) is not bool:
+            raise ReleaseRefused("P15-B8 source selection must be an explicit boolean")
+        if with_p15b8_source:
+            apply_b4(source, project)
+            apply_b8(source, project)
         drop_test_harness(source, project)
         normalize_lockfile(source)
         no_models_or_harness(source)
@@ -287,7 +368,8 @@ def build(project: Path, oem: Path, output_dir: Path) -> dict:
         raise ReleaseRefused("source export unexpectedly modified Companion")
     return {"status": SOURCE_STATUS, "archive_sha256": digest,
             "files": len(manifest["files"]), "companion_sha": project_sha,
-            "kwipi_seg_weights_included": False, "bitbake_built": False}
+            "kwipi_seg_weights_included": False, "bitbake_built": False,
+            "local_detections_acl_candidate": manifest["local_detections_acl_candidate"]}
 
 
 def main() -> None:
@@ -296,17 +378,20 @@ def main() -> None:
     cli.add_argument("--oem-checkout", type=Path)
     cli.add_argument("--output-dir", type=Path)
     cli.add_argument("--verify", type=Path)
+    cli.add_argument("--with-p15b8-source", action="store_true",
+                     help="source-only optional OEM mediad B4/B8 ACL profile; runtime stays off")
     args = cli.parse_args()
     try:
         if args.verify:
-            if args.output_dir or args.oem_checkout:
+            if args.output_dir or args.oem_checkout or args.with_p15b8_source:
                 raise ReleaseRefused("verification is independent of source checkout")
             result = verify_archive(args.verify)
             print(json.dumps({"status": result["status"], "files": len(result["files"])}))
         else:
             if args.oem_checkout is None or args.output_dir is None:
                 raise ReleaseRefused("building requires OEM checkout and an unused output directory")
-            print(json.dumps(build(args.project, args.oem_checkout, args.output_dir), sort_keys=True))
+            print(json.dumps(build(args.project, args.oem_checkout, args.output_dir,
+                with_p15b8_source=args.with_p15b8_source), sort_keys=True))
     except (ReleaseRefused, OSError, subprocess.CalledProcessError, tarfile.TarError,
             ValueError) as error:
         cli.exit(1, f"PER-P11 STOP: {error}\n")
