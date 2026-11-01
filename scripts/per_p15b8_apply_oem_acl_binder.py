@@ -134,8 +134,11 @@ def apply(archive: Path, project: Path) -> None:
         (RETURN_FROM, RETURN_TO),
     ):
         text = _one(text, before, after)
-    if "robot.do" in text or "robot.move" in text or "media.frame" in text:
-        raise OverlayRefused("unexpected motor or raw-camera channel in metadata source")
+    # Existing B4 negative tests contain the forbidden literal "robot.move".
+    # Check only the code introduced by B8, not trusted B4 test fixtures.
+    insertion = MODULE_INSERT + DEFAULT_TO + BIND_TO + DIR_TO + SOCKET_TO + RETURN_TO
+    if any(forbidden in insertion for forbidden in ("robot.do", "robot.move", "media.frame")):
+        raise OverlayRefused("B8 injection unexpectedly introduced motor/raw-camera code")
 
     # All gates pass before either file is modified; touch only a scratch OEM
     # source copy. Never change robotd, mediad main/lib, gitlinks, or service.
