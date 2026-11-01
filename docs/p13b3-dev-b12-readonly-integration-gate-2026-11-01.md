@@ -80,6 +80,27 @@ PY
 
 Ne pas conclure une absence à partir d'un seul manifeste ancien : un `*.manifest` du répertoire `deploy/images` peut provenir d'une image antérieure. Relier d'abord la version du rootfs aux fichiers réellement présents et à sa provenance de build.
 
+## P13B4 — preuves opérateur du staging P14B/B6 et de la porte source B10 (01/11/2026)
+
+**Sortie WSL2 observée et communiquée** (la commande a été exécutée par l'opérateur, pas par GitHub) :
+
+```text
+P14B_SOURCE_MODULES: 19
+P15B6_SOURCE_MODULES: 5
+P13B4_SOURCE_PROVENANCE: PASS
+P13B4_SOURCE_STAGE: PASS_SOURCES_ONLY
+P13B4_B10_SOURCE_GATE: PASS_SOURCE_ONLY
+BITBAKE_EXECUTED: false
+ROOTFS_BUILT: false
+```
+
+**Provenance et réemploi :** checkout propre `/home/jp/kwipi-v1-p13b-e2e9bfef/companion@e2e9bfef7d7c4f46fe51924937e7939d78d00383`, gitlinks OEM inchangés ; staging neuf `/home/jp/kwipi-build-v1/p13b4-dev-source-stage-20261101/{meta-kwipi-python,meta-kwipi-passive}`, 19+5 sources exactes. Les contrôles réutilisés `scripts.per_p14b_yocto_python_layer.{stage,verify}`, `scripts.per_p15b6_passive_python_addon.{stage,verify}` et `scripts.per_p15b10_dev_passive_env_gate.source_gate` ont réussi. Les deux dépôts candidats précédents étaient `Microduck-P15B6@702115e` et `kwipi-v1-p13b-e2e9bfef/companion@e2e9bfe` ; le second a été choisi **explicitement**, car le premier ne contient pas encore P15-B10. Aucun code n'a été changé ni recompilé pour résoudre la découverte de deux checkouts. P14B inventorie en outre `pyproject.toml` : le contrôle de concordance doit comparer **les 19 Python communs**, non une égalité aveugle entre 20 entrées et 19.
+
+**Ce que le PASS prouve et ne prouve pas :** deux couches sources Python mutuellement cohérentes, avec recette et archive conformes à ce SHA ; le fichier `yocto/meta-kwipi-p15-passive-selection` répond à la porte source B10. Ce n'est **pas** une validation des `BBLAYERS` ou `IMAGE_INSTALL` réellement développés par BitBake, du paquet B6, de son `do_package_write_rpm`, d'une nouvelle composition rootfs, d'un service ni du robot.
+
+**Prochain essai enregistré avant exécution (P13B5, métadonnées uniquement) :** conserver la couche P12 B12 `e2e9bfe` et son `PV` exact, réutiliser le staging P13B4, puis superposer uniquement les couches DEV P14C/P15A/P15-B9/P15-B10 au KAS constructeur épinglé. Lire `bitbake -e` et `bitbake-layers show-appends` en fichiers privés 0600 sans publier les contenus (les paramètres OEM peuvent contenir des hashes de mots de passe). Rejouer les portes déjà codées : P13A sur `microduck-daemon` pour `SRC_URI/PV/DUCK_REVISION`, P15A pour son auto-enable `disable`, P15-B10 pour sélection **exactement une fois en DEV, zéro shipping**, maintien de l'opérateur OEM, création DEV du compte `kwipi` sans groupe `robot`, 19+5 sources. Vérifier indépendamment `RDEPENDS:kwipi-passive-fixture` incluant `kwipi-companion` et `PN/PV` exacts. Critères négatifs/STOP : gitlinks, révision B12, source ou licence changeant ; couche inconnue, B10 active shipping, mots de passe exposés, service activé, module supplémentaire, paquet manquant, incohérence `KAS_WORK_DIR`, sortie de métadonnées manquante, erreur parser/BitBake. **Ne pas invoquer les runners historiques B9-R ni leurs anciens auditeurs P16-A tels quels**, qui interdisent B10 / refusent 24 modules. Un PASS de métadonnées n'autorise pas encore `do_rootfs`; toute compilation/installation serait un autre lot avec témoins/risques et contrôles de ressources, sans WIC/RAUC.
+
+---
 ## Sixième diagnostic WSL2 — P12 B12 conservé et sstate B6 non localisé (01/11/2026)
 
 **Sortie opérateur, préflight strictement en lecture seule :**
