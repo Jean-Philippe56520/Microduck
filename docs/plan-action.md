@@ -1,3 +1,15 @@
+## P13B3 — porte de cohérence B12 → rootfs DEV, lecture seule (01/11/2026)
+
+**Autorité GitHub de départ :** `main@c6d0344ee35c49830ac104fe9d07062b2b2764cc`, #256 et #257 fusionnées ; 7/7 puis 5/5 workflows visibles au HEAD en succès. Source OEM épinglée `942e58e3aa6d`, RL `b02fdea4902c`, Yocto `1ee58387810c`, non modifiés. P13B2 a réellement compilé et empaqueté `mediad`/`robotd` AArch64 au SHA source `e2e9bfef` ; **le rootfs DEV B9-R préexistant ne prouve pas l'intégration de ces nouveaux octets**. Le doc P13B2 ci-dessous reste historique, pas une instruction de nouveau build.
+
+**Manque précis :** les portes P16-A (19 sources Python + manifeste + P15A), P16-S1 (sonde/systemd) et P15-B9-R (identités) ne croisent pas encore les SHA-256 du paquet Rust B12 avec `/opt/robot/daemon/releases/<version>/bin` du rootfs. Prochain contrôle sur WSL2 : lire `packages-split`, le rootfs DEV et `current`, comparer deux ELF AArch64, empreintes et unités OEM, puis réutiliser les contrôles d'identité et manifeste existants si leurs preuves sont présentes.
+
+**Porte et STOP préenregistrés :** [protocole P13B3 et commande autonome WSL2](p13b3-dev-b12-readonly-integration-gate-2026-11-01.md). Positif = deux hachages exacts dans paquet **et** rootfs, bonne release active, unités constructeur conformes, compte `kwipi` isolé, P15A non activée et manifeste DEV cohérent. Négatif = version ancienne, binaire/paquet/rapport absent, ELF incorrect, symlink anormal, compte privilégié, activation imprévue ; STOP sans nouveau BitBake automatique. **Aucun PASS WSL2 de cette nouvelle porte n'est encore attesté.** L'audit GitHub est uniquement statique. Le service P15A garde le risque Unix `SupplementaryGroups=robot` ; l'ACL effective `/run/mediad`, le boot, RAUC/signature et le robot demeurent inconnus.
+
+**Décision :** le prochain essai est **un inventaire sans écriture**, pas un nouveau `do_rootfs`, WIC, flash, service ni une montée de version des sous-modules. Un éventuel nouveau rootfs DEV sera un lot distinct après constat d'une absence réelle de B12 dans l'ancien. Retour arrière : abandon du protocole documentaire, conservation des artefacts/cache et de l'OEM. Mesurer avant d'affirmer une intégration.
+
+---
+
 ## P13B2 B12 — preuve AArch64 WSL2 clôturée, pas de validation robot (01/11/2026)
 
 **Autorité de reprise (les STOP E0308 plus bas sont historiques) :** `main@e2e9bfef7d7c4f46fe51924937e7939d78d00383`, [#256 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/256) après 8 CI vertes au SHA correctif `e378802e42700d5a1a77808d4ca3517a0257e998`. Le témoin `57fbff44` échouait à `getpwnam_r` (`E0308`, tampon `i8` sur AArch64) ; le correctif `libc::c_char` compile désormais **réellement sur hôte WSL2**. Les anciens paquets/archives ne prouvent pas cette révision.
