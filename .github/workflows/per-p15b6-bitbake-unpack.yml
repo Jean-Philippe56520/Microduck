@@ -26,6 +26,8 @@ jobs:
       P15BM_YOCTO: /tmp/p15b6m-yocto
       P15BM_BASE: /tmp/p15b6m-meta-kwipi-python
       P15BM_ADDON: /tmp/p15b6m-meta-kwipi-passive
+      P15BM_SOURCE: /tmp/p15b6m-oem-source
+      P15BM_OEM: /tmp/p15b6m-meta-kwipi-oem
       P15BM_RECIPE_ENV: /tmp/p15b6m-recipe-env.txt
       P15BM_DEV_ENV: /tmp/p15b6m-dev-env.txt
       P15BM_SHIP_ENV: /tmp/p15b6m-shipping-env.txt
@@ -37,17 +39,20 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          submodules: false
+          submodules: recursive
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: dtolnay/rust-toolchain@1.89.0
       - name: Prove HEAD, pinned OEM gitlinks and negative fixture gates
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
           test "$(git ls-tree HEAD upstream/microduck | awk '{print $3}')" = "942e58e3aa6dbb28e7037203fff11866122c7567"
           test "$(git ls-tree HEAD upstream/microduck_rl | awk '{print $3}')" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git -C upstream/microduck_rl rev-parse HEAD)" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
           python -m compileall -q scripts/per_p15b6_bitbake_unpack_gate.py tests/test_per_p15b6_bitbake_unpack_gate.py
           python -m unittest discover -s tests -p 'test_per_p15b6_bitbake_unpack_gate.py' -v
           python -m unittest discover -s tests -p 'test_per_p15b6_passive_python_addon.py' -v
@@ -73,6 +78,16 @@ jobs:
           GIT_TERMINAL_PROMPT=0 git -C "$P15BM_YOCTO" fetch --depth 1 origin 1ee58387810cebb67ae0d634c351d95024483bce
           git -C "$P15BM_YOCTO" checkout --detach FETCH_HEAD
           test "$(git -C "$P15BM_YOCTO" rev-parse HEAD)" = "1ee58387810cebb67ae0d634c351d95024483bce"
+      - name: Reuse pinned P11/P12 OEM daemon source provider, metadata only
+        run: |
+          set -euo pipefail
+          python -m scripts.per_p11_v1_source_release \
+            --oem-checkout upstream/microduck --output-dir "$P15BM_SOURCE"
+          python -m scripts.per_p12_yocto_layer stage \
+            --yocto "$P15BM_YOCTO" --source-dir "$P15BM_SOURCE" --output "$P15BM_OEM"
+          python -m scripts.per_p12_yocto_layer verify --layer "$P15BM_OEM"
+          test "$(git -C "$P15BM_YOCTO" status --porcelain --untracked-files=no)" = ""
+          git diff --exit-code -- upstream/
       - name: Install only parser host prerequisites, never relax OS sandbox
         timeout-minutes: 9
         run: |
@@ -101,6 +116,10 @@ jobs:
           header:
             version: 14
           repos:
+            kwipi:
+              path: $P15BM_OEM
+              layers:
+                .:
             kwipipy:
               path: $P15BM_BASE
               layers:
