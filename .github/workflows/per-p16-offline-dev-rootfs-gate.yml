@@ -1,0 +1,30 @@
+name: PER-P16 offline DEV rootfs gate (fixtures only, NOT do_rootfs)
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fixture-audit:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: P16 strict negative fixtures (no build or robot)
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -p 'test_per_p16_dev_rootfs_audit.py' -v
+          PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -p 'test_per_p16_dev_rootfs_service_gate.py' -v
+          PYTHONDONTWRITEBYTECODE=1 python -m compileall -q scripts/per_p16_dev_rootfs_service_gate.py
+          PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -p 'test_per_p16_s2_rauc_rootfs_gate.py' -v
+          PYTHONDONTWRITEBYTECODE=1 python -m compileall -q scripts/per_p16_s2_rauc_rootfs_gate.py
+          PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -p 'test_per_p16_b1b_wic_artifact_gate.py' -v
+          PYTHONDONTWRITEBYTECODE=1 python -m compileall -q scripts/per_p16_b1b_wic_artifact_gate.py
+          PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -p 'test_per_p16_b2c_final_artifact_gate.py' -v
+          PYTHONDONTWRITEBYTECODE=1 python -m compileall -q scripts/per_p16_b2c_final_artifact_gate.py
+          PYTHONDONTWRITEBYTECODE=1 python -m compileall -q scripts/per_p16_dev_rootfs_audit.py
+      - name: Source-only invariant
+        run: |
+          git diff --exit-code -- upstream/
+          test ! -e rauc-keys
