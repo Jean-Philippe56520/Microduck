@@ -31,6 +31,7 @@ jobs:
       P15BM_RECIPE_ENV: /tmp/p15b6m-recipe-env.txt
       P15BM_DEV_ENV: /tmp/p15b6m-dev-env.txt
       P15BM_SHIP_ENV: /tmp/p15b6m-shipping-env.txt
+      P15BM_CHECKSUM: /tmp/p15b6m-effective-checksum.txt
       KAS_WORK_DIR: /tmp/p15b6m-kas-work
       KAS_BUILD_DIR: /tmp/p15b6m-kas-build
       KAS_CLONE_DEPTH: "1"
@@ -139,10 +140,11 @@ jobs:
           set -euo pipefail
           cfg="$P15BM_YOCTO/kas/microduck.yml:$P15BM_YOCTO/kas/per-p15b6m-opt-in.yml"
           timeout 1400s kas shell "$cfg" -c \
-            "bitbake -p && bitbake -e kwipi-passive-fixture > $P15BM_RECIPE_ENV && bitbake -e microduck-image-dev > $P15BM_DEV_ENV && bitbake -e microduck-image > $P15BM_SHIP_ENV && bitbake -c unpack kwipi-passive-fixture"
+            "bitbake -p && bitbake -e kwipi-passive-fixture > $P15BM_RECIPE_ENV && bitbake -e microduck-image-dev > $P15BM_DEV_ENV && bitbake -e microduck-image > $P15BM_SHIP_ENV && bitbake-getvar -r kwipi-passive-fixture -f p15b6.sha256sum --value SRC_URI > $P15BM_CHECKSUM && bitbake -c unpack kwipi-passive-fixture"
           test -s "$P15BM_RECIPE_ENV"
           test -s "$P15BM_DEV_ENV"
           test -s "$P15BM_SHIP_ENV"
+          test -s "$P15BM_CHECKSUM"
           echo "P15-B6-M real BitBake parsed and unpacked source, NOT do_package or rootfs"
       - name: Audit real effective metadata and five unpacked source hashes
         run: |
@@ -155,6 +157,7 @@ jobs:
             --recipe-env "$P15BM_RECIPE_ENV" \
             --dev-env "$P15BM_DEV_ENV" \
             --shipping-env "$P15BM_SHIP_ENV" \
+            --checksum-value-file "$P15BM_CHECKSUM" \
             --output "$RUNNER_TEMP/p15b6m-unpack-proof.json"
           python - <<'PY'
           import json, os

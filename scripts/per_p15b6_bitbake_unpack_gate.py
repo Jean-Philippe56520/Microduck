@@ -29,7 +29,7 @@ def _tokens(value: str) -> set[str]:
 
 def validate_metadata(recipe: str, dev: str, shipping: str, *,
                       base_layer: Path, addon_layer: Path, dev_layer: Path,
-                      digest: str) -> dict[str, str]:
+                      digest: str, checksum: str) -> dict[str, str]:
     values = {key: bbvar(recipe, key) for key in REQUIRED_RECIPE}
     if values["PN"] != b6.PN or values["PV"] != b6.PV:
         raise EnvRefused("wrong resolved P15-B6 recipe identity")
@@ -38,7 +38,7 @@ def validate_metadata(recipe: str, dev: str, shipping: str, *,
     uri = f"file://{b6.SRC_NAME};subdir={values['BP']};name=p15b6"
     if _tokens(values["SRC_URI"]) != {uri}:
         raise EnvRefused("extra, missing or retargeted P15-B6 source")
-    if bbvar(recipe, "SRC_URI[p15b6.sha256sum]") != digest:
+    if checksum != digest:
         raise EnvRefused("effective archive SHA does not match staged source")
     expected_py = "/usr/lib/python3.14/site-packages"
     if values["PYTHON_SITEPACKAGES_DIR"] != expected_py:
@@ -69,7 +69,8 @@ def validate_metadata(recipe: str, dev: str, shipping: str, *,
 
 
 def validate_unpack(root: Path, base_layer: Path, addon_layer: Path,
-                    dev_layer: Path, recipe: str, dev: str, shipping: str) -> dict:
+                    dev_layer: Path, recipe: str, dev: str, shipping: str,
+                    checksum: str) -> dict:
     root = root.resolve(strict=True)
     base_layer = base_layer.resolve(strict=True)
     addon_layer = addon_layer.resolve(strict=True)
@@ -86,7 +87,7 @@ def validate_unpack(root: Path, base_layer: Path, addon_layer: Path,
     values = validate_metadata(
         recipe, dev, shipping,
         base_layer=base_layer, addon_layer=addon_layer, dev_layer=dev_layer,
-        digest=source_addon["archive_sha256"])
+        digest=source_addon["archive_sha256"], checksum=checksum)
     unpack = Path(values["UNPACKDIR"])
     source = Path(values["S"])
     tmpdir = Path(values["TMPDIR"])
@@ -141,7 +142,7 @@ def validate_unpack(root: Path, base_layer: Path, addon_layer: Path,
 def main() -> None:
     cli = argparse.ArgumentParser(description=__doc__)
     for arg in ("root", "base-layer", "addon-layer", "dev-layer",
-                "recipe-env", "dev-env", "shipping-env", "output"):
+                "recipe-env", "dev-env", "shipping-env", "checksum-value-file", "output"):
         cli.add_argument("--" + arg, type=Path, required=True)
     args = cli.parse_args()
     try:
@@ -149,7 +150,8 @@ def main() -> None:
             args.root, args.base_layer, args.addon_layer, args.dev_layer,
             args.recipe_env.read_text(encoding="utf-8"),
             args.dev_env.read_text(encoding="utf-8"),
-            args.shipping_env.read_text(encoding="utf-8"))
+            args.shipping_env.read_text(encoding="utf-8"),
+            args.checksum_value_file.read_text(encoding="utf-8").strip())
         if args.output.exists() or args.output.is_symlink():
             raise EnvRefused("proof report already exists")
         args.output.parent.mkdir(parents=True, exist_ok=True)

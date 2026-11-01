@@ -39,7 +39,6 @@ class B6MUnpackGateTests(unittest.TestCase):
             'LICENSE="CLOSED"',
             'PACKAGE_ARCH="all"',
             f'SRC_URI="file://{b6.SRC_NAME};subdir={b6.PN}-{b6.PV};name=p15b6"',
-            f'SRC_URI[p15b6.sha256sum]="{self.addon_provenance["archive_sha256"]}"',
             f'S="{self.source}"',
             f'BP="{b6.PN}-{b6.PV}"',
             f'UNPACKDIR="{self.unpack}"',
@@ -58,12 +57,13 @@ class B6MUnpackGateTests(unittest.TestCase):
             'IMAGE_INSTALL="microduck-daemon microduck-data"\n'
         )
 
-    def check(self, recipe=None, dev=None, shipping=None):
+    def check(self, recipe=None, dev=None, shipping=None, checksum=None):
         return validate_unpack(
             ROOT, self.base, self.addon, self.dev_layer,
             self.env if recipe is None else recipe,
             self.dev if dev is None else dev,
-            self.shipping if shipping is None else shipping)
+            self.shipping if shipping is None else shipping,
+            self.addon_provenance["archive_sha256"] if checksum is None else checksum)
 
     def test_01_nominal_fixture_explicitly_not_bitbake_proof(self):
         report = self.check()
@@ -94,7 +94,6 @@ class B6MUnpackGateTests(unittest.TestCase):
         for before, after in (
             (f'name=p15b6"', 'name=evil"'),
             (f'name=p15b6"', 'name=p15b6 file://other.tar.gz"'),
-            (self.addon_provenance["archive_sha256"], "0" * 64),
             (f'BP="{b6.PN}-{b6.PV}"', 'BP="injected"'),
         ):
             with self.subTest(before=before), self.assertRaises(EnvRefused):
@@ -170,8 +169,21 @@ class B6MUnpackGateTests(unittest.TestCase):
             self.env, self.dev, self.shipping,
             base_layer=self.base, addon_layer=self.addon,
             dev_layer=self.dev_layer,
-            digest=self.addon_provenance["archive_sha256"])
+            digest=self.addon_provenance["archive_sha256"],
+            checksum=self.addon_provenance["archive_sha256"])
         self.assertEqual(result["PN"], b6.PN)
+
+    def test_12_missing_wrong_multiline_checksum_flag_refused(self):
+        digest = self.addon_provenance["archive_sha256"]
+        for bad in ("", "0" * 64, digest + "extra", digest + "\nother"):
+            with self.subTest(bad=bad), self.assertRaises(EnvRefused):
+                self.check(checksum=bad)
+
+    def test_13_source_env_text_does_not_spoof_effective_checksum(self):
+        digest = self.addon_provenance["archive_sha256"]
+        fake_env = self.env + f'SRC_URI[p15b6.sha256sum]="{digest}"\n'
+        with self.assertRaises(EnvRefused):
+            self.check(recipe=fake_env, checksum="0" * 64)
 
 
 if __name__ == "__main__":
