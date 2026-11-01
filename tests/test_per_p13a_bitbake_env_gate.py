@@ -89,20 +89,20 @@ class EffectiveEnvTests(unittest.TestCase):
         profile = dict(P12, local_detections_acl_candidate=True)
         version = "0.17.8+kwipi.p12." + REVISION[:12]
         base = fake_env().replace(version, version + ".b8")
-        env = base + f'export DUCK_REVISION="{REVISION}"\\n'
+        env = base + f'export DUCK_REVISION="{REVISION}"\n'
         report = validate(env, profile, layer=LAYER)
         self.assertTrue(report["local_detections_acl_candidate"])
         self.assertTrue(report["duck_revision_compile_env_verified"])
         for bad in (base,
-                    base + 'export DUCK_REVISION="' + "c"*40 + '"\\n',
-                    env + f'DUCK_REVISION="{REVISION}"\\n'):
+                    base + 'export DUCK_REVISION="' + "c"*40 + '"\n',
+                    env + f'DUCK_REVISION="{REVISION}"\n'):
             with self.subTest(kind=bad[-70:]):
                 with self.assertRaises(EnvRefused):
                     validate(bad, profile, layer=LAYER)
         with self.assertRaises(EnvRefused):
             validate(env, dict(profile, local_detections_acl_candidate="yes"), layer=LAYER)
         with self.assertRaises(EnvRefused):
-            validate(fake_env() + f'export DUCK_REVISION="{REVISION}"\\n',
+            validate(fake_env() + f'export DUCK_REVISION="{REVISION}"\n',
                      profile, layer=LAYER)  # B8 version suffix absent
 
     def test_no_unverified_promotion(self):
