@@ -127,11 +127,21 @@ fn strict_private_dir(path: &Path, uid: u32) -> Result<()> {
 pub(super) fn hide_private_dir_before_bind(path: &Path, uid: u32) -> Result<()> {
     strict_private_dir(path, uid)?;
     if read_acl(path)?.is_some() {
+        // Linux removes the extended ACL but may leave st_mode's former mask
+        // bits behind. FIRST revoke named traversal through the ACL mask by
+        // reducing chmod to 0700 (never broadening permissions), THEN remove
+        // only the exact, previously validated ACL. A failed removal still
+        // leaves effective named permissions denied by the zero mask.
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700))
+            .context("could not revoke directory traversal before rebind")?;
+        if metadata(path)?.permissions().mode() & 0o777 != 0o700 {
+            bail!("directory remained traversable after owner-only chmod");
+        }
         let name = c_path(path)?;
         let rc = unsafe { libc::lremovexattr(name.as_ptr(), ACL_NAME.as_ptr().cast()) };
         if rc != 0 {
             return Err(std::io::Error::last_os_error())
-                .context("could not revoke directory traversal before socket rebind");
+                .context("could not remove validated ACL from closed directory");
         }
     }
     if read_acl(path)?.is_some()
