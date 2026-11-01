@@ -1,5 +1,12 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+## P15-B11 — source candidat OEM, bilan matériel inchangé (01/11/2026)
+
+[PR #252](https://github.com/Jean-Philippe56520/Microduck/pull/252) vise une archive `mediad` **optionnelle** B4/B8 identifiée en source P11/P12, avec révision de compilation explicitée. Première compilation de `mediad` sur **Linux PC** réussie, mais **aucune** mesure ni installation sur RK3566, NPU/RKNN, mémoire RSS, température, batterie, ACL du `/run` monté, 2 Hz en conditions de fonctionnement ou impact sur la boucle `robotd` 50 Hz. La provenance `DUCK_REVISION` devra être lue dans le binaire/image effectivement produits avant toute attribution de mesure. La WIC DEV historique et le rootfs B9 post-hoc ne sont pas des images contenant B11. **Statut matériel : inconnu/en attente.**
+
+---
+
+
 ## Réévaluation des preuves matérielles — 1er novembre 2026, après fusion #248
 
 **Référence logicielle vérifiée :** `main@89c6472fdf4afe472a41df9e4bd63186eb31d94f`, PR [#242](https://github.com/Jean-Philippe56520/Microduck/pull/242) à [#248](https://github.com/Jean-Philippe56520/Microduck/pull/248) fusionnées, **sans robot physique**. Les chiffres de CI, d'Unix hôte, de BitBake et de WSL2 ne constituent **aucune mesure sur RK3566**. Les paragraphes historiques du 31/10 ci-dessous et leur mention « zéro do_rootfs » ne décrivent plus l'ensemble des **preuves hôte** ; ils restent conservés pour provenance.
