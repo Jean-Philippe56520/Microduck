@@ -80,6 +80,31 @@ PY
 
 Ne pas conclure une absence à partir d'un seul manifeste ancien : un `*.manifest` du répertoire `deploy/images` peut provenir d'une image antérieure. Relier d'abord la version du rootfs aux fichiers réellement présents et à sa provenance de build.
 
+## Sixième diagnostic WSL2 — P12 B12 conservé et sstate B6 non localisé (01/11/2026)
+
+**Sortie opérateur, préflight strictement en lecture seule :**
+
+```text
+B6_RECIPE_IDENTITY: True
+B6_RECIPE_VERSION: 0.1.0
+B6_SSTATE_CANDIDATES: 0
+B6_SSTATE_PACKAGE_CANDIDATES: 0
+B6_SSTATE_REUSE_NOT_YET_PROVEN: True
+P12_STAGED_LAYERS_FOUND: 3
+B12_STAGED_ARCHIVE_MATCH: True
+B12_STAGED_RECIPE_MATCH: True
+B12_STAGED_REVISION_MATCHES: 1
+P13B3_CACHE_PREFLIGHT: READ_ONLY_COMPLETE
+```
+
+**Constats exacts :** le contexte B6 `recipe-env.txt` identifie `PN=kwipi-passive-fixture`, `PV=0.1.0` ; le motif de recherche borné dans `SSTATE_DIR` ne retrouve **aucun candidat au nom B6** (ni de fichier `:package:` selon le critère de comptage), ce qui ne démontre **pas** la purge complète des artefacts sstate ni la possibilité de réutiliser les signatures. Trois couches P12 ont été recherchées : **une seule** porte `companion_sha=e2e9bfef7d7c4f46fe51924937e7939d78d00383` avec `kwipi-v1-oem-source.tar.gz` SHA-256 `1763291f62c1e29ff248000dfc27564404dd1e37eb2845e1dd917ec315ae2da3` et les deux affectations `MICRODUCK_DAEMON_SRCREV`/`VERSION` exactes. Ce test ne valide ni `BBLAYERS` effectif ni l'entrée `do_rootfs` et ne donne pas le chemin de la couche correspondant à B12.
+
+**Décision et limites :** préserver cette couche P12 B12 et son `packages-split` AArch64 (P13B2/P13B3 PASS), sans régénérer le fournisseur OEM depuis un nouveau commit documentaire : `scripts/per_p12_yocto_layer.py` construit `PV` à partir de `companion_sha[:12]`, ce qui pourrait réétiqueter le paquet Rust et invalider sa réutilisation. Les 24 sources Python 19+5 restent identiques entre `702115e`, `e2e9bfe` et `c6d0344`. B6 a une archive et provenance validées, un `PKGDEST` historique manquant et aucun sstate nominal retrouvé : une **nouvelle étape de packaging B6** pourrait être nécessaire pour rendre son paquet installable, mais **aucun `do_package` n'a été exécuté ou autorisé** dans ce lot.
+
+**Porte suivante avant toute tâche BitBake :** localiser de façon non ambiguë les chemins physiques de la couche P12 B12, de la couche B6 `-b`, de P14B Python, des trois overlays DEV P14C/P15A/P15-B9 et de P15-B10 ; valider leur contenu et les gitlinks sans changement. Préparer dans un lot distinct une composition KAS DEV unique qui conserve le fournisseur Rust B12, les modules P14B 19 et B6 5, et sélectionne B10 **seulement en DEV**. Son préflight devra comparer les variables BitBake **effectives** `PV/SRCREV/DUCK_REVISION`, `IMAGE_INSTALL`, `RDEPENDS` et `BBLAYERS`, vérifier que shipping ne sélectionne ni Kwipi B10 ni compte DEV, conserver P15A désactivée et les unités OEM, puis produire un audit d'installation strict **24/24** (P16-A actuel n'accepte que 19). STOP si contradiction ou version B12 changée ; aucune nouvelle tâche moteur, `do_rootfs`, WIC, RAUC, flash ni essai robot dans cette preuve. La source `CLOSED` B6 garde sa revue juridique séparée.
+
+---
+
 ## Cinquième diagnostic WSL2 — archives B6 conformes, PKGDEST historique absent (01/11/2026)
 
 **Observation opérateur, strictement en lecture seule :**
