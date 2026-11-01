@@ -13,6 +13,7 @@ from pathlib import Path
 import stat
 
 from scripts.per_p15b6_cached_package_runner import Refused
+from scripts.per_p15a_yocto_package_gate import _unit_active_lines
 
 OEM_GROUPS = frozenset({
     "robot", "sudo", "audio", "video", "dialout", "i2c", "plugdev", "input"
@@ -105,7 +106,16 @@ def verify_rootfs(rootfs: Path) -> dict:
 
     unit = _read(root, UNIT)
     preset = _read(root, PRESET)
-    if "[Install]" in unit or preset.strip() != "disable kwipi-readonly-probe.service":
+    # P15A's reviewed unit mentions [Install] in a comment; only active
+    # systemd lines can make the service installable or start other units.
+    active = _unit_active_lines(unit)
+    forbidden = (
+        "[Install]", "WantedBy=", "RequiredBy=", "Alias=", "Also=",
+        "Restart=", "Wants=", "Requires=", "BindsTo=", "Requisite=",
+        "ExecStartPre=", "ExecStartPost=", "ExecStopPost=",
+    )
+    if (any(line.startswith(forbidden) for line in active)
+            or preset.strip() != "disable kwipi-readonly-probe.service"):
         raise Refused("P15A unit is installable or enabled by preset")
     # No installed activation links, even with a harmless-looking link name.
     for base in ("etc/systemd/system", "usr/lib/systemd/system", "lib/systemd/system"):

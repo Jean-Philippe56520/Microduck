@@ -136,5 +136,43 @@ class InstalledIdentityFixtures(unittest.TestCase):
             verify_rootfs(self.root)
 
 
+    def test_positive_original_p15a_unit_comment_is_not_install_section(self):
+        root = Path(__file__).resolve().parents[1]
+        reviewed = (root / "yocto/meta-kwipi-p15-readonly"
+                    / "recipes-kwipi/kwipi-readonly-probe/files"
+                    / "kwipi-readonly-probe.service")
+        original = reviewed.read_text(encoding="utf-8")
+        self.assertIn("# PER-P15A: deliberately no [Install] / WantedBy;", original)
+        self.unit.write_text(original.replace("@LIBEXECDIR@", "/usr/libexec"))
+        result = verify_rootfs(self.root)
+        self.assertEqual(result["status"], STATUS)
+        self.assertTrue(result["p15a_service_installed_not_enabled_in_rootfs"])
+        self.assertFalse(result["runtime_service_state_verified"])
+
+    def test_negative_active_systemd_directives_despite_comments(self):
+        original = self.unit.read_text()
+        for active in (
+            "\n[Install]\nWantedBy=multi-user.target\n",
+            "\nWantedBy=multi-user.target\n",
+            "\nRestart=always\n",
+            "\nExecStartPre=/usr/bin/false\n",
+        ):
+            with self.subTest(active=active.strip()):
+                self.unit.write_text(
+                    "# [Install] / WantedBy must not count as active\n"
+                    + original + active
+                )
+                with self.assertRaises(Refused):
+                    verify_rootfs(self.root)
+        self.unit.write_text(original)
+
+    def test_negative_untrusted_systemd_preset_with_comment(self):
+        self.preset.write_text(
+            "# disable kwipi-readonly-probe.service\n"
+            "enable kwipi-readonly-probe.service\n")
+        with self.assertRaises(Refused):
+            verify_rootfs(self.root)
+
+
 if __name__ == "__main__":
     unittest.main()
