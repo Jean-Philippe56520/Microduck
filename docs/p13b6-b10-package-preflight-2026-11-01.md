@@ -156,6 +156,97 @@ fi
 
 Ce `bitbake -n` est un **aperçu**, pas une preuve absolue qu'une exécution ultérieure n'entraînerait aucun autre travail ; les fichiers de métadonnées peuvent être rafraîchis. **Ne pas encore exécuter le vrai `package_write_rpm` ou `do_rootfs`** sans inspection du dry-run. Partager seulement les 3 lignes `P13B6_DRYRUN_...` et, si erreur, le type de blocage sans fuite d'environnements. Ne pas effacer ni réutiliser un scratch préexistant.
 
+## Retour opérateur P13B6 — dry-run exécuté, aucune tâche réelle (01/11/2026)
+
+**Nouvelle sortie WSL2 transmise :**
+
+```text
+P13B6_DRYRUN_BITBAKE_EXIT: 0
+P13B6_DRYRUN_SUSPECT_TASK_LINES: 0
+P13B6_DRYRUN_LOG_PRIVATE: true
+P13B6_DRYRUN_REQUIRES_REVIEW: true
+```
+
+**Ce qui est prouvé :** `bitbake -n -c package_write_rpm kwipi-passive-fixture` sous la configuration KAS P13B5 est sorti avec le code 0 ; le filtre simple des lignes suspectes du script n'a trouvé **aucun motif** de compilation OEM ou d'image dans ce journal. `P13B6_DRYRUN_LOG_PRIVATE` est une valeur déclarée par le script, **pas** une lecture indépendante de ses droits Unix. La sortie de la porte A `P13B6_METADATA_REUSE` n'a **pas** été transmise dans ce message (même si la commande B était prévue seulement après A). La classification du runqueue n'a pas été examinée intégralement : **zéro ligne regex ≠ preuve qu'aucun travail OEM ne serait replanifié lors d'une future exécution réelle**. Aucun RPM n'a été produit ni inspecté, `do_package_write_rpm` réel **non exécuté**.
+
+**Prochaine porte courte, sans nouveau BitBake :** lire uniquement `p13b6-package-rpm-dryrun.log` et les variables nécessaires des `*-env.txt` conservés pour confirmer les droits privés, backend RPM, version Rust B12, sélection DEV/shipping et présence/format des lignes de runqueue. Ne publier que les compteurs, pas de log intégral. Si le journal est vide, ne comporte aucune ligne tâche identifiable, n'est pas privé ou contient erreur/anomalie : `INCONNU / STOP`, **pas d'autorisation implicite du vrai package**. Les critères initiaux ci-dessus restent inchangés.
+
+### Relecture bornée du journal P13B6 (sans nouvelle tâche)
+
+```bash
+python3 -B - <<'PY'
+from pathlib import Path
+import re, stat
+
+base = Path("/home/jp/kwipi-build-v1/p13b5-dev-metadata-20261101")
+log = base / "p13b6-package-rpm-dryrun.log"
+def stop(reason):
+    raise SystemExit("P13B6_LOG_REVIEW_STOP: " + reason)
+def read_private(path, max_bytes):
+    if (not path.is_file() or path.is_symlink()
+            or stat.S_IMODE(path.stat().st_mode) & 0o077):
+        stop("missing_linked_or_nonprivate_file")
+    if not 0 < path.stat().st_size <= max_bytes:
+        stop("empty_or_oversized_file")
+    return path.read_text(encoding="utf-8", errors="replace")
+def variable(content, key):
+    values = re.findall(r'^(?:export )?' + re.escape(key) + r'="(.*)"
+
+`P13B5_METADATA = PASS` (preuve opérateur WSL2) ; `P13B6_PACKAGE_WRITE = NON_EXECUTE` ; `P16_B10_ROOTFS_24_MODULES = EN_ATTENTE` ; `WIC/RAUC/ROBOT = NON_VALIDES`.
+,
+                        content, re.M)
+    if len(values) != 1:
+        stop("missing_or_duplicate_variable_" + key)
+    return values[0]
+daemon = read_private(base / "daemon-env.txt", 64 * 1024**2)
+addon = read_private(base / "addon-env.txt", 64 * 1024**2)
+dev = read_private(base / "dev-env.txt", 64 * 1024**2)
+shipping = read_private(base / "shipping-env.txt", 64 * 1024**2)
+if variable(daemon, "PV") != "0.17.8+kwipi.p12.e2e9bfef7d7c":
+    stop("daemon_release_changed")
+if (variable(addon, "PN") != "kwipi-passive-fixture"
+        or variable(addon, "PV") != "0.1.0"
+        or "package_rpm" not in variable(addon, "PACKAGE_CLASSES").split()):
+    stop("addon_identity_or_backend_changed")
+def tokens(value):
+    return value.replace("\\n", " ").replace("\\t", " ").split()
+if (tokens(variable(dev, "IMAGE_INSTALL")).count("kwipi-passive-fixture") != 1
+        or tokens(variable(shipping, "IMAGE_INSTALL")).count("kwipi-passive-fixture") != 0):
+    stop("dev_or_shipping_selection_changed")
+data = read_private(log, 32 * 1024**2)
+lines = data.splitlines()
+task_lines = [s for s in lines if re.search(
+    r"(?i)\b(?:Running task|Executing task|do_[a-z][\w]*)\b", s)]
+task_refs = re.findall(r'([^\s()]+\.bb):(?P<task>do_[a-zA-Z0-9_]+)', data)
+errors = sum(bool(re.search(r"(?i)\b(?:ERROR|FATAL):", s)) for s in lines)
+oem = sum(("microduck-daemon" in recipe and task in {"do_compile", "do_package", "do_package_write_rpm"})
+          for recipe, task in task_refs)
+images = sum(task.startswith(("do_rootfs", "do_image", "do_deploy"))
+             for _, task in task_refs)
+target = sum("kwipi-passive-fixture" in recipe and task == "do_package_write_rpm"
+             for recipe, task in task_refs)
+summary = any("Tasks Summary" in s or "Task Summary" in s for s in lines)
+print("P13B6_LOG_LINES:", len(lines))
+print("P13B6_LOG_TASK_LINES:", len(task_lines))
+print("P13B6_LOG_RECIPE_TASK_REFERENCES:", len(task_refs))
+print("P13B6_LOG_TARGET_PACKAGE_WRITE_REFERENCES:", target)
+print("P13B6_LOG_OEM_PACKAGE_OR_COMPILE_REFERENCES:", oem)
+print("P13B6_LOG_IMAGE_TASK_REFERENCES:", images)
+print("P13B6_LOG_ERROR_MARKERS:", errors)
+print("P13B6_LOG_TASK_SUMMARY_PRESENT:", summary)
+print("P13B6_LOG_METADATA_AND_PERMISSIONS: PASS_READ_ONLY")
+if errors or oem or images:
+    print("P13B6_LOG_REVIEW: STOP_ANOMALY")
+elif not task_refs or not summary:
+    print("P13B6_LOG_REVIEW: INCONCLUSIVE_NO_RECOGNIZED_RUNQUEUE")
+else:
+    print("P13B6_LOG_REVIEW: PASS_TASK_REFERENCE_SCREEN_ONLY")
+print("P13B6_NO_PACKAGE_RUN: true")
+PY
+```
+
+L'inventaire de lignes tâche est un **contrôle de cohérence supplémentaire**, non une preuve de cause, d'absence exhaustive de dépendances ni de stabilité des signatures. Le plan de tâche réel devra rester borné à `kwipi-passive-fixture` avant autorisation du package.
+
 ## Statut à ce SHA documentaire
 
 `P13B5_METADATA = PASS` (preuve opérateur WSL2) ; `P13B6_PACKAGE_WRITE = NON_EXECUTE` ; `P16_B10_ROOTFS_24_MODULES = EN_ATTENTE` ; `WIC/RAUC/ROBOT = NON_VALIDES`.
