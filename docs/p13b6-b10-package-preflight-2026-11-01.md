@@ -1,3 +1,11 @@
+## Clôture du blocage payload P13B6 et contrôle réel du journal (01/11/2026)
+
+**Retour WSL2 opérateur ultérieur (remplace le STOP natif plus bas, historique)** : `rpm2cpio` est un wrapper qui appelle finalement `rpm2archive.real`. Les bibliothèques `libarchive.so.13` et `libbz2.so.1` existaient déjà dans les sysroots Yocto ; chargement local temporaire par `LD_LIBRARY_PATH` **sans installation, symlink ajouté ni recompilation**. L'outil a terminé 0 et produit 20 480 octets GZIP/TAR (pas CPIO brut). Audit TAR en mémoire : exactement cinq `.py` réguliers, aucun fichier supplémentaire, cinq SHA-256 égaux aux sources et `PKGDEST` : `P13B6_PAYLOAD: PASS_5_OF_5`. Les permissions détaillées des membres TAR, la signature et l'authenticité de release ne sont pas qualifiées.
+
+**Journal BitBake réel** : 10 386 octets, SHA-256 `53c906be7c5bf91a707c86dd236a69373f5eb59474d8270d2799293b41560292`, 117 lignes, 23 tâches `Running task` analysées, 0 non analysée, exactement **une** `kwipi-passive-fixture_0.1.0.bb:do_package_write_rpm`, 0 OEM `microduck-daemon:do_compile/do_package/do_install`, 0 `do_rootfs/do_image`, 0 `do_deploy` inattendu. 0 marqueurs `ERROR/FATAL`, résumé `all succeeded`, **un WARNING non qualifié**. `P13B6_REAL_LOG: PASS_TASK_SET`. Pas de reproduction de la compilation en CI ni preuve d'installation. **P13B6 paquet principal et jeu de tâches visible : PASS limité** ; `P16_B10_ROOTFS_24_MODULES=EN_ATTENTE`. Suivre [P16-A/B10 et ses critères](p16b10-offline-rootfs-audit-2026-11-01.md), sans relancer le RPM déjà créé.
+
+---
+
 # P13B5 validé ; P13B6 — décision avant empaquetage DEV B10 (01/11/2026)
 
 ## Retour final WSL2 de la session — empaquetage réel réussi, vérification de charge utile STOP (01/11/2026)

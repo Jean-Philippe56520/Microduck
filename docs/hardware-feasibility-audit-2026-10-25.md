@@ -1,3 +1,7 @@
+## P13B6 : contenu du paquet validé sur WSL2, pas de mesure matérielle (01/11/2026)
+
+La sortie native de `rpm2archive` (archive GZIP/TAR en mémoire) a livré exactement les cinq modules B6, 5/5 SHA-256 identiques au PKGDEST et à la source B12, sans fichier additionnel. Journal BitBake réel : SHA-256 `53c906be7c5bf91a707c86dd236a69373f5eb59474d8270d2799293b41560292`, 117 lignes, 23 tâches reconnues, un seul `do_package_write_rpm` B6, zéro tâche OEM Rust compilée/empaquetée/installée et zéro tâche image/rootfs observée, zéro erreur, un WARNING non qualifié. Ceci **ne valide ni la signature RPM ni l'installation dans un rootfs B10**, ni l'usage sur RK3566. Candidat P16-A/B10 : contrôle hors ligne de 19+5 `.py`, des deux ELF64 AArch64 B12, du compte Kwipi isolé et de P15A désactivée ; shipping et mesures matérielles toujours non validés. [Protocole et repli](p16b10-offline-rootfs-audit-2026-11-01.md).
+
 # Audit de faisabilité matérielle — Microduck Companion
 
 ## Qualification P13B5/P13B6 sur hôte WSL2 — pas une mesure RK3566 (01/11/2026)
