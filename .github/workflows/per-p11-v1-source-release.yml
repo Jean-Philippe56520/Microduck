@@ -1,4 +1,4 @@
-name: PER-P11 pinned OEM V1 source with opt-in B4/B8 (NOT Yocto image)
+name: PER-P11 pinned OEM V1 source with local capture metadata (NOT Yocto image)
 
 on:
   pull_request:
@@ -12,6 +12,8 @@ on:
       - 'scripts/per_p10c_*'
       - 'scripts/per_p15b4_*'
       - 'scripts/per_p15b8_*'
+      - 'scripts/per_p15b12_*'
+      - 'tests/test_per_p15b12_oem_capture_provenance.py'
       - 'rust/kwipi-seg-mask-core/**'
       - 'docs/per-p11-v1-source-release-2026-10-30.md'
       - 'docs/p11-b4b8-source-closure-2026-11-01.md'
@@ -46,6 +48,7 @@ jobs:
           python -m unittest discover -s tests -p test_per_p11_v1_source_release.py -v
           python -m unittest discover -s tests -p test_per_p15b4_oem_local_overlay.py -v
           python -m unittest discover -s tests -p test_per_p15b8_oem_acl_overlay.py -v
+          python -m unittest discover -s tests -p test_per_p15b12_oem_capture_provenance.py -v
           test "$(git -C upstream/microduck rev-parse HEAD)" = '942e58e3aa6dbb28e7037203fff11866122c7567'
           test "$(git -C upstream/microduck_rl rev-parse HEAD)" = 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
           git diff --exit-code -- upstream/
@@ -71,7 +74,9 @@ jobs:
           path = Path(os.environ["RUNNER_TEMP"]) / "p11-first/kwipi-v1-oem-source.tar.gz"
           with tarfile.open(path, "r:gz") as archive:
               manifest = json.load(archive.extractfile("kwipi-source-manifest.json"))
-              assert manifest["code"] == "P10A_P10B_P10C_P15B4_P15B8_without_test_harness"
+              assert manifest["code"] == "P10A_P10B_P10C_P15B4_P15B8_P15B12_without_test_harness"
+              assert manifest["capture_timestamp_origin"] == "mediad_appsink_callback_not_exposure"
+              assert manifest["capture_provenance_validated_on_robot"] is False
               assert manifest["local_detections_opt_in_only"] is True
               assert manifest["local_detections_installed_on_robot"] is False
               local = archive.extractfile("mediad/src/local_detections.rs").read()
@@ -109,6 +114,8 @@ jobs:
             -p mediad --bin mediad
           file "$RUNNER_TEMP/p11-unpacked/target/debug/mediad"
           test -s "$RUNNER_TEMP/p11-unpacked/target/debug/mediad"
+          cargo test --manifest-path "$RUNNER_TEMP/p11-unpacked/Cargo.toml" --locked \
+            -p mediad --lib local_detections::tests -- --nocapture
           git diff --exit-code -- upstream/
           echo 'HOST source build passed; Yocto BitBake, RAUC, model rights and robot remain BLOCKED.'
       - name: Retain content-addressed SOURCE candidate for review (not signed release)

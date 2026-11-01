@@ -17,6 +17,10 @@
 
 **Reste non résolu après cette seule clôture de sources :** la version `mediad` contenue dans les **binaires AArch64/WIC WSL2 précédents n'est pas reconstruite**. La construction P11/P12 candidate ne dit rien de `DUCK_REVISION` exécutée, UID/groupe/ACL effectifs sur `/run`, timestamp ou numéro de capture `Sighting`, débit NPU ou boucle autonome. Ne pas déverrouiller le lecteur B5 de fixtures ni installer de service. **Prochain critère** : preuve de source incluse dans une vraie recette/paquet, puis droits/provenance OEM vérifiables, uniquement sur objectif nouveau avec positif, négatif et STOP prévus ; pas de nouveau `do_rootfs`/WIC sans nécessité mesurée. Robot absent.
 
+### P15-B12 — horloge de trame et séquence dans le détecteur unique (01/11/2026)
+
+**Objectif :** ne plus émettre en local de `Sighting` sans provenance temporelle de sa trame. **Manque attesté :** `Frame.captured_at` existait dans l'OEM ; `Sighting` n'en transportait aucune trace, et le score/temps d'inférence ne prouvent pas la fraîcheur. **Réemploi :** `Frames.next_frame()`, le seul worker `mediad`, `duck_ipc_proto::clock::monotonic_ns`, B4/B8 et leurs tests Rust/ACL. **Adaptation** dans P11 sur source OEM jetable : horloge monotone au callback appsink, UTC OEM existant, compteur de succès de détection par worker ; seules les métadonnées du socket local reçoivent les trois nombres, jamais un média brut. Positifs : compilation du vrai `mediad` hôte depuis l'archive P11, tests positif/négatif des stales/future/manquants/relecture/seg, aucune modification WebRTC moteur. STOP sur CI non verte, doublon caméra, source non épinglée, preuve de capture indéfinie. **Limites :** horloge de callback ≠ exposition capteur ; `look_seq` ≠ numéro de frame physique ; source test/sim et ACL réellement installée encore inconnues ; pas de lecture B5 réelle, SQLite, service, BitBake ARM64 ou robot. Les contrôles de source/version/ACL sur la distribution candidate restent séparés.
+
 ### Jalons validés pour leur périmètre strict
 
 | Porte | Acquis vérifié | Non acquis |

@@ -30,12 +30,13 @@ from scripts.per_p15b8_apply_oem_acl_binder import (
     RETURN_TO as B8_RETURN_TO, SOCKET_TO as B8_SOCKET_TO,
     apply as apply_b8,
 )
+from scripts.per_p15b12_apply_oem_capture_provenance import apply as apply_capture
 
 RL_PIN = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
 ARCHIVE_NAME = "kwipi-v1-oem-source.tar.gz"
 MANIFEST_NAME = "kwipi-source-manifest.json"
 SOURCE_STATUS = "source_candidate_only_bitbake_licence_and_robot_blocked"
-SOURCE_COMPOSITION = "P10A_P10B_P10C_P15B4_P15B8_without_test_harness"
+SOURCE_COMPOSITION = "P10A_P10B_P10C_P15B4_P15B8_P15B12_without_test_harness"
 LOCAL_REQUIRED_PATHS = (
     "mediad/src/main.rs",
     "mediad/src/lib.rs",
@@ -43,6 +44,8 @@ LOCAL_REQUIRED_PATHS = (
     "mediad/src/local_detections.rs",
     "mediad/src/local_detections_acl.rs",
     "robotd-params/src/lib.rs",
+    "mediad/src/pipeline.rs",
+    "mediad/src/detect/seg.rs",
 )
 MODEL_SUFFIXES = {".rknn", ".onnx", ".pt", ".safetensors"}
 # These ONNX inputs are already tracked in the pinned OEM git tree; preserve,
@@ -138,7 +141,7 @@ def require_local_detection_contract(parts: dict[str, bytes]) -> None:
     if set(parts) != set(LOCAL_REQUIRED_PATHS):
         raise ReleaseRefused("P15-B4/B8 source files missing or unexpected")
     try:
-        main, lib, detect, local, acl, params = (
+        main, lib, detect, local, acl, params, pipeline, seg = (
             parts[name].decode("utf-8") for name in LOCAL_REQUIRED_PATHS
         )
     except UnicodeDecodeError as error:
@@ -155,6 +158,17 @@ def require_local_detection_contract(parts: dict[str, bytes]) -> None:
         (local, "const MAX_CLIENTS: usize = 2;"),
         (local, "const MAX_LINE_BYTES: usize = 4096;"),
         (detect, "pub region_candidates: Option"),
+        (detect, "pub captured_at_monotonic_ns: Option<u64>"),
+        (detect, "pub captured_at_unix_us: Option<u64>"),
+        (detect, "pub look_seq: Option<u64>"),
+        (detect, "sighting.captured_at_monotonic_ns = Some(capture_monotonic_ns);"),
+        (detect, "sighting.captured_at_unix_us = capture_unix_us;"),
+        (detect, "sighting.look_seq = Some(look_seq);"),
+        (pipeline, "pub captured_at_monotonic_ns: u64"),
+        (pipeline, "captured_at_monotonic_ns: proto::clock::monotonic_ns(),"),
+        (local, "const MAX_CAPTURE_AGE_NS: u64 = 2_000_000_000;"),
+        (local, "fn notification_at(sighting: &Sighting, now_ns: u64)"),
+        (local, "if seq <= last_seq { continue; }"),
     )
     # The Rust helper legitimately mentions certain functions more than once,
     # and the OEM parameter source has several unrelated "enabled: false".
@@ -167,6 +181,8 @@ def require_local_detection_contract(parts: dict[str, bytes]) -> None:
         (acl, "grant_socket"),
         (acl, "grant_private_dir"),
         (params, "enabled: false"),
+        (seg, "captured_at_monotonic_ns: None,"),
+        (seg, "captured_at_unix_us: None,"),
     )
     if (any(source.count(anchor) != 1 for source, anchor in required)
             or any(anchor not in source for source, anchor in present)):
@@ -261,6 +277,8 @@ def manifest_for(source: Path, project_sha: str) -> dict:
         "local_detections_opt_in_only": True,
         "local_detections_installed_on_robot": False,
         "acl_validated_on_robot": False,
+        "capture_timestamp_origin": "mediad_appsink_callback_not_exposure",
+        "capture_provenance_validated_on_robot": False,
         "kwipi_seg_weights_included": False, "oem_onnx_sources_preserved": True,
         "detector_enabled_by_default": False,
         "bitbake_built": False, "robot_validated": False,
@@ -318,6 +336,8 @@ def verify_archive(path: Path) -> dict:
                 or obj.get("local_detections_opt_in_only") is not True
                 or obj.get("local_detections_installed_on_robot") is not False
                 or obj.get("acl_validated_on_robot") is not False
+                or obj.get("capture_timestamp_origin") != "mediad_appsink_callback_not_exposure"
+                or obj.get("capture_provenance_validated_on_robot") is not False
                 or obj.get("kwipi_seg_weights_included") is not False
                 or obj.get("oem_onnx_sources_preserved") is not True
                 or obj.get("detector_enabled_by_default") is not False
@@ -366,6 +386,7 @@ def build(project: Path, oem: Path, output_dir: Path) -> dict:
         # B4 before B8, then remove the test-only harness and marker.
         apply_b4(source, project)
         apply_b8(source, project)
+        apply_capture(source, project)  # Same OEM worker, no new frame reader.
         drop_test_harness(source, project)
         normalize_lockfile(source)
         no_models_or_harness(source)

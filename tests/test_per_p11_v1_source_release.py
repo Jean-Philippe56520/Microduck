@@ -32,7 +32,13 @@ class P11V1SourceTests(unittest.TestCase):
             "LICENSE": "Apache-2.0 fixture",
             "mediad/src/detect.rs": (
                 'frames.next_frame(); name("duck-detect"); pub(crate) mod seg; '
-                'pub region_candidates: Option'
+                'pub region_candidates: Option; '
+                'pub captured_at_monotonic_ns: Option<u64>; '
+                'pub captured_at_unix_us: Option<u64>; '
+                'pub look_seq: Option<u64>; '
+                'sighting.captured_at_monotonic_ns = Some(capture_monotonic_ns); '
+                'sighting.captured_at_unix_us = capture_unix_us; '
+                'sighting.look_seq = Some(look_seq);'
             ),
             "mediad/src/main.rs": B4_ARGS_TO + B4_MAIN_ADDITION,
             "mediad/src/lib.rs": B4_LIB_TO,
@@ -40,12 +46,17 @@ class P11V1SourceTests(unittest.TestCase):
                 B8_MODULE_INSERT + B8_DEFAULT_TO + B8_SOCKET_TO + B8_RETURN_TO
                 + "const MAX_CLIENTS: usize = 2;\n"
                 + "const MAX_LINE_BYTES: usize = 4096;\n"
+                + "const MAX_CAPTURE_AGE_NS: u64 = 2_000_000_000;\n"
+                + "fn notification_at(sighting: &Sighting, now_ns: u64)\n"
+                + "if seq <= last_seq { continue; }\n"
             ),
             "mediad/src/local_detections_acl.rs": (
                 "system.posix_acl_access\ngetpwnam_r\nlsetxattr\n"
                 "hide_private_dir_before_bind\ngrant_socket\ngrant_private_dir\n"
             ),
-            "mediad/src/detect/seg.rs": "fixture",
+            "mediad/src/detect/seg.rs": "captured_at_monotonic_ns: None; captured_at_unix_us: None;",
+            "mediad/src/pipeline.rs": ("pub captured_at_monotonic_ns: u64; "
+                                       "captured_at_monotonic_ns: proto::clock::monotonic_ns(),"),
             "duck-detect/src/rknn/segments.rs": "fixture",
             "duck-detect/src/seg_tail.rs": "fixture",
             "kwipi-seg-mask-core/src/lib.rs": "fixture",
@@ -74,6 +85,9 @@ class P11V1SourceTests(unittest.TestCase):
             self.assertTrue(manifest["local_detections_opt_in_only"])
             self.assertFalse(manifest["local_detections_installed_on_robot"])
             self.assertFalse(manifest["acl_validated_on_robot"])
+            self.assertFalse(manifest["capture_provenance_validated_on_robot"])
+            self.assertEqual(manifest["capture_timestamp_origin"],
+                             "mediad_appsink_callback_not_exposure")
             (root / MANIFEST_NAME).write_text(json.dumps(manifest, sort_keys=True), encoding="utf-8")
             first, second = Path(temp) / "1.tar.gz", Path(temp) / "2.tar.gz"
             write_tar(root, first)
@@ -133,6 +147,9 @@ class P11V1SourceTests(unittest.TestCase):
             ("mediad/src/local_detections.rs", "grant_socket(path, uid)"),
             ("mediad/src/local_detections_acl.rs", "getpwnam_r"),
             ("robotd-params/src/lib.rs", "enabled: false"),
+            ("mediad/src/pipeline.rs", "captured_at_monotonic_ns: proto::clock::monotonic_ns()"),
+            ("mediad/src/detect.rs", "sighting.look_seq = Some(look_seq)"),
+            ("mediad/src/local_detections.rs", "MAX_CAPTURE_AGE_NS"),
         )
         for path, token in scenarios:
             with self.subTest(path=path, token=token), tempfile.TemporaryDirectory() as temp:
@@ -154,6 +171,8 @@ class P11V1SourceTests(unittest.TestCase):
             ("local_detections_opt_in_only", False),
             ("local_detections_installed_on_robot", True),
             ("acl_validated_on_robot", True),
+            ("capture_provenance_validated_on_robot", True),
+            ("capture_timestamp_origin", "sensor_exposure_confirmed"),
             ("bitbake_built", True),
             ("robot_validated", True),
             ("signed_ota_release", True),
