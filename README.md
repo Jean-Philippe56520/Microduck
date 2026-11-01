@@ -1,3 +1,11 @@
+## P13B5 — métadonnées DEV B12/B10 effectives validées sur WSL2 (01/11/2026)
+
+**Preuve opérateur :** `P13B5_P12_B12_EFFECTIVE_METADATA: PASS`, `P13B5_P14B_B6_RECIPE_IDENTITIES_AND_DEPENDENCY: PASS`, `P13B5_P15A_DISABLED: PASS`, `P13B5_P15B10_DEV_ONLY_AND_ACCOUNT: PASS`, `P13B5_METADATA_ONLY: PASS_NO_PACKAGE_OR_ROOTFS_TASK`. Le contrôle `bitbake -p` + `-e` / `show-appends` a résolu réellement les recettes sur la composition KAS privée B12 `e2e9bfef`, P14B 19 modules + B6 5 modules, P15A inactive, compte Kwipi DEV isolé, B10 uniquement dans DEV sans fuite shipping. Aucune nouvelle compilation Rust, aucun `do_package_write_*` ni `do_rootfs` ; ne pas déduire d'installation, de services actifs ou de capacité robot. `main@f3ecd8ae5bfe93c893128130f80105e32156659f` est le dernier main de départ, #258 fusionnée après 5/5 CI vertes.
+
+**Nouvelle décision P13B6 :** cibler exclusivement la disponibilité du paquet installable `kwipi-passive-fixture 0.1.0` (ancien `PKGDEST` disparu), après contrôle de `PACKAGE_CLASSES` et aperçu `bitbake -n` dans **la même configuration KAS** ; ne pas relancer P12/Rust ni construire d'image pour ce préflight. Avant tout futur rootfs DEV : adapter la porte P16-A à exactement **19+5 modules** et garder les protections P15A/B9/B10. Critères de succès, STOP et commandes WSL2 : [P13B6](docs/p13b6-b10-package-preflight-2026-11-01.md). Aucune WIC, RAUC ni validation robot.
+
+---
+
 ## P13B3 — qualification hors ligne de l'intégration B12 dans la distribution DEV (01/11/2026)
 
 **État GitHub contrôlé :** `main@c6d0344ee35c49830ac104fe9d07062b2b2764cc` ; PR [#256](https://github.com/Jean-Philippe56520/Microduck/pull/256) et [#257](https://github.com/Jean-Philippe56520/Microduck/pull/257) fusionnées, 7/7 et 5/5 workflows visibles conclus en succès sur leurs derniers HEAD. Les sous-modules épinglés restent `microduck@942e58e3` et `microduck_rl@b02fdea4` ; Yocto OEM est à `1ee58387`. Les dernières preuves P13B2 documentent **un paquet AArch64** B12 compilé au SHA source `e2e9bfef`, **pas une installation B12** dans le rootfs DEV historique. Ne pas reconstruire ce paquet sans manque vérifié.
