@@ -96,10 +96,11 @@ def _installed_modules(rootfs: Path, expected: dict[str, str]) -> dict[str, str]
         if entry.is_symlink():
             raise Refused("unreviewed link in installed Python package")
         if entry.is_file():
-            if entry.suffix not in (".py", ".pyc"):
-                raise Refused("unexpected installed Python package file")
-            if entry.suffix == ".py":
-                seen.add(entry.relative_to(rootfs / p16a.PYTHON_PREFIX).as_posix())
+            # Unreviewed bytecode can override trusted source files at runtime;
+            # the B10 recipe installs only .py. Refuse .pyc until audited.
+            if entry.suffix != ".py":
+                raise Refused("unexpected installed Python package file or bytecode")
+            seen.add(entry.relative_to(rootfs / p16a.PYTHON_PREFIX).as_posix())
         elif not entry.is_dir():
             raise Refused("unexpected Python package entry type")
     if set(expected) != seen or len(expected) != 24:
@@ -107,6 +108,8 @@ def _installed_modules(rootfs: Path, expected: dict[str, str]) -> dict[str, str]
     digests = {}
     for rel, digest in sorted(expected.items()):
         file = p16a._under(rootfs, p16a.PYTHON_PREFIX + rel)
+        if stat.S_IMODE(file.stat().st_mode) != 0o644:
+            raise Refused("installed Python module mode drift: " + rel)
         actual = _hash(file)
         if actual != digest:
             raise Refused("installed module SHA-256 mismatch: " + rel)

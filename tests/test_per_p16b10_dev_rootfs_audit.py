@@ -166,6 +166,17 @@ class B10RootfsFixtures(unittest.TestCase):
         with self.assertRaisesRegex(gate.Refused, "unexpected installed"):
             self.run_gate()
 
+    def test_unreviewed_pyc_and_changed_python_mode_refused(self):
+        pyc = self.module_root / "extra.pyc"
+        pyc.write_bytes(b"unreviewed bytecode")
+        with self.assertRaisesRegex(gate.Refused, "bytecode"):
+            self.run_gate()
+        pyc.unlink()
+        f = self.module_root / "passive_media_router.py"
+        f.chmod(0o755)
+        with self.assertRaisesRegex(gate.Refused, "mode drift"):
+            self.run_gate()
+
     def test_wrong_base_or_addon_provenance_refused(self):
         self.base_proof["source_archive_sha256"] = "0" * 64
         with self.assertRaisesRegex(gate.Refused, "provenance"):
