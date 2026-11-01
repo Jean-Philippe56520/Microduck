@@ -1,4 +1,4 @@
-"""P11: reproducible SOURCE candidate from the exact OEM pin plus P10A/B/C.
+"""P11: reproducible OEM source candidate with P10A/B/C and P15-B4/B8.
 
 Not an installer, Yocto BitBake image, signed updater release or licensed model.
 Read-only on both Git checkouts; every modification occurs in a scratch archive.
@@ -21,11 +21,29 @@ import tempfile
 from scripts.per_p10a_apply_oem_rknn_overlay import PIN, SENTINEL, apply as apply_a, replace_once
 from scripts.per_p10b_apply_oem_tail_overlay import apply as apply_b
 from scripts.per_p10c_apply_oem_mediad_overlay import apply as apply_c
+from scripts.per_p15b4_apply_oem_local_detections import (
+    ARGS_TO as B4_ARGS_TO, LIB_TO as B4_LIB_TO,
+    MAIN_ADDITION as B4_MAIN_ADDITION, apply as apply_b4,
+)
+from scripts.per_p15b8_apply_oem_acl_binder import (
+    DEFAULT_TO as B8_DEFAULT_TO, MODULE_INSERT as B8_MODULE_INSERT,
+    RETURN_TO as B8_RETURN_TO, SOCKET_TO as B8_SOCKET_TO,
+    apply as apply_b8,
+)
 
 RL_PIN = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
 ARCHIVE_NAME = "kwipi-v1-oem-source.tar.gz"
 MANIFEST_NAME = "kwipi-source-manifest.json"
 SOURCE_STATUS = "source_candidate_only_bitbake_licence_and_robot_blocked"
+SOURCE_COMPOSITION = "P10A_P10B_P10C_P15B4_P15B8_without_test_harness"
+LOCAL_REQUIRED_PATHS = (
+    "mediad/src/main.rs",
+    "mediad/src/lib.rs",
+    "mediad/src/detect.rs",
+    "mediad/src/local_detections.rs",
+    "mediad/src/local_detections_acl.rs",
+    "robotd-params/src/lib.rs",
+)
 MODEL_SUFFIXES = {".rknn", ".onnx", ".pt", ".safetensors"}
 # These ONNX inputs are already tracked in the pinned OEM git tree; preserve,
 # rather than misclassifying them as new Kwipi weights.
@@ -111,6 +129,56 @@ def normalize_lockfile(source: Path) -> None:
                    stdout=subprocess.DEVNULL)
 
 
+def require_local_detection_contract(parts: dict[str, bytes]) -> None:
+    """Reject absent/widened B4+B8 endpoint in a source tree OR archive.
+
+    These markers are safety invariants, not evidence of an OEM runtime or ACL
+    installed on a robot. The real exported Rust source is compiled in P11 CI.
+    """
+    if set(parts) != set(LOCAL_REQUIRED_PATHS):
+        raise ReleaseRefused("P15-B4/B8 source files missing or unexpected")
+    try:
+        main, lib, detect, local, acl, params = (
+            parts[name].decode("utf-8") for name in LOCAL_REQUIRED_PATHS
+        )
+    except UnicodeDecodeError as error:
+        raise ReleaseRefused("P15-B4/B8 source is not UTF-8") from error
+
+    required = (
+        (main, B4_ARGS_TO),
+        (main, B4_MAIN_ADDITION),
+        (lib, B4_LIB_TO),
+        (local, B8_MODULE_INSERT),
+        (local, B8_DEFAULT_TO),
+        (local, B8_SOCKET_TO),
+        (local, B8_RETURN_TO),
+        (local, "const MAX_CLIENTS: usize = 2;"),
+        (local, "const MAX_LINE_BYTES: usize = 4096;"),
+        (acl, "system.posix_acl_access"),
+        (acl, "getpwnam_r"),
+        (acl, "lsetxattr"),
+        (acl, "hide_private_dir_before_bind"),
+        (acl, "grant_socket"),
+        (acl, "grant_private_dir"),
+        (detect, "pub region_candidates: Option"),
+        (params, "enabled: false"),
+    )
+    if any(source.count(anchor) != 1 for source, anchor in required):
+        raise ReleaseRefused("P15-B4/B8 opt-in, one-detector or strict ACL contract changed")
+    if (main.count("kwipi_local_detections: bool") != 1
+            or main.count("if args.kwipi_local_detections {") != 1
+            or lib.count("pub mod local_detections;") != 1
+            or local.count('include!("local_detections_acl.rs")') != 1
+            or local.count("let listener = UnixListener::bind(path)") != 1
+            or detect.count("frames.next_frame()") != 1
+            or detect.count('name("duck-detect"') != 1):
+        raise ReleaseRefused("P15-B4/B8 duplicated detector, endpoint or binder")
+    production = local.split("#[cfg(test)]", 1)[0]
+    if any(value in production for value in (
+            "robot.do", "robot.move", "media.frame", "cmd_vel")):
+        raise ReleaseRefused("P15-B4/B8 local endpoint contains raw camera or motor access")
+
+
 def no_models_or_harness(source: Path) -> None:
     necessary = ("mediad/src/detect/seg.rs", "duck-detect/src/seg_tail.rs",
                  "duck-detect/src/rknn/segments.rs", "kwipi-seg-mask-core/src/lib.rs",
@@ -131,6 +199,15 @@ def no_models_or_harness(source: Path) -> None:
             or "pub(crate) mod seg;" not in detect
             or "enabled: false" not in params):
         raise ReleaseRefused("cargo, tee or OEM disabled-by-default invariant failed")
+    # P15-B4/B8 must be present in the ORIGINAL exported source, not only
+    # in a separate scratch prototype. No symlink is accepted for these files.
+    local_parts = {}
+    for rel in LOCAL_REQUIRED_PATHS:
+        target = source / rel
+        if not target.is_file() or target.is_symlink():
+            raise ReleaseRefused("required B4/B8 OEM source absent or symlinked: " + rel)
+        local_parts[rel] = target.read_bytes()
+    require_local_detection_contract(local_parts)
     for p in source.rglob("*"):
         rel = p.relative_to(source)
         is_unapproved_model = p.suffix.lower() in MODEL_SUFFIXES and rel.as_posix() not in OEM_ONNX_PATHS
@@ -174,7 +251,10 @@ def manifest_for(source: Path, project_sha: str) -> dict:
         "format": "kwipi-oem-source-v1", "companion_sha": project_sha,
         "oem_sha": PIN, "mujoco_sha": RL_PIN,
         "status": SOURCE_STATUS,
-        "code": "P10A_P10B_P10C_without_test_harness",
+        "code": SOURCE_COMPOSITION,
+        "local_detections_opt_in_only": True,
+        "local_detections_installed_on_robot": False,
+        "acl_validated_on_robot": False,
         "kwipi_seg_weights_included": False, "oem_onnx_sources_preserved": True,
         "detector_enabled_by_default": False,
         "bitbake_built": False, "robot_validated": False,
@@ -228,6 +308,10 @@ def verify_archive(path: Path) -> dict:
         if (obj.get("format") != "kwipi-oem-source-v1"
                 or obj.get("status") != SOURCE_STATUS
                 or obj.get("oem_sha") != PIN
+                or obj.get("code") != SOURCE_COMPOSITION
+                or obj.get("local_detections_opt_in_only") is not True
+                or obj.get("local_detections_installed_on_robot") is not False
+                or obj.get("acl_validated_on_robot") is not False
                 or obj.get("kwipi_seg_weights_included") is not False
                 or obj.get("oem_onnx_sources_preserved") is not True
                 or obj.get("detector_enabled_by_default") is not False
@@ -237,6 +321,7 @@ def verify_archive(path: Path) -> dict:
         if not isinstance(records, list) or any(not isinstance(x, dict) for x in records):
             raise ReleaseRefused("missing source hashes")
         actual = []
+        local_parts = {}
         for m in members:
             if m.name == MANIFEST_NAME or m.isdir():
                 continue
@@ -244,11 +329,15 @@ def verify_archive(path: Path) -> dict:
                 content = tar.extractfile(m)
                 if content is None:
                     raise ReleaseRefused("regular file has no content")
-                actual.append({"path": m.name, "sha256": hashlib.sha256(content.read()).hexdigest()})
+                raw = content.read()
+                actual.append({"path": m.name, "sha256": hashlib.sha256(raw).hexdigest()})
+                if m.name in LOCAL_REQUIRED_PATHS:
+                    local_parts[m.name] = raw
             elif m.issym():
                 actual.append({"path": m.name, "link": m.linkname})
         if sorted(actual, key=lambda x: x["path"]) != records:
             raise ReleaseRefused("source content differs from provenance hashes")
+        require_local_detection_contract(local_parts)
         return obj
 
 
@@ -265,6 +354,10 @@ def build(project: Path, oem: Path, output_dir: Path) -> dict:
         apply_a(source, project / "scripts/per_p10a_rknn_segments.rs")
         apply_b(source, project / "scripts/per_p10b_seg_tail.rs", project)
         apply_c(source, project)
+        # Both approved overlays require the temporary OEM pin marker. Apply
+        # B4 before B8, then remove the test-only harness and marker.
+        apply_b4(source, project)
+        apply_b8(source, project)
         drop_test_harness(source, project)
         normalize_lockfile(source)
         no_models_or_harness(source)
