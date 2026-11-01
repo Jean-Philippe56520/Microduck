@@ -90,6 +90,8 @@ def preflight(cfg: Config) -> dict:
     if not re.fullmatch("[a-f0-9]{40}", cfg.expected_sha):
         raise Refused("explicit --expected-sha must be a 40-character lowercase SHA")
     paths = (cfg.project, cfg.yocto, cfg.work, cfg.build)
+    if any(any(c in str(p) for c in (":", "\r", "\n")) for p in (*paths, cfg.scratch)):
+        raise Refused("unsafe newline/colon in KAS source or scratch path")
     if any(not p.is_absolute() or not p.is_dir() or p.is_symlink() for p in paths):
         raise Refused("all checkouts and cache paths must be existing absolute real directories")
     if (cfg.project.resolve() == cfg.yocto.resolve()
@@ -151,14 +153,15 @@ def _execute(args: list[str], env: dict[str, str], *,
         start_new_session=True)
     try:
         out, _ = proc.communicate(timeout=timeout)
-    except subprocess.TimeoutExpired as exc:
+    except (subprocess.TimeoutExpired, KeyboardInterrupt) as exc:
         os.killpg(proc.pid, signal.SIGTERM)
         try:
             proc.communicate(timeout=10)
         except subprocess.TimeoutExpired:
             os.killpg(proc.pid, signal.SIGKILL)
             proc.communicate()
-        raise Refused("command expired without package proof: " + args[0]) from exc
+        reason = "interrupted" if isinstance(exc, KeyboardInterrupt) else "expired"
+        raise Refused("command " + reason + " without package proof: " + args[0]) from exc
     if proc.returncode != 0:
         raise Refused("command failed (" + str(proc.returncode) + "): " + args[0])
     return out or ""
@@ -169,10 +172,10 @@ def _overlay(cfg: Config) -> str:
     return (
         "header:\n  version: 14\n"
         "repos:\n"
-        "  kwipi:\n    path: " + str(root / "meta-kwipi") + "\n    layers:\n      .:\n"
-        "  kwipipy:\n    path: " + str(root / "meta-kwipi-python") + "\n    layers:\n      .:\n"
-        "  kwipipassive:\n    path: " + str(root / "meta-kwipi-passive") + "\n    layers:\n      .:\n"
-        "  kwipidev:\n    path: " + str(cfg.project / "yocto/meta-kwipi-dev-image") + "\n    layers:\n      .:\n"
+        "  kwipi:\n    path: " + json.dumps(str(root / "meta-kwipi")) + "\n    layers:\n      .:\n"
+        "  kwipipy:\n    path: " + json.dumps(str(root / "meta-kwipi-python")) + "\n    layers:\n      .:\n"
+        "  kwipipassive:\n    path: " + json.dumps(str(root / "meta-kwipi-passive")) + "\n    layers:\n      .:\n"
+        "  kwipidev:\n    path: " + json.dumps(str(cfg.project / "yocto/meta-kwipi-dev-image")) + "\n    layers:\n      .:\n"
         "local_conf_header:\n"
         "  kwipi-b6p-offline: |\n"
         "    BB_NO_NETWORK = \"1\"\n"
