@@ -154,9 +154,9 @@ class P15B10GateTests(unittest.TestCase):
             self.appends().replace(
                 "microduck-image-dev.bb:", "microduck-image.bb:"),
             self.appends() +
-            f"microduck-image.bb:\\n  {self.selection / b10.APPEND}\\n",
+            f"microduck-image.bb:\n  {self.selection / b10.APPEND}\n",
             self.appends() +
-            f"unrelated.bb:\\n  {self.selection / b10.APPEND}\\n",
+            f"unrelated.bb:\n  {self.selection / b10.APPEND}\n",
         ):
             with self.subTest(case=bad[-100:]), self.assertRaises(EnvRefused):
                 self.check(appends=bad)
