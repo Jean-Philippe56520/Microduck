@@ -3,8 +3,10 @@ on:
   pull_request:
     paths:
       - 'tests/test_per_p15b3_oem_unix_dac.py'
+      - 'tests/test_per_p15b7_mediad_private_dac.py'
       - '.github/workflows/per-p15b3-oem-unix-dac.yml'
       - 'docs/per-p15b3-oem-unix-dac-revision-gate-2026-10-31.md'
+      - 'docs/per-p15b7-mediad-private-socket-dac-2026-11-01.md'
       - 'README.md'
       - 'docs/plan-action.md'
   workflow_dispatch:
@@ -38,5 +40,9 @@ jobs:
           # ONLY temporary fake Unix sockets. Never /run, robotd RPC, camera,
           # user accounts/groups, or hardware. Forked clients drop uid/gid.
           sudo -n env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_per_p15b3_oem_unix_dac.py' -v
+          # Same Linux credential/ACL gate for a private 0700 mediad metadata directory.
+          # No /run sockets, group assignment, camera, robotd or persistent changes.
+          sudo -n env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_per_p15b7_mediad_private_dac.py' -v
       - name: Check Python syntax without external dependency
-        run: python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("tests/test_per_p15b3_oem_unix_dac.py").read_text()); print("Python syntax OK, no pycache writes")'
+        run: |
+          python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("tests/test_per_p15b3_oem_unix_dac.py").read_text()); ast.parse(pathlib.Path("tests/test_per_p15b7_mediad_private_dac.py").read_text()); print("Python syntax OK, no pycache writes")'
