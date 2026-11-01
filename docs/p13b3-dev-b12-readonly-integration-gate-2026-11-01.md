@@ -80,6 +80,29 @@ PY
 
 Ne pas conclure une absence à partir d'un seul manifeste ancien : un `*.manifest` du répertoire `deploy/images` peut provenir d'une image antérieure. Relier d'abord la version du rootfs aux fichiers réellement présents et à sa provenance de build.
 
+## Troisième préflight opérateur — BBLAYERS et B6 (01/11/2026)
+
+**Sortie transmise, audit en lecture seule d'un `bblayers.conf` et d'un chemin `packages-split` précis :**
+
+```text
+BBLAYERS_CONF_PRESENT: True
+LAYER_REFERENCE: P12_OEM_SOURCE True
+LAYER_REFERENCE: P14B_PYTHON False
+LAYER_REFERENCE: P15B6_PASSIVE_PACKAGE False
+LAYER_REFERENCE: P14C_DEV_IMAGE False
+LAYER_REFERENCE: P15A_PROBE False
+LAYER_REFERENCE: P15B9_ACCOUNT False
+LAYER_REFERENCE: P15B10_SELECTION False
+P15B6_CACHED_PACKAGE_COUNT: 0
+P13B3_NEXT_PREFLIGHT: READ_ONLY_COMPLETE
+```
+
+**Interprétation exacte :** le fichier `/home/jp/kwipi-build-v1/build/conf/bblayers.conf` inspecté ne comporte pas les noms recherchés, **mais ce n'est pas une preuve de la sélection BitBake DEV/shipping effective pour une nouvelle commande KAS**. Les lanceurs P15-B6-P et P15-B9-R utilisent des **overlays KAS temporaires** dans un répertoire `scratch` et définissent `KAS_BUILD_DIR` ; un autre contexte peut avoir produit les anciens paquets/rootfs. `P15B6_CACHED_PACKAGE_COUNT=0` signifie seulement qu'aucun paquet n'a été trouvé sous le motif `build/tmp/work/*/kwipi-passive-fixture/*/packages-split/kwipi-passive-fixture` ; cette absence **n'invalide pas** les preuves WSL2 historiques `do_package` B6 (5 modules), ni ne démontre qu'aucune archive RPM/sstate ne subsiste. Les **versions B12/B10 installées, le BBLAYERS effectif futur et l'existence d'un RPM B6 réutilisable sont toujours inconnus**.
+
+**Porte suivante (lecture seule, aucune nouvelle compilation) :** inventorier dans le `KAS_BUILD_DIR` actuel les preuves privées B6 (sans publier environnement complet, mots de passe ou secrets), `tmp/deploy/rpm`, `tmp/pkgdata`, les stamps existants et les overlays KAS `scratch` déjà utilisés. Ne pas parcourir tout le disque ni déplacer/supprimer les caches. Si des fichiers sont absents, état `inconnu/en attente` ; décider ensuite seulement si la couche B6 source existante doit être réinstanciée dans une nouvelle **composition DEV opt-in**. Tester une fois, sur configuration KAS effective, les protections B10 : cinq fichiers B6 exacts et leur RDEPENDS P14B, sélection DEV unique, absence shipping ; conserver B9 identités, P15A inactive et OEM `robotd`/ `mediad` inchangés. **Le lanceur B9-R actuel refuse B10 et ne peut pas servir d'intégrateur tel quel.** Aucune commande `do_rootfs`, service ou déploiement n'est autorisée par le présent inventaire.
+
+---
+
 ## Second diagnostic opérateur P13B3 — rootfs ancien confirmé (01/11/2026)
 
 **Lecture seule WSL2 transmise, sans accès direct du connecteur GitHub à la machine opérateur :**
