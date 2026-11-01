@@ -5,14 +5,25 @@ Reuses P15-B6-P's pinned cached WSL2 gate; never stages, builds, or writes.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
 from scripts import per_p15b6_cached_package_runner as cached
 from scripts.per_p15a_bitbake_env_gate import verify_source as verify_p15a
-from tests.test_per_p15b9_dev_account import (
-    EXPECTED_APPEND, EXPECTED_CONF, APPEND, CONF,
-)
+from scripts.per_p15b9_dev_account_env_gate import APPEND_REL
+
+CONF = "conf/layer.conf"
+APPEND = APPEND_REL
+ACCOUNT_BLOBS = {
+    CONF: "72d935fc61e2d4ff7fdfa82016c7f63f862b33d9",
+    APPEND: "aad4f036e6984f0eedfa366952e5327bf9f17781",
+}
+
+
+def _blob(data: bytes) -> str:
+    return hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+
 
 ROOT_LAYERS = (
     "yocto/meta-kwipi-dev-image",
@@ -32,9 +43,9 @@ def _account_layer(root: Path) -> None:
     }
     if entries != {CONF, APPEND}:
         raise cached.Refused("P15-B9 account source manifest differs")
-    for rel, exact in ((CONF, EXPECTED_CONF), (APPEND, EXPECTED_APPEND)):
+    for rel, sha in ACCOUNT_BLOBS.items():
         p = layer / rel
-        if p.is_symlink() or p.read_text(encoding="utf-8") != exact:
+        if p.is_symlink() or not p.is_file() or _blob(p.read_bytes()) != sha:
             raise cached.Refused("P15-B9 account file differs: " + rel)
 
 
