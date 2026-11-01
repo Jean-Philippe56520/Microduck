@@ -177,6 +177,7 @@ def _overlay(cfg: Config) -> str:
     return (
         "header:\n  version: 14\n"
         "repos:\n"
+        "  microduck_os:\n    path: " + json.dumps(str(cfg.yocto)) + "\n"
         "  kwipi:\n    path: " + json.dumps(str(root / "meta-kwipi")) + "\n    layers:\n      .:\n"
         "  kwipipy:\n    path: " + json.dumps(str(root / "meta-kwipi-python")) + "\n    layers:\n      .:\n"
         "  kwipipassive:\n    path: " + json.dumps(str(root / "meta-kwipi-passive")) + "\n    layers:\n      .:\n"
@@ -226,9 +227,18 @@ def execute(cfg: Config) -> dict:
     ]
     for command in commands:
         _execute(command, env, timeout=240, cwd=cfg.project)
+    # KAS 5.2 requires concatenated configs to share one Git repository
+    # or ALL be unversioned. Never concatenate pinned OEM Git with scratch.
+    source_config = cfg.yocto / "kas/microduck.yml"
+    if not source_config.is_file() or source_config.is_symlink():
+        raise Refused("pinned OEM KAS config is missing or linked")
+    scratch_config = cfg.scratch / "microduck-pinned.yml"
+    scratch_config.write_bytes(source_config.read_bytes())
+    if scratch_config.read_bytes() != source_config.read_bytes():
+        raise Refused("copied OEM KAS config differs from pinned source")
     overlay = cfg.scratch / "p15b6p-offline.yml"
     overlay.write_text(_overlay(cfg), encoding="utf-8")
-    config = str(cfg.yocto / "kas/microduck.yml") + ":" + str(overlay)
+    config = str(scratch_config) + ":" + str(overlay)
     start = time.monotonic()
     _execute(["kas", "shell", "--skip", "repos_checkout", config,
               "-c", _task_command(cfg.scratch)],

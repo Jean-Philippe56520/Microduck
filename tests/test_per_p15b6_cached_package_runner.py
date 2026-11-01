@@ -137,6 +137,8 @@ class CachedOperatorTests(unittest.TestCase):
         overlay = runner._overlay(self.cfg)
         self.assertIn('BB_NO_NETWORK = "1"', overlay)
         self.assertIn(str(self.cfg.scratch / "meta-kwipi-passive"), overlay)
+        self.assertIn('"'+str(self.cfg.yocto)+'"', overlay)
+        self.assertIn("microduck_os:", overlay)
         self.assertNotIn("IMAGE_INSTALL", overlay)
         command = runner._task_command(self.cfg.scratch)
         self.assertIn("bitbake -c package kwipi-passive-fixture", command)
@@ -161,9 +163,15 @@ class CachedOperatorTests(unittest.TestCase):
         self.assertEqual(runner.PASS, result["status"])
         self.assertEqual(0, result["bitbake_do_package_exit_code"])
         self.assertEqual(6, len(calls))
+        self.assertEqual(
+            (self.cfg.yocto / "kas/microduck.yml").read_bytes(),
+            (self.cfg.scratch / "microduck-pinned.yml").read_bytes())
         kas = [x for x in calls if x[0][0] == "kas"]
         self.assertEqual(1, len(kas))
         self.assertEqual(1600, kas[0][1])
+        self.assertIn(
+            str(self.cfg.scratch / "microduck-pinned.yml") + ":" +
+            str(self.cfg.scratch / "p15b6p-offline.yml"), kas[0][0])
         self.assertIn("--skip", kas[0][0])
         self.assertIn("repos_checkout", kas[0][0])
         self.assertEqual("true", kas[0][2]["CARGO_NET_OFFLINE"])
@@ -222,7 +230,19 @@ class CachedOperatorTests(unittest.TestCase):
                                       return_value=SimpleNamespace(stdout=version)):
                         REAL_CHECK_KAS()
 
-    def test_15_pin_fails_if_staged_tree_dirty(self):
+    def test_15_refuse_symlinked_pinned_kas_config(self):
+        real = self.cfg.yocto / "kas/microduck.yml"
+        data = real.read_bytes()
+        real.unlink()
+        target = self.cfg.yocto / "real.yml"
+        target.write_bytes(data)
+        real.symlink_to(target)
+        with patch.object(runner, "_check_kas"), patch.object(runner, "_execute",
+                                                              return_value=""):
+            with self.assertRaises(runner.Refused):
+                runner.execute(self.cfg)
+
+    def test_16_pin_fails_if_staged_tree_dirty(self):
         def dirty(path, *cmd):
             if path == self.cfg.project and cmd == (
                     "status", "--porcelain", "--untracked-files=no"):
