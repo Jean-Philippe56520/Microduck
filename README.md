@@ -2,6 +2,12 @@
 
 **État du code vérifié :** [`main@89c6472fdf4afe472a41df9e4bd63186eb31d94f`](https://github.com/Jean-Philippe56520/Microduck/tree/89c6472fdf4afe472a41df9e4bd63186eb31d94f) après consolidation. Les PR **#230, #231, #235, #238–#241 et #242–#248** sont **toutes fusionnées** ; [#249](https://github.com/Jean-Philippe56520/Microduck/pull/249) a corrigé le point de reprise précédent. Les anciennes mentions « #242 à #248 ouvertes », « P14B à compiler » et « rootfs absent », conservées plus bas, sont **historiques et non opératoires**. À chaque reprise, revérifier SHA `main`, gitlinks, PR et CI sur GitHub ; le [plan d'action](docs/plan-action.md) fait foi.
 
+### P11-C1 — archive de sources B4/B8 en cours de qualification (01/11/2026)
+
+La [PR #251](https://github.com/Jean-Philippe56520/Microduck/pull/251) corrige l'écart entre les adaptations locales P15-B4/B8 déjà fusionnées et la **génération P11** : le seul fournisseur de sources OEM épinglé appelle désormais les overlays P10A/B/C puis **B4 → B8**, avant retrait du banc de test temporaire. Le manifeste et l'audit de tar exigent les deux sources Rust `mediad/src/local_detections{,_acl}.rs`, l'opt-in `kwipi_local_detections=false`, l'UID observateur isolé et le garde ACL après bind/rebind ; P12 refuse les anciennes archives P10 seules. [Contrat/tests et critères STOP](docs/p11-b4b8-source-closure-2026-11-01.md).
+
+**Statut strict :** candidat de **source P11/P12**, dont la CI Rust exportée et les tests négatifs sont à contrôler sur le dernier SHA de la PR avant fusion. **Aucun nouveau `do_package` AArch64, rootfs, WIC, RAUC ni binaire `mediad` embarqué** n'est attesté par cette modification. Les anciennes empreintes WSL2 et la WIC historique restent des observations d'une autre révision ; aucune ACL de `/run`, fraîcheur/capture de `Sighting`, `DUCK_REVISION` exécutée ni autonomie du robot n'est démontrée.
+
 ### Code réellement dans `main`
 
 | Ensemble | PR fusionnées | Ce qui existe — et ce qui n'est pas livré |
