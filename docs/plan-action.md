@@ -1,5 +1,14 @@
 # Plan directeur opérationnel — Microduck Companion
 
+## P15-B11 — preuve de source OEM en cours (01/11/2026)
+
+**Base :** `main@db2e138a81cf1126b9b1a1daecd9efef48136c27` (PR #250 fusionnée) ; [#252](https://github.com/Jean-Philippe56520/Microduck/pull/252) en brouillon. **Manque prouvé :** P11/P12 n'appliquaient **pas** B4/B8 à la source Yocto, bien que les prototypes OEM scratch soient testés. `DUCK_REVISION` est un `option_env!` du code OEM, pas automatiquement le `MICRODUCK_DAEMON_SRCREV` de BitBake.
+
+**Choix minimal :** reprendre les overlays B4/B8 existants sur la même archive P11 **seulement en profil `--with-p15b8-source`**, profil historique inchangé, version candidate P12 distincte et `DUCK_REVISION` exportée puis contrôlée dans l'environnement effectif P13A. Positif : compilations/tests Unix et Rust sur archive hôte + P12 provenance + BitBake `-p/-e` sans compilation cible ; négatifs : profil partiel, marqueur/flag falsifié, mauvaise révision, source OEM divergente, package shipping, groupe moteur ou daemon autonome. **STOP** si CI finale rouge, source non épinglée ou droit élargi ; aucune image WIC/RAUC, `mediad` cible, ACL réelles `/run`, catégorie, Qwen, mémoire ni robot validés. [Fiche de contrat et repli](per-p15b11-opt-in-mediad-source-provenance-2026-11-01.md). **Nouveau jalon après B11** seulement si cette porte PC réussit : prouver l'authenticité/fraîcheur des détections avant d'ouvrir une voie de lecture OEM au runtime passif ; aucune commande moteur.
+
+---
+
+
 ## État de référence après fusion de P15-B10 — 1er novembre 2026
 
 **Ce bloc est l'autorité de reprise.** Source de code contrôlée : [`main@89c6472fdf4afe472a41df9e4bd63186eb31d94f`](https://github.com/Jean-Philippe56520/Microduck/tree/89c6472fdf4afe472a41df9e4bd63186eb31d94f). **#230, #231, #235, #238–#241 et #242–#248 sont fusionnées.** La PR [#249](https://github.com/Jean-Philippe56520/Microduck/pull/249) correspond à une synthèse intermédiaire qui les indiquait encore ouvertes ; son contenu est dorénavant **historique**, pas décisionnel. [#237](https://github.com/Jean-Philippe56520/Microduck/pull/237) (QW-2/MEM-EX3) reste ouverte. Vérifier GitHub à chaque reprise ; historique et CI ne remplacent pas une preuve d'environnement réel.
