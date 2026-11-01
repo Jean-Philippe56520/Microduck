@@ -134,13 +134,13 @@ class ServiceGateFixtureTests(unittest.TestCase):
         base_hashes = {}
         for i in range(19):
             name = f"fixture_{i:02d}.py"
-            data = f"# P14B synthetic module {i}\\n".encode()
+            data = f"# P14B synthetic module {i}\n".encode()
             (pkg / name).write_bytes(data)
             base_hashes["microduck_companion/" + name] = hashlib.sha256(data).hexdigest()
         addon_hashes = {}
         for rel in b10.B6_SHA256:
             name = rel.removeprefix("microduck_companion/")
-            data = ("# B6 synthetic module " + name + "\\n").encode()
+            data = ("# B6 synthetic module " + name + "\n").encode()
             (pkg / name).write_bytes(data)
             addon_hashes[rel] = hashlib.sha256(data).hexdigest()
         addon_patch = patch.dict(b10.B6_SHA256, addon_hashes, clear=True)
@@ -150,7 +150,7 @@ class ServiceGateFixtureTests(unittest.TestCase):
         release = self.root / "opt/robot/daemon/releases" / b10.B12_VERSION / "bin"
         release.mkdir(parents=True, exist_ok=True)
         for name in b10.B12_BINARIES:
-            data = b"\\x7fELF\\x02\\x01" + b"\\x00" * 12 + b"\\xb7\\x00" + name.encode()
+            data = b"\x7fELF\x02\x01" + b"\x00" * 12 + b"\xb7\x00" + name.encode()
             binary = release / name
             binary.write_bytes(data)
             binary.chmod(0o755)
