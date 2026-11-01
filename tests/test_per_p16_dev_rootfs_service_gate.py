@@ -124,14 +124,30 @@ class ServiceGateFixtureTests(unittest.TestCase):
         with self.assertRaisesRegex(gate.Stop, "override"):
             gate.validate(self.base)
 
-    def test_b10_report_supported_without_boot_claim(self):
-        report_path = self.base / "proofs/p16-rootfs-audit.json"
-        report = json.loads(report_path.read_text())
-        report.update({
+    def _make_b10_report(self) -> Path:
+        """Synthetic B10 fixture, independent of the immutable historical file."""
+        legacy = json.loads((self.base / "proofs/p16-rootfs-audit.json").read_text())
+        report = {
+            **legacy,
+            "schema": "kwipi-p16b10-existing-dev-rootfs-audit-v1",
             "status": b10.STATUS,
+            "source_head_verified_against_checkout": b10.SOURCE_HEAD,
+            "p14b_archive_sha256": b10.p16a.PINNED_P14B_ARCHIVE_SHA256,
+            "packages": {
+                "kwipi-companion": "0.2.0a1",
+                "kwipi-passive-fixture": "0.1.0",
+                "kwipi-readonly-probe": "0.1",
+                "microduck-daemon": b10.B12_PKG_VERSION,
+                "microduck-data": "1.0",
+            },
             "python_modules_verified": 24,
             "p14b_modules_verified": 19,
             "p15b6_modules_verified": 5,
+            "python_sha256": {
+                **{f"microduck_companion/fixture_{i:02d}.py": "a" * 64
+                   for i in range(19)},
+                **b10.B6_SHA256,
+            },
             "b12_release": b10.B12_VERSION,
             "b12_sha256": {
                 name: digest for name, (_, digest) in b10.B12_BINARIES.items()
@@ -139,35 +155,128 @@ class ServiceGateFixtureTests(unittest.TestCase):
             "current_points_to_b12": True,
             "kwipi_account_isolated_from_motor": True,
             "oem_operator_preserved": True,
-        })
-        report_path.write_text(json.dumps(report))
-        proof = gate.validate(self.base)
-        self.assertTrue(proof["p16_a_report_rechecked"])
+        }
+        path = self.base / "proofs/p16b10-private-new-audit.json"
+        path.write_text(json.dumps(report, sort_keys=True))
+        return path
+
+    def _validate_b10(self, path: Path):
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        return gate.validate(self.base, report_path=path, report_sha256=digest)
+
+    def test_b10_report_supported_without_boot_claim_and_legacy_preserved(self):
+        historical = self.base / "proofs/p16-rootfs-audit.json"
+        old_bytes = historical.read_bytes()
+        old_digest = hashlib.sha256(old_bytes).hexdigest()
+        path = self._make_b10_report()
+        proof = self._validate_b10(path)
+        self.assertTrue(proof["p16_b10_report_rechecked"])
+        self.assertTrue(proof["b10_report_sha256_verified"])
+        self.assertFalse(proof["p16_a_report_rechecked"])
+        self.assertEqual(proof["input_report_kind"], "P16-B10")
+        self.assertEqual(proof["probe_autostart_references_found"], 0)
         self.assertFalse(proof["systemd_runtime_or_boot_verified"])
+        self.assertEqual(historical.read_bytes(), old_bytes)
+        self.assertEqual(hashlib.sha256(historical.read_bytes()).hexdigest(), old_digest)
+        self.assertTrue(gate.validate(self.base)["p16_a_report_rechecked"])
+
+    def test_b10_report_with_wrong_binary_digest_refused(self):
+        path = self._make_b10_report()
+        report = json.loads(path.read_text())
         report["b12_sha256"]["robotd"] = "0" * 64
-        report_path.write_text(json.dumps(report))
+        path.write_text(json.dumps(report))
         with self.assertRaisesRegex(gate.Stop, "B10 proof incomplete"):
-            gate.validate(self.base)
+            self._validate_b10(path)
 
     def test_b10_report_with_wrong_module_count_refused(self):
-        report_path = self.base / "proofs/p16-rootfs-audit.json"
-        report = json.loads(report_path.read_text())
-        report.update({
-            "status": b10.STATUS,
-            "python_modules_verified": 19,
-            "p14b_modules_verified": 19,
-            "p15b6_modules_verified": 5,
-            "b12_release": b10.B12_VERSION,
-            "b12_sha256": {
-                name: digest for name, (_, digest) in b10.B12_BINARIES.items()
-            },
-            "current_points_to_b12": True,
-            "kwipi_account_isolated_from_motor": True,
-            "oem_operator_preserved": True,
-        })
-        report_path.write_text(json.dumps(report))
+        path = self._make_b10_report()
+        report = json.loads(path.read_text())
+        report["python_modules_verified"] = 19
+        path.write_text(json.dumps(report))
         with self.assertRaisesRegex(gate.Stop, "expected scope"):
+            self._validate_b10(path)
+
+    def test_b10_report_missing_digest_refused(self):
+        path = self._make_b10_report()
+        with self.assertRaisesRegex(gate.Stop, "requires pinned SHA-256"):
+            gate.validate(self.base, report_path=path)
+
+    def test_b10_report_wrong_digest_refused(self):
+        path = self._make_b10_report()
+        with self.assertRaisesRegex(gate.Stop, "SHA-256 mismatch"):
+            gate.validate(self.base, report_path=path, report_sha256="0" * 64)
+
+    def test_b10_report_schema_or_version_changed_refused(self):
+        path = self._make_b10_report()
+        data = json.loads(path.read_text())
+        data["schema"] = "unreviewed-schema"
+        path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(gate.Stop, "B10 proof incomplete"):
+            self._validate_b10(path)
+        data["schema"] = "kwipi-p16b10-existing-dev-rootfs-audit-v1"
+        data["packages"]["microduck-daemon"] = "wrong"
+        path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(gate.Stop, "B10 proof incomplete"):
+            self._validate_b10(path)
+
+    def test_b10_report_24_python_hashes_required(self):
+        path = self._make_b10_report()
+        data = json.loads(path.read_text())
+        data["python_sha256"].pop("microduck_companion/passive_resilience.py")
+        path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(gate.Stop, "B10 proof incomplete"):
+            self._validate_b10(path)
+
+    def test_b10_report_status_cannot_be_p16a(self):
+        path = self._make_b10_report()
+        data = json.loads(path.read_text())
+        data["status"] = gate.REPORT_STATUS
+        path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(gate.Stop, "explicit report must be P16-B10"):
+            self._validate_b10(path)
+
+    def test_b10_report_bad_json_refused(self):
+        path = self._make_b10_report()
+        path.write_text('{"status":')
+        with self.assertRaisesRegex(gate.Stop, "invalid P16-A/B10 JSON"):
+            self._validate_b10(path)
+
+    def test_b10_report_symlink_refused(self):
+        path = self._make_b10_report()
+        alias = self.base / "proofs/symlink-b10.json"
+        alias.symlink_to(path)
+        with self.assertRaisesRegex(gate.Stop, "B10 report not found or symlinked"):
+            gate.validate(self.base, report_path=alias,
+                          report_sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+
+    def test_b10_report_requires_absolute_path(self):
+        with self.assertRaisesRegex(gate.Stop, "path must be absolute"):
+            gate.validate(self.base, report_path=Path("proofs/b10.json"),
+                          report_sha256="a" * 64)
+
+    def test_historical_report_path_cannot_be_explicit_b10(self):
+        historical = self.base / "proofs/p16-rootfs-audit.json"
+        with self.assertRaisesRegex(gate.Stop, "historical P16-A report cannot serve"):
+            gate.validate(self.base, report_path=historical,
+                          report_sha256=hashlib.sha256(historical.read_bytes()).hexdigest())
+
+    def test_default_historical_mode_rejects_replacement_with_b10(self):
+        historical = self.base / "proofs/p16-rootfs-audit.json"
+        path = self._make_b10_report()
+        historical.write_bytes(path.read_bytes())
+        with self.assertRaisesRegex(gate.Stop, "historical report path requires P16-A"):
             gate.validate(self.base)
+
+    def test_digest_alone_without_report_refused(self):
+        with self.assertRaisesRegex(gate.Stop, "without explicit B10"):
+            gate.validate(self.base, report_sha256="0" * 64)
+
+    def test_b10_detects_live_systemd_reference(self):
+        path = self._make_b10_report()
+        service = self.root / "usr/lib/systemd/system/live.service"
+        service.write_text("[Unit]\\nWants=kwipi-readonly-probe.service\\n")
+        with self.assertRaisesRegex(gate.Stop, "live probe reference"):
+            self._validate_b10(path)
 
     def test_report_missing_refused(self):
         (self.base / "proofs/p16-rootfs-audit.json").unlink()
