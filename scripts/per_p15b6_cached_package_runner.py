@@ -78,10 +78,12 @@ def _safe_new_path(path: Path, inputs: tuple[Path, ...]) -> None:
 def _cmake_native_completed(stamps: Path) -> bool:
     # A stamp is only a prerequisite cache hint, not proof B6 is packaged.
     # Do not trust the presence of a .sigdata file as a completed task.
-    for item in stamps.glob("**/cmake-native/*/do_populate_sysroot*"):
+    # OE STAMP = .../${PN}/${PV}-${PR}: task name is appended to the VERSION FILE, not a nested task directory.
+    for item in stamps.glob("**/cmake-native/*do_populate_sysroot*"):
         if (item.is_file() and not item.is_symlink()
                 and ".sigdata." not in item.name
-                and ".sigbasedata." not in item.name):
+                and ".sigbasedata." not in item.name
+                and "_setscene" not in item.name):
             return True
     return False
 
