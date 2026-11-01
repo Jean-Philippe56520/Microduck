@@ -207,8 +207,8 @@ PATCHES: dict[str, tuple[tuple[str, str], ...]] = {
             + "            took_ms: 25.0,",
         ),
         (
-            "            region_candidates: Some(vec![]),\\n            took_ms: 2.0,",
-            "            region_candidates: Some(vec![]),\\n" + SIGHTING_NONE
+            "            region_candidates: Some(vec![]),\n            took_ms: 2.0,",
+            "            region_candidates: Some(vec![]),\n" + SIGHTING_NONE
             + "            took_ms: 2.0,",
         ),
     ),
