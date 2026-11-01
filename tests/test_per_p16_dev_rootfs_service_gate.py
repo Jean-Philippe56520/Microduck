@@ -127,6 +127,38 @@ class ServiceGateFixtureTests(unittest.TestCase):
     def _make_b10_report(self) -> Path:
         """Synthetic B10 fixture, independent of the immutable historical file."""
         legacy = json.loads((self.base / "proofs/p16-rootfs-audit.json").read_text())
+        # Build the 24-file source closure and B12 ELF fixtures in the same
+        # rootfs that P16-S1 will scan. Never change the historical proof.
+        pkg = self.root / b10.p16a.PYTHON_PREFIX / "microduck_companion"
+        pkg.mkdir(parents=True, exist_ok=True)
+        base_hashes = {}
+        for i in range(19):
+            name = f"fixture_{i:02d}.py"
+            data = f"# P14B synthetic module {i}\\n".encode()
+            (pkg / name).write_bytes(data)
+            base_hashes["microduck_companion/" + name] = hashlib.sha256(data).hexdigest()
+        addon_hashes = {}
+        for rel in b10.B6_SHA256:
+            name = rel.removeprefix("microduck_companion/")
+            data = ("# B6 synthetic module " + name + "\\n").encode()
+            (pkg / name).write_bytes(data)
+            addon_hashes[rel] = hashlib.sha256(data).hexdigest()
+        addon_patch = patch.dict(b10.B6_SHA256, addon_hashes, clear=True)
+        addon_patch.start()
+        self.addCleanup(addon_patch.stop)
+        binaries = {}
+        release = self.root / "opt/robot/daemon/releases" / b10.B12_VERSION / "bin"
+        release.mkdir(parents=True, exist_ok=True)
+        for name in b10.B12_BINARIES:
+            data = b"\\x7fELF\\x02\\x01" + b"\\x00" * 12 + b"\\xb7\\x00" + name.encode()
+            binary = release / name
+            binary.write_bytes(data)
+            binary.chmod(0o755)
+            binaries[name] = (len(data), hashlib.sha256(data).hexdigest())
+        bin_patch = patch.dict(b10.B12_BINARIES, binaries, clear=True)
+        bin_patch.start()
+        self.addCleanup(bin_patch.stop)
+        (self.root / "opt/robot/daemon/current").symlink_to("releases/" + b10.B12_VERSION)
         report = {
             **legacy,
             "schema": "kwipi-p16b10-existing-dev-rootfs-audit-v1",
@@ -143,11 +175,7 @@ class ServiceGateFixtureTests(unittest.TestCase):
             "python_modules_verified": 24,
             "p14b_modules_verified": 19,
             "p15b6_modules_verified": 5,
-            "python_sha256": {
-                **{f"microduck_companion/fixture_{i:02d}.py": "a" * 64
-                   for i in range(19)},
-                **b10.B6_SHA256,
-            },
+            "python_sha256": {**base_hashes, **addon_hashes},
             "b12_release": b10.B12_VERSION,
             "b12_sha256": {
                 name: digest for name, (_, digest) in b10.B12_BINARIES.items()
@@ -172,6 +200,8 @@ class ServiceGateFixtureTests(unittest.TestCase):
         proof = self._validate_b10(path)
         self.assertTrue(proof["p16_b10_report_rechecked"])
         self.assertTrue(proof["b10_report_sha256_verified"])
+        self.assertEqual(proof["b10_installed_python_rehashed"], 24)
+        self.assertEqual(proof["b10_oem_binaries_rehashed"], 2)
         self.assertFalse(proof["p16_a_report_rechecked"])
         self.assertEqual(proof["input_report_kind"], "P16-B10")
         self.assertEqual(proof["probe_autostart_references_found"], 0)
@@ -179,6 +209,21 @@ class ServiceGateFixtureTests(unittest.TestCase):
         self.assertEqual(historical.read_bytes(), old_bytes)
         self.assertEqual(hashlib.sha256(historical.read_bytes()).hexdigest(), old_digest)
         self.assertTrue(gate.validate(self.base)["p16_a_report_rechecked"])
+
+    def test_b10_rejects_old_or_drifted_rootfs_despite_authentic_report(self):
+        path = self._make_b10_report()
+        installed = self.root / b10.p16a.PYTHON_PREFIX / "microduck_companion/fixture_00.py"
+        installed.unlink()
+        with self.assertRaisesRegex(gate.Stop, "current rootfs differs from pinned B10 proof"):
+            self._validate_b10(path)
+
+    def test_b10_rejects_changed_oem_binary_even_with_authentic_report(self):
+        path = self._make_b10_report()
+        binary = (self.root / "opt/robot/daemon/releases" /
+                  b10.B12_VERSION / "bin/mediad")
+        binary.write_bytes(binary.read_bytes() + b"drift")
+        with self.assertRaisesRegex(gate.Stop, "current rootfs differs from pinned B10 proof"):
+            self._validate_b10(path)
 
     def test_b10_report_with_wrong_binary_digest_refused(self):
         path = self._make_b10_report()
