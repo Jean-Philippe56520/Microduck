@@ -76,6 +76,7 @@ class PureSourceContractTests(unittest.TestCase):
         self.assertEqual(append.count('SRC_URI = "'), 1)
         self.assertIn("SRCREV_FORMAT = \"bmi088\"", append)
         self.assertIn("0.17.8+kwipi.p12.cccccccccccc", append)
+        self.assertIn('export DUCK_REVISION = "' + revision + '"', append)
         self.assertIn("sha256sum", append)
         for file in OEM_FILES:
             self.assertIn("file://" + file, append)
@@ -133,6 +134,7 @@ class RealPinnedSourceTests(unittest.TestCase):
             self.assertFalse(one["bitbake_parsed"])
             self.assertFalse(one["robot_validated"])
             self.assertTrue(one["crates_regenerated"])
+            self.assertTrue(one["duck_revision_export_declared"])
             aa = a / "recipes-microduck/microduck-daemon"
             bb = b / "recipes-microduck/microduck-daemon"
             for rel in ("microduck-daemon.bbappend", "microduck-daemon-crates-kwipi.inc"):
@@ -155,6 +157,11 @@ class RealPinnedSourceTests(unittest.TestCase):
             with self.assertRaises(ReleaseRefused):
                 verify(layer)
             state["bitbake_built"] = False
+            state["duck_revision_export_declared"] = False
+            provenance.write_text(json.dumps(state), encoding="utf-8")
+            with self.assertRaises(ReleaseRefused):
+                verify(layer)
+            state["duck_revision_export_declared"] = True
             provenance.write_text(json.dumps(state), encoding="utf-8")
             archive = layer / "recipes-microduck/microduck-daemon/files/kwipi-v1-oem-source.tar.gz"
             with archive.open("ab") as file:

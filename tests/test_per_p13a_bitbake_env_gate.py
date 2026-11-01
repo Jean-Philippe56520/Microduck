@@ -13,6 +13,7 @@ P12 = {
     "schema": SCHEMA, "source_only": True, "bitbake_parsed": False,
     "robot_validated": False, "crates_generated": 2,
     "archive_sha256": "b" * 64, "companion_sha": REVISION,
+    "duck_revision_export_declared": True,
 }
 LAYER = Path("/tmp/kwipi-p13-fixture-layer")
 BASE_SRC = (
@@ -31,6 +32,7 @@ def fake_env(src: str = BASE_SRC) -> str:
         f'SRC_URI="{src}"',
         'PV="0.17.8+kwipi.p12.aaaaaaaaaaaa"',
         f'MICRODUCK_DAEMON_SRCREV="{REVISION}"',
+        f'export DUCK_REVISION="{REVISION}"',
         'SRCREV_FORMAT="bmi088"',
         'UNPACKDIR="/tmp/p13/unpack"',
         'BP="microduck-daemon-0.17.8+kwipi.p12.aaaaaaaaaaaa"',
@@ -84,6 +86,21 @@ class EffectiveEnvTests(unittest.TestCase):
 
     def test_wrong_layer_is_fatal(self):
         self.check_refused(f'BBLAYERS="{LAYER}"', 'BBLAYERS="/tmp/other-layer"')
+
+    def test_compiled_revision_export_is_exact_and_fail_closed(self):
+        base = fake_env()
+        self.assertTrue(validate(base, P12, layer=LAYER)["duck_revision_compile_env_verified"])
+        for changed in (
+            base.replace('export DUCK_REVISION=', 'DUCK_REVISION='),
+            base.replace(f'export DUCK_REVISION="{REVISION}"', ''),
+            base.replace(f'export DUCK_REVISION="{REVISION}"', 'export DUCK_REVISION="' + "0"*40 + '"'),
+            base + f'export DUCK_REVISION="{REVISION}"\n',
+            base + f'DUCK_REVISION="{REVISION}"\n',
+        ):
+            with self.subTest(suffix=changed[-90:]), self.assertRaises(EnvRefused):
+                validate(changed, P12, layer=LAYER)
+        with self.assertRaises(EnvRefused):
+            validate(base, dict(P12, duck_revision_export_declared=False), layer=LAYER)
 
     def test_no_unverified_promotion(self):
         changed = dict(P12, bitbake_parsed=True)

@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**P12-R1 (01/11/2026, candidat) :** B4/B8 sont déjà intégrés dans la source P11/P12 après #251 ; ce lot exporte et contrôle `DUCK_REVISION` dans le parseur BitBake réel, sans build ARM64 ni activation OEM, capteur ou droit supplémentaire. Voir [plan](plan-action.md).
+
+
 ## Situation V1 après consolidation — 1er novembre 2026
 
 **Code contrôlé :** [`main@89c6472fdf4afe472a41df9e4bd63186eb31d94f`](https://github.com/Jean-Philippe56520/Microduck/tree/89c6472fdf4afe472a41df9e4bd63186eb31d94f). **#230/#231/#235/#238–#248 sont fusionnées** ; les indications historiques « PR ouvertes » ou « image non construite » ci-dessous sont remplacées par ce tableau. [Plan d'action](plan-action.md) = autorité. Une fusion/CI n'est jamais une preuve de capacité robot.
