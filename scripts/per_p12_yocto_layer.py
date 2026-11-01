@@ -179,6 +179,8 @@ def layer_files(manifest: dict, digest: str, rows: list[tuple[str, str, str]]) -
         'FILESEXTRAPATHS:prepend := "${THISDIR}/files:"\n'
         f'MICRODUCK_DAEMON_VERSION = "{v}"\n'
         f'MICRODUCK_DAEMON_SRCREV = "{revision}"\n'
+        # The OEM build_info!() macro reads DUCK_REVISION at compile time.
+        f'export DUCK_REVISION = "{revision}"\n'
         'PV = "${MICRODUCK_DAEMON_VERSION}"\n'
         'SRC_URI = " \\\n'
         f'    file://{MODEL_NAME};subdir=${{BP}};name=kwipisrc \\\n'
@@ -213,7 +215,8 @@ def verify(layer: Path) -> dict:
         raise ReleaseRefused("P12 staged source absent")
     m = verify_archive(archive)
     if (hashlib.sha256(archive.read_bytes()).hexdigest() != p["archive_sha256"]
-            or m.get("companion_sha") != p["companion_sha"]):
+            or m.get("companion_sha") != p["companion_sha"]
+            or p.get("duck_revision_export_declared") is not True):
         raise ReleaseRefused("P12 source SHA/revision changed")
     with tarfile.open(archive, "r:gz") as tar:
         rows = crates(read_member(tar, "Cargo.lock"))
@@ -251,6 +254,7 @@ def stage(yocto: Path, source_dir: Path, output: Path) -> dict:
             "yocto_sha": YOCTO_SHA, "oem_sha": OEM_SHA,
             "companion_sha": manifest["companion_sha"],
             "archive_sha256": sha, "crates_generated": len(rows),
+            "duck_revision_export_declared": True,
             "original_crates": len(upstream), "crates_regenerated": upstream != {(n, v) for n, v, _ in rows},
             "bitbake_parsed": False, "bitbake_built": False, "rauc_built": False,
             "signed_release": False, "python_companion_installed": False,

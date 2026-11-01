@@ -19,7 +19,7 @@ class EnvRefused(ValueError):
 
 
 def bbvar(text: str, name: str) -> str:
-    found = re.findall(r"^" + re.escape(name) + r'="(.*)"$', text, re.M)
+    found = re.findall(r"^(?:export )?" + re.escape(name) + r'="(.*)"$', text, re.M)
     if len(found) != 1:
         raise EnvRefused(f"effective BitBake variable missing/duplicate: {name}")
     return found[0]
@@ -89,6 +89,10 @@ def validate(env: str, p12: dict, *, layer: Path) -> dict:
         raise EnvRefused("unrelated OEM release version or false identity")
     if bbvar(env, "MICRODUCK_DAEMON_SRCREV") != p12["companion_sha"]:
         raise EnvRefused("source revision does not identify Companion code")
+    if (p12.get("duck_revision_export_declared") is not True
+            or bbvar(env, "DUCK_REVISION") != p12["companion_sha"]
+            or not re.search(r'^export DUCK_REVISION="[0-9a-f]{40}"$', env, re.M)):
+        raise EnvRefused("compiled DUCK_REVISION missing, non-exported or mismatched")
     if bbvar(env, "SRCREV_FORMAT") != "bmi088":
         raise EnvRefused("remaining vendor Git revision format differs")
     source_dir = bbvar(env, "S")
@@ -111,6 +115,7 @@ def validate(env: str, p12: dict, *, layer: Path) -> dict:
         "original_daemon_git_removed": True,
         "oem_resources_kept": True,
         "package_version": version,
+        "duck_revision_compile_env_verified": True,
         "bitbake_parse_passed": True,
         "bitbake_compile_run": False,
         "rauc_built": False,

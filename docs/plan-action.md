@@ -1,5 +1,12 @@
 # Plan directeur opérationnel — Microduck Companion
 
+## P12-R1 — transmettre et contrôler `DUCK_REVISION` (01/11/2026)
+
+**Référence :** `main@1df1fe2c53ae523d38f28f459cc2966e6f98b86b`, P11-C1/#251 fusionnée. **Manque :** `duck_ipc_proto::build_info!()` lit `option_env!("DUCK_REVISION")`, et l'ancienne recette P12 n'exportait pas cette valeur malgré le SHA de package. **Réutiliser :** les seules portes P12 et P13A. **Succès attendu :** SHA Companion exact du manifeste P11 exporté par le bbappend, reconnu par le vrai `bitbake -e` P13A, tests positifs/négatifs sur absente/non exportée/dupliquée/fausse révision. STOP sur CI non verte, Yocto/OEM divergents, faux statut de build. Aucun `do_package`, `do_rootfs`, WIC ou service activé dans ce lot. **Porte suivante :** lier un horodatage de capture réellement porté par la trame à `Sighting`, puis qualifier séparément le binaire ARM64 et l'ACL réelle. `DUCK_REVISION` en métadonnées n'est pas la révision d'un processus effectivement lancé.
+
+---
+
+
 ## État de référence après fusion de P15-B10 — 1er novembre 2026
 
 **Ce bloc est l'autorité de reprise.** Source de code contrôlée : [`main@89c6472fdf4afe472a41df9e4bd63186eb31d94f`](https://github.com/Jean-Philippe56520/Microduck/tree/89c6472fdf4afe472a41df9e4bd63186eb31d94f). **#230, #231, #235, #238–#241 et #242–#248 sont fusionnées.** La PR [#249](https://github.com/Jean-Philippe56520/Microduck/pull/249) correspond à une synthèse intermédiaire qui les indiquait encore ouvertes ; son contenu est dorénavant **historique**, pas décisionnel. [#237](https://github.com/Jean-Philippe56520/Microduck/pull/237) (QW-2/MEM-EX3) reste ouverte. Vérifier GitHub à chaque reprise ; historique et CI ne remplacent pas une preuve d'environnement réel.

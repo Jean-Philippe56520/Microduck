@@ -1,3 +1,9 @@
+## P12-R1 — provenance de compilation `mediad` (candidat du 01/11/2026)
+
+Après [#251](https://github.com/Jean-Philippe56520/Microduck/pull/251) fusionnée sur `main@1df1fe2c53ae523d38f28f459cc2966e6f98b86b`, P11/P12 contiennent **B4/B8 dans les sources**, mais le paquet WSL2 précédent n'a pas été reconstruit. Ce lot ajoute `export DUCK_REVISION` dans le bbappend P12 et vérifie dans le **vrai `bitbake -e` P13A** le SHA exact compilable du manifeste P11, distinct de `MICRODUCK_DAEMON_SRCREV`. Négatifs : variable absente, non exportée, dupliquée ou incohérente. **Aucun binaire ARM64, WIC, RAUC, service, ACL sur `/run`, caméra, robot ou autonomie nouvellement validés.** L'identité du processus exécuté devra être comparée à `mediad/identity.json` dans un autre lot.
+
+---
+
 ## Reprise V1 actualisée — 1er novembre 2026 (après fusion P15-B10)
 
 **État du code vérifié :** [`main@89c6472fdf4afe472a41df9e4bd63186eb31d94f`](https://github.com/Jean-Philippe56520/Microduck/tree/89c6472fdf4afe472a41df9e4bd63186eb31d94f) après consolidation. Les PR **#230, #231, #235, #238–#241 et #242–#248** sont **toutes fusionnées** ; [#249](https://github.com/Jean-Philippe56520/Microduck/pull/249) a corrigé le point de reprise précédent. Les anciennes mentions « #242 à #248 ouvertes », « P14B à compiler » et « rootfs absent », conservées plus bas, sont **historiques et non opératoires**. À chaque reprise, revérifier SHA `main`, gitlinks, PR et CI sur GitHub ; le [plan d'action](docs/plan-action.md) fait foi.

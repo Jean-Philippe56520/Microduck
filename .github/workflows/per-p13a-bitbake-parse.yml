@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/per-p13a-bitbake-parse.yml"
       - "scripts/per_p13a_bitbake_env_gate.py"
+      - "scripts/per_p12_yocto_layer.py"
       - "tests/test_per_p13a_bitbake_env_gate.py"
       - "docs/per-p13a-real-bitbake-parse-2026-10-30.md"
   workflow_dispatch:

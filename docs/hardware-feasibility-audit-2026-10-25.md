@@ -1,5 +1,8 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+**P12-R1 (01/11/2026) :** l'identité exportée par la recette BitBake ne mesure pas le matériel RK3566, NPU, RAM, thermique, latence motrice ni batterie. Aucun nouveau binaire ARM64, WIC, ACL cible ni robot validés.
+
+
 ## P11-C1 — source `mediad` élargie sur PC, aucune nouvelle preuve RK3566 (01/11/2026)
 
 La [PR #251](https://github.com/Jean-Philippe56520/Microduck/pull/251) prépare l'injection B4/B8 dans la **nouvelle archive source P11**, puis dans la couche candidate P12 ; elle réutilise un seul worker de détection constructeur et les gardes POSIX ACL sur socket local **désactivé par défaut**. L'archive doit être vérifiée et compilée sur hôte en CI avant fusion. **Aucun binaire AArch64 antérieur ni aucune WIC existante n'est modifié**, et aucune permission de vrai `/run`, `DUCK_REVISION` démarrée, puissance NPU 2 Hz, CPU/RSS, chaleur, batterie, délai de détection ou perturbation des moteurs 50 Hz n'a été mesurée sur robot. Les métriques locales PC restent distinctes des performances OEM ; la disponibilité matérielle et la licence de distribution ne changent pas. [Critères positifs/négatifs préenregistrés](p11-b4b8-source-closure-2026-11-01.md).
