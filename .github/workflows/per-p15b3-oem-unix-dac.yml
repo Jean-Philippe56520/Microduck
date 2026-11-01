@@ -1,0 +1,42 @@
+name: PER-P15-B3 Linux isolated ToF socket DAC gate (NOT robot)
+on:
+  pull_request:
+    paths:
+      - 'tests/test_per_p15b3_oem_unix_dac.py'
+      - '.github/workflows/per-p15b3-oem-unix-dac.yml'
+      - 'docs/per-p15b3-oem-unix-dac-revision-gate-2026-10-31.md'
+      - 'README.md'
+      - 'docs/plan-action.md'
+  workflow_dispatch:
+
+jobs:
+  kernel-dac-acl-fixtures:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Require actual Linux root probe and POSIX ACL CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -s)" = Linux
+          sudo -n true
+          if ! command -v setfacl >/dev/null || ! command -v getfacl >/dev/null; then
+            sudo -n apt-get update -qq
+            sudo -n apt-get install -y -qq acl
+          fi
+          command -v setfacl
+          command -v getfacl
+          sudo -n python3 -c 'import os, socket; assert os.geteuid() == 0 and hasattr(socket, "SO_PEERCRED"); print("Linux root SO_PEERCRED available")'
+      - name: Real kernel DAC and socket-specific ACL positive/negative tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          # ONLY temporary fake Unix sockets. Never /run, robotd RPC, camera,
+          # user accounts/groups, or hardware. Forked clients drop uid/gid.
+          sudo -n env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_per_p15b3_oem_unix_dac.py' -v
+      - name: Check Python syntax without external dependency
+        run: python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("tests/test_per_p15b3_oem_unix_dac.py").read_text()); print("Python syntax OK, no pycache writes")'
