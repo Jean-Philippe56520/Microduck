@@ -43,3 +43,15 @@
 **Conclusion précise :** le garde exact `0700` P15-B4 est remplacé **dans une copie scratch seulement**, par une autorisation POSIX ACL stricte qui refuse une ACL incongrue. Les 6 tests Rust démontrent le rebind, les refus UID différent/root/owner, les ACL de groupe malformées, les symlinks et les chemins préexistants. Les 16 tests B3/B7 indépendants démontrent le refus de connexion du moteur/caméra en tant qu'UID Kwipi factice. Aucun pilote, modèle, RTC, WebRTC, second détecteur, service, robot, sous-module ou recette Yocto modifié.
 
 **STOP cible :** un compte `kwipi` nommé et indépendant n'est **pas créé** par ce lot ; son appartenance réelle aux groupes et l'absence du groupe `robot` ne sont pas prouvées. La prise en charge ACL du **système de fichiers réel de `/run` (éventuellement `tmpfs`)** et les options du noyau compilé (`CONFIG_TMPFS_XATTR`, `CONFIG_TMPFS_POSIX_ACL` si `tmpfs`; `CONFIG_EXT4_FS_POSIX_ACL` si ext4) restent inconnues malgré les tests hôte. Pas de preuve de `DUCK_REVISION` dans le binaire Yocto ni de timestamp OEM de capture dans `Sighting`. **Pas d'intégration B8 dans la source P11/P12**, pas de `do_package` B8, rootfs, WIC, RAUC, signing, service de démarrage ni essai robot ; B6-P local reste acquis séparément. Décision future OEM/Yocto uniquement avec preuve de droits/cadence/version et tests physiques supervisés. PR [#246](https://github.com/Jean-Philippe56520/Microduck/pull/246) demeure brouillon sur #245, pile non fusionnée.
+
+## Lecture seule du noyau compilé Yocto — preuve locale complémentaire (01/11/2026)
+
+L'opérateur a exécuté sur son WSL2 un `find` puis `grep` **en lecture seule** des fichiers `.config` du cache BitBake, et a communiqué ces lignes de la configuration `build/tmp/work/microduck_zero3-poky-linux/linux-rockchip/6.1/linux-microduck_zero3-standard-build/.config` :
+
+```text
+CONFIG_EXT4_FS_POSIX_ACL=y
+CONFIG_TMPFS_POSIX_ACL=y
+CONFIG_TMPFS_XATTR=y
+```
+
+**PASS limité au fichier de configuration du noyau préparé pour `microduck_zero3`** : la présence de ces trois options n'est plus inconnue dans ce cache. Il s'agit d'une preuve opérateur (aucun accès direct au contenu du disque WSL2 depuis GitHub), et non d'une attestation de noyau démarré ou du paquet kernel effectivement inclus dans la WIC. Les fragments Yocto lus précédemment ne suffisaient pas, à eux seuls, à établir ce point ; la `.config` finale du cache le renseigne. **Restent en attente :** identité et groupes du compte `kwipi` dans le rootfs, montage réel de `/run` et test ACL sous le noyau du Microduck, révision compilée du service `mediad`, origine/fraîcheur des détections, mesures et validation robot. Pas de nouveau `do_package` P15-B6 ni de WIC à cette étape. Le statut des tests hôte [CI P15-B8 #41296701522](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41296701522) reste **vert** ; les [cinq CI au HEAD documentaire précédent `fb6ddcea`](https://github.com/Jean-Philippe56520/Microduck/pull/246/checks) sont également **vertes**. La PR est brouillon, non fusionnée.
