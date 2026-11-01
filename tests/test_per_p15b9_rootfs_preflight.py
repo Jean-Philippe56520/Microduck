@@ -20,10 +20,10 @@ class RootfsPreflightFixture(TestCase):
         account = self.project / gate.ACCOUNT
         (account / gate.CONF).parent.mkdir(parents=True)
         (account / gate.CONF).write_text(
-            'BBPATH .= ":\${LAYERDIR}"\n'
-            'BBFILES += "\${LAYERDIR}/recipes-*/*/*.bbappend"\n'
+            'BBPATH .= ":${LAYERDIR}"\n'
+            'BBFILES += "${LAYERDIR}/recipes-*/*/*.bbappend"\n'
             'BBFILE_COLLECTIONS += "kwipiaccount"\n'
-            'BBFILE_PATTERN_kwipiaccount := "^\${LAYERDIR}/"\n'
+            'BBFILE_PATTERN_kwipiaccount := "^${LAYERDIR}/"\n'
             'BBFILE_PRIORITY_kwipiaccount = "24"\n'
             'LAYERVERSION_kwipiaccount = "1"\n'
             'LAYERDEPENDS_kwipiaccount = "core microduck"\n'
