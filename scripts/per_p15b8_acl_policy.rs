@@ -37,8 +37,9 @@ fn c_path(path: &Path) -> Result<CString> {
 }
 
 fn expected_acl(uid: u32, access: Access) -> Vec<u8> {
-    let owner = if access == Access::Directory { 0o7 } else { 0o6 };
-    let named = if access == Access::Directory { 0o1 } else { 0o6 };
+    // POSIX ACL xattr encodes tags/permissions as u16 and IDs as u32.
+    let owner: u16 = if access == Access::Directory { 0o7 } else { 0o6 };
+    let named: u16 = if access == Access::Directory { 0o1 } else { 0o6 };
     let mut bytes = ACL_VERSION.to_ne_bytes().to_vec();
     for (tag, perm, id) in [
         (ACL_USER_OBJ, owner, UNDEF_ID),
