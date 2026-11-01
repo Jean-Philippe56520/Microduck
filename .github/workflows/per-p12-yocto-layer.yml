@@ -8,6 +8,7 @@ on:
       - "tests/test_per_p12_yocto_layer.py"
       - ".github/workflows/per-p12-yocto-layer.yml"
       - "scripts/per_p11_v1_source_release.py"
+      - "scripts/per_p15b12_apply_oem_capture_provenance.py"
       - "docs/per-p12-yocto-layer-source-contract-2026-10-30.md"
   workflow_dispatch:
 
