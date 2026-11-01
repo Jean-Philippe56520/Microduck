@@ -47,9 +47,20 @@ Le script B5 réutilise `per_p13a_bitbake_env_gate.validate`, `per_p15a_bitbake_
 ```bash
 python3 -B - <<'PY'
 from pathlib import Path
-import re, stat
+import re, stat, subprocess
 
 root = Path("/home/jp/kwipi-build-v1/p13b5-dev-metadata-20261101")
+project = Path("/home/jp/kwipi-v1-p13b-e2e9bfef/companion")
+yocto = Path("/home/jp/kwipi-build-v1/yocto")
+def live(repo, *args):
+    if not repo.is_dir() or repo.is_symlink():
+        stop("missing_or_linked_checkout")
+    p = subprocess.run(["git", "-C", str(repo), *args],
+                       capture_output=True, text=True, timeout=20)
+    if p.returncode:
+        stop("git_pin_check_failed")
+    return p.stdout.strip()
+
 files = {
     "daemon": "daemon-env.txt", "base": "base-env.txt",
     "addon": "addon-env.txt", "probe": "p15a-env.txt",
@@ -57,6 +68,18 @@ files = {
 }
 def stop(s):
     raise SystemExit("P13B6_PREFLIGHT_STOP: " + s)
+if live(project, "rev-parse", "HEAD") != "e2e9bfef7d7c4f46fe51924937e7939d78d00383":
+    stop("companion_head_changed")
+if live(yocto, "rev-parse", "HEAD") != "1ee58387810cebb67ae0d634c351d95024483bce":
+    stop("yocto_head_changed")
+if any(live(repo, "status", "--porcelain", "--untracked-files=no") for repo in (project, yocto)):
+    stop("tracked_files_modified")
+for rel, expected in {
+    "upstream/microduck": "942e58e3aa6dbb28e7037203fff11866122c7567",
+    "upstream/microduck_rl": "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3",
+}.items():
+    if live(project, "rev-parse", "HEAD:" + rel) != expected:
+        stop("oem_gitlink_changed")
 def get(text, name):
     rows = re.findall(r"^(?:export )?" + re.escape(name) + r'="(.*)"$', text, re.M)
     if len(rows) != 1:
