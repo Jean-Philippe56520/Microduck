@@ -1,0 +1,111 @@
+name: P15-B9 DEV-only account effective BitBake metadata (NO rootfs)
+on:
+  pull_request:
+    branches:
+      - main
+      - feature/per-p15b8-oem-acl-binder-prototype
+    paths:
+      - ".github/workflows/per-p15b9-dev-account-metadata.yml"
+      - "yocto/meta-kwipi-p15-account/**"
+      - "scripts/per_p15b9_dev_account_env_gate.py"
+      - "tests/test_per_p15b9_dev_account.py"
+      - "tests/test_per_p15b9_dev_account_env_gate.py"
+      - "docs/per-p15b9-dev-kwipi-account-2026-11-01.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  effective-bitbake-dev-shipping-account:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 38
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      P15B9_YOCTO: /tmp/p15b9-yocto
+      P15B9_DEV_ENV: /tmp/p15b9-effective-dev-env.txt
+      P15B9_SHIP_ENV: /tmp/p15b9-effective-shipping-env.txt
+      P15B9_APPENDS: /tmp/p15b9-effective-appends.txt
+      KAS_WORK_DIR: /tmp/p15b9-kas-work
+      KAS_BUILD_DIR: /tmp/p15b9-kas-build
+      KAS_CLONE_DEPTH: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          submodules: false
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Source-only positive and negative identity tests
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          python -m unittest discover -s tests -p 'test_per_p15b9_dev_account.py' -v
+          python -m unittest discover -s tests -p 'test_per_p15b9_dev_account_env_gate.py' -v
+      - name: Fetch only official pinned Yocto source for metadata
+        run: |
+          set -euo pipefail
+          mkdir -p "$P15B9_YOCTO"
+          git -C "$P15B9_YOCTO" init -q
+          git -C "$P15B9_YOCTO" remote add origin https://github.com/pollen-robotics/microduck_yocto.git
+          GIT_TERMINAL_PROMPT=0 git -C "$P15B9_YOCTO" fetch --depth 1 origin 1ee58387810cebb67ae0d634c351d95024483bce
+          git -C "$P15B9_YOCTO" checkout --detach FETCH_HEAD
+          test "$(git -C "$P15B9_YOCTO" rev-parse HEAD)" = "1ee58387810cebb67ae0d634c351d95024483bce"
+          test "$(git -C "$P15B9_YOCTO" hash-object meta-microduck/recipes-core/images/microduck-image.bb)" = "6ee5d14f7a8ebca2441bdff525ce41705bec935e"
+          test "$(git -C "$P15B9_YOCTO" hash-object meta-microduck/recipes-core/images/microduck-image-dev.bb)" = "ec7fa8f82b7685a7da1807c2fee597f9e98e4f8d"
+      - name: Install official parsing prerequisites (no rootfs build)
+        run: |
+          set -euo pipefail
+          free_kb="$(df -Pk /tmp | awk 'NR==2 {print $4}')"
+          test "$free_kb" -ge 6000000 || { echo "P15-B9 STOP: insufficient scratch disk"; exit 1; }
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends chrpath diffstat
+          python -m venv "$RUNNER_TEMP/p15b9-kas-venv"
+          "$RUNNER_TEMP/p15b9-kas-venv/bin/pip" install --no-cache-dir --disable-pip-version-check 'kas==5.2.0'
+          mkdir -p "$KAS_WORK_DIR" "$KAS_BUILD_DIR"
+          echo "$RUNNER_TEMP/p15b9-kas-venv/bin" >> "$GITHUB_PATH"
+      - name: Compose one optional account-only DEV layer without changing OEM
+        run: |
+          set -euo pipefail
+          cat > "$P15B9_YOCTO/kas/per-p15b9-opt-in.yml" <<EOF
+          header:
+            version: 14
+          repos:
+            kwipiaccount:
+              path: $GITHUB_WORKSPACE/yocto/meta-kwipi-p15-account
+              layers:
+                .:
+          EOF
+          test "$(git -C "$P15B9_YOCTO" status --porcelain --untracked-files=no)" = ""
+      - name: Parse real BitBake DEV and shipping effective variables (never print raw env)
+        run: |
+          set -euo pipefail
+          umask 022
+          cfg="$P15B9_YOCTO/kas/microduck.yml:$P15B9_YOCTO/kas/per-p15b9-opt-in.yml"
+          timeout 1650s kas shell "$cfg" -c \
+            "bitbake -p && bitbake -e microduck-image-dev > $P15B9_DEV_ENV && bitbake -e microduck-image > $P15B9_SHIP_ENV && bitbake-layers show-appends > $P15B9_APPENDS"
+          test -s "$P15B9_DEV_ENV"
+          test -s "$P15B9_SHIP_ENV"
+          test -s "$P15B9_APPENDS"
+          chmod 0600 "$P15B9_DEV_ENV" "$P15B9_SHIP_ENV"
+      - name: Gate exactly three DEV account commands versus one OEM shipping command
+        run: |
+          set -euo pipefail
+          python -m scripts.per_p15b9_dev_account_env_gate \
+            --dev-env "$P15B9_DEV_ENV" \
+            --shipping-env "$P15B9_SHIP_ENV" \
+            --appends "$P15B9_APPENDS" \
+            --account-layer "$GITHUB_WORKSPACE/yocto/meta-kwipi-p15-account" \
+            --report "$RUNNER_TEMP/p15b9-metadata-report.json"
+          test "$(git -C "$P15B9_YOCTO" status --porcelain --untracked-files=no)" = ""
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          echo "P15-B9: metadata only; no do_rootfs, WIC, signing, robot, ACL or service"
+      - name: Upload sanitized proof only (no effective env / password hash)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p15b9-dev-only-identity-bitbake-metadata
+          path: ${{ runner.temp }}/p15b9-metadata-report.json
+          retention-days: 7
