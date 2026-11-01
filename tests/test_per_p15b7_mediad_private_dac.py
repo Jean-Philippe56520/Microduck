@@ -194,7 +194,7 @@ class MediadPrivateMetadataDacFixtures(unittest.TestCase):
     def test_07_unlink_rebind_invalidates_old_socket_acl(self) -> None:
         self._grant_both()
         self.assertEqual("allowed", self._connect(self.metadata))
-        old_inode = self.metadata.stat().st_ino
+        # unlink/rebind creates a new socket, even if the filesystem reuses an inode number.
         self.listeners["metadata"].close()
         self.metadata.unlink()
         replacement = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -203,7 +203,10 @@ class MediadPrivateMetadataDacFixtures(unittest.TestCase):
         os.chown(self.metadata, b3.UID_MEDIAD, GID_MEDIAD)
         os.chmod(self.metadata, 0o600)
         self.listeners["metadata"] = replacement
-        self.assertNotEqual(old_inode, self.metadata.stat().st_ino)
+        self.assertNotIn(
+            f"user:{b3.UID_KWIPI}:rw-", self._getfacl(self.metadata),
+            "rebound socket unexpectedly retained a previous per-user ACL",
+        )
         self.assertEqual("denied", self._connect(self.metadata))
         self.assertEqual("denied", self._connect(self.motor))
         # Regranting on the newly bound inode is a separate OEM responsibility.
