@@ -74,7 +74,7 @@ jobs:
           git -C "$P15BM_YOCTO" checkout --detach FETCH_HEAD
           test "$(git -C "$P15BM_YOCTO" rev-parse HEAD)" = "1ee58387810cebb67ae0d634c351d95024483bce"
       - name: Install only parser host prerequisites, never relax OS sandbox
-        timeout-minutes: 6
+        timeout-minutes: 9
         run: |
           set -euo pipefail
           free_kb="$(df -Pk /tmp | awk 'NR==2 {print $4}')"
@@ -83,7 +83,7 @@ jobs:
           echo "P15-B6-M prereq: apt index start $(date -u +%FT%TZ)"
           timeout 120s sudo apt-get update -qq || { echo "P15-B6-M STOP: apt update failed/timeout"; exit 1; }
           echo "P15-B6-M prereq: apt packages start $(date -u +%FT%TZ)"
-          timeout 90s sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends chrpath diffstat || { echo "P15-B6-M STOP: apt install failed/timeout"; exit 1; }
+          timeout 240s sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends chrpath diffstat || { echo "P15-B6-M STOP: apt install failed/timeout"; exit 1; }
           command -v chrpath
           command -v diffstat
           mkdir -p "$KAS_WORK_DIR" "$KAS_BUILD_DIR"
