@@ -1,5 +1,10 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+## Après fusion P15-B12 — aucun résultat matériel nouveau (01/11/2026)
+
+Code source `main@448eefeca72146d3424c2c9ef56249a54263b025` ; #253 (export `DUCK_REVISION`/BitBake `-e`) et #254 (callback GStreamer horodaté dans le `mediad` exporté) sont fusionnées et leurs CI PC vertes. **Aucune** mesure ni installation RK3566 : binaire de la dernière source construit sur Linux x86-64 uniquement ; aucune WIC modifiée, aucun test de NPU/thermie/CPU/RSS/batterie, de cadence 2 Hz réelle, d'ACL `/run` ou de sécurité 50 Hz sur robot. Les sorties WSL2 antérieures prouvent **l'ancienne** composition AArch64, pas cette révision. Ne pas déduire autonomie ou détection physique de ces compilations.
+
+
 **P12-R1 (01/11/2026) :** l'identité exportée par la recette BitBake ne mesure pas le matériel RK3566, NPU, RAM, thermique, latence motrice ni batterie. Aucun nouveau binaire ARM64, WIC, ACL cible ni robot validés.
 
 

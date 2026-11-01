@@ -1,5 +1,10 @@
 # Feuille de route — Microduck Companion
 
+## Reprise V1 courante — source B12 fusionnée, packaging cible en attente (01/11/2026)
+
+**Référence :** `main@448eefeca72146d3424c2c9ef56249a54263b025` ; #251, #253 et #254 fusionnées (sept CI vertes pour chacune des deux dernières) ; #252 fermée sans fusion. **Acquis** : même `mediad` constructeur compilé/testé sur PC Linux depuis la nouvelle archive P11, B4/B8 et datation B12 intégrées, `DUCK_REVISION` contrôlée en environnement BitBake. **Manque restant** : vrai paquet AArch64 issu de cette archive, contrôle `PKGDEST`/identité binaire/ACL après installation, démonstration robot, ressources RK3566 et chaîne signée. Prochaine porte : preuve du paquet ciblé sur WSL2 après préflight lecture seule, **pas** de WIC/RAUC ou de service activé automatiquement. B5 reste `--mock-only` ; aucun mouvement ni souvenir tiré d'une détection.
+
+
 **P12-R1 (01/11/2026, candidat) :** B4/B8 sont déjà intégrés dans la source P11/P12 après #251 ; ce lot exporte et contrôle `DUCK_REVISION` dans le parseur BitBake réel, sans build ARM64 ni activation OEM, capteur ou droit supplémentaire. Voir [plan](plan-action.md).
 
 
