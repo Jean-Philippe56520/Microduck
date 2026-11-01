@@ -59,10 +59,11 @@ DIR_TO = """    let parent = path.parent().context("missing local detections dir
 """
 SOCKET_FROM = """    let listener = UnixListener::bind(path).context("local detections bind failed")?;
 """
-SOCKET_TO = """    // No stale endpoint or symlink may be overwritten. Apply the directory
-    // ACL only AFTER checking that the endpoint does not already exist.
+SOCKET_TO = """    // The observer MUST NOT traverse this directory between bind(2) and
+    // chmod(0600). On rebind, revoke our exact prior ACL before creating an
+    // inode; later restore the directory grant as the VERY LAST step.
     if let Some(uid) = observer_uid {
-        acl_policy::grant_private_dir(parent, uid)?;
+        acl_policy::hide_private_dir_before_bind(parent, uid)?;
     }
     let listener = UnixListener::bind(path).context("local detections bind failed")?;
 """
@@ -76,10 +77,12 @@ RETURN_TO = """        return Err(error).context("socket chmod failed");
     if let Some(uid) = observer_uid {
         // Apply/read back the exact five-entry socket ACL BEFORE returning a
         // listener; caller cannot accept a connection until this succeeds.
-        if let Err(error) = acl_policy::grant_socket(path, uid) {
+        let result = acl_policy::grant_socket(path, uid)
+            .and_then(|()| acl_policy::grant_private_dir(parent, uid));
+        if let Err(error) = result {
             drop(listener);
             let _ = std::fs::remove_file(path);
-            return Err(error).context("metadata socket ACL grant refused");
+            return Err(error).context("metadata socket/dir ACL grant refused");
         }
     }
     Ok(listener)
