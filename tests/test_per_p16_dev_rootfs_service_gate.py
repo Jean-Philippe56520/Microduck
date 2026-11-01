@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts import per_p16_dev_rootfs_service_gate as gate
+from scripts import per_p16b10_dev_rootfs_audit as b10
 
 UNIT = """# PER-P15A: deliberately no [Install] / WantedBy; manual DEV probe only.
 [Unit]
@@ -121,6 +122,51 @@ class ServiceGateFixtureTests(unittest.TestCase):
         folder.mkdir(parents=True)
         (folder / gate.UNIT_NAME).write_text(UNIT)
         with self.assertRaisesRegex(gate.Stop, "override"):
+            gate.validate(self.base)
+
+    def test_b10_report_supported_without_boot_claim(self):
+        report_path = self.base / "proofs/p16-rootfs-audit.json"
+        report = json.loads(report_path.read_text())
+        report.update({
+            "status": b10.STATUS,
+            "python_modules_verified": 24,
+            "p14b_modules_verified": 19,
+            "p15b6_modules_verified": 5,
+            "b12_release": b10.B12_VERSION,
+            "b12_sha256": {
+                name: digest for name, (_, digest) in b10.B12_BINARIES.items()
+            },
+            "current_points_to_b12": True,
+            "kwipi_account_isolated_from_motor": True,
+            "oem_operator_preserved": True,
+        })
+        report_path.write_text(json.dumps(report))
+        proof = gate.validate(self.base)
+        self.assertTrue(proof["p16_a_report_rechecked"])
+        self.assertFalse(proof["systemd_runtime_or_boot_verified"])
+        report["b12_sha256"]["robotd"] = "0" * 64
+        report_path.write_text(json.dumps(report))
+        with self.assertRaisesRegex(gate.Stop, "B10 proof incomplete"):
+            gate.validate(self.base)
+
+    def test_b10_report_with_wrong_module_count_refused(self):
+        report_path = self.base / "proofs/p16-rootfs-audit.json"
+        report = json.loads(report_path.read_text())
+        report.update({
+            "status": b10.STATUS,
+            "python_modules_verified": 19,
+            "p14b_modules_verified": 19,
+            "p15b6_modules_verified": 5,
+            "b12_release": b10.B12_VERSION,
+            "b12_sha256": {
+                name: digest for name, (_, digest) in b10.B12_BINARIES.items()
+            },
+            "current_points_to_b12": True,
+            "kwipi_account_isolated_from_motor": True,
+            "oem_operator_preserved": True,
+        })
+        report_path.write_text(json.dumps(report))
+        with self.assertRaisesRegex(gate.Stop, "expected scope"):
             gate.validate(self.base)
 
     def test_report_missing_refused(self):

@@ -11,6 +11,8 @@ import json
 import re
 from pathlib import Path
 
+from scripts import per_p16b10_dev_rootfs_audit as b10
+
 UNIT_NAME = "kwipi-readonly-probe.service"
 UNIT_REL = "usr/lib/systemd/system/" + UNIT_NAME
 PRESET_REL = "usr/lib/systemd/system-preset/98-kwipi-readonly-probe.preset"
@@ -106,11 +108,27 @@ def validate(base: Path) -> dict:
     if not report_path.is_file() or report_path.is_symlink():
         _fail("P16-A report not found or symlinked")
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    if (report.get("status") != REPORT_STATUS or
-        report.get("python_modules_verified") != 19 or
+    status = report.get("status")
+    if status == REPORT_STATUS:
+        modules = 19  # Preserve legacy P16-A rootfs-only contract.
+    elif status == b10.STATUS:
+        modules = 24
+        if (report.get("p14b_modules_verified") != 19
+                or report.get("p15b6_modules_verified") != 5
+                or report.get("b12_release") != b10.B12_VERSION
+                or report.get("b12_sha256") != {
+                    name: digest for name, (_, digest) in b10.B12_BINARIES.items()
+                }
+                or report.get("current_points_to_b12") is not True
+                or report.get("kwipi_account_isolated_from_motor") is not True
+                or report.get("oem_operator_preserved") is not True):
+            _fail("P16-B10 proof incomplete for service audit")
+    else:
+        _fail("unreviewed P16-A/B10 proof status")
+    if (report.get("python_modules_verified") != modules or
         report.get("probe_systemd_symlink_found") is not False or
         len(report.get("probe_sha256", {})) != 3):
-        _fail("existing P16-A proof does not match expected scope")
+        _fail("existing P16-A/B10 proof does not match expected scope")
     for rel, digest in EXPECTED_SHA256.items():
         file = _safe_file(root, rel)
         if report["probe_sha256"].get(rel) != digest:
