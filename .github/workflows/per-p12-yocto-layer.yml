@@ -8,6 +8,8 @@ on:
       - "tests/test_per_p12_yocto_layer.py"
       - ".github/workflows/per-p12-yocto-layer.yml"
       - "scripts/per_p11_v1_source_release.py"
+      - "tests/test_per_p15b11_opt_in_source_provenance.py"
+      - "docs/per-p15b11-opt-in-mediad-source-provenance-2026-11-01.md"
       - "docs/per-p12-yocto-layer-source-contract-2026-10-30.md"
   workflow_dispatch:
 
@@ -53,7 +55,7 @@ jobs:
       - name: Build exact P11 source from current PR head (no weights or physical I/O)
         run: |
           set -euo pipefail
-          python -m scripts.per_p11_v1_source_release --oem-checkout upstream/microduck --output-dir "$KWIPI_P12_SOURCE"
+          python -m scripts.per_p11_v1_source_release --oem-checkout upstream/microduck --with-p15b8-source --output-dir "$KWIPI_P12_SOURCE"
           cd "$KWIPI_P12_SOURCE"
           sha256sum -c kwipi-v1-oem-source.tar.gz.sha256
           cd "$GITHUB_WORKSPACE"
@@ -76,6 +78,8 @@ jobs:
           assert d["bitbake_built"] is False and d["bitbake_parsed"] is False
           assert d["signed_release"] is False and d["python_companion_installed"] is False
           assert d["crates_regenerated"] is True
+          assert d["local_detections_acl_candidate"] is True
+          assert d["duck_revision_export_declared"] is True
           print("P12: Yocto source layer checked; no claim of BitBake, RAUC or deployment.")
           PY
           test "$(git -C "$KWIPI_P12_YOCTO" status --porcelain --untracked-files=no)" = ""
