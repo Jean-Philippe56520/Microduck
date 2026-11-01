@@ -1,3 +1,11 @@
+## P13B5 PASS — P13B6 ensuite : disponibilité des paquets DEV B10 (01/11/2026)
+
+**Autorité actuelle à l'ouverture de ce lot :** `main@f3ecd8ae5bfe93c893128130f80105e32156659f` ; #258 fusionnée (5/5 CI finales vertes). Preuve opérateur P13B5 sur WSL2 : `P13B5_P12_B12_EFFECTIVE_METADATA: PASS`, `P13B5_P14B_B6_RECIPE_IDENTITIES_AND_DEPENDENCY: PASS`, `P13B5_P15A_DISABLED: PASS`, `P13B5_P15B10_DEV_ONLY_AND_ACCOUNT: PASS`, `P13B5_METADATA_ONLY: PASS_NO_PACKAGE_OR_ROOTFS_TASK`. Cette **qualification effective des métadonnées** sous KAS épinglé est distincte des anciennes portes P13B3/P13B4 source-only et du `do_package` B12 déjà réussi. Dossier local privé `/home/jp/kwipi-build-v1/p13b5-dev-metadata-20261101` : ne pas publier les `*-env.txt` BitBake contenant éventuellement des hashes OEM. **Aucune construction de paquet ou de rootfs nouvellement démontrée.**
+
+**P13B6 (prochain lot)** — `kwipi-passive-fixture 0.1.0` a une provenance/archive B6 vérifiée mais le `PKGDEST` historique est absent et l'archive installable actuelle est inconnue. Reprendre le même KAS, vérifier `PACKAGE_CLASSES` et source/version, prévisualiser **uniquement** `bitbake -n -c package_write_rpm kwipi-passive-fixture` si backend RPM, avec STOP si recompile OEM ou image planifiées. Ensuite seulement tâche package réelle bornée et comparaison des 5 empreintes `PKGDEST` et du RPM. Ne pas exécuter `do_rootfs` tant que la porte P16-A historique n'est pas adaptée et testée pour **19+5**, le compte Kwipi isolé, le service P15A désactivé et les exécutables OEM B12 préservés. Positifs, négatifs, repli et commandes : [P13B6](p13b6-b10-package-preflight-2026-11-01.md). Ne pas nettoyer les caches, modifier les gitlinks ni lancer WIC/RAUC/flash/robot.
+
+---
+
 ## P13B3 — porte de cohérence B12 → rootfs DEV, lecture seule (01/11/2026)
 
 **Autorité GitHub de départ :** `main@c6d0344ee35c49830ac104fe9d07062b2b2764cc`, #256 et #257 fusionnées ; 7/7 puis 5/5 workflows visibles au HEAD en succès. Source OEM épinglée `942e58e3aa6d`, RL `b02fdea4902c`, Yocto `1ee58387810c`, non modifiés. P13B2 a réellement compilé et empaqueté `mediad`/`robotd` AArch64 au SHA source `e2e9bfef` ; **le rootfs DEV B9-R préexistant ne prouve pas l'intégration de ces nouveaux octets**. Le doc P13B2 ci-dessous reste historique, pas une instruction de nouveau build.
