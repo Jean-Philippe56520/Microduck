@@ -8,9 +8,10 @@ import os
 from pathlib import Path
 import shutil
 import tempfile
+import tarfile
 import unittest
 
-from scripts.per_p11_v1_source_release import ReleaseRefused
+from scripts.per_p11_v1_source_release import SOURCE_COMPOSITION, ReleaseRefused
 from scripts.per_p12_yocto_layer import (
     BMI_SHA, DAEMON_URI, OEM_FILES, YOCTO_SHA,
     check_yocto, checked_artifact, crates, layer_files, render_crates,
@@ -105,6 +106,17 @@ class RealPinnedSourceTests(unittest.TestCase):
         old_inc = check_yocto(self.yocto)
         archive, manifest, lock, digest = checked_artifact(self.artifact)
         rows = crates(lock)
+        self.assertEqual(manifest["code"], SOURCE_COMPOSITION)
+        self.assertTrue(manifest["local_detections_opt_in_only"])
+        self.assertFalse(manifest["local_detections_installed_on_robot"])
+        self.assertFalse(manifest["acl_validated_on_robot"])
+        with tarfile.open(archive, "r:gz") as source:
+            local = source.extractfile("mediad/src/local_detections.rs")
+            acl = source.extractfile("mediad/src/local_detections_acl.rs")
+            self.assertIsNotNone(local)
+            self.assertIsNotNone(acl)
+            self.assertIn(b'include!("local_detections_acl.rs")', local.read())
+            self.assertIn(b"system.posix_acl_access", acl.read())
         self.assertNotIn("P11 weight", old_inc)
         self.assertEqual(len(digest), 64)
         self.assertEqual(manifest["status"], "source_candidate_only_bitbake_licence_and_robot_blocked")
