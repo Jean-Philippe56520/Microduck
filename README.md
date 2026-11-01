@@ -1,3 +1,13 @@
+## P13B3 — qualification hors ligne de l'intégration B12 dans la distribution DEV (01/11/2026)
+
+**État GitHub contrôlé :** `main@c6d0344ee35c49830ac104fe9d07062b2b2764cc` ; PR [#256](https://github.com/Jean-Philippe56520/Microduck/pull/256) et [#257](https://github.com/Jean-Philippe56520/Microduck/pull/257) fusionnées, 7/7 et 5/5 workflows visibles conclus en succès sur leurs derniers HEAD. Les sous-modules épinglés restent `microduck@942e58e3` et `microduck_rl@b02fdea4` ; Yocto OEM est à `1ee58387`. Les dernières preuves P13B2 documentent **un paquet AArch64** B12 compilé au SHA source `e2e9bfef`, **pas une installation B12** dans le rootfs DEV historique. Ne pas reconstruire ce paquet sans manque vérifié.
+
+**Décision opérationnelle supplémentaire :** auditer sur WSL2 **en lecture seule** les deux binaires `mediad`/`robotd` de `packages-split` face aux fichiers du **rootfs DEV effectivement présent**, leur version `0.17.8+kwipi.p12.e2e9bfef7d7c`, le lien `current` et les unités constructeur. Réutiliser ensuite les audits déjà codés P15-B9-R/P16-A/P16-S1 pour les comptes, la sonde désactivée et les dépendances, sans créer de second service. Les unités OEM ont leur politique d'activation propre ; la sonde P15A est inactive par défaut, **mais son appartenance au groupe `robot` donne un accès Unix général au RPC OEM**, qui reste une limite non résolue. Aucune commande motrice ni activation automatique.
+
+**Critères PASS/STOP, script WSL2 et limites :** [P13B3 — porte DEV B12 lecture seule](docs/p13b3-dev-b12-readonly-integration-gate-2026-11-01.md). Porte **préenregistrée, non exécutée sur le WSL2 de l'opérateur** dans cette PR. Un éventuel rootfs plus ancien est à documenter comme écart de version, non comme échec du `do_package` B12. Aucune image, WIC, RAUC, ACL runtime, capture, inférence NPU, service démarré ou validation robot nouvellement démontrés. Les sections P13B2 et antérieures ci-dessous constituent l'historique des preuves.
+
+---
+
 ## P13B2 B12 — compilation et packaging AArch64 vérifiés sur WSL2 (01/11/2026)
 
 **Nouvelle autorité de reprise :** [`main@e2e9bfef7d7c4f46fe51924937e7939d78d00383`](https://github.com/Jean-Philippe56520/Microduck/tree/e2e9bfef7d7c4f46fe51924937e7939d78d00383) après [#256 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/256), ses 8 contrôles CI verts et le correctif `libc::c_char` de l'ABI AArch64. Le STOP Rust `E0308` sur l'ancien `57fbff44` est **résolu par la nouvelle compilation hôte**, pas par un essai robot. Les archives, journaux et paquets de l'ancien SHA restent des preuves historiques.
