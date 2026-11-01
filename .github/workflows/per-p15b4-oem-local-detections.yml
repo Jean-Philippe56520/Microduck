@@ -5,6 +5,10 @@ on:
       - 'scripts/per_p15b4_apply_oem_local_detections.py'
       - 'scripts/per_p15b4_local_detections.rs'
       - 'tests/test_per_p15b4_oem_local_overlay.py'
+      - 'scripts/per_p15b8_apply_oem_acl_binder.py'
+      - 'scripts/per_p15b8_acl_policy.rs'
+      - 'tests/test_per_p15b8_oem_acl_overlay.py'
+      - 'docs/per-p15b8-oem-mediad-acl-binder-2026-11-01.md'
       - 'docs/per-p15b4-oem-mediad-local-detections-2026-10-31.md'
       - '.github/workflows/per-p15b4-oem-local-detections.yml'
   workflow_dispatch:
@@ -31,6 +35,7 @@ jobs:
           set -euo pipefail
           test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
           python -m unittest discover -s tests -p 'test_per_p15b4_oem_local_overlay.py' -v
+          python -m unittest discover -s tests -p 'test_per_p15b8_oem_acl_overlay.py' -v
           git diff --exit-code -- upstream/
 
   compile-real-pinned-mediad:
@@ -70,6 +75,10 @@ jobs:
           python -m scripts.per_p10b_apply_oem_tail_overlay --archive "$P15B4_OEM"
           python -m scripts.per_p10c_apply_oem_mediad_overlay --archive "$P15B4_OEM"
           python -m scripts.per_p15b4_apply_oem_local_detections --archive "$P15B4_OEM"
+          # P15-B8: only a scratch-local strict Linux ACL guard on top of B4.
+          python -m scripts.per_p15b8_apply_oem_acl_binder --archive "$P15B4_OEM"
+          test -f "$P15B4_OEM/mediad/src/local_detections_acl.rs"
+          grep -Fq "grant_socket(path, uid)" "$P15B4_OEM/mediad/src/local_detections.rs"
           test -f "$P15B4_OEM/mediad/src/local_detections.rs"
           grep -Fq 'kwipi_local_detections: bool' "$P15B4_OEM/mediad/src/main.rs"
           grep -Fq 'region_candidates: None' "$P15B4_OEM/mediad/src/local_detections.rs"
@@ -90,6 +99,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --manifest-path "$P15B4_OEM/Cargo.toml" --locked -p mediad --lib local_detections::tests -- --nocapture
+          cargo test --manifest-path "$P15B4_OEM/Cargo.toml" --locked -p mediad --lib local_detections::acl_policy::tests -- --nocapture
           cargo clippy --manifest-path "$P15B4_OEM/Cargo.toml" --locked -p mediad --lib --bin mediad -- -D warnings
           git diff --exit-code -- upstream/
       - name: Validate same OEM metadata shape with existing Companion reader
