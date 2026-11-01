@@ -1,5 +1,9 @@
 # Audit de faisabilité matérielle — Microduck Companion
 
+## P11-C1 — source `mediad` élargie sur PC, aucune nouvelle preuve RK3566 (01/11/2026)
+
+La [PR #251](https://github.com/Jean-Philippe56520/Microduck/pull/251) prépare l'injection B4/B8 dans la **nouvelle archive source P11**, puis dans la couche candidate P12 ; elle réutilise un seul worker de détection constructeur et les gardes POSIX ACL sur socket local **désactivé par défaut**. L'archive doit être vérifiée et compilée sur hôte en CI avant fusion. **Aucun binaire AArch64 antérieur ni aucune WIC existante n'est modifié**, et aucune permission de vrai `/run`, `DUCK_REVISION` démarrée, puissance NPU 2 Hz, CPU/RSS, chaleur, batterie, délai de détection ou perturbation des moteurs 50 Hz n'a été mesurée sur robot. Les métriques locales PC restent distinctes des performances OEM ; la disponibilité matérielle et la licence de distribution ne changent pas. [Critères positifs/négatifs préenregistrés](p11-b4b8-source-closure-2026-11-01.md).
+
 ## Réévaluation des preuves matérielles — 1er novembre 2026, après fusion #248
 
 **Référence logicielle vérifiée :** `main@89c6472fdf4afe472a41df9e4bd63186eb31d94f`, PR [#242](https://github.com/Jean-Philippe56520/Microduck/pull/242) à [#248](https://github.com/Jean-Philippe56520/Microduck/pull/248) fusionnées, **sans robot physique**. Les chiffres de CI, d'Unix hôte, de BitBake et de WSL2 ne constituent **aucune mesure sur RK3566**. Les paragraphes historiques du 31/10 ci-dessous et leur mention « zéro do_rootfs » ne décrivent plus l'ensemble des **preuves hôte** ; ils restent conservés pour provenance.
