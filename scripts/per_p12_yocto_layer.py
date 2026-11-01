@@ -102,6 +102,8 @@ def checked_artifact(directory: Path) -> tuple[Path, dict, bytes, str]:
             or m.get("local_detections_opt_in_only") is not True
             or m.get("local_detections_installed_on_robot") is not False
             or m.get("acl_validated_on_robot") is not False
+            or m.get("robot_validated") is not False
+            or m.get("signed_ota_release") is not False
             or not re.fullmatch("[0-9a-f]{40}", m.get("companion_sha", ""))):
         raise ReleaseRefused("P11 provenance/weights/defaults mismatch")
     with tarfile.open(archive, "r:gz") as t:

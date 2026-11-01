@@ -154,6 +154,9 @@ class P11V1SourceTests(unittest.TestCase):
             ("local_detections_opt_in_only", False),
             ("local_detections_installed_on_robot", True),
             ("acl_validated_on_robot", True),
+            ("bitbake_built", True),
+            ("robot_validated", True),
+            ("signed_ota_release", True),
         )
         for key, value in variants:
             with self.subTest(key=key), tempfile.TemporaryDirectory() as temp:

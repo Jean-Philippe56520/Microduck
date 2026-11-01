@@ -321,7 +321,9 @@ def verify_archive(path: Path) -> dict:
                 or obj.get("kwipi_seg_weights_included") is not False
                 or obj.get("oem_onnx_sources_preserved") is not True
                 or obj.get("detector_enabled_by_default") is not False
-                or obj.get("bitbake_built") is not False):
+                or obj.get("bitbake_built") is not False
+                or obj.get("robot_validated") is not False
+                or obj.get("signed_ota_release") is not False):
             raise ReleaseRefused("invalid source provenance and safety state")
         records = obj.get("files")
         if not isinstance(records, list) or any(not isinstance(x, dict) for x in records):
