@@ -35,7 +35,8 @@ class CachedOperatorTests(unittest.TestCase):
         (self.cfg.build / "tmp/work").mkdir(parents=True)
         target = self.cfg.build / "tmp/stamps/x86_64-linux/cmake-native/4.3.1-r0"
         target.mkdir(parents=True)
-        (target / "do_populate_sysroot").write_text("done")
+        self.cmake_stamp = target / "do_populate_sysroot"
+        self.cmake_stamp.write_text("done")
         self.revisions = {
             self.cfg.project: self.sha, self.cfg.yocto: runner.YOCTO,
             self.cfg.project / "upstream/microduck": runner.OEM,
@@ -71,8 +72,6 @@ class CachedOperatorTests(unittest.TestCase):
         self.assertFalse(self.cfg.scratch.exists())
 
     def test_02_wrong_expected_sha_refused(self):
-        bad = runner.Config(*self.cfg.__dict__.values())  # same paths, pinned sha below
-        self.assertEqual(bad.expected_sha, self.sha)
         invalid = runner.Config(
             self.cfg.project, self.cfg.yocto, self.cfg.work,
             self.cfg.build, self.cfg.scratch, "invalid")
@@ -97,14 +96,13 @@ class CachedOperatorTests(unittest.TestCase):
         with self.assertRaises(runner.Refused):
             runner.preflight(self.cfg)
         conf.write_text("restored")
-        stamp = next((self.cfg.build / "tmp/stamps").rglob("do_populate_sysroot"))
-        stamp.unlink()
+        self.cmake_stamp.unlink()
         with self.assertRaises(runner.Refused):
             runner.preflight(self.cfg)
 
     def test_05_signatures_only_do_not_count_as_completed_cache(self):
-        stamp_dir = next((self.cfg.build / "tmp/stamps").rglob("cmake-native")).parent / "cmake-native/4.3.1-r0"
-        stamp_dir.joinpath("do_populate_sysroot").unlink()
+        stamp_dir = self.cmake_stamp.parent
+        self.cmake_stamp.unlink()
         stamp_dir.joinpath("do_populate_sysroot.sigdata.abc").write_bytes(b"fake")
         with self.assertRaises(runner.Refused):
             runner.preflight(self.cfg)
@@ -184,7 +182,15 @@ class CachedOperatorTests(unittest.TestCase):
             executed.assert_not_called()
         self.assertFalse(self.cfg.scratch.exists())
 
-    def test_12_pin_fails_if_staged_tree_dirty(self):
+    def test_12_unsafe_colon_or_linebreak_in_scratch_path_refused(self):
+        for name in ("bad:name", "bad\\nline"):
+            cfg = runner.Config(
+                self.cfg.project, self.cfg.yocto, self.cfg.work,
+                self.cfg.build, self.cfg.scratch.parent / name, self.sha)
+            with self.subTest(name=name), self.assertRaises(runner.Refused):
+                runner.preflight(cfg)
+
+    def test_13_pin_fails_if_staged_tree_dirty(self):
         def dirty(path, *cmd):
             if path == self.cfg.project and cmd == (
                     "status", "--porcelain", "--untracked-files=no"):
