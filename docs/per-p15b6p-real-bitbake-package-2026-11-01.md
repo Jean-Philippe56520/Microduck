@@ -28,3 +28,21 @@
 
 Pour éviter les reruns complets à chaque commit de documentation, le job GitHub B6-P est désormais **opt-in** : il ne démarre qu'à l'ajout explicite du label `run-b6p-bitbake` à la PR, ou à un `workflow_dispatch` disponible. **Un job GitHub marqué « skipped » ne valide rien** ; le précédent échec du vrai `do_package` reste l'état de preuve.
 
+
+## Résultat complémentaire — vrai `do_package` WSL2 réussi (01/11/2026)
+
+**Verdict : PASS limité à la tâche BitBake et aux cinq fichiers du paquet principal.** Suite à l'échec de durée sur GitHub décrit ci-dessus, l'opérateur a exécuté le runner cache `scripts/per_p15b6_cached_package_runner.py --run` en WSL2 sur le SHA **`702115e44e919178007a46d1ff10a8ab787a6c18`**, avec Yocto OEM épinglé **`1ee58387810cebb67ae0d634c351d95024483bce`**, six dépôts KAS vérifiés et récupération hors réseau. Le contrôle `kas dump` sur deux configurations dans le même scratch non versionné était **PASS** avant cette exécution.
+
+**Journal BitBake fourni par l'opérateur :** `NOTE: Tasks Summary: Attempted 522 tasks of which 512 didn't need to be rerun and all succeeded.` ; **`bitbake_do_package_exit_code=0`**, `bitbake_duration_s=120.5`. Les **deux warnings** n'ont pas interrompu la tâche (l'un concerne `CONFIG_TASK_IO_ACCOUNTING` désactivé sur le noyau hôte). Le rapport local `package-proof.json`, au SHA identique, a le statut `bitbake_passive_addon_package_files_verified_only`, `package_split_files_verified=true`, et les cinq hashes sources correspondant à l'archive `sha256:8d6939db16b507a12651f18e8486ad24b8ef5b6110b0bdca6407da0af5427c3d`. La vérification préserve **19 modules de base**, confirme `addon_rdepends_base=true`, `target_python_sitepackages=/usr/lib/python3.14/site-packages`, `dev_image_selects_addon=false`, `shipping_image_selects_addon=false`.
+
+| Source Python empaquetée | SHA-256 du fichier dans le paquet |
+| --- | --- |
+| `offline_resource_budget.py` | `0dada90173be2877fb25be2c99c24944f017fc9e7181cca508f4d7e42338cc38` |
+| `passive_fixture_runtime.py` | `75e632284f93be06208903bf091a88c42bd4bc0f773b909c4d5d71e49fa09306` |
+| `passive_media_fixture_reader.py` | `a019b5f744a6e95cb5de84d0e58ddff6c1f4513bc97962acef43a9e5eb9212bf` |
+| `passive_media_router.py` | `6e95975ee701d93b6b69e01cc8d5fb5959f2e4ec12e76110bcb2425415b15d6e` |
+| `passive_resilience.py` | `154567e81fb3eef8d26fa4fc129d819cd59ca58e1885b03deaf4dd2cd572774b` |
+
+**Provenance de la preuve :** la sortie des commandes locales est fournie par l'opérateur dans la conversation. L'assistant n'a pas eu d'accès direct à sa WSL2 et ne publie ni fichier privé `-e`, ni chemin personnel, ni paquet brut. Les champs `bitbake_task_execution_attested_by_this_script=false` et `bitbake_do_package_run_attested_by_this_script=false` sont **corrects** : le *validateur* contrôle les fichiers et ne peut pas prouver seul qu'une tâche s'est exécutée. La **combinaison** du code de sortie et de la sortie du wrapper, plus le rapport d'octets, constitue ici une attestation **opérateur-local**, pas une preuve de CI GitHub. Au même SHA, les workflows [Python](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41293084956), [P15-B6-M](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41293084937), P15A, P15-B3 et N1 sont verts ; [GitHub B6-P](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41293085299) reste volontairement `skipped`.
+
+**STOP / non encore prouvé :** `do_package_write_ipk`, installation du paquet dans `microduck-image-dev` ou shipping, `do_rootfs`, `do_image`, WIC P16, RAUC, signature et licences de redistribution, exécution réelle de Python sur RK3566, permissions/version/identité/fraîcheur OEM, tests sur robot. La source B6 demeure **non sélectionnée** dans les deux images. La PR #244 reste brouillon et empilée ; ne pas la fusionner sans revue de la pile et CI au SHA final.
