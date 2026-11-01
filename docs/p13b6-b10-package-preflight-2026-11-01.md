@@ -311,6 +311,142 @@ PY
 
 **STOP si `do_rootfs`, `do_image`, recette OEM inattendue, référence sans contexte compréhensible, journal modifié, ou recompilation inconnue**. Ne pas requalifier le STOP en PASS sur la seule absence de `do_rootfs` : les deux recettes/tâches doivent être examinées individuellement. Toujours aucune suppression du cache, aucune tâche réelle, WIC/RAUC/robot.
 
+## Troisième retour P13B6 — identification des deux tâches et décision (01/11/2026)
+
+**Observation exacte du journal privé, communiquée par l'opérateur :**
+
+```text
+P13B6_CLASSIFY_TOTAL_REFS: 23
+P13B6_CLASSIFY_SUSPECTS: 2
+P13B6_TASK_REVIEW: kwipi-passive-fixture_0.1.0.bb do_deploy_source_date_epoch scheduled
+P13B6_TASK_REVIEW: kwipi-companion_0.2.0a1.bb do_deploy_source_date_epoch scheduled
+P13B6_COMPILE_REFS: 2
+P13B6_COMPILE_REVIEW: kwipi-companion_0.2.0a1.bb do_compile
+P13B6_COMPILE_REVIEW: kwipi-passive-fixture_0.1.0.bb do_compile
+P13B6_ROOTFS_REFS: 0
+P13B6_IMAGE_REFS: 0
+P13B6_DEPLOY_REFS: 2
+P13B6_CLASSIFY: READ_ONLY_NO_BITBAKE
+P13B6_PACKAGE_RUN: false
+```
+
+**Nature des tâches :** `do_deploy_source_date_epoch` est la tâche OpenEmbedded liée au `SOURCE_DATE_EPOCH` par recette et à la **reproductibilité des artefacts**, pas `do_deploy` d'une image produit ni `do_rootfs` ([référence Yocto](https://docs.yoctoproject.org/5.2.1/ref-manual/variables.html#term-SOURCE_DATE_EPOCH), [implémentation OpenEmbedded historique](https://www.openembedded.org/pipermail/openembedded-core/2018-March/149010.html)). Le filtre précédant `task.startswith("do_deploy")` était trop large ; le STOP a correctement protégé l'opération avant classification. Les deux `do_compile` identifiés sont les **recettes Python pures** P14B et B6 (`inherit allarch python3-dir` + installation de .py déjà révisés), **aucune recompilation Rust OEM n'est montrée dans ce dry-run**. `0 do_rootfs`, `0 do_image`, `0 autre do_deploy` dans les 23 références lues. Cette classification résout **l'anomalie de nom** ; elle n'atteste pas l'absence garantie de changement de signature ni la réussite d'un vrai `do_package_write_rpm`.
+
+**Décision du lot P13B6 :** autoriser un **unique** `bitbake -c package_write_rpm kwipi-passive-fixture` dans **le même KAS** seulement après le contrôle juste avant exécution (source épinglée, 23 références identiques, 2 tâches `SOURCE_DATE_EPOCH` exactes, 2 `do_compile` Python exactes, aucun OEM/image, espace libre et absence de journal existant). **Ne pas** ajouter `-f`, `clean`, `do_rootfs`, WIC, RAUC, service, robot, ni nouvelle copie du fournisseur B12. Repli : STOP et conserver logs/caches si contexte différent, tâche inattendue ou échec. Ce n'est **pas** une autorisation globale de compilation ni de déploiement OEM.
+
+### Préflight P13B6 de l'empaquetage ciblé (lecture seule)
+
+```bash
+python3 -B - <<'PY'
+from pathlib import Path
+import re, shutil, stat, subprocess
+
+base = Path("/home/jp/kwipi-build-v1")
+scratch = base / "p13b5-dev-metadata-20261101"
+log = scratch / "p13b6-package-rpm-dryrun.log"
+package_log = scratch / "p13b6-package-rpm-real.log"
+project = Path("/home/jp/kwipi-v1-p13b-e2e9bfef/companion")
+yocto = base / "yocto"
+
+def stop(reason):
+    raise SystemExit("P13B6_REAL_PREFLIGHT_STOP: " + reason)
+def git(folder, *args):
+    try:
+        p = subprocess.run(["git", "-C", str(folder), *args],
+                           capture_output=True, text=True, timeout=20)
+    except (OSError, subprocess.TimeoutExpired):
+        stop("git_unavailable")
+    if p.returncode:
+        stop("git_failed")
+    return p.stdout.strip()
+if git(project, "rev-parse", "HEAD") != "e2e9bfef7d7c4f46fe51924937e7939d78d00383":
+    stop("companion_source_changed")
+if git(yocto, "rev-parse", "HEAD") != "1ee58387810cebb67ae0d634c351d95024483bce":
+    stop("yocto_source_changed")
+if any(git(repo, "status", "--porcelain", "--untracked-files=no")
+       for repo in (project, yocto)):
+    stop("tracked_source_dirty")
+for rel, sha in {
+    "upstream/microduck": "942e58e3aa6dbb28e7037203fff11866122c7567",
+    "upstream/microduck_rl": "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3",
+}.items():
+    if git(project, "rev-parse", "HEAD:" + rel) != sha:
+        stop("gitlink_changed")
+if (not log.is_file() or log.is_symlink()
+        or stat.S_IMODE(log.stat().st_mode) & 0o077
+        or not 0 < log.stat().st_size <= 32 * 1024**2):
+    stop("dryrun_log_missing_or_not_private")
+if package_log.exists() or package_log.is_symlink():
+    stop("real_package_log_already_exists")
+expected = sorted([
+    ("kwipi-passive-fixture_0.1.0.bb", "do_deploy_source_date_epoch"),
+    ("kwipi-companion_0.2.0a1.bb", "do_deploy_source_date_epoch"),
+])
+expected_compile = sorted([
+    ("kwipi-passive-fixture_0.1.0.bb", "do_compile"),
+    ("kwipi-companion_0.2.0a1.bb", "do_compile"),
+])
+body = log.read_text(encoding="utf-8", errors="replace")
+refs = [(Path(recipe).name, task) for recipe, task in re.findall(
+    r'([^\s()]+\.bb):(do_[A-Za-z0-9_]+)', body)]
+suspect = sorted((rec, task) for rec, task in refs
+                 if task.startswith(("do_rootfs", "do_image", "do_deploy")))
+compile_tasks = sorted((rec, task) for rec, task in refs
+                       if task.startswith("do_compile"))
+if (len(refs) != 23 or suspect != expected
+        or compile_tasks != expected_compile):
+    stop("task_set_changed_or_unreviewed")
+if any("microduck-daemon" in rec for rec, task in refs):
+    stop("unexpected_oem_daemon_task")
+if "Tasks Summary" not in body and "Task Summary" not in body:
+    stop("missing_bitbake_summary")
+if re.search(r'(?im)\b(?:ERROR|FATAL):', body):
+    stop("error_in_dryrun")
+if shutil.disk_usage(base / "build").free < 16 * 1024**3:
+    stop("insufficient_build_disk")
+for name in ("microduck-pinned.yml", "p13b5-offline.yml"):
+    f = scratch / name
+    if f.is_symlink() or not f.is_file() or f.stat().st_size == 0:
+        stop("kas_overlay_missing_or_linked")
+print("P13B6_PINS_AND_TASKS: PASS")
+print("P13B6_TARGET: kwipi-passive-fixture_0.1.0")
+print("P13B6_REAL_PACKAGE_PREFLIGHT: PASS_NO_BITBAKE")
+print("P13B6_PACKAGE_EXECUTED: false")
+PY
+```
+
+### Exécution unique B6 — seulement si le préflight précédent est PASS
+
+```bash
+set -euo pipefail
+BASE=/home/jp/kwipi-build-v1
+D="$BASE/p13b5-dev-metadata-20261101"
+CFG="$D/microduck-pinned.yml:$D/p13b5-offline.yml"
+LOG="$D/p13b6-package-rpm-real.log"
+if [ -e "$LOG" ] || [ -L "$LOG" ]; then
+    echo "P13B6_PACKAGE_STOP: log_already_exists"
+else
+    (umask 077; : > "$LOG")
+    export KAS_WORK_DIR="$BASE/kas-work" KAS_BUILD_DIR="$BASE/build"
+    export KAS_CLONE_DEPTH=1 PYTHONDONTWRITEBYTECODE=1 CARGO_NET_OFFLINE=true
+    export GIT_TERMINAL_PROMPT=0 GIT_CONFIG_COUNT=1
+    export GIT_CONFIG_KEY_0=protocol.https.allow GIT_CONFIG_VALUE_0=never
+    umask 022
+    if kas shell --skip repos_checkout "$CFG" \
+       -c 'set -euo pipefail; bitbake -c package_write_rpm kwipi-passive-fixture' \
+       >> "$LOG" 2>&1; then
+        echo "P13B6_REAL_PACKAGE_WRITE_TASK: EXIT_0"
+        echo "P13B6_B6_RPM_AND_PKGDEST: MUST_VERIFY_NEXT"
+        echo "P13B6_ROOTFS_BUILT: false_not_requested"
+    else
+        echo "P13B6_REAL_PACKAGE_WRITE_TASK: STOP_NONZERO_SEE_PRIVATE_LOG"
+        echo "P13B6_NO_AUTOMATIC_RETRY: true"
+    fi
+fi
+```
+
+**Ne pas conclure PASS paquet** sur `EXIT_0` seul : dans un contrôle ultérieur séparé, lire `PKGDEST` et `DEPLOY_DIR_RPM` **effectifs**, vérifier la présence de cinq fichiers .py exactement, leurs SHA-256 B6 et le RPM `allarch` sans autre contenu inattendu. Vérifier dans le log que `microduck-daemon` n'a pas été replanifié. En cas de STOP : ne pas relancer, conserver les fichiers d'audit et vérifier le motif sans exposer les secrets du `bitbake -e`.
+
 ## Statut à ce SHA documentaire
 
 `P13B5_METADATA = PASS` (preuve opérateur WSL2) ; `P13B6_PACKAGE_WRITE = NON_EXECUTE` ; `P16_B10_ROOTFS_24_MODULES = EN_ATTENTE` ; `WIC/RAUC/ROBOT = NON_VALIDES`.
