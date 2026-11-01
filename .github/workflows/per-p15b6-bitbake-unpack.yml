@@ -10,6 +10,10 @@ on:
       - "docs/per-p15b6m-real-bitbake-metadata-unpack-2026-11-01.md"
   workflow_dispatch:
 
+concurrency:
+  group: p15b6m-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -70,17 +74,26 @@ jobs:
           git -C "$P15BM_YOCTO" checkout --detach FETCH_HEAD
           test "$(git -C "$P15BM_YOCTO" rev-parse HEAD)" = "1ee58387810cebb67ae0d634c351d95024483bce"
       - name: Install only parser host prerequisites, never relax OS sandbox
+        timeout-minutes: 6
         run: |
           set -euo pipefail
           free_kb="$(df -Pk /tmp | awk 'NR==2 {print $4}')"
           echo "Disk free before P15-B6-M metadata/unpack: $free_kb KB"
           test "$free_kb" -ge 6000000 || { echo "P15-B6-M STOP: insufficient disk"; exit 1; }
-          sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends chrpath diffstat
+          echo "P15-B6-M prereq: apt index start $(date -u +%FT%TZ)"
+          timeout 120s sudo apt-get update -qq || { echo "P15-B6-M STOP: apt update failed/timeout"; exit 1; }
+          echo "P15-B6-M prereq: apt packages start $(date -u +%FT%TZ)"
+          timeout 90s sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends chrpath diffstat || { echo "P15-B6-M STOP: apt install failed/timeout"; exit 1; }
+          command -v chrpath
+          command -v diffstat
           mkdir -p "$KAS_WORK_DIR" "$KAS_BUILD_DIR"
-          python -m venv "$RUNNER_TEMP/p15b6m-kas-venv"
-          "$RUNNER_TEMP/p15b6m-kas-venv/bin/pip" install --no-cache-dir --disable-pip-version-check 'kas==5.2.0'
+          echo "P15-B6-M prereq: isolated Python venv start $(date -u +%FT%TZ)"
+          timeout 30s python -m venv "$RUNNER_TEMP/p15b6m-kas-venv" || { echo "P15-B6-M STOP: venv failed/timeout"; exit 1; }
+          echo "P15-B6-M prereq: pinned kas 5.2.0 pip install start $(date -u +%FT%TZ)"
+          timeout 120s "$RUNNER_TEMP/p15b6m-kas-venv/bin/pip" install --no-cache-dir --disable-pip-version-check 'kas==5.2.0' || { echo "P15-B6-M STOP: kas install failed/timeout"; exit 1; }
+          "$RUNNER_TEMP/p15b6m-kas-venv/bin/kas" --version
           echo "$RUNNER_TEMP/p15b6m-kas-venv/bin" >> "$GITHUB_PATH"
+          echo "P15-B6-M prereq: completed $(date -u +%FT%TZ)"
       - name: Temporary KAS overlay; P14C only DEV, P15-B6 not selected
         run: |
           set -euo pipefail
