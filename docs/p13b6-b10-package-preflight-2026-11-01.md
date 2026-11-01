@@ -1,5 +1,35 @@
 # P13B5 validé ; P13B6 — décision avant empaquetage DEV B10 (01/11/2026)
 
+## Retour final WSL2 de la session — empaquetage réel réussi, vérification de charge utile STOP (01/11/2026)
+
+**Ce paragraphe prévaut sur les décisions intermédiaires `P13B6_PACKAGE_RUN:false` consignées plus bas**, qui décrivaient alors le dry-run uniquement. Base GitHub avant nouvelle PR documentaire : `main@5842780f6fab4b5bc1a8d997d71a8efeafca7d56` ; #259 est fusionnée (5/5 CI réussies).
+
+| Étape réellement exécutée sur WSL2 | Preuve reçue | Portée |
+|---|---|---|
+| Préflight avant vrai BitBake | `P13B6_PINS_AND_TASKS: PASS` ; `P13B6_REAL_PACKAGE_PREFLIGHT: PASS_NO_BITBAKE` | Révisions, KAS et 23 tâches dry-run inchangés |
+| Écriture ciblée | `P13B6_REAL_PACKAGE_WRITE_TASK: EXIT_0` | Une tâche `bitbake -c package_write_rpm kwipi-passive-fixture` réussie ; **pas** un `do_rootfs` |
+| Arborescence `PKGDEST` | `P13B6_PYTHON_MODULES: 5` ; `P13B6_PYTHON_SHA256: PASS` | Cinq modules B6 en paquet séparé conformes à la source |
+| Inventaire `DEPLOY_DIR_RPM` | 3 fichiers avec magie RPM valide | Principal `kwipi-passive-fixture-0.1.0-r0.noarch.rpm` **21458 octets**, `-dbg-0.1.0-r0.noarch.rpm` **5869**, `-dev-0.1.0-r0.noarch.rpm` **6009** ; les variantes sont normales, **ne pas exiger un seul RPM global** |
+| En-tête paquet principal | `P13B6_RPM_MAIN: PASS_HEADER_AND_FILE_LIST` | Identité `kwipi-passive-fixture|0.1.0|r0|noarch`, cinq fichiers .py attendus, 0 chemin supplémentaire hors répertoires parents, dépendance `kwipi-companion`, aucun scriptlet |
+| Digests internes de l'en-tête | `P13B6_RPM_HEADER_SHA256: PASS_5_OF_5` ; `FILEDIGESTALGO=8`, longueur 64 | Les digests déclarés **dans l'en-tête** pour les cinq fichiers correspondent aux sources. Cela **ne compare pas** les octets du payload compressé |
+| Lecture CPIO réelle | `P13B6_PAYLOAD_STOP: native_rpm2cpio_unavailable_or_unusable` | Aucun payload décodé ; pas d'accusation de corruption |
+| Diagnostic natif ultérieur | `RPM2CPIO_EXIT: 127`, 0 octet, `rpm2cpio.real` : `libarchive.so.13` introuvable ; `RPMKEYS_EXIT: 127`, `rpmkeys` : `libbz2.so.1` introuvable | **Chargeur ELF de l'outillage Yocto hors contexte**, non contenu du RPM. Il faut d'abord résoudre l'environnement de ces outils ; pas de bibliothèque système à installer par défaut |
+
+**Précisions :** les outils existent dans `/home/jp/kwipi-build-v1/build/tmp/sysroots-components/x86_64/rpm-native/usr/bin/`. `rpm` utilisé dans `work/all-poky-linux/kwipi-passive-fixture/0.1.0/recipe-sysroot-native/usr/bin/rpm` peut lire `-qp` mais affiche en `stderr` `error: cannot open Packages database in /var/lib/rpm` ; son code retour pour `--qf %{FILEDIGESTALGO}` était bien **0**, et `stdout='8'`. Un essai `rpm -K --nosignature` a échoué sur le chemin d'`rpmkeys` absent du sysroot ciblé ; l'`rpmkeys` effectivement retrouvé ensuite a l'erreur de chargement `libbz2.so.1`. Ni cet échec, ni `rpm2cpio` 127 **ne démontrent** un RPM mal formé. Aucun digeste du **RPM complet** ni vérification de signature ne remplace la comparaison des octets décompressés à la source.
+
+### Reprise bornée — ne pas refaire les compilations
+
+1. **Lecture seule d'abord :** contrôler le binaire effectivement lancé (script enveloppe `rpm2cpio` vs `rpm2cpio.real`), l'`ldd`/`readelf -d` du vrai exécutable et de `rpmkeys`, et la présence des bibliothèques `libarchive.so.13` et `libbz2.so.1` dans les **sysroots natifs Yocto existants** (`build/tmp/sysroots-components/x86_64` et `recipe-sysroot-native`). Limiter la recherche et n'afficher que chemins/noms/versions utiles ; **ne pas publier d'environnement BitBake complet**, de secrets ni de médias.
+2. **Si les bibliothèques exactes sont présentes et compatibles**, utiliser l'environnement natif Yocto correctement initialisé ou un chemin de bibliothèques strictement temporaire **limité au processus d'inspection**, sans créer de symlinks, modifier les binaires, installer d'outils hôte, nettoyer le cache ni répéter la tâche package. **STOP** si bibliothèque inconnue/incompatible ou nécessité de modifier le système.
+3. Après relance de l'outil valide, contrôle positif **réel** : décompresser **en lecture seule** le RPM principal déjà produit, comparer *les octets de tous les fichiers réguliers* : **exactement cinq .py**, SHA-256 identiques à `proof["addon_sha256"]`, pas d'autre fichier, lien, device ou permission exécutable inattendus. Contrôle négatif : charge utile vide, tronquée, entrée supplémentaire, symlink, mauvaise somme, outil cassé → **STOP** ; jamais `PASS` sur les seuls en-têtes. Une validation RPM digests (non signée) est distincte de l'authenticité/ signature de release.
+4. **Inspecter le journal réel privé** `/home/jp/kwipi-build-v1/p13b5-dev-metadata-20261101/p13b6-package-rpm-real.log` : résumé, erreurs, tâche finale et présence éventuelle de `microduck-daemon:do_compile/do_package/do_package_write_rpm` ou `do_rootfs/do_image` **dans la tâche réelle** ; ne pas conclure à son absence sur le seul dry-run. Si tâche inattendue, journal non vérifiable ou ambigu : **STOP** / preuve inconnue.
+5. **Avant un nouveau rootfs**, adapter/faire tester les portes P16-A/B10 pour **24 modules** au lieu des anciens 19, avec SHA source, compte Kwipi isolé, P15A désactivée, shipping inchangé et binaires B12 AArch64 exacts ; **pas** de `do_rootfs` sous ce lot. Aucun firmware signé, WIC/RAUC ou robot validé.
+
+**État de fin de session :** `P13B6_PACKAGE_WRITE=EXIT_0_WSL2` ; `P13B6_PKGDEST=PASS_5_OF_5` ; `P13B6_RPM_HEADER=PASS_MAIN_AND_DIGESTS` ; `P13B6_PAYLOAD=STOP_NATIVE_TOOL_DEPENDENCIES` ; `P13B6_REAL_LOG_AUDIT=EN_ATTENTE` ; `P16_ROOTFS_24_MODULES=EN_ATTENTE` ; `ROBOT_VALIDATED=false`.
+
+---
+
+
 ## État et provenance
 
 - Base de ce lot documentaire : `main@f3ecd8ae5bfe93c893128130f80105e32156659f` ; PR #258 **fusionnée après 5/5 CI vertes**. OEM `microduck@942e58e3aa6dbb28e7037203fff11866122c7567`, RL `b02fdea4902c2b93b7d34a83a6f05da4ececb7d3`, Yocto `1ee58387810cebb67ae0d634c351d95024483bce` ; aucun gitlink à modifier.
@@ -449,4 +479,4 @@ fi
 
 ## Statut à ce SHA documentaire
 
-`P13B5_METADATA = PASS` (preuve opérateur WSL2) ; `P13B6_PACKAGE_WRITE = NON_EXECUTE` ; `P16_B10_ROOTFS_24_MODULES = EN_ATTENTE` ; `WIC/RAUC/ROBOT = NON_VALIDES`.
+**Statut historique du dry-run, remplacé par le retour WSL2 en tête du document :** `P13B5_METADATA = PASS` (preuve opérateur WSL2) ; `P13B6_PACKAGE_WRITE = NON_EXECUTE` ; `P16_B10_ROOTFS_24_MODULES = EN_ATTENTE` ; `WIC/RAUC/ROBOT = NON_VALIDES`.
