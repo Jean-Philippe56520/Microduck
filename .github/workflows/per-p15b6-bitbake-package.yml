@@ -2,6 +2,7 @@ name: PER-P15-B6-P real pinned BitBake do_package (NOT image/robot)
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     paths:
       - ".github/workflows/per-p15b6-bitbake-package.yml"
       - "scripts/per_p15b6_bitbake_package_gate.py"
@@ -18,6 +19,9 @@ permissions:
 
 jobs:
   real-bitbake-p15b6-package-files-only:
+    # Opt-in: first GitHub attempt hit native cmake at task 489/522 (timeout 1600s).
+    # A skipped job must never be claimed as do_package proof.
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-b6p-bitbake') }}
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     env:

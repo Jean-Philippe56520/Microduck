@@ -20,6 +20,11 @@
 
 **Retour arrière.** Retirer uniquement workflow, validateur, tests et doc P15-B6-P sur la branche draft. N'altérer ni OEM, ni image, ni versions, ni répertoires personnels, ni clé/signature, ni SQLite.
 
-## Résultat réel
+## Résultat réel — STOP par délai de dépendance native (pas de paquet)
 
-En attente de l'essai GitHub Actions. Ne jamais comptabiliser un paquet tant que la CI et le contrôle du répertoire split ne sont pas verts au SHA testé.
+[CI #41257921306](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41257921306), SHA exact `c50e703f6d1a2f13c5ed4c461f83394ec23c600f` : **échec par expiration du `timeout 1600s` (code 124 ; kas a signalé SIGTERM -15)**. `bitbake -p` a analysé 3 101 recettes, 0 erreur. `bitbake -c package kwipi-passive-fixture` a lancé 522 tâches et atteint la **tâche 489/522** : `cmake-native_4.3.1.bb:do_compile`, encore en cours à expiration. La tâche `kwipi-passive-fixture:do_package` et l'audit final `PKGDEST` **n'ont pas été exécutés avec succès**, aucun artefact de preuve de paquet n'a été produit. Ce n'est **ni une réussite B6-P, ni la preuve d'un défaut du code Python**. B6-M est indépendamment **PASS** (SHA `dc55053c`, et revalidé au SHA `c50e703` [CI #41257921366](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41257921366)). Les quatre autres CI de la branche sont vertes au même SHA.
+
+**Décision après le STOP préenregistré** : pas de nouvelle exécution complète sur runner GitHub vierge ni augmentation arbitraire du délai. Préparer la reprise sur le cache **local WSL2 déjà utilisé** pour les tâches P14B/P15A, sans présumer qu'il est encore présent ni compatible. Le lot [P15-B6-P-Cache](per-p15b6p-cached-yocto-resume-2026-11-01.md) se limite à un préflight fail-closed et une invocation locale explicite `--run`, avec réutilisation des scripts P11/P12/P14B/B6 et de l'auditeur B6-P inchangé. Aucun accès distant à WSL2 depuis GitHub/ChatGPT et aucun run réel local revendiqué. Toute validation future exige **code retour 0 du vrai BitBake** et JSON PKGDEST au même SHA, pas seulement un rapport de fixtures.
+
+Pour éviter les reruns complets à chaque commit de documentation, le job GitHub B6-P est désormais **opt-in** : il ne démarre qu'à l'ajout explicite du label `run-b6p-bitbake` à la PR, ou à un `workflow_dispatch` disponible. **Un job GitHub marqué « skipped » ne valide rien** ; le précédent échec du vrai `do_package` reste l'état de preuve.
+
