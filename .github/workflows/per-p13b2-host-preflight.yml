@@ -1,0 +1,61 @@
+name: PER-P13B2-H1 persistent Yocto host preflight (NO BUILD)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/per-p13b2-host-preflight.yml"
+      - "scripts/per_p13b2_host_preflight.py"
+      - "tests/test_per_p13b2_host_preflight.py"
+      - "docs/per-p13b2-h1-host-preflight-2026-10-31.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-no-build-source-and-resource-gates:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 12
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          submodules: false
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify commit, OEM gitlinks and source-only fixture matrix
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git ls-tree HEAD upstream/microduck | awk '{print $3}')" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git ls-tree HEAD upstream/microduck_rl | awk '{print $3}')" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          python -m compileall -q scripts/per_p13b2_host_preflight.py tests/test_per_p13b2_host_preflight.py
+          python -m unittest discover -s tests -p 'test_per_p13b2_host_preflight.py' -v
+          python -m scripts.per_p13b2_host_preflight --plan > "$RUNNER_TEMP/p13b2-offline-plan.json"
+          python - "$RUNNER_TEMP/p13b2-offline-plan.json" <<'PY'
+          import json, sys
+          report=json.load(open(sys.argv[1], encoding="utf-8"))
+          assert report["status"]=="offline_plan_only_no_host_checked"
+          assert report["same_volume_requires_sum_gib"]==290
+          assert report["bitbake_executed"] is False
+          assert report["robot_validated"] is False
+          print("P13B2-H1 offline plan only; no local BitBake capacity was assumed")
+          PY
+          git diff --exit-code -- upstream/
+      - name: Reject incomplete resource invocations instead of running a build
+        run: |
+          set -euo pipefail
+          if python -m scripts.per_p13b2_host_preflight --check > /dev/null 2>&1; then
+            echo "P13B2-H1 STOP: incomplete check unexpectedly succeeded"
+            exit 1
+          fi
+          if python -m scripts.per_p13b2_host_preflight --plan --build /tmp > /dev/null 2>&1; then
+            echo "P13B2-H1 STOP: offline plan improperly inspected local paths"
+            exit 1
+          fi
+          test "$(git status --porcelain --untracked-files=no)" = ""
