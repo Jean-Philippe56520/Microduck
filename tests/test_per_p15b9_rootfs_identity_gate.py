@@ -174,5 +174,44 @@ class InstalledIdentityFixtures(unittest.TestCase):
             verify_rootfs(self.root)
 
 
+    def test_positive_merged_usr_lib_alias_is_one_physical_unit(self):
+        (self.root / "lib").symlink_to("usr/lib", target_is_directory=True)
+        result = verify_rootfs(self.root)
+        self.assertEqual(result["status"], STATUS)
+        self.assertTrue(result["p15a_service_installed_not_enabled_in_rootfs"])
+        self.assertFalse(result["runtime_service_state_verified"])
+        self.assertFalse(result["robot_validated"])
+
+    def test_negative_extra_kwipi_unit_still_rejected_through_merged_usr(self):
+        (self.root / "lib").symlink_to("usr/lib", target_is_directory=True)
+        (self.root / "usr/lib/systemd/system/kwipi-surprise.service").write_text(
+            "[Service]\nExecStart=/bin/false\n"
+        )
+        with self.assertRaises(Refused):
+            verify_rootfs(self.root)
+
+    def test_negative_wants_symlink_still_rejected_through_merged_usr(self):
+        (self.root / "lib").symlink_to("usr/lib", target_is_directory=True)
+        wants = self.root / "etc/systemd/system/multi-user.target.wants"
+        wants.mkdir(parents=True)
+        (wants / "kwipi-readonly-probe.service").symlink_to(self.unit)
+        with self.assertRaises(Refused):
+            verify_rootfs(self.root)
+
+    def test_negative_unapproved_root_lib_alias(self):
+        (self.root / "etc/systemd/system").mkdir(parents=True)
+        (self.root / "lib").symlink_to("etc", target_is_directory=True)
+        with self.assertRaises(Refused):
+            verify_rootfs(self.root)
+
+    def test_negative_direct_systemd_folder_symlink(self):
+        (self.root / "etc/systemd").mkdir(parents=True)
+        (self.root / "etc/systemd/system").symlink_to(
+            self.root / "usr/lib/systemd/system",
+            target_is_directory=True,
+        )
+        with self.assertRaises(Refused):
+            verify_rootfs(self.root)
+
 if __name__ == "__main__":
     unittest.main()

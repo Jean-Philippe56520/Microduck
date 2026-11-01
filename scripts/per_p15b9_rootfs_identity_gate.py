@@ -117,11 +117,33 @@ def verify_rootfs(rootfs: Path) -> dict:
     if (any(line.startswith(forbidden) for line in active)
             or preset.strip() != "disable kwipi-readonly-probe.service"):
         raise Refused("P15A unit is installable or enabled by preset")
-    # No installed activation links, even with a harmless-looking link name.
+    # Yocto merged-/usr may install /lib -> usr/lib. A lexical scan would
+    # count the same P15A unit twice and incorrectly reject the /lib spelling.
+    # Inspect each real directory once; fail closed on any other directory
+    # alias rather than silently overlooking an activation link.
+    lib_alias = root / "lib"
+    if lib_alias.is_symlink() and os.readlink(lib_alias) != "usr/lib":
+        raise Refused("unreviewed rootfs /lib symlink target")
+    visited: set[Path] = set()
     for base in ("etc/systemd/system", "usr/lib/systemd/system", "lib/systemd/system"):
         folder = root / base
-        if not folder.exists() or folder.is_symlink():
+        if not folder.exists():
+            if folder.is_symlink():
+                raise Refused("dangling systemd directory symlink")
             continue
+        if folder.is_symlink() or not folder.is_dir():
+            raise Refused("linked or invalid systemd directory")
+        physical = folder.resolve(strict=True)
+        if not physical.is_relative_to(root):
+            raise Refused("systemd directory escapes rootfs")
+        if physical in visited:
+            if (base != "lib/systemd/system"
+                    or not lib_alias.is_symlink()
+                    or os.readlink(lib_alias) != "usr/lib"
+                    or physical != (root / "usr/lib/systemd/system").resolve(strict=True)):
+                raise Refused("unreviewed systemd directory alias")
+            continue
+        visited.add(physical)
         for item in folder.rglob("*"):
             rel = item.relative_to(root).as_posix()
             if (item.name.startswith("kwipi")
