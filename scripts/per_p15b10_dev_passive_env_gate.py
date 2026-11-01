@@ -168,7 +168,7 @@ def _require_dev_only_append(appends: str, selected: Path) -> None:
         entry = line.strip()
         if not entry:
             continue
-        if line[0] not in " \\t":
+        if not line[0].isspace():
             section = (Path(entry[:-1]).name
                        if entry.endswith(".bb:") else None)
             continue
