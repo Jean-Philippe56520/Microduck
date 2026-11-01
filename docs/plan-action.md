@@ -4,6 +4,12 @@
 
 **Ce bloc est l'autorité de reprise.** Source de code contrôlée : [`main@89c6472fdf4afe472a41df9e4bd63186eb31d94f`](https://github.com/Jean-Philippe56520/Microduck/tree/89c6472fdf4afe472a41df9e4bd63186eb31d94f). **#230, #231, #235, #238–#241 et #242–#248 sont fusionnées.** La PR [#249](https://github.com/Jean-Philippe56520/Microduck/pull/249) correspond à une synthèse intermédiaire qui les indiquait encore ouvertes ; son contenu est dorénavant **historique**, pas décisionnel. [#237](https://github.com/Jean-Philippe56520/Microduck/pull/237) (QW-2/MEM-EX3) reste ouverte. Vérifier GitHub à chaque reprise ; historique et CI ne remplacent pas une preuve d'environnement réel.
 
+### P11-C1 — intégration source B4/B8 en qualification (01/11/2026)
+
+**Objectif et manque réellement traités :** `main@db2e138a81cf1126b9b1a1daecd9efef48136c27` exportait P10A/B/C vers P11/P12 mais n'appelait pas B4/B8. La [PR #251](https://github.com/Jean-Philippe56520/Microduck/pull/251), après [préenregistrement des positifs/négatifs](p11-b4b8-source-closure-2026-11-01.md), réutilise les overlays stricts **B4 puis B8** dans `build()`. La vérification de l'archive et `checked_artifact` P12 exigent désormais la composition, deux fichiers Rust locaux, un seul détecteur, l'opt-in `false`, la politique d'UID isolé et les champs `robot_validated=false` / ACL cible non validée. L'ancienne archive P10 seule doit être refusée. La **preuve attendue** est double export identique + compilation `mediad` depuis l'archive en CI, puis transmission exacte à la couche P12. CI et SHA final à vérifier avant fusion.
+
+**Reste non résolu après cette seule clôture de sources :** la version `mediad` contenue dans les **binaires AArch64/WIC WSL2 précédents n'est pas reconstruite**. La construction P11/P12 candidate ne dit rien de `DUCK_REVISION` exécutée, UID/groupe/ACL effectifs sur `/run`, timestamp ou numéro de capture `Sighting`, débit NPU ou boucle autonome. Ne pas déverrouiller le lecteur B5 de fixtures ni installer de service. **Prochain critère** : preuve de source incluse dans une vraie recette/paquet, puis droits/provenance OEM vérifiables, uniquement sur objectif nouveau avec positif, négatif et STOP prévus ; pas de nouveau `do_rootfs`/WIC sans nécessité mesurée. Robot absent.
+
 ### Jalons validés pour leur périmètre strict
 
 | Porte | Acquis vérifié | Non acquis |
