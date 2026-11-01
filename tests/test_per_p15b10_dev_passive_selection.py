@@ -36,16 +36,32 @@ class P15B10GateTests(unittest.TestCase):
         self.addon = self.work / b6.LAYER
         self.selection = self.work / "selection"
         shutil.copytree(SELECTED, self.selection)
+        # Metadata-only fixtures: existing directories are needed by validate.
+        # The two source_gate tests remove them before staging real reviewed bytes.
+        self.base.mkdir()
+        self.addon.mkdir()
         self.base_proof = {
+            "schema": p14b.SCHEMA,
+            "source_revision": "fixture-revision",
+            "oem_yocto_sha": p14b.YOCTO_SHA,
             "selected_python_modules": 19,
             "license_recipe_closed": True,
-            "source_sha256": {"microduck_companion/test.py": "a" * 64},
+            "source_license_checked": False,
+            "source_sha256": {
+                **{name: "a" * 64 for name in p14b.p14a.SELECTED},
+                "pyproject.toml": "b" * 64,
+            },
         }
         self.addon_proof = {
             "schema": b6.SCHEMA,
+            "source_revision": "fixture-revision",
+            "oem_yocto_sha": p14b.YOCTO_SHA,
             "status": "host_addon_source_candidate_not_bitbake",
             "addon_modules": 5, "base_modules": 19,
-            "base_sha256": dict(self.base_proof["source_sha256"]),
+            "base_sha256": {
+                name: self.base_proof["source_sha256"][name]
+                for name in p14b.p14a.SELECTED
+            },
             "dev_image_selected": False,
             "shipping_image_selected": False,
             "systemd_installed": False,
@@ -196,6 +212,8 @@ class P15B10GateTests(unittest.TestCase):
         self.assertFalse((SELECTED / "recipes-core/images/microduck-image.bbappend").exists())
 
     def test_11_source_gate_checks_real_closed_19_plus_5_layers(self):
+        self.base.rmdir()
+        self.addon.rmdir()
         p14b.stage(ROOT, self.base)
         b6.stage(ROOT, self.addon)
         base, addon = b10.source_gate(
@@ -204,7 +222,12 @@ class P15B10GateTests(unittest.TestCase):
         )
         self.assertEqual((19, 5),
                          (base["selected_python_modules"], addon["addon_modules"]))
-        self.assertEqual(base["source_sha256"], addon["base_sha256"])
+        self.assertEqual(
+            {name: digest for name, digest in base["source_sha256"].items()
+             if name != "pyproject.toml"},
+            addon["base_sha256"],
+        )
+        self.assertIn("pyproject.toml", base["source_sha256"])
         self.assertEqual("host_addon_source_candidate_not_bitbake", addon["status"])
 
     def test_12_unreviewed_selection_source_change_stops(self):
@@ -229,6 +252,8 @@ class P15B10GateTests(unittest.TestCase):
                                     addon_layer=self.addon, python_layer=self.base)
 
     def test_13_source_gate_refuses_modified_addon_package(self):
+        self.base.rmdir()
+        self.addon.rmdir()
         p14b.stage(ROOT, self.base)
         b6.stage(ROOT, self.addon)
         p = self.addon / b6.RECIPE
