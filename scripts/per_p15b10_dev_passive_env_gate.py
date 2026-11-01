@@ -125,11 +125,7 @@ def validate(dev_env: str, shipping_env: str, appends: str, *,
         layers = {Path(x).resolve() for x in _tokens(bbvar(env, "BBLAYERS"))}
         if not {selected_layer, addon}.issubset(layers):
             raise EnvRefused("passive selection or source layer not in BitBake BBLAYERS")
-    if not show_appends_selects_file(
-        appends, recipe="microduck-image-dev.bb",
-        expected=selected_layer / APPEND,
-    ):
-        raise EnvRefused("BitBake did not select the exact DEV-only passive append")
+    _require_dev_only_append(appends, selected_layer / APPEND)
     return {
         "schema": SCHEMA,
         "status": "dev_only_passive_selection_effective_metadata_verified",
@@ -152,6 +148,37 @@ def validate(dev_env: str, shipping_env: str, appends: str, *,
         "robot_validated": False,
         "motor_commands_issued": 0,
     }
+
+
+
+def _require_dev_only_append(appends: str, selected: Path) -> None:
+    """Reject the reviewed append under ANY non-DEV recipe section.
+
+    The reused helper verifies one exact DEV selection. This additional guard
+    refuses a second occurrence under shipping or another recipe even if the
+    correct DEV entry remains present.
+    """
+    if not show_appends_selects_file(
+        appends, recipe="microduck-image-dev.bb", expected=selected
+    ):
+        raise EnvRefused("BitBake did not select the exact DEV-only passive append")
+    expected = selected.resolve(strict=True)
+    section = None
+    for line in appends.splitlines():
+        entry = line.strip()
+        if not entry:
+            continue
+        if line[0] not in " \\t":
+            section = (Path(entry[:-1]).name
+                       if entry.endswith(".bb:") else None)
+            continue
+        if not entry.startswith("/") or not entry.endswith(".bbappend"):
+            continue
+        candidate = Path(entry)
+        if candidate.is_file() and candidate.resolve(strict=True) == expected:
+            if section != "microduck-image-dev.bb":
+                raise EnvRefused("passive DEV append also selected outside DEV")
+
 
 
 def _private_env(path: Path) -> str:
