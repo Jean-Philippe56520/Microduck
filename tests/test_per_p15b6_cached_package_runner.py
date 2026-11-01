@@ -33,9 +33,9 @@ class CachedOperatorTests(unittest.TestCase):
         (self.cfg.build / "conf").mkdir()
         (self.cfg.build / "conf/local.conf").write_text('MACHINE = "microduck-zero3"\n')
         (self.cfg.build / "tmp/work").mkdir(parents=True)
-        target = self.cfg.build / "tmp/stamps/x86_64-linux/cmake-native/4.3.1-r0"
+        target = self.cfg.build / "tmp/stamps/x86_64-linux/cmake-native"
         target.mkdir(parents=True)
-        self.cmake_stamp = target / "do_populate_sysroot"
+        self.cmake_stamp = target / "4.3.1-r0.do_populate_sysroot.abc123"
         self.cmake_stamp.write_text("done")
         self.revisions = {
             self.cfg.project: self.sha, self.cfg.yocto: runner.YOCTO,
@@ -103,7 +103,7 @@ class CachedOperatorTests(unittest.TestCase):
     def test_05_signatures_only_do_not_count_as_completed_cache(self):
         stamp_dir = self.cmake_stamp.parent
         self.cmake_stamp.unlink()
-        stamp_dir.joinpath("do_populate_sysroot.sigdata.abc").write_bytes(b"fake")
+        stamp_dir.joinpath("4.3.1-r0.do_populate_sysroot.sigdata.abc").write_bytes(b"fake")
         with self.assertRaises(runner.Refused):
             runner.preflight(self.cfg)
 
