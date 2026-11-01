@@ -21,3 +21,33 @@
 ## Résultat
 
 **Préparation/code/tests :** en attente des vérifications GitHub de ce lot. **BitBake WSL2 réel et paquet :** en attente de l'exécution effective par l'opérateur, non accessible depuis la session d'édition GitHub.
+
+## Procédure locale WSL2 — uniquement sur décision explicite
+
+Préconditions : checkout de la PR #244 au SHA exact affiché sur GitHub, sous-modules OEM présents aux gitlinks épinglés, checkout Yocto au SHA 1ee58387810cebb67ae0d634c351d95024483bce, KAS_WORK_DIR réellement utilisé lors des anciens builds (six clones OE/BitBake/Rockchip/RAUC), KAS_BUILD_DIR avec conf/local.conf, tmp/work et un cache-stamp cmake-native déjà terminé. KAS 5.2 et cargo requis. Ne pas substituer des répertoires vierges ou réinstaller des dépendances au hasard. Les chemins WSL2 cités dans les logs antérieurs sont des pistes, non des chemins vérifiés aujourd'hui.
+
+Depuis la racine du checkout Microduck dans WSL2, renseigner **les chemins réels** et conserver un scratch inexistant. Le SHA doit être recopié depuis la page de PR, pas auto-déduit comme une preuve indépendante.
+
+```bash
+PROJECT="$PWD"
+YOCTO="/home/jp/kwipi-build-v1/yocto"       # verifier sur votre WSL2
+WORK="/chemin/existant/du/KAS_WORK_DIR"       # repos OE deja presents
+BUILD="/home/jp/kwipi-build-v1/build"       # verifier sur votre WSL2
+SCRATCH="$HOME/kwipi-b6p-scratch-20261101"   # doit ne PAS exister
+EXPECTED_SHA="<SHA complet du HEAD PR #244 lu sur GitHub>"
+
+python3 -m scripts.per_p15b6_cached_package_runner --check \
+  --project "$PROJECT" --yocto "$YOCTO" --work-dir "$WORK" \
+  --build-dir "$BUILD" --scratch "$SCRATCH" --expected-sha "$EXPECTED_SHA"
+
+# Uniquement apres preflight PASS, sans autre BitBake concurrent :
+python3 -m scripts.per_p15b6_cached_package_runner --run \
+  --project "$PROJECT" --yocto "$YOCTO" --work-dir "$WORK" \
+  --build-dir "$BUILD" --scratch "$SCRATCH" --expected-sha "$EXPECTED_SHA"
+```
+
+Le mode --check ne cree aucun fichier ni ne lance kas, mais prouve seulement l'existence de sources epinglees et d'un cache eligible : status p15b6p_local_cached_preflight_only (PAS paquet verifie). L'option --run cree les couches P11/P12/P14B/B6 dans scratch en reutilisant les generateurs existants, impose CARGO_NET_OFFLINE et BB_NO_NETWORK via un overlay scratch, refuse toute recuperation Git HTTPS, saute checkout KAS des depots deja controles, n'invoque que BitBake parse/-e/getvar/do_package et le validateur existant. Le vrai BitBake est limite a 1600 s. Aucune commande clean, do_rootfs, do_image, service ou moteur.
+
+**Verdict :** seule une commande --run reellement executee avec code de sortie 0 de BitBake, suivi de l'audit des fichiers et du rapport SCRATCH/package-proof.json avec status bitbake_passive_addon_package_files_verified_only, constitue une preuve de packaging LOCAL. En cas d'absence de cache, echec, expiration, interruptions, SHA differents ou fichier supplementaire : STOP, aucune preuve de paquet. Le dossier scratch n'est jamais supprime automatiquement ; conserver les logs localement sans publier les sorties -e, secrets ou fichiers prives. Le build cache sera susceptible d'etre modifie par BitBake pendant --run, d'ou la necessite d'un environnement sans autre compilation concurrente et d'un plan de restauration si ses artefacts sont critiques.
+
+**A ce stade :** outil cree, exécution WSL2 non faite. Les tests unitaires synthétiques valident la porte de contrôle, pas un runtime OEM ni le robot.
