@@ -1,3 +1,11 @@
+## P13B B12 — incident de compilation AArch64 et correctif candidat (01/11/2026)
+
+Sur WSL2, la nouvelle source P11/P12 (`57fbff44927c9de158fa9c68adaf3745c090240b`) a passé le parse BitBake P13A, l'extraction et `do_configure`. Le **vrai `do_compile microduck-daemon` a échoué** dans `mediad/src/local_detections_acl.rs` sur `getpwnam_r` : `E0308`, pointeur `*mut i8` au lieu du `*mut u8` attendu en AArch64. La source P15-B8 utilisait `[0_i8; 4096]`, valable sur certains hôtes mais pas portable.
+
+**Correctif de cette branche (à qualifier) :** tampon de type `libc::c_char` lié à l'ABI, refus des régressions `i8`/`u8` fixes dans l'overlay jetable, tests positifs/négatifs. Aucun nouveau paquet ARM64, WIC, RAUC, service actif ni matériel validé par cette modification. **Pour reprendre**, régénérer P11/P12/P13A à partir du nouveau SHA après CI verte, puis compiler et auditer uniquement `microduck-daemon` sur WSL2 ; ne pas altérer l'archive/PKGDEST historique en place. Les critères STOP sont dans [le plan](docs/plan-action.md).
+
+---
+
 ## Point de reprise V1 — après fusion #253 et #254 (01/11/2026)
 
 **Référence GitHub contrôlée :** [`main@448eefeca72146d3424c2c9ef56249a54263b025`](https://github.com/Jean-Philippe56520/Microduck/tree/448eefeca72146d3424c2c9ef56249a54263b025). **PR [#251](https://github.com/Jean-Philippe56520/Microduck/pull/251), [#253](https://github.com/Jean-Philippe56520/Microduck/pull/253) et [#254](https://github.com/Jean-Philippe56520/Microduck/pull/254) fusionnées**, avec 7 contrôles GitHub verts au HEAD de #253 et 7 au HEAD de #254, dont source P11/P12, vrais tests Rust `mediad` sur PC Linux et parsing BitBake `-e` P13A pour #253. La [#252](https://github.com/Jean-Philippe56520/Microduck/pull/252) est **fermée sans fusion**, doublon remplacé ; [#237](https://github.com/Jean-Philippe56520/Microduck/pull/237) est toujours ouverte à revérifier, sans effet sur ce lot.

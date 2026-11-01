@@ -197,7 +197,9 @@ pub(super) fn grant_socket(path: &Path, uid: u32) -> Result<()> {
 pub(super) fn observer_uid() -> Result<u32> {
     let mut entry: libc::passwd = unsafe { std::mem::zeroed() };
     let mut matched: *mut libc::passwd = std::ptr::null_mut();
-    let mut buf = [0_i8; 4096];
+    // libc::c_char follows the target ABI (signed on x86_64, unsigned on AArch64).
+    // getpwnam_r must receive that native type, not a host-specific i8 buffer.
+    let mut buf: [libc::c_char; 4096] = [0; 4096];
     let rc = unsafe {
         libc::getpwnam_r(
             c"kwipi".as_ptr(),

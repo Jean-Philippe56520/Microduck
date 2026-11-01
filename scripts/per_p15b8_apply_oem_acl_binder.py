@@ -123,6 +123,7 @@ def apply(archive: Path, project: Path) -> None:
     helper_content = source_helper.read_text(encoding="utf-8")
     if ("system.posix_acl_access" not in helper_content
             or "getpwnam_r" not in helper_content
+            or "let mut buf: [libc::c_char; 4096] = [0; 4096];" not in helper_content
             or "lsetxattr" not in helper_content
             or "group" not in helper_content):
         raise OverlayRefused("strict Linux ACL source helper contract missing")
