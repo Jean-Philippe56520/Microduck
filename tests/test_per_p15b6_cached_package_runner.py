@@ -183,7 +183,7 @@ class CachedOperatorTests(unittest.TestCase):
         self.assertFalse(self.cfg.scratch.exists())
 
     def test_12_unsafe_colon_or_linebreak_in_scratch_path_refused(self):
-        for name in ("bad:name", "bad\\nline"):
+        for name in ("bad:name", "bad\nline"):
             cfg = runner.Config(
                 self.cfg.project, self.cfg.yocto, self.cfg.work,
                 self.cfg.build, self.cfg.scratch.parent / name, self.sha)
