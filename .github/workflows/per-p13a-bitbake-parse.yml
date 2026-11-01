@@ -7,6 +7,9 @@ on:
       - ".github/workflows/per-p13a-bitbake-parse.yml"
       - "scripts/per_p13a_bitbake_env_gate.py"
       - "tests/test_per_p13a_bitbake_env_gate.py"
+      - "scripts/per_p11_v1_source_release.py"
+      - "scripts/per_p12_yocto_layer.py"
+      - "docs/per-p15b11-opt-in-mediad-source-provenance-2026-11-01.md"
       - "docs/per-p13a-real-bitbake-parse-2026-10-30.md"
   workflow_dispatch:
 
@@ -59,7 +62,7 @@ jobs:
       - name: Create the exact source layer with existing P11/P12 tools
         run: |
           set -euo pipefail
-          python -m scripts.per_p11_v1_source_release --oem-checkout upstream/microduck --output-dir "$P13_SOURCE"
+          python -m scripts.per_p11_v1_source_release --oem-checkout upstream/microduck --with-p15b8-source --output-dir "$P13_SOURCE"
           python -m scripts.per_p12_yocto_layer stage \
             --yocto "$P13_YOCTO" --source-dir "$P13_SOURCE" --output "$P13_LAYER"
           python -m scripts.per_p12_yocto_layer verify --layer "$P13_LAYER"
