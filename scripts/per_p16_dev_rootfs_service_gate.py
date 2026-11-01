@@ -185,6 +185,16 @@ def validate(base: Path, *, report_path: Path | None = None,
             _fail("P16-B10 proof incomplete for service audit")
     else:
         _fail("unreviewed P16-A/B10 proof status")
+    if explicit_b10:
+        # Pin the selected report to the actual existing rootfs, not merely a
+        # matching P15A unit that could also exist in the historical image.
+        # Reuse B10's fail-closed file/ELF gates; no build, install or writes.
+        try:
+            b10._installed_modules(root, python_hashes)
+            b10._binary_checks(root)
+        except b10.Refused as exc:
+            raise Stop("current rootfs differs from pinned B10 proof: " + str(exc)) from exc
+
     if (report.get("python_modules_verified") != modules
             or report.get("probe_systemd_symlink_found") is not False
             or not isinstance(report.get("probe_sha256"), dict)
@@ -263,6 +273,8 @@ def validate(base: Path, *, report_path: Path | None = None,
         "p16_b10_report_rechecked": explicit_b10,
         "b10_report_sha256_verified": explicit_b10,
         "input_report_kind": "P16-B10" if explicit_b10 else "P16-A",
+        "b10_installed_python_rehashed": 24 if explicit_b10 else 0,
+        "b10_oem_binaries_rehashed": 2 if explicit_b10 else 0,
         "installed_probe_files_rehashed": 3,
         "other_systemd_files_examined": examined,
         "systemd_preset_files_examined": checked_presets,
