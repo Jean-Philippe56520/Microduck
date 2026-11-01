@@ -115,5 +115,23 @@ class DevImageOnlyTests(unittest.TestCase):
                             self.py_layer, ROOT)
 
 
+    def test_kas_build_dotdot_path_of_exact_append_is_accepted(self):
+        alias = ROOT / "scripts" / ".." / "yocto" / "meta-kwipi-dev-image" / DEV_APPEND
+        self.assertEqual(
+            self.check(appends=f"microduck-image-dev.bb:\n  {alias}\n")["dev_image_package_count"], 1)
+
+    def test_reject_spoofed_substring_shipping_and_duplicate_append(self):
+        exact = DEV_LAYER / DEV_APPEND
+        invalid = (
+            f"microduck-image-dev.bb:\n  /other/{DEV_APPEND}\n",
+            f"microduck-image.bb:\n  {exact}\n",
+            f"microduck-image-dev.bb:\n  {exact}\n  {exact}\n",
+            f"microduck-image-dev.bb:\n# {exact}\n",
+        )
+        for case in invalid:
+            with self.subTest(data=case[:75]), self.assertRaises(EnvRefused):
+                self.check(appends=case)
+
+
 if __name__ == "__main__":
     unittest.main()

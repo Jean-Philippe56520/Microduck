@@ -176,5 +176,26 @@ class P15AMetadataGateTests(unittest.TestCase):
                 features="allow-root-login"))
 
 
+    def test_kas_build_dotdot_aliases_are_accepted_in_correct_recipe(self):
+        p14c = ROOT / "scripts" / ".." / "yocto/meta-kwipi-dev-image" / P14C_APPEND
+        p15a = ROOT / "scripts" / ".." / "yocto/meta-kwipi-p15-readonly" / DEV_APPEND
+        result = self.check(appends=(
+            f"microduck-image-dev.bb:\n  {p14c}\n  {p15a}\n"
+        ))
+        self.assertEqual(result["systemd_auto_enable"], "disable")
+
+    def test_reject_p15a_in_shipping_section_duplicate_or_wrong_file(self):
+        exact = P15 / DEV_APPEND
+        base = f"microduck-image-dev.bb:\n  {P14C / P14C_APPEND}\n"
+        cases = (
+            base + f"microduck-image.bb:\n  {exact}\n",
+            base + f"  {exact}\n  {exact}\n",
+            base + f"  /outside/{DEV_APPEND}\n",
+        )
+        for case in cases:
+            with self.subTest(case=case[:90]), self.assertRaises(EnvRefused):
+                self.check(appends=case)
+
+
 if __name__ == "__main__":
     unittest.main()

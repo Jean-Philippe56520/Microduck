@@ -105,5 +105,30 @@ class AccountMetadataGateTests(unittest.TestCase):
                 _commands(text)
 
 
+    def test_kas_dotdot_alias_of_real_account_append_is_accepted(self):
+        mid = self.layer.parent / "existing-build"
+        mid.mkdir()
+        alias = mid / ".." / self.layer.name / APPEND_REL
+        outcome = self.check(appends=f"microduck-image-dev.bb:\n  {alias}\n")
+        self.assertTrue(outcome["kwipi_user_declared_dev_only"])
+
+    def test_reject_account_append_in_shipping_duplicate_or_wrong_file(self):
+        exact = self.layer / APPEND_REL
+        cases = (
+            f"microduck-image.bb:\n  {exact}\n",
+            f"microduck-image-dev.bb:\n  {exact}\n  {exact}\n",
+            f"microduck-image-dev.bb:\n  /outside/{APPEND_REL}\n",
+        )
+        for case in cases:
+            with self.subTest(case=case[:90]), self.assertRaises(EnvRefused):
+                self.check(appends=case)
+
+    def test_reject_symlink_instead_of_reviewed_account_append(self):
+        linked = self.layer.parent / "linked.bbappend"
+        linked.symlink_to(self.layer / APPEND_REL)
+        with self.assertRaises(EnvRefused):
+            self.check(appends=f"microduck-image-dev.bb:\n  {linked}\n")
+
+
 if __name__ == "__main__":
     unittest.main()

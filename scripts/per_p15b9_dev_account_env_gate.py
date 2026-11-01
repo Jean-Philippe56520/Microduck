@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 import shlex
 
-from scripts.per_p13a_bitbake_env_gate import EnvRefused, bbvar
+from scripts.per_p13a_bitbake_env_gate import EnvRefused, bbvar, show_appends_selects_file
 
 LAYER_REL = "yocto/meta-kwipi-p15-account"
 APPEND_REL = "recipes-core/images/microduck-image-dev.bbappend"
@@ -53,7 +53,9 @@ def validate(dev_env: str, shipping_env: str, appends: str,
     layer = account_layer.resolve(strict=True)
     if layer not in _layers(dev_env) or layer not in _layers(shipping_env):
         raise EnvRefused("opt-in account layer missing from BBLAYERS")
-    if str((layer / APPEND_REL).resolve()) not in appends:
+    if not show_appends_selects_file(
+            appends, recipe="microduck-image-dev.bb",
+            expected=layer / APPEND_REL):
         raise EnvRefused("exact DEV-only bbappend not recognized by BitBake")
 
     ship_commands = _commands(bbvar(shipping_env, "EXTRA_USERS_PARAMS"))

@@ -10,7 +10,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from scripts.per_p13a_bitbake_env_gate import EnvRefused, bbvar
+from scripts.per_p13a_bitbake_env_gate import EnvRefused, bbvar, show_appends_selects_file
 from scripts.per_p14c_dev_image_env_gate import source_gate as p14c_source_gate
 from scripts.per_p14c_dev_image_env_gate import validate as p14c_validate
 
@@ -109,7 +109,9 @@ def validate(recipe_env: str, dev_env: str, shipping_env: str, appends: str, *,
             raise EnvRefused("P15A must be selected only once and only in dev")
         if tokens.count("kwipi-companion") != expected:
             raise EnvRefused("P14B must remain dev-only")
-    if str((p15_layer / DEV_APPEND).resolve()) not in appends:
+    if not show_appends_selects_file(
+            appends, recipe="microduck-image-dev.bb",
+            expected=p15_layer / DEV_APPEND):
         raise EnvRefused("P15A exact dev-image bbappend not recognized by BitBake")
     return {
         "schema": SCHEMA,

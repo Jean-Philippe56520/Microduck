@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 import subprocess
 
-from scripts.per_p13a_bitbake_env_gate import EnvRefused, bbvar
+from scripts.per_p13a_bitbake_env_gate import EnvRefused, bbvar, show_appends_selects_file
 from scripts.per_p14b_yocto_python_layer import (
     verify as verify_python_layer,
 )
@@ -110,7 +110,9 @@ def validate(dev_env: str, shipping_env: str, appends: str, *,
         if expected_pn == "microduck-image" and (
                 set(_tokens(bbvar(text, "IMAGE_FEATURES"))) & UNSAFE_PROD_FEATURES):
             raise EnvRefused("development root-login features leaked to product")
-    if (DEV_APPEND not in appends or "microduck-image-dev.bb" not in appends):
+    if not show_appends_selects_file(
+            appends, recipe="microduck-image-dev.bb",
+            expected=dev_layer / DEV_APPEND):
         raise EnvRefused("BitBake does not acknowledge exact dev-image bbappend")
     return {
         "schema": SCHEMA,

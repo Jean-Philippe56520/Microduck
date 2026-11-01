@@ -25,6 +25,39 @@ def bbvar(text: str, name: str) -> str:
     return found[0]
 
 
+
+def show_appends_selects_file(text: str, *, recipe: str, expected: Path) -> bool:
+    """Require an exact real bbappend in one BitBake recipe section.
+
+    BitBake may emit paths containing build/../ . Resolve paths rather than
+    searching substrings, without accepting foreign or missing files.
+    """
+    if (not recipe.endswith(".bb") or Path(recipe).name != recipe
+            or expected.is_symlink() or not expected.is_file()):
+        return False
+    expected_real = expected.resolve(strict=True)
+    selected = False
+    matches = 0
+    for line in text.splitlines():
+        item = line.strip()
+        if not item:
+            continue
+        if line[0] not in " \t":
+            selected = item.endswith(".bb:") and Path(item[:-1]).name == recipe
+            continue
+        if not selected or not item.startswith("/") or not item.endswith(".bbappend"):
+            continue
+        candidate = Path(item)
+        if candidate.is_symlink():
+            continue
+        try:
+            if candidate.is_file() and candidate.resolve(strict=True) == expected_real:
+                matches += 1
+        except OSError:
+            continue
+    return matches == 1
+
+
 def validate(env: str, p12: dict, *, layer: Path) -> dict:
     if (p12.get("schema") != P12_SCHEMA
             or p12.get("source_only") is not True
