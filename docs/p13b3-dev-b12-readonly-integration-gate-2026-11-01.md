@@ -13,6 +13,73 @@ Version exacte de la release B12 compilée : `0.17.8+kwipi.p12.e2e9bfef7d7c`.
 
 **Manque attesté :** [P16-A](../scripts/per_p16_dev_rootfs_audit.py) vérifie le manifeste, les 19 modules P14B et les trois fichiers P15A ; [P16-S1](../scripts/per_p16_dev_rootfs_service_gate.py) vérifie les références de démarrage de la sonde ; [P15-B9-R](../scripts/per_p15b9_rootfs_identity_gate.py) contrôle les comptes et groupes du rootfs. Aucun de ces contrôles ne compare **les deux binaires B12 du paquet AArch64** avec **les deux binaires effectivement présents dans le rootfs DEV**. Le `do_rootfs` B9-R antérieur a été attesté sur WSL2 par 4 515 tâches, puis 20/20 tests et audit post-hoc, mais **aucun rootfs B12 requalifié** n'a été produit dans ce lot. Ne pas attribuer automatiquement la version B12 au rootfs historique ; il peut être ancien, et sa version est à mesurer.
 
+## Première exécution opérateur P13B3 — PASS paquet / STOP rootfs (01/11/2026)
+
+**Preuve de sortie communiquée par l'opérateur** après exécution du contrôle P13B3 préenregistré :
+
+```text
+P13B3_PACKAGED_B12: PASS
+P13B3_STOP: mediad_missing_or_symlink
+```
+
+Le script confirme avoir trouvé **un** candidat `packages-split/microduck-daemon` B12 et comparé `mediad` et `robotd` comme fichiers réguliers, ELF64 little-endian AArch64, aux **deux empreintes exactes attendues**. Il a ensuite trouvé **un** rootfs `microduck-image-dev`, mais la cible `/opt/robot/daemon/releases/0.17.8+kwipi.p12.e2e9bfef7d7c/bin/mediad` n'est pas un fichier régulier sans symlink. Ce message regroupe **absence et lien symbolique**, sans trancher entre eux. La version de release du rootfs, la présence d'un autre `mediad`, le binaire `robotd` installé, le lien `current`, les unités et le manifeste **n'ont pas été vérifiés par cette exécution**, puisqu'elle s'est arrêtée au premier STOP. Le caractère historique de la version du rootfs est une **hypothèse plausible**, pas encore un fait mesuré.
+
+**Décision :** `P13B3_PACKAGE_ONLY = PASS` (preuve opérateur, non exécution GitHub), `P13B3_ROOTFS_B12 = STOP` et intégration complète `en attente`. Ne pas relancer `do_compile`, `do_package`, `do_rootfs`, ni toucher aux caches sur cette seule sortie. Faire d'abord une lecture des releases installées, du lien `current` et du manifeste, sans prétendre que le contrôle P16-A historique valide une cible B10.
+
+### Diagnostic suivant — inventaire local sans écriture, WSL2 uniquement
+
+Dans le shell **bash WSL2** (et non dans PowerShell directement), ce bloc ne fait que lire les noms des releases, les deux chemins de binaires, la cible du lien `current`, les unités et quelques versions de paquets des manifestes existants. Aucun BitBake, socket, système monté ni secret :
+
+```bash
+python3 -B - <<'PY'
+from pathlib import Path
+
+base = Path("/home/jp/kwipi-build-v1")
+work = base / "build/tmp/work"
+roots = sorted(p for p in work.glob("*/microduck-image-dev/*/rootfs")
+               if p.is_dir() and not p.is_symlink())
+print("DEV_ROOTFS_COUNT:", len(roots))
+if len(roots) != 1:
+    raise SystemExit("P13B3_INVENTORY_STOP: expected_one_dev_rootfs")
+root = roots[0]
+releases = root / "opt/robot/daemon/releases"
+print("RELEASES_DIR:", "directory" if releases.is_dir() and not releases.is_symlink() else "missing_or_link")
+if releases.is_dir() and not releases.is_symlink():
+    for release in sorted(releases.iterdir(), key=lambda p: p.name):
+        if release.name.startswith("."):
+            continue
+        print("RELEASE:", release.name, "dir" if release.is_dir() and not release.is_symlink() else "other")
+        for name in ("mediad", "robotd"):
+            p = release / "bin" / name
+            state = ("symlink" if p.is_symlink()
+                     else "regular" if p.is_file() else "missing_or_other")
+            print("BIN:", release.name, name, state)
+current = root / "opt/robot/daemon/current"
+print("CURRENT:", str(current.readlink()) if current.is_symlink() else "missing_or_not_link")
+for name in ("mediad.service", "robotd.service", "kwipi-readonly-probe.service"):
+    p = root / "usr/lib/systemd/system" / name
+    print("UNIT:", name, "regular" if p.is_file() and not p.is_symlink()
+          else "symlink" if p.is_symlink() else "missing_or_other")
+image_dir = base / "build/tmp/deploy/images"
+manifests = sorted(image_dir.rglob("microduck-image-dev-*.manifest")) if image_dir.is_dir() else []
+print("DEV_MANIFEST_COUNT:", len(manifests))
+for p in manifests[:8]:
+    print("MANIFEST:", p.name)
+    for line in p.read_text(encoding="utf-8").splitlines():
+        parts = line.split()
+        if parts and parts[0] in {
+            "microduck-daemon", "kwipi-companion",
+            "kwipi-readonly-probe", "kwipi-passive-fixture"
+        }:
+            print("PACKAGE:", parts[0], parts[2] if len(parts) > 2 else "version_unknown")
+if len(manifests) > 8:
+    print("MANIFESTS_TRUNCATED: true")
+print("P13B3_INVENTORY: READ_ONLY_COMPLETE_NOT_A_PASS")
+PY
+```
+
+Ne pas conclure une absence à partir d'un seul manifeste ancien : un `*.manifest` du répertoire `deploy/images` peut provenir d'une image antérieure. Relier d'abord la version du rootfs aux fichiers réellement présents et à sa provenance de build.
+
 ## Écart B10 prouvé dans les gardes historiques (audit statique)
 
 **Attention, ne pas réutiliser P16-A inchangé pour prétendre valider la composition V1 avec P15-B10.** La couche `yocto/meta-kwipi-p15-passive-selection` demande `kwipi-passive-fixture` **DEV seulement** et la source du paquet B6 installe cinq fichiers Python supplémentaires aux côtés des dix-neuf de P14B. Or `scripts/per_p16_dev_rootfs_audit.py` impose `EXPECTED = ("kwipi-companion", "kwipi-readonly-probe")`, refuse tout autre paquet `kwipi-` dans le manifeste et exige **exactement 19** `.py` sous `microduck_companion` : un futur rootfs conforme à B10 serait rejeté par cette **ancienne** porte P16-A. `P16-S1` dépend en outre du rapport P16-A.
