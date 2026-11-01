@@ -19,7 +19,139 @@ class EnvRefused(ValueError):
 
 
 def bbvar(text: str, name: str) -> str:
-    found = re.findall(r"^" + re.escape(name) + r'="(.*)"$', text, re.M)
+    found = re.findall(r"^(?:export )?" + re.escape(name) + r'="(.*)", text, re.M)
+    if len(found) != 1:
+        raise EnvRefused(f"effective BitBake variable missing/duplicate: {name}")
+    return found[0]
+
+
+
+def show_appends_selects_file(text: str, *, recipe: str, expected: Path) -> bool:
+    """Require an exact real bbappend in one BitBake recipe section.
+
+    BitBake may emit paths containing build/../ . Resolve paths rather than
+    searching substrings, without accepting foreign or missing files.
+    """
+    if (not recipe.endswith(".bb") or Path(recipe).name != recipe
+            or expected.is_symlink() or not expected.is_file()):
+        return False
+    expected_real = expected.resolve(strict=True)
+    selected = False
+    matches = 0
+    for line in text.splitlines():
+        item = line.strip()
+        if not item:
+            continue
+        if line[0] not in " \t":
+            selected = item.endswith(".bb:") and Path(item[:-1]).name == recipe
+            continue
+        if not selected or not item.startswith("/") or not item.endswith(".bbappend"):
+            continue
+        candidate = Path(item)
+        if candidate.is_symlink():
+            continue
+        try:
+            if candidate.is_file() and candidate.resolve(strict=True) == expected_real:
+                matches += 1
+        except OSError:
+            continue
+    return matches == 1
+
+
+def validate(env: str, p12: dict, *, layer: Path) -> dict:
+    if (p12.get("schema") != P12_SCHEMA
+            or p12.get("source_only") is not True
+            or p12.get("bitbake_parsed") is not False
+            or p12.get("robot_validated") is not False):
+        raise EnvRefused("candidate was promoted without a real build")
+    uri = bbvar(env, "SRC_URI")
+    parts = uri.split()
+    tar_uri = "file://kwipi-v1-oem-source.tar.gz"
+    if sum(x.startswith(tar_uri + ";") for x in parts) != 1:
+        raise EnvRefused("BitBake source tar is not uniquely selected")
+    tar_entry = next(x for x in parts if x.startswith(tar_uri + ";"))
+    if ";name=kwipisrc" not in tar_entry or ";subdir=" not in tar_entry:
+        raise EnvRefused("BitBake source tar missing subdir or named checksum")
+    if any(DAEMON_URI in x or "microduck_daemon.git" in x for x in parts):
+        raise EnvRefused("original OEM daemon Git URI still fetched")
+    if parts.count(BMI_URI) != 1:
+        raise EnvRefused("pinned BMI088 source missing/duplicated")
+    for name in OEM_FILES:
+        if parts.count("file://" + name) != 1:
+            raise EnvRefused(f"OEM-local resource missing/duplicated: {name}")
+    crates = sorted(x for x in parts if x.startswith("crate://crates.io/"))
+    if len(crates) != p12.get("crates_generated") or len(set(crates)) != len(crates):
+        raise EnvRefused("effective BitBake crate list differs from P11 Cargo.lock")
+    if not crates:
+        raise EnvRefused("zero crates in effective BitBake SRC_URI")
+    version = bbvar(env, "PV")
+    profile = p12.get("local_detections_acl_candidate", False)
+    if type(profile) is not bool:
+        raise EnvRefused("invalid P15-B8 source profile declaration")
+    expected_version = ("0.17.8+kwipi.p12." + p12["companion_sha"][:12]
+                        + (".b8" if profile else ""))
+    if version != expected_version:
+        raise EnvRefused("unrelated OEM release version or false identity")
+    if profile and bbvar(env, "DUCK_REVISION") != p12["companion_sha"]:
+        raise EnvRefused("compiled mediad DUCK_REVISION differs from B8 source candidate")
+    if bbvar(env, "MICRODUCK_DAEMON_SRCREV") != p12["companion_sha"]:
+        raise EnvRefused("source revision does not identify Companion code")
+    if bbvar(env, "SRCREV_FORMAT") != "bmi088":
+        raise EnvRefused("remaining vendor Git revision format differs")
+    source_dir = bbvar(env, "S")
+    unpack = bbvar(env, "UNPACKDIR")
+    bp = bbvar(env, "BP")
+    if source_dir.rstrip("/") != (unpack.rstrip("/") + "/" + bp):
+        raise EnvRefused("BitBake S does not reference the chosen tar subdirectory")
+    layers = bbvar(env, "BBLAYERS")
+    # BitBake prints literal backslash-n continuations in the effective value.
+    # Do not interpret those bytes as part of a layer path.
+    tokens = layers.replace("\\n", " ").replace("\\t", " ").split()
+    if layer.resolve() not in {Path(part).resolve() for part in tokens}:
+        raise EnvRefused("companion layer absent from BitBake layer resolution: " + repr(tokens[:12]))
+    return {
+        "status": "real_bitbake_metadata_parsed_only",
+        "archive_sha256": p12["archive_sha256"],
+        "companion_sha": p12["companion_sha"],
+        "effective_crates": len(crates),
+        "vendor_bmi088_kept": True,
+        "original_daemon_git_removed": True,
+        "oem_resources_kept": True,
+        "package_version": version,
+        "local_detections_acl_candidate": profile,
+        "duck_revision_compile_env_verified": profile,
+        "bitbake_parse_passed": True,
+        "bitbake_compile_run": False,
+        "rauc_built": False,
+        "signed_release": False,
+        "physical_robot_verified": False,
+    }
+
+
+def main() -> None:
+    cli = argparse.ArgumentParser(description=__doc__)
+    cli.add_argument("--env-file", type=Path, required=True)
+    cli.add_argument("--p12-layer", type=Path, required=True)
+    cli.add_argument("--output", type=Path, required=True)
+    args = cli.parse_args()
+    try:
+        layer = args.p12_layer.resolve(strict=True)
+        p12 = verify_p12(layer)
+        data = args.env_file.read_text(encoding="utf-8")
+        report = validate(data, p12, layer=layer)
+        if args.output.exists():
+            raise EnvRefused("output already exists")
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n",
+                               encoding="utf-8")
+    except (EnvRefused, ValueError, OSError, KeyError) as error:
+        cli.exit(1, f"PER-P13A STOP: {error}\n")
+    print(json.dumps(report, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()
+, text, re.M)
     if len(found) != 1:
         raise EnvRefused(f"effective BitBake variable missing/duplicate: {name}")
     return found[0]
