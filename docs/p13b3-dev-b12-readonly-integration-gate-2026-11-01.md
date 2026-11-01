@@ -80,6 +80,45 @@ PY
 
 Ne pas conclure une absence à partir d'un seul manifeste ancien : un `*.manifest` du répertoire `deploy/images` peut provenir d'une image antérieure. Relier d'abord la version du rootfs aux fichiers réellement présents et à sa provenance de build.
 
+## Second diagnostic opérateur P13B3 — rootfs ancien confirmé (01/11/2026)
+
+**Lecture seule WSL2 transmise, sans accès direct du connecteur GitHub à la machine opérateur :**
+
+```text
+DEV_ROOTFS_COUNT: 1
+RELEASES_DIR: directory
+RELEASE: 0.17.8+kwipi.p12.3406fee5428c dir
+BIN: 0.17.8+kwipi.p12.3406fee5428c mediad regular
+BIN: 0.17.8+kwipi.p12.3406fee5428c robotd regular
+CURRENT: releases/0.17.8+kwipi.p12.3406fee5428c
+UNIT: mediad.service regular
+UNIT: robotd.service regular
+UNIT: kwipi-readonly-probe.service regular
+DEV_MANIFEST_COUNT: 2
+MANIFEST: microduck-image-dev-microduck-zero3.rootfs-20261031175742.manifest
+PACKAGE: kwipi-companion 0.2.0a1
+PACKAGE: kwipi-readonly-probe 0.1
+PACKAGE: microduck-daemon 0.17.8+kwipi.p12.e4a0a1268c730+bd113f317b
+MANIFEST: microduck-image-dev-microduck-zero3.rootfs.manifest
+PACKAGE: kwipi-companion 0.2.0a1
+PACKAGE: kwipi-readonly-probe 0.1
+PACKAGE: microduck-daemon 0.17.8+kwipi.p12.e4a0a1268c730+bd113f317b
+P13B3_INVENTORY: READ_ONLY_COMPLETE_NOT_A_PASS
+```
+
+**Faits désormais distingués :**
+- **Paquet B12 AArch64** `0.17.8+kwipi.p12.e2e9bfef7d7c` : PASS antérieur par relecture du paquet `packages-split`, deux empreintes conformes.
+- **Rootfs DEV unique réellement inspecté** : `mediad` et `robotd` sont présents sous la release **antérieure** `0.17.8+kwipi.p12.3406fee5428c`, et `current` pointe vers elle. Le rootfs inspecté **n'intègre pas les binaires sous le chemin de release B12 attendu**. Cela explique le STOP précédent sans incriminer `do_compile`/`do_package`.
+- **Deux manifestes existants** affichent la version de paquet `e4a0a1268c730+bd113f317b`, qui ne correspond **ni** au suffixe de la release active `3406fee5428c` **ni** à celui de la release B12 `e2e9bfef7d7c`. Ils sont des artefacts historiques distincts dont l'association au répertoire `rootfs` n'est **pas prouvée**. Ne pas prétendre connaître la cause de ce décalage ni attribuer l'un des manifestes au rootfs par simple proximité de nom.
+- Les trois unités systemd sont **présentes comme fichiers réguliers**, sans inspection de leur contenu ni du statut runtime ; la sonde P15A ne doit toujours pas être démarrée. `kwipi-passive-fixture` n'apparaît dans **aucun des deux manifestes consultés**, sans que cela prouve une quelconque composition d'un nouveau rootfs.
+- Le périmètre de cet essai reste `lecture_fichiers_WSL2` ; aucune installation, commande système, écritures, capteurs, ACL runtime, boot, WIC, RAUC ni robot.
+
+**Critères de décision révisés par preuve :** un **nouveau rootfs DEV avec B12** serait nécessaire pour obtenir une **nouvelle composition** contenant cette release ; le besoin n'autorise pas automatiquement `do_rootfs`. Avant tout essai, vérifier les `BBLAYERS` et `IMAGE_INSTALL` DEV/shipping **effectifs**, la provenance/chemin des archives et des paquets B12 déjà construits, et la sélection de la couche P15-B10 (5 modules) avec contrôle strict 19+5. L'ancien lanceur P15-B9-R refuse B10 et l'ancien auditeur P16-A refuse 24 modules : ils ne doivent **pas** être réutilisés tels quels pour déclarer la cible complète conforme. Une nouvelle source P11 générée au SHA documentaire peut modifier `DUCK_REVISION` et `PV` : **préserver/réutiliser la source et les artefacts B12 `e2e9bfef...` vérifiés**, sans reconstruction par changement de SHA purement documentaire, sous réserve de vérifier l'environnement BitBake effectif. Préflight/critères positifs et négatifs, provenance des manifestes et accord sur la seule tâche `do_rootfs` doivent être distincts de l'observation présente.
+
+**Statut opérationnel :** `P13B3_PACKAGE_B12 = PASS`, `P13B3_ROOTFS_B12 = NOT_PRESENT_AT_EXPECTED_VERSION`, `P13B3_IMAGE_MANIFEST_PROVENANCE = INCONNUE`, `P15B10_IN_NEW_ROOTFS = NON_VERIFIE`. Aucun PASS d'intégration, de service ou de robot.
+
+---
+
 ## Écart B10 prouvé dans les gardes historiques (audit statique)
 
 **Attention, ne pas réutiliser P16-A inchangé pour prétendre valider la composition V1 avec P15-B10.** La couche `yocto/meta-kwipi-p15-passive-selection` demande `kwipi-passive-fixture` **DEV seulement** et la source du paquet B6 installe cinq fichiers Python supplémentaires aux côtés des dix-neuf de P14B. Or `scripts/per_p16_dev_rootfs_audit.py` impose `EXPECTED = ("kwipi-companion", "kwipi-readonly-probe")`, refuse tout autre paquet `kwipi-` dans le manifeste et exige **exactement 19** `.py` sous `microduck_companion` : un futur rootfs conforme à B10 serait rejeté par cette **ancienne** porte P16-A. `P16-S1` dépend en outre du rapport P16-A.
