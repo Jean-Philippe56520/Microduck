@@ -117,6 +117,30 @@ fn strict_private_dir(path: &Path, uid: u32) -> Result<()> {
     }
 }
 
+/// Close traversal BEFORE binding a new inode. A Unix pathname socket starts
+/// with the process umask's permissions; while the listener is not returned,
+/// a different thread/process might still reach it before chmod(0600).
+/// Revoke ONLY our known exact named ACL and make the directory owner-only.
+/// The directory access grant is deliberately the LAST step before returning
+/// the listener. Never change a foreign/unknown ACL.
+pub(super) fn hide_private_dir_before_bind(path: &Path, uid: u32) -> Result<()> {
+    strict_private_dir(path, uid)?;
+    if read_acl(path)?.is_some() {
+        let name = c_path(path)?;
+        let rc = unsafe { libc::lremovexattr(name.as_ptr(), ACL_NAME.as_ptr().cast()) };
+        if rc != 0 {
+            return Err(std::io::Error::last_os_error())
+                .context("could not revoke directory traversal before socket rebind");
+        }
+    }
+    if read_acl(path)?.is_some()
+        || metadata(path)?.permissions().mode() & 0o777 != 0o700
+    {
+        bail!("private directory was not closed before binding a new socket");
+    }
+    Ok(())
+}
+
 pub(super) fn grant_private_dir(path: &Path, uid: u32) -> Result<()> {
     strict_private_dir(path, uid)?;
     if read_acl(path)?.is_none() {
@@ -215,6 +239,20 @@ mod tests {
         assert!(check_dir(&dir, FIXTURE_KWIPI_UID).is_err());
         assert!(grant_private_dir(&dir, FIXTURE_KWIPI_UID).is_err());
         assert!(check_dir(&dir, FIXTURE_KWIPI_UID + 1).is_err());
+    }
+
+    #[test]
+    fn revokes_previous_directory_acl_before_new_socket_bind() {
+        let (_tmp, dir) = fake_private();
+        grant_private_dir(&dir, FIXTURE_KWIPI_UID).unwrap();
+        assert_eq!(metadata(&dir).unwrap().permissions().mode() & 0o777, 0o710);
+        hide_private_dir_before_bind(&dir, FIXTURE_KWIPI_UID).unwrap();
+        assert_eq!(metadata(&dir).unwrap().permissions().mode() & 0o777, 0o700);
+        assert!(read_acl(&dir).unwrap().is_none());
+        // Regranting traversal belongs at the END of the bind sequence.
+        grant_private_dir(&dir, FIXTURE_KWIPI_UID).unwrap();
+        assert!(hide_private_dir_before_bind(&dir, FIXTURE_KWIPI_UID + 1).is_err());
+        assert_eq!(metadata(&dir).unwrap().permissions().mode() & 0o777, 0o710);
     }
 
     #[test]
