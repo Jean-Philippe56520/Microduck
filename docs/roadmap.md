@@ -1,5 +1,8 @@
 # Feuille de route — Microduck Companion
 
+**Note de qualification DEV (01/11/2026, voir [plan-action](plan-action.md)) :** P13B2 B12 Rust AArch64 `do_compile/do_package` vérifiés sur WSL2, mais rootfs DEV observé à release antérieure. P13B4 a désormais produit et vérifié un staging source 19+5 de P14B/P15-B6 avec porte B10 source-only PASS, sans nouvelle tâche BitBake ni rootfs. Étape suivante P13B5 : `bitbake -e` DEV/shipping sous KAS épinglé, protection fournisseur B12, B10 DEV-only, compte/P15A/dépendances et tests négatifs avant nouvel emballage/rootfs. Le reste de cette feuille est historique ; `docs/plan-action.md` fait autorité.
+
+
 ## Reprise V1 courante — source B12 fusionnée, packaging cible en attente (01/11/2026)
 
 **Référence :** `main@448eefeca72146d3424c2c9ef56249a54263b025` ; #251, #253 et #254 fusionnées (sept CI vertes pour chacune des deux dernières) ; #252 fermée sans fusion. **Acquis** : même `mediad` constructeur compilé/testé sur PC Linux depuis la nouvelle archive P11, B4/B8 et datation B12 intégrées, `DUCK_REVISION` contrôlée en environnement BitBake. **Manque restant** : vrai paquet AArch64 issu de cette archive, contrôle `PKGDEST`/identité binaire/ACL après installation, démonstration robot, ressources RK3566 et chaîne signée. Prochaine porte : preuve du paquet ciblé sur WSL2 après préflight lecture seule, **pas** de WIC/RAUC ou de service activé automatiquement. B5 reste `--mock-only` ; aucun mouvement ni souvenir tiré d'une détection.
