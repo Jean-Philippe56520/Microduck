@@ -108,6 +108,7 @@ class RealPinnedSourceTests(unittest.TestCase):
         self.assertNotIn("P11 weight", old_inc)
         self.assertEqual(len(digest), 64)
         self.assertEqual(manifest["status"], "source_candidate_only_bitbake_licence_and_robot_blocked")
+        self.assertIs(manifest["local_detections_acl_candidate"], True)
         self.assertGreater(len(rows), 400)
 
     def test_real_layer_is_deterministic_and_sha_fail_closed(self):
@@ -121,6 +122,12 @@ class RealPinnedSourceTests(unittest.TestCase):
             self.assertFalse(one["bitbake_parsed"])
             self.assertFalse(one["robot_validated"])
             self.assertTrue(one["crates_regenerated"])
+            self.assertTrue(one["local_detections_acl_candidate"])
+            self.assertTrue(one["duck_revision_export_declared"])
+            app = a / "recipes-microduck/microduck-daemon/microduck-daemon.bbappend"
+            txt = app.read_text(encoding="utf-8")
+            self.assertIn("0.17.8+kwipi.p12." + one["companion_sha"][:12] + ".b8", txt)
+            self.assertIn('export DUCK_REVISION = "' + one["companion_sha"] + '"', txt)
             aa = a / "recipes-microduck/microduck-daemon"
             bb = b / "recipes-microduck/microduck-daemon"
             for rel in ("microduck-daemon.bbappend", "microduck-daemon-crates-kwipi.inc"):
