@@ -138,6 +138,28 @@ class P15B8OverlayOnly(unittest.TestCase):
         self.assertEqual(self.local.read_text(), changed)
         self.assertFalse(self.helper.exists())
 
+    def test_10_native_c_char_buffer_and_regression_fail_closed(self):
+        # x86_64 libc::c_char is signed, but AArch64 Linux expects an
+        # unsigned char pointer for getpwnam_r. Either fixed-width type is wrong.
+        helper = self.project / "scripts/per_p15b8_acl_policy.rs"
+        original = helper.read_text(encoding="utf-8")
+        portable = "let mut buf: [libc::c_char; 4096] = [0; 4096];"
+        self.assertEqual(original.count(portable), 1)
+        previous_local = self.local.read_bytes()
+        previous_main = self.main.read_bytes()
+        for wrong in ("let mut buf = [0_i8; 4096];",
+                      "let mut buf = [0_u8; 4096];"):
+            with self.subTest(wrong=wrong):
+                helper.write_text(original.replace(portable, wrong), encoding="utf-8")
+                with self.assertRaises(OverlayRefused):
+                    b8.apply(self.archive, self.project)
+                self.assertFalse(self.helper.exists())
+                self.assertEqual(self.local.read_bytes(), previous_local)
+                self.assertEqual(self.main.read_bytes(), previous_main)
+        helper.write_text(original, encoding="utf-8")
+        b8.apply(self.archive, self.project)
+        self.assertEqual(self.helper.read_bytes(), original.encode("utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

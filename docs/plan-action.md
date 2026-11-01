@@ -1,3 +1,13 @@
+## P13B B12 — STOP AArch64 reproduit, correctif source en qualification (01/11/2026)
+
+**Observation WSL2 réelle (source `57fbff44927c9de158fa9c68adaf3745c090240b`) :** P13A / `bitbake -e` et le contrôle de l'archive P11/P12 ont passé ; la tâche `do_compile microduck-daemon` a échoué à la compilation Rust AArch64 de `mediad/src/local_detections_acl.rs:205` avec `E0308: expected *mut u8, found *mut i8`. **Aucun `do_package` B12 réussi ni ELF AArch64 nouveau vérifié** ; la réussite du reste des 1 850 tâches ne constitue pas un succès de compilation.
+
+**Manque et témoin :** l'overlay P15-B8 emploie `[0_i8; 4096]` pour `libc::getpwnam_r` ; le type C `char` dépend de la cible. Le témoin x86_64 pouvait compiler, mais la preuve de compilation AArch64 a précisément échoué. **Adaptation minimale** : déclarer le tampon `[libc::c_char; 4096]`, conserver l'identité nommée `kwipi`, l'ACL stricte et les appels OEM ; aucun cast forcé, permission relâchée, nouveau démon ou sous-module modifié.
+
+**Critères fixés avant nouvelle tentative :** positif = même overlay B4/B8 sur arbre jetable, tests Python et Rust hôte existants puis compilation `do_compile` et packaging `do_package` AArch64 depuis une nouvelle archive P11/P12 à SHA vérifié ; négatifs = réintroduction `i8` ou `u8` fixe rejetée sans écriture dans l'arbre OEM, `gitlink` divergent, mauvais manifeste, flag local activé, relâchement ACL ou binaires non AArch64 : **STOP**. Le garde de type dans l'adaptateur B8 et son test de régression ne prouvent **pas** à eux seuls le nouveau build AArch64. Les artefacts et preuves P13A de l'ancienne révision restent historiques et ne peuvent pas être réutilisés pour attester la révision corrigée. WIC/RAUC/robot, caméra, activation du service et contrôle des moteurs hors périmètre.
+
+---
+
 # Plan directeur opérationnel — Microduck Companion
 
 ## État opérationnel vérifié après P15-B12 — autorité de reprise (01/11/2026)
