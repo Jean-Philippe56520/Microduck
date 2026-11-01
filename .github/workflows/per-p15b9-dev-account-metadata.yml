@@ -102,6 +102,17 @@ jobs:
         run: |
           set -euo pipefail
           umask 022
+          # BitBake rejects a restrictive process umask, but its full -e output
+          # must never be temporarily world-readable (it can contain hashes).
+          for private_env in "$P15B9_DEV_ENV" "$P15B9_SHIP_ENV"; do
+            if [ -e "$private_env" ] || [ -L "$private_env" ]; then
+              echo "P15-B9 STOP: unexpected existing private env file" >&2
+              exit 1
+            fi
+          done
+          (umask 077; : > "$P15B9_DEV_ENV"; : > "$P15B9_SHIP_ENV")
+          test "$(stat -c %a "$P15B9_DEV_ENV")" = 600
+          test "$(stat -c %a "$P15B9_SHIP_ENV")" = 600
           cfg="$P15B9_YOCTO/kas/microduck.yml:$P15B9_YOCTO/kas/per-p15b9-opt-in.yml"
           timeout 1650s kas shell "$cfg" -c \
             "bitbake -p && bitbake -e microduck-image-dev > $P15B9_DEV_ENV && bitbake -e microduck-image > $P15B9_SHIP_ENV && bitbake-layers show-appends > $P15B9_APPENDS"

@@ -19,3 +19,16 @@ Projet parent PR #246 au SHA `fa783ff162ad356d5298e2f3e1157cd0a7d696b0` (brouill
 5. Ne pas activer de service, changer moteur, socket, ACL effective, RAUC, WIC ou sous-modules; maintien des STOP P15-B8 : montage `/run` reel, provenance timestamp, revision `DUCK_REVISION`, droits capteurs et validation RK3566.
 
 Retour arriere : retirer simplement cette couche des `BBLAYERS` optionnels; aucune WIC ou image existante n'est modifiee. Ce dossier ne constitue ni un compte livre, ni un logiciel embarque valide.
+
+
+## Résultat : BitBake réel DEV/shipping et correction de CI (01/11/2026)
+
+**Témoin négatif réel :** la CI initiale [#41300372893](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41300372893), SHA `b27827bd5e18c3c593648203e523f5ca6cd63db4`, a analysé 3 099 recettes sans erreur avec `bitbake -p`, puis s'est arrêtée sur `Nothing RPROVIDES 'microduck-daemon'` parce que `MICRODUCK_DAEMON_VERSION` et `MICRODUCK_DAEMON_SRCREV` n'étaient pas sélectionnés. Cet échec de montage du fournisseur n'est **pas** une preuve d'échec ou de succès de `EXTRA_USERS_PARAMS`.
+
+**Réemploi minimal :** commit `fd3fba917dcfc548ea67d1fdddcb8fdf8fc2e9a4` : checkout des gitlinks OEM épinglés, scripts P11 source-only et P12 overlay de daemon déjà utilisés en P14C ; aucune variable constructeur fictive, aucune édition de l'OEM, aucune installation, compilation cible, signature ni image. `bitbake -p`, puis `bitbake -e microduck-image-dev`, `bitbake -e microduck-image`, `bitbake-layers show-appends` sous KAS officiel et la seule couche compte optionnelle. Aucun export des environnements bruts ; rapport JSON borné, sans empreinte de mot de passe.
+
+**Positif réel :** [CI P15-B9 #41301044648](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41301044648) **SUCCESS**, au SHA `fd3fba9` ; cinq workflows du SHA réussis, incluant la suite Python. Le rapport `kwipi-p15b9-dev-only-account-metadata-v1` indique `status=bitbake_effective_dev_only_kwipi_account_metadata_pass`, `dev_identity_commands=3`, `shipping_identity_commands=1`, compte OEM conservé, création DEV de groupe `kwipi`, compte système verrouillé, shell non interactif, aucune permission `robot` ajoutée. Les tests source et mutations négatives P15-B9 sont réussis. Ces constats concernent **les variables réellement évaluées**, pas le contenu de rootfs.
+
+**Précaution confidentialité ajoutée ensuite :** précréer les fichiers des environnements BitBake en mode `0600` avant redirection, dans un sous-shell `umask 077` ; la commande KAS conserve `umask 022` requise par l'OEM. Ce changement doit être revalidé en CI au nouveau SHA avant fusion.
+
+**Limites/arrêt maintenus :** `account_present_in_new_rootfs_verified=false`, `do_rootfs_executed_by_gate=false`, `new_image_or_wic_built=false`, `real_socket_acl_verified=false`, `robot_validated=false`. Le workflow n'inclut que P12 + couche de compte pour isoler les métadonnées, pas toute la pile P14C/P15A/P15-B6. Prochaine porte distincte, si nécessaire : composition KAS complète et `do_rootfs` DEV privé et borné sur cache existant, puis vérification indépendante de `/etc/passwd`, `/etc/group`, `/etc/shadow`, absence de groupes privilégiés et du nouveau service, sans WIC/RAUC ni moteur. La WIC P16 historique reste immuable ; STOP si ressources, versions ou dépendances divergent.
