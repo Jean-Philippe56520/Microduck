@@ -111,9 +111,22 @@ jobs:
                 .:
           EOF
           test "$(git -C "$P15M_YOCTO" status --porcelain --untracked-files=no)" = ""
-      - name: Execute REAL BitBake parse, recipe and dev/shipping -e; no packages
+      - name: Execute REAL BitBake -p and recipe/dev/shipping -e privately; no packages
         run: |
           set -euo pipefail
+          # Full BitBake -e may contain OEM password hashes. Preserve BitBake
+          # umask 022 but create private files under 077 BEFORE redirection.
+          umask 022
+          for private_env in "$P15M_RECIPE_ENV" "$P15M_DEV_ENV" "$P15M_SHIP_ENV"; do
+            if [ -e "$private_env" ] || [ -L "$private_env" ]; then
+              echo "P15A-M STOP: unexpected BitBake environment path" >&2
+              exit 1
+            fi
+          done
+          (umask 077; : > "$P15M_RECIPE_ENV"; : > "$P15M_DEV_ENV"; : > "$P15M_SHIP_ENV")
+          for private_env in "$P15M_RECIPE_ENV" "$P15M_DEV_ENV" "$P15M_SHIP_ENV"; do
+            test "$(stat -c %a "$private_env")" = 600
+          done
           cfg="$P15M_YOCTO/kas/microduck.yml:$P15M_YOCTO/kas/per-p15a-m-opt-in.yml"
           timeout 1600s kas shell "$cfg" -c \
             "bitbake -p && bitbake -e kwipi-readonly-probe > $P15M_RECIPE_ENV && bitbake -e microduck-image-dev > $P15M_DEV_ENV && bitbake -e microduck-image > $P15M_SHIP_ENV && bitbake-layers show-appends > $P15M_APPENDS"
@@ -121,6 +134,10 @@ jobs:
           test -s "$P15M_DEV_ENV"
           test -s "$P15M_SHIP_ENV"
           test -s "$P15M_APPENDS"
+          for private_env in "$P15M_RECIPE_ENV" "$P15M_DEV_ENV" "$P15M_SHIP_ENV"; do
+            test ! -L "$private_env"
+            test "$(stat -c %a "$private_env")" = 600
+          done
       - name: Check exact P15A/P14C OEM metadata, drop complete -e outputs
         run: |
           set -euo pipefail
@@ -150,6 +167,7 @@ jobs:
           PY
           git diff --exit-code -- upstream/
           test "$(git -C "$P15M_YOCTO" status --porcelain --untracked-files=no)" = ""
+          rm -f "$P15M_RECIPE_ENV" "$P15M_DEV_ENV" "$P15M_SHIP_ENV"
       - name: Upload only bounded metadata proof, never raw -e or source media
         uses: actions/upload-artifact@v4
         with:

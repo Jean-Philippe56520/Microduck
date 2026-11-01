@@ -106,15 +106,29 @@ jobs:
                 .:
           EOF
           test "$(git -C "$P14C_YOCTO" status --porcelain --untracked-files=no)" = ""
-      - name: Run real BitBake -p, -e dev and -e shipping, show-appends; never build a rootfs
+      - name: Run real BitBake -p, -e dev and -e shipping with private environments; no rootfs
         run: |
           set -euo pipefail
+          umask 022
+          # Full effective environments may contain OEM password hashes.
+          # A 0600 file must exist BEFORE BitBake redirects sensitive output.
+          for private_env in "$P14C_DEV_ENV" "$P14C_SHIP_ENV"; do
+            if [ -e "$private_env" ] || [ -L "$private_env" ]; then
+              echo "P14C STOP: unexpected effective environment path" >&2
+              exit 1
+            fi
+          done
+          (umask 077; : > "$P14C_DEV_ENV"; : > "$P14C_SHIP_ENV")
+          test "$(stat -c %a "$P14C_DEV_ENV")" = 600
+          test "$(stat -c %a "$P14C_SHIP_ENV")" = 600
           cfg="$P14C_YOCTO/kas/microduck.yml:$P14C_YOCTO/kas/per-p14c-opt-in.yml"
           timeout 1650s kas shell "$cfg" -c \
             "bitbake -p && bitbake -e microduck-image-dev > $P14C_DEV_ENV && bitbake -e microduck-image > $P14C_SHIP_ENV && bitbake-layers show-appends > $P14C_APPENDS"
           test -s "$P14C_DEV_ENV"
           test -s "$P14C_SHIP_ENV"
           test -s "$P14C_APPENDS"
+          test "$(stat -c %a "$P14C_DEV_ENV")" = 600
+          test "$(stat -c %a "$P14C_SHIP_ENV")" = 600
       - name: Verify dev-only inclusion and zero production changes via real effective variables
         run: |
           set -euo pipefail
@@ -141,6 +155,8 @@ jobs:
           PY
           git diff --exit-code -- upstream/
           test "$(git -C "$P14C_YOCTO" status --porcelain --untracked-files=no)" = ""
+          # Do not retain the complete effective environment after the gate.
+          rm -f "$P14C_DEV_ENV" "$P14C_SHIP_ENV"
       - name: Keep only bounded, nonprivate BitBake selection proof
         uses: actions/upload-artifact@v4
         with:
