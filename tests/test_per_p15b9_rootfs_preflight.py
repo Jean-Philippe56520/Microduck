@@ -19,9 +19,24 @@ class RootfsPreflightFixture(TestCase):
             (self.project / rel).mkdir(parents=True)
         account = self.project / gate.ACCOUNT
         (account / gate.CONF).parent.mkdir(parents=True)
-        (account / gate.CONF).write_text(gate.EXPECTED_CONF)
+        (account / gate.CONF).write_text(
+            'BBPATH .= ":\${LAYERDIR}"\n'
+            'BBFILES += "\${LAYERDIR}/recipes-*/*/*.bbappend"\n'
+            'BBFILE_COLLECTIONS += "kwipiaccount"\n'
+            'BBFILE_PATTERN_kwipiaccount := "^\${LAYERDIR}/"\n'
+            'BBFILE_PRIORITY_kwipiaccount = "24"\n'
+            'LAYERVERSION_kwipiaccount = "1"\n'
+            'LAYERDEPENDS_kwipiaccount = "core microduck"\n'
+            'LAYERSERIES_COMPAT_kwipiaccount = "wrynose"\n'
+        )
         (account / gate.APPEND).parent.mkdir(parents=True)
-        (account / gate.APPEND).write_text(gate.EXPECTED_APPEND)
+        (account / gate.APPEND).write_text(
+            "# P15-B9: isolated, locked service identity for the optional DEV image only.\n"
+            "# Preserve OEM microduck operator and the shipping image untouched.\n"
+            "# The OEM image already inherits extrausers. No service is enabled here.\n"
+            'EXTRA_USERS_PARAMS:append = " groupadd -r kwipi; '
+            "useradd -r -g kwipi -M -s /sbin/nologin -p '!' kwipi;" + '"\n'
+        )
         self.cfg = cached.Config(self.project, root / "yocto",
                                  root / "work", root / "build",
                                  root / "scratch", "a" * 40)
@@ -44,7 +59,7 @@ class RootfsPreflightFixture(TestCase):
         with patch.object(gate.cached, "preflight", return_value=self._proof()), \
              patch.object(gate, "verify_p15a", return_value={"reviewed_source_unchanged": True}):
             file = self.project / gate.ACCOUNT / gate.APPEND
-            file.write_text(gate.EXPECTED_APPEND.replace("/sbin/nologin", "/bin/bash"))
+            file.write_text(file.read_text().replace("/sbin/nologin", "/bin/bash"))
             with self.assertRaises(cached.Refused):
                 gate.check(self.cfg)
 
