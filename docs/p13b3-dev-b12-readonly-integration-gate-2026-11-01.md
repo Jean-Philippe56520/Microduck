@@ -80,6 +80,43 @@ PY
 
 Ne pas conclure une absence à partir d'un seul manifeste ancien : un `*.manifest` du répertoire `deploy/images` peut provenir d'une image antérieure. Relier d'abord la version du rootfs aux fichiers réellement présents et à sa provenance de build.
 
+## Cinquième diagnostic WSL2 — archives B6 conformes, PKGDEST historique absent (01/11/2026)
+
+**Observation opérateur, strictement en lecture seule :**
+
+```text
+SCRATCH: p15b6p-cache-scratch-20261101
+B6_PROOF_PRESENT: False
+B6_PROVENANCE_PRESENT: True
+B6_STAGE_REVISION: 9ca3dd3f7d8d71c95160e3896cbce05c3860c61f
+B6_STAGE_FIVE_HASHES: True
+B6_ARCHIVE_SHA_MATCH: True
+B6_ARCHIVE_5_GITHUB_BLOBS_MATCH: True
+B6_RECIPE_ENV: NOT_AVAILABLE
+SCRATCH: p15b6p-cache-scratch-20261101-b
+B6_PROOF_PRESENT: True
+B6_PROVENANCE_PRESENT: True
+B6_PROOF_STATUS: bitbake_passive_addon_package_files_verified_only
+B6_PROOF_REVISION: 702115e44e919178007a46d1ff10a8ab787a6c18
+B6_PROOF_FIVE_HASHES: True
+B6_STAGE_REVISION: 702115e44e919178007a46d1ff10a8ab787a6c18
+B6_STAGE_FIVE_HASHES: True
+B6_ARCHIVE_SHA_MATCH: True
+B6_ARCHIVE_5_GITHUB_BLOBS_MATCH: True
+B6_PROOF_STAGE_MATCH: True
+B6_PKGDEST_EXISTS: False
+B6_PACKAGED_FILES: NOT_FOUND
+B6_AUDIT: READ_ONLY_COMPLETE
+```
+
+**Portes réellement franchies :** chacune des deux archives de source staged a un SHA-256 correspondant à sa provenance ; ses 5 membres correspondent octet pour octet aux blobs GitHub. Le scratch `-b` contient un `package-proof.json` dont `packaged_sha256`, révision source et SHA de l'archive correspondent à sa provenance. Le premier scratch n'a pas de rapport de packaging ni d'environnement `recipe-env`. Le `PKGDEST` enregistré dans l'environnement privé du scratch `-b` **n'existe plus** au moment du contrôle ; aucune disponibilité actuelle des cinq fichiers empaquetés n'est attestée.
+
+**Ne pas confondre :** archive source B6 validée ≠ paquet actuel disponible, historique `package_split_files_verified=true` ≠ nouveau `do_package` exécuté, absence de RPM ≠ échec de `do_package`, et similarité des 24 blobs Git entre anciennes révisions ≠ preuve de dépendances installées ou fonctionnement sur le robot. Aucun nouveau paquet n'a été construit, aucune tâche n'a été lancée. Le statut est `B6_SOURCE_ARCHIVE = PASS`, `B6_HISTORICAL_PROOF = CONSISTENT`, `B6_CURRENT_PKGDEST = ABSENT`, `B6_SSTATE_REUSE = UNKNOWN`, `B10_DEV_EFFECTIVE_SELECTION = UNKNOWN`.
+
+**Décision suivante :** ne pas refaire P11/P12/P13B2 ni modifier les sous-modules. Vérifier uniquement la présence des objets sstate B6 et les chemins effectifs de `recipe-env.txt` existant sans imprimer d'environnement brut ; ensuite préparer un overlay KAS **DEV seulement** qui réutilise la source B12 à provenance fixe, P14B (19 modules), P15-B6 (5 modules), P15-B10, P15A inactive, P15-B9 (compte isolé), et audit d'installation 24/24 révisé au lieu de P16-A historique. La préparation doit prouver le fournisseur Rust B12 et l'absence de contamination shipping avant toute tâche `do_rootfs`. Aucun cache n'est nettoyé, aucun `do_package`/nouveau rootfs, WIC, RAUC, service ou robot entrepris par ce diagnostic. La licence de redistribution `CLOSED` reste un blocage séparé pour diffusion réelle.
+
+---
+
 ## Quatrième diagnostic opérateur — empreinte B6 historique retrouvée (01/11/2026)
 
 **Sortie WSL2 reçue, lecture seule, sans exécution distante GitHub :**
