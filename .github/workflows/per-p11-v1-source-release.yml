@@ -1,4 +1,4 @@
-name: PER-P11 pinned OEM V1 source artifact (NOT Yocto image)
+name: PER-P11 pinned OEM V1 source with opt-in B4/B8 (NOT Yocto image)
 
 on:
   pull_request:
@@ -10,8 +10,11 @@ on:
       - 'scripts/per_p10a_*'
       - 'scripts/per_p10b_*'
       - 'scripts/per_p10c_*'
+      - 'scripts/per_p15b4_*'
+      - 'scripts/per_p15b8_*'
       - 'rust/kwipi-seg-mask-core/**'
       - 'docs/per-p11-v1-source-release-2026-10-30.md'
+      - 'docs/p11-b4b8-source-closure-2026-11-01.md'
   workflow_dispatch:
 
 permissions:
@@ -41,10 +44,12 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
           python -m unittest discover -s tests -p test_per_p11_v1_source_release.py -v
+          python -m unittest discover -s tests -p test_per_p15b4_oem_local_overlay.py -v
+          python -m unittest discover -s tests -p test_per_p15b8_oem_acl_overlay.py -v
           test "$(git -C upstream/microduck rev-parse HEAD)" = '942e58e3aa6dbb28e7037203fff11866122c7567'
           test "$(git -C upstream/microduck_rl rev-parse HEAD)" = 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
           git diff --exit-code -- upstream/
-      - name: Export reproducible source archive twice from the pinned OEM and P10A/B/C
+      - name: Export reproducible pinned source twice with P10A/B/C then B4/B8
         run: |
           set -euo pipefail
           python -m scripts.per_p11_v1_source_release \
@@ -58,6 +63,27 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           python -m scripts.per_p11_v1_source_release --verify \
             "$RUNNER_TEMP/p11-first/kwipi-v1-oem-source.tar.gz"
+          python - <<'PY'
+          import json
+          import os
+          import tarfile
+          from pathlib import Path
+          path = Path(os.environ["RUNNER_TEMP"]) / "p11-first/kwipi-v1-oem-source.tar.gz"
+          with tarfile.open(path, "r:gz") as archive:
+              manifest = json.load(archive.extractfile("kwipi-source-manifest.json"))
+              assert manifest["code"] == "P10A_P10B_P10C_P15B4_P15B8_without_test_harness"
+              assert manifest["local_detections_opt_in_only"] is True
+              assert manifest["local_detections_installed_on_robot"] is False
+              local = archive.extractfile("mediad/src/local_detections.rs").read()
+              acl = archive.extractfile("mediad/src/local_detections_acl.rs").read()
+              main = archive.extractfile("mediad/src/main.rs").read()
+              assert local.count(b'include!("local_detections_acl.rs")') == 1
+              assert b"system.posix_acl_access" in acl
+              assert main.count(b"if args.kwipi_local_detections {") == 1
+              assert b"default_value_t = false" in main
+              assert "p10c-harness" not in archive.getnames()
+          print("P11 B4/B8: reviewed opt-in source present, not installed or robot-validated")
+          PY
           git diff --exit-code -- upstream/
       - name: Compile the actual exported source, not the working overlay tree
         run: |
@@ -73,6 +99,8 @@ jobs:
           test ! -e "$RUNNER_TEMP/p11-unpacked/.per-p10a-throwaway-pin"
           test ! -e "$RUNNER_TEMP/p11-unpacked/kwipi_seg.rknn"
           test ! -e "$RUNNER_TEMP/p11-unpacked/kwipi_seg_tail.onnx"
+          test -s "$RUNNER_TEMP/p11-unpacked/mediad/src/local_detections.rs"
+          test -s "$RUNNER_TEMP/p11-unpacked/mediad/src/local_detections_acl.rs"
           cargo metadata --manifest-path "$RUNNER_TEMP/p11-unpacked/Cargo.toml" --locked \
             --format-version 1 > /dev/null
           cargo check --manifest-path "$RUNNER_TEMP/p11-unpacked/Cargo.toml" --locked \
