@@ -25,6 +25,13 @@
 
 **Périmètre interdit :** pas de modification `tofd` ni accès au vrai `/run` constructeur ; aucune permission sur une WIC, aucun run sur robot. Pas de timestamp de capture dans `Sighting`, ni révision effective `DUCK_REVISION` établie, ni test de disponibilité kernel ACL sur le RK3566/Yocto, ni mesure RAM/chaleur/50Hz. Il faudra une décision d'intégration OEM et P16 distincte, plus une vérification du compte Kwipi et des groupes avant toute installation. **Un succès Rust PC ne lève pas ces STOP.**
 
+
+## Révision de l'ordre de sûreté avant test Rust
+
+**Risque détecté à la revue du candidat, avant validation :** si l'ACL de traversée est déjà active à l'instant de `UnixListener::bind`, le nouvel inode Unix peut exister brièvement avec ses permissions initiales (umask du processus) **avant** `chmod(0600)`. Ne pas supposer que l'absence de retour du listener bloque une autre connexion dans ce délai : le socket est un objet de système de fichiers. Le candidat B8 **ferme le répertoire** en retirant *uniquement* l'ACL nominative préalablement validée, vérifie le retour au mode `0700`, crée le socket, applique `chmod(0600)`, installe + relit l'ACL socket `user:<uid>:rw-`, puis installe + relit **en dernier** l'ACL répertoire `user:<uid>:--x`. Sur échec, ne pas rendre de listener et enlever l'endpoint nouvellement créé. Les tests Python de source vérifient l'ordre et un test Rust vérifie la révocation/repose de la permission de traversée. Cette discipline peut provoquer un bref refus de nouveaux clients à chaque rebind ; elle privilégie la sûreté à la continuité du flux.
+
+**Autre verrou cible distinct :** les fragments noyau Yocto constructeur consultés (`linux-rockchip_6.1.bbappend`, `cgroups.cfg`, `rauc.cfg`) ne prouvent pas l'état final de `CONFIG_EXT4_FS_POSIX_ACL` ou la disponibilité réelle des xattr/ACL sur le système de fichiers `/run` du robot. L'appel Linux `lsetxattr` ne requiert pas `libacl` externe à l'exécution mais nécessite la prise en charge kernel/filesystem. Sur RK3566 ou image DEV, **statut inconnu, arrêt de déploiement**. `kwipi` et ses groupes réels sont aussi non établis : ne pas créer de compte ou modifier Yocto dans B8.
+
 ## Résultat
 
 À remplir à partir des CI et journaux réels. Ne pas assimiler test PC au comportement du robot.
