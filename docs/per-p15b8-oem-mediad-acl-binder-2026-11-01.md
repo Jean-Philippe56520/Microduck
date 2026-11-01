@@ -1,0 +1,30 @@
+# P15-B8 — porte OEM de démarrage/rebind des métadonnées privées avec ACL strictes (01/11/2026)
+
+## Contrat arrêté AVANT code/test
+
+**Résultat concret ciblé.** Faire démarrer, fermer, puis **recréer** le socket local de métadonnées `mediad` dans un répertoire privé **après** l'attribution d'une ACL nominative à l'UID isolé Kwipi, sans perdre le droit de traversée, sans autoriser le groupe moteur `robot` et sans déployer de service ni d'image. Utiliser le **vrai `mediad` OEM épinglé sur une archive temporaire** P11 + P10A/B/C + P15-B4 ; compiler et exécuter les tests Rust du producteur sur Linux PC. Aucun accès physique à l'appareil.
+
+**Preuve qui manque :** [P15-B7/#245, CI Linux #41295547232](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41295547232) a validé 8/8 tests P15-B3 + 8/8 tests P15-B7 de DAC kernel. L'ACL `u:<kwipi>:--x` du répertoire `0700` augmente le masque de groupe visible à `0710`. Le prototype P15-B4 `scripts/per_p15b4_local_detections.rs` interdit strictement tout mode différent de `0700` dans `safe_dir(private=true)` et refuserait donc un nouveau bind : **bloqueur réel**. Autre risque : `unlink/bind` remplace le socket, perdant son ACL `u:<kwipi>:rw-` ; une ACL posée une seule fois n'est pas suffisante.
+
+**Pins et responsabilité :** projet parent [#245](https://github.com/Jean-Philippe56520/Microduck/pull/245) HEAD `e08c5453057fd62533e691f298c2724a36ce7738`, `main@eab73e9435dbd217c0e50b9e9ecfd59730a6e068` ; constructeur `microduck@942e58e3aa6dbb28e7037203fff11866122c7567`, simulation `microduck_rl@b02fdea4902c2b93b7d34a83a6f05da4ececb7d3`, Yocto `microduck_yocto@1ee58387810cebb67ae0d634c351d95024483bce`. Amont OEM `main@b2b0d213a402caeac492dd662ea891faa17f67c0` garde les mêmes sockets `robot` et `tofd` ; le constructeur ne publie aucun mécanisme dédié Kwipi. Les PR Qwen #97–99 sont fusionnées et hors sujet. `mediad` conserve caméra, détecteur et diffusion uniques ; `robotd` seul pilote moteurs, freinage et arrêt.
+
+**Réutiliser / adapter / nouveau :**
+- **Réutiliser** sans changement P15-B4 : `Detector.sightings`, `detect::notification`, `main.rs` et `lib.rs` OEM modifiés en scratch, CLI `--kwipi-local-detections` désactivée par défaut ; noyau DAC P15-B7 et CI GStreamer/cargo P15-B4. Pas de nouveau daemon, groupe, modèle ou inférence.
+- **Adapter dans la seule archive scratch** `mediad/src/local_detections.rs` de B4 avec un garde ACL strict et une opération de grant **sur le nouveau socket juste après `bind` et `chmod 0600`, avant de retourner le listener**. L'UID cible doit venir du compte système nommé `kwipi` dans la variante `bind_default`, **jamais d'un chiffre arbitraire en production** ; si ce compte n'existe pas, STOP désactivé. Une fonction à UID numérique reste disponible uniquement aux fixtures Rust.
+- **Nouveau minimal** : une politique Linux ACL propre au socket B4 (xattr POSIX version 2, via `libc` déjà dépendance OEM), l'overlay B8 fail-closed et ses tests; pas de `libacl`/shell/`setfacl` requis **à l'exécution**. La CI peut installer des outils sur hôte pour contre-vérifier. Aucun composant tiers C3 n'est nécessaire.
+
+**Observation/hypothèse.** Un propriétaire Unix de répertoire est autorisé par Linux à poser une ACL exacte `user_obj:rwx, user:<uid>:--x, group_obj:---, mask:--x, other:---` ; un socket propriétaire `0600` peut porter `user_obj:rw, user:<uid>:rw, group_obj:---, mask:rw, other:---`. Le masque de groupe apparent devient `0710` puis `0660` **sans ouvrir le droit à `group::`**. La politique devra refuser tout attribut inconnu, UID root ou égal à `mediad`, symlink, ACL plus large, droits de groupe/other, droits ajoutés à un autre UID, socket préexistant, chemin hors répertoire sûr ou échec d'une opération. Aucune ACL `default:` ni attribution à `robot`. L'accès reste opt-in et ne doit jamais publier un listener tant que les deux ACL n'ont pas été vérifiées.
+
+**Positifs préenregistrés :**
+1. L'overlay refuse l'absence de marqueur OEM, une source différente de B4, des liens symboliques et une deuxième application ; il ne modifie que le module B4 dans un arbre OEM éphémère et un helper Rust propre à B8.
+2. Le `mediad` OEM réel épinglé **compile** sur hôte après P10A/B/C/B4/B8 ; `cargo fmt --check`, `cargo test --lib` du module B4/B8 et `cargo clippy` passent ; aucun changement dans `upstream/`.
+3. Test Rust **sous vrai noyau Linux** sur répertoire et socket temporaires : premier bind/ACL, ACL xattr exactement lue, `safe_dir` accepte le répertoire ACL **seulement** si l'UID attendu et la liste d'entrées correspondent ; après fermeture + unlink du socket de fixture, rebind applique à nouveau l'ACL socket **avant** de rendre le listener. Dossiers/sockets moteurs et caméra non sollicités.
+4. Les tests P15-B3+B7 **16/16** sur noyau Linux et la suite Python générale restent verts sur SHA final. Aucun WIC, `do_rootfs`, déploiement ou essai moteur.
+
+**Négatifs/STOP préenregistrés :** erreur `getxattr/setxattr` ou ACL non supportée, compte Kwipi absent, UID=0/mediad, ACL contenant d'autres utilisateurs ou donnant groupe/other, masque trop large, répertoire modifié ou symlinké, socket préexistant, échec de rebind, source constructeur modifiée, échec Rust/CI ou compile du binaire = **STOP** ; aucun retour à `chmod 0777`, groupe `robot`, `setfacl` asynchrone ni service supplémentaire. Retour arrière : supprimer l'overlay B8/helper/tests/workflow de sa branche ; l'OEM, les gitlinks et le cache de l'opérateur demeurent inchangés.
+
+**Périmètre interdit :** pas de modification `tofd` ni accès au vrai `/run` constructeur ; aucune permission sur une WIC, aucun run sur robot. Pas de timestamp de capture dans `Sighting`, ni révision effective `DUCK_REVISION` établie, ni test de disponibilité kernel ACL sur le RK3566/Yocto, ni mesure RAM/chaleur/50Hz. Il faudra une décision d'intégration OEM et P16 distincte, plus une vérification du compte Kwipi et des groupes avant toute installation. **Un succès Rust PC ne lève pas ces STOP.**
+
+## Résultat
+
+À remplir à partir des CI et journaux réels. Ne pas assimiler test PC au comportement du robot.
