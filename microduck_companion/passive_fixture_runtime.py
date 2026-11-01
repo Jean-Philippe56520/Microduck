@@ -7,6 +7,7 @@ This is NOT a deployable companion daemon, robot observation or safety check.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 import math
 from pathlib import Path
@@ -19,6 +20,7 @@ from .autonomy import AutonomyBrain
 from .episodic_memory import ExperienceMemory
 from .passive_learning import PassiveLearning
 from .passive_memory import PassiveObservationJournal
+from .passive_media_fixture_reader import MediaFixtureReader, validate_media_fixture_path
 from .passive_resilience import PassiveCycleLimits, PassiveCycleSupervisor
 from .passive_sources import FixtureUnixReader
 
@@ -51,19 +53,31 @@ def validate_fixture_args(socket_path: Path, database: Path, *,
 
 def run_fixture_lifecycle(socket_path: Path, database: Path, *,
                           cycles: int = 4, interval_s: float = 0.6,
-                          stop_event: threading.Event | None = None) -> dict:
+                          stop_event: threading.Event | None = None,
+                          media_fixture_path: Path | None = None) -> dict:
     """Finite, cooperative mock cycle; no live OEM source or physical effect.
 
     F2-D's wall/cycle deadlines are soft, and SIGTERM is cooperative: neither
     can interrupt a blocked SQLite operation or an in-flight fixture read.
     """
     validate_fixture_args(socket_path, database, cycles=cycles, interval_s=interval_s)
+    # Validate BOTH fixture endpoints before creating/opening ExperienceMemory.
+    if media_fixture_path is not None:
+        validate_media_fixture_path(media_fixture_path)
+        if media_fixture_path.resolve(strict=False) == socket_path.resolve(strict=False):
+            raise ValueError("media and mock-cognition sockets must be different")
     if stop_event is not None and not isinstance(stop_event, threading.Event):
         raise TypeError("stop_event must be a threading.Event")
     stop = stop_event if stop_event is not None else threading.Event()
     if stop.is_set():
-        return _result(0, 0, 0, 0, {}, True, memory_opened=False)
+        return _result(0, 0, 0, 0, {}, True, memory_opened=False,
+                       media_enabled=media_fixture_path is not None)
 
+    # This observer has no access to brain/journal/SQLite or OEM motor APIs.
+    media_reader = (MediaFixtureReader(media_fixture_path)
+                    if media_fixture_path is not None else None)
+    media_statuses: Counter[str] = Counter()
+    media_notifications = 0
     memory = ExperienceMemory(database)
     try:
         journal = PassiveObservationJournal(memory)
@@ -86,6 +100,13 @@ def run_fixture_lifecycle(socket_path: Path, database: Path, *,
             report = runner.run_once()
             if report.executed or report.motor_commands_issued:
                 raise RuntimeError("fixture cycle must never execute actions")
+            if media_reader is not None and not stop.is_set():
+                # Sidecar only: NEVER pass this result to the brain, journal,
+                # passive-learning ledger or any motor request.
+                media_result = media_reader.read()
+                media_statuses[media_result.status] += 1
+                if media_result.notification_valid_shape_only:
+                    media_notifications += 1
             if index + 1 < cycles and stop.wait(interval_s):
                 break
         metrics = runner.metrics()
@@ -93,13 +114,19 @@ def run_fixture_lifecycle(socket_path: Path, database: Path, *,
             metrics.cycles_attempted, metrics.stored_observations,
             metrics.scored_consequences, metrics.source_events_accepted,
             dict(metrics.status_counts), stop.is_set(), memory_opened=True,
+            media_enabled=media_reader is not None,
+            media_statuses=dict(media_statuses),
+            media_notifications=media_notifications,
         )
     finally:
         memory.close()
 
 
 def _result(cycles: int, stored: int, scored: int, events: int,
-            statuses: dict[str, int], stopped: bool, *, memory_opened: bool) -> dict:
+            statuses: dict[str, int], stopped: bool, *, memory_opened: bool,
+            media_enabled: bool = False,
+            media_statuses: dict[str, int] | None = None,
+            media_notifications: int = 0) -> dict:
     return {
         "status": "fixture_stop_requested" if stopped else "fixture_cycles_finished",
         "source": "untrusted_mock_fixture_unix_only",
@@ -115,6 +142,14 @@ def _result(cycles: int, stored: int, scored: int, events: int,
         "robot_validated": False,
         "action_executed": False,
         "experience_memory_instances": 1 if memory_opened else 0,  # never a second SQLite
+        "media_fixture_enabled": media_enabled,
+        "media_source": ("untrusted_oem_shape_unix_fixture_only" if media_enabled
+                         else "disabled"),
+        "media_statuses": media_statuses if media_statuses is not None else {},
+        "media_notifications_received": media_notifications,
+        "media_categories_recognized": 0,
+        "media_observations_stored": 0,
+        "media_sensor_verified": False,
     }
 
 
@@ -122,6 +157,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mock-only", action="store_true", required=True)
     parser.add_argument("--fixture-unix-socket", type=Path, required=True)
+    parser.add_argument("--media-fixture-unix-socket", type=Path)
     parser.add_argument("--database", type=Path, required=True)
     parser.add_argument("--cycles", type=int, default=4)
     parser.add_argument("--interval-s", type=float, default=0.6)
@@ -138,6 +174,7 @@ def main(argv: list[str] | None = None) -> int:
         result = run_fixture_lifecycle(
             args.fixture_unix_socket, args.database,
             cycles=args.cycles, interval_s=args.interval_s, stop_event=stop,
+            media_fixture_path=args.media_fixture_unix_socket,
         )
     except (OSError, ValueError, TypeError, sqlite3.Error, RuntimeError) as exc:
         # No frame, memory, socket path, or exception text is logged.
