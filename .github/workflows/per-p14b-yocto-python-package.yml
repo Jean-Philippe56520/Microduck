@@ -1,0 +1,173 @@
+name: PER-P14B pinned BitBake Python metadata (NOT do_package/robot)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/per-p14b-yocto-python-package.yml"
+      - "scripts/per_p14b_yocto_python_layer.py"
+      - "scripts/per_p14b_yocto_package_gate.py"
+      - "tests/test_per_p14b_yocto_python_layer.py"
+      - "tests/test_per_p14b_yocto_package_gate.py"
+      - "docs/per-p14b-yocto-python-package-2026-10-30.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-python-recipe-metadata-only:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 38
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      P14_YOCTO: /tmp/p14b-yocto
+      P14_LAYER: /tmp/p14b-meta-kwipi-python
+      P14_ENV: /tmp/p14b-effective-env-private.txt
+      KAS_WORK_DIR: /tmp/p14b-kas-work
+      KAS_BUILD_DIR: /tmp/p14b-kas-build
+      KAS_CLONE_DEPTH: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          submodules: false
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check exact PR head and OEM gitlinks without modifying submodules
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git ls-tree HEAD upstream/microduck | awk '{print $3}')" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git ls-tree HEAD upstream/microduck_rl | awk '{print $3}')" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          python -m compileall -q scripts/per_p14b_yocto_python_layer.py scripts/per_p14b_yocto_package_gate.py
+          python -m unittest discover -s tests -p 'test_per_p14b_yocto_python_layer.py' -v
+          python -m unittest discover -s tests -p 'test_per_p14b_yocto_package_gate.py' -v
+          python -m unittest discover -s tests -p 'test_per_p14a_embedded_wheel.py' -v
+          git diff --exit-code -- upstream/
+      - name: Stage two byte-identical candidate OE layers from same P14A allowlist
+        run: |
+          set -euo pipefail
+          python -m scripts.per_p14b_yocto_python_layer stage --output "$P14_LAYER"
+          python -m scripts.per_p14b_yocto_python_layer stage --output "$RUNNER_TEMP/p14b-second"
+          diff -rq "$P14_LAYER" "$RUNNER_TEMP/p14b-second"
+          python -m scripts.per_p14b_yocto_python_layer verify --layer "$P14_LAYER"
+          test ! -e "$P14_LAYER/recipes-kwipi/kwipi-companion/files/kwipi_seg.rknn"
+          git diff --exit-code -- upstream/
+      - name: Acquire exact pinned official Yocto checkout
+        run: |
+          set -euo pipefail
+          mkdir -p "$P14_YOCTO"
+          git -C "$P14_YOCTO" init -q
+          git -C "$P14_YOCTO" remote add origin https://github.com/pollen-robotics/microduck_yocto.git
+          GIT_TERMINAL_PROMPT=0 git -C "$P14_YOCTO" fetch --depth 1 origin 1ee58387810cebb67ae0d634c351d95024483bce
+          git -C "$P14_YOCTO" checkout --detach FETCH_HEAD
+          test "$(git -C "$P14_YOCTO" rev-parse HEAD)" = "1ee58387810cebb67ae0d634c351d95024483bce"
+      - name: Prepare genuine host kas/BitBake without lowering AppArmor
+        run: |
+          set -euo pipefail
+          available="$(df -Pk /tmp | awk 'NR==2 {print $4}')"
+          echo "Available KB before BitBake: $available"
+          test "$available" -ge 6000000 || { echo 'P14B STOP: host has insufficient disk'; exit 1; }
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends chrpath diffstat
+          mkdir -p "$KAS_WORK_DIR" "$KAS_BUILD_DIR"
+          python -m venv "$RUNNER_TEMP/kwipi-p14b-venv"
+          "$RUNNER_TEMP/kwipi-p14b-venv/bin/pip" install --disable-pip-version-check --no-cache-dir "kas==5.2.0"
+          "$RUNNER_TEMP/kwipi-p14b-venv/bin/kas" --version
+          echo "$RUNNER_TEMP/kwipi-p14b-venv/bin" >> "$GITHUB_PATH"
+      - name: Add the separate opt-in Python layer with no image modification
+        run: |
+          set -euo pipefail
+          cat > "$P14_YOCTO/kas/per-p14b-layer.yml" <<EOF
+          header:
+            version: 14
+          repos:
+            kwipipy:
+              path: $P14_LAYER
+              layers:
+                .:
+          EOF
+          test "$(git -C "$P14_YOCTO" status --porcelain --untracked-files=no)" = ""
+      - name: REAL pinned BitBake parse and effective recipe metadata only; no do_package
+        run: |
+          set -euo pipefail
+          umask 022
+          if [ -e "$P14_ENV" ] || [ -L "$P14_ENV" ]; then
+            echo "P14B STOP: effective BitBake env path already exists" >&2
+            exit 1
+          fi
+          # The expanded -e may contain OEM credentials. Create mode 0600
+          # BEFORE shell redirection, keeping BitBake-compatible umask 022.
+          (umask 077; : > "$P14_ENV")
+          test "$(stat -c %a "$P14_ENV")" = 600
+          config="$P14_YOCTO/kas/microduck.yml:$P14_YOCTO/kas/per-p14b-layer.yml"
+          timeout 1650s kas shell "$config" -c \
+            "bitbake -p && bitbake -e kwipi-companion > $P14_ENV"
+          test -s "$P14_ENV"
+          test "$(stat -c %a "$P14_ENV")" = 600
+          echo "P14B: REAL BitBake metadata parsed; NO do_package on ephemeral GitHub runner"
+      - name: Validate exact active metadata, original 19 source modules and WSL2 archive SHA
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from scripts.per_p13a_bitbake_env_gate import bbvar
+          from scripts.per_p14b_yocto_package_gate import effective_variables
+          from scripts.per_p14b_yocto_python_layer import verify
+
+          root = Path(os.environ["GITHUB_WORKSPACE"])
+          layer = Path(os.environ["P14_LAYER"])
+          env = Path(os.environ["P14_ENV"])
+          if env.is_symlink() or not env.is_file() or env.stat().st_mode & 0o077:
+              raise SystemExit("P14B STOP: private effective env file insecure")
+          original = verify(root, layer)
+          text = env.read_text(encoding="utf-8")
+          if bbvar(text, "PN") != "kwipi-companion":
+              raise SystemExit("P14B STOP: BitBake selected a different recipe")
+          effective_variables(text, layer)
+          expected_archive_sha = "85c583b86f0c8b5c59e9a547762a223c7ab27dee016c3ec604141907b20b2245"
+          if original["source_archive_sha256"] != expected_archive_sha:
+              raise SystemExit("P14B STOP: reviewed WSL2 packaged archive differed")
+          if (original["selected_python_modules"] != 19
+                  or original["license_recipe_closed"] is not True
+                  or original["source_license_checked"] is not False
+                  or original["oem_yocto_sha"] != "1ee58387810cebb67ae0d634c351d95024483bce"):
+              raise SystemExit("P14B STOP: 19 source modules/license/OEM pin changed")
+          report = {
+              "schema": "kwipi-p14b-hosted-bitbake-metadata-v1",
+              "status": "pinned_bitbake_metadata_verified_not_package",
+              "source_revision": original["source_revision"],
+              "oem_yocto_sha": original["oem_yocto_sha"],
+              "source_archive_sha256": expected_archive_sha,
+              "python_modules_source_verified": 19,
+              "recipe_pn": "kwipi-companion",
+              "source_license_checked": False,
+              "bitbake_parse_and_effective_env_verified": True,
+              "do_package_run_by_this_workflow": False,
+              "package_files_verified_by_this_workflow": False,
+              "local_wsl2_package_proof_separate": True,
+              "rootfs_or_image_built": False,
+              "service_activated": False,
+              "robot_validated": False,
+              "motor_commands_issued": 0,
+          }
+          out = Path(os.environ["RUNNER_TEMP"]) / "p14b-pinned-metadata-proof.json"
+          if out.exists() or out.is_symlink():
+              raise SystemExit("P14B STOP: report target already exists")
+          out.write_text(json.dumps(report, sort_keys=True, indent=2) + "\n")
+          print("P14B METADATA PASS; no do_package in hosted CI, no image or robot")
+          PY
+          test "$(git -C "$P14_YOCTO" status --porcelain --untracked-files=no)" = ""
+          git diff --exit-code -- upstream/
+          rm -f "$P14_ENV"
+      - name: Upload sanitized metadata proof only, no raw -e, package, image or signing material
+        uses: actions/upload-artifact@v4
+        with:
+          name: kwipi-p14b-pinned-bitbake-metadata-only
+          path: ${{ runner.temp }}/p14b-pinned-metadata-proof.json
+          retention-days: 7
