@@ -47,10 +47,13 @@ class CachedOperatorTests(unittest.TestCase):
         self.space_patch = patch.object(
             runner.shutil, "disk_usage",
             return_value=SimpleNamespace(free=17 * 1024**3))
+        self.tool_patch = patch.object(runner, "_check_kas")
         self.git_patch.start()
         self.space_patch.start()
+        self.tool_patch.start()
         self.addCleanup(self.git_patch.stop)
         self.addCleanup(self.space_patch.stop)
+        self.addCleanup(self.tool_patch.stop)
 
     def _fake_git(self, path, *cmd):
         if cmd == ("status", "--porcelain", "--untracked-files=no"):
@@ -67,6 +70,9 @@ class CachedOperatorTests(unittest.TestCase):
         report = runner.preflight(self.cfg)
         self.assertEqual(runner.CHECK, report["status"])
         self.assertTrue(report["existing_bitbake_cache"])
+        self.assertTrue(report["kas_5_2_checked"])
+        self.assertTrue(report["cargo_present"])
+        runner._check_kas.assert_called_once_with()
         self.assertFalse(report["bitbake_run"])
         self.assertFalse(report["package_verified"])
         self.assertFalse(self.cfg.scratch.exists())
@@ -190,7 +196,16 @@ class CachedOperatorTests(unittest.TestCase):
             with self.subTest(name=name), self.assertRaises(runner.Refused):
                 runner.preflight(cfg)
 
-    def test_13_pin_fails_if_staged_tree_dirty(self):
+    def test_13_readonly_preflight_refuses_missing_or_wrong_kas(self):
+        for reason in ("kas 5.2 missing", "cargo missing", "kas version 5.3"):
+            with self.subTest(reason=reason):
+                with patch.object(runner, "_check_kas",
+                                  side_effect=runner.Refused(reason)):
+                    with self.assertRaises(runner.Refused):
+                        runner.preflight(self.cfg)
+            self.assertFalse(self.cfg.scratch.exists())
+
+    def test_14_pin_fails_if_staged_tree_dirty(self):
         def dirty(path, *cmd):
             if path == self.cfg.project and cmd == (
                     "status", "--porcelain", "--untracked-files=no"):

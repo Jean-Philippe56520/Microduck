@@ -24,7 +24,7 @@
 
 ## Procédure locale WSL2 — uniquement sur décision explicite
 
-Préconditions : checkout de la PR #244 au SHA exact affiché sur GitHub, sous-modules OEM présents aux gitlinks épinglés, checkout Yocto au SHA 1ee58387810cebb67ae0d634c351d95024483bce, KAS_WORK_DIR réellement utilisé lors des anciens builds (six clones OE/BitBake/Rockchip/RAUC), KAS_BUILD_DIR avec conf/local.conf, tmp/work et un cache-stamp cmake-native déjà terminé. KAS 5.2 et cargo requis. Ne pas substituer des répertoires vierges ou réinstaller des dépendances au hasard. Les chemins WSL2 cités dans les logs antérieurs sont des pistes, non des chemins vérifiés aujourd'hui.
+Préconditions : checkout de la PR #244 au SHA exact affiché sur GitHub, sous-modules OEM présents aux gitlinks épinglés, checkout Yocto au SHA 1ee58387810cebb67ae0d634c351d95024483bce, KAS_WORK_DIR réellement utilisé lors des anciens builds (six clones OE/BitBake/Rockchip/RAUC), KAS_BUILD_DIR avec conf/local.conf, tmp/work et un cache-stamp cmake-native déjà terminé. KAS 5.2 et cargo requis : le mode `--check` vérifie désormais aussi leur disponibilité (`kas --version` et recherche locale de `cargo`), sans lancement de BitBake. Ne pas substituer des répertoires vierges ou réinstaller des dépendances au hasard. Les chemins WSL2 cités dans les logs antérieurs sont des pistes, non des chemins vérifiés aujourd'hui.
 
 Depuis la racine du checkout Microduck dans WSL2, renseigner **les chemins réels** et conserver un scratch inexistant. Le SHA doit être recopié depuis la page de PR, pas auto-déduit comme une preuve indépendante.
 

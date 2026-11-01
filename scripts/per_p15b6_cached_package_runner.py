@@ -124,13 +124,16 @@ def preflight(cfg: Config) -> dict:
         raise Refused("no completed cached cmake-native sysroot stamp: stop before a cold build")
     if shutil.disk_usage(cfg.build).free < SPACE:
         raise Refused("free disk below 16 GiB")
+    # --check must also prove the pinned operator tooling is available.
+    # kas --version and shutil.which are read-only and start no BitBake task.
+    _check_kas()
 
     return {
         "status": CHECK, "source_revision": cfg.expected_sha,
         "oem_sha": OEM, "yocto_sha": YOCTO, "pinned_kas_repositories": len(KAS_REPOS),
         "existing_cmake_native_sysroot_stamp": True,
         "existing_bitbake_cache": True,
-        "minimum_free_gib": 16,
+        "minimum_free_gib": 16, "kas_5_2_checked": True, "cargo_present": True,
         "scratch_written": False, "bitbake_run": False, "package_verified": False,
         "robot_access": False, "image_built": False, "motor_commands": 0,
     }
@@ -199,7 +202,6 @@ def _task_command(scratch: Path) -> str:
 
 def execute(cfg: Config) -> dict:
     preflight(cfg)
-    _check_kas()
     env = dict(os.environ)
     env.update({
         "PYTHONDONTWRITEBYTECODE": "1", "CARGO_NET_OFFLINE": "true",
