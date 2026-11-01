@@ -1,5 +1,12 @@
 # Feuille de route — Microduck Companion
 
+## P15-B11 — option de sources B4/B8 sous revue (01/11/2026)
+
+**Écart confirmé :** P11/P12 distribuent jusqu'à P10A/B/C, pas les propositions locales B4/B8 ; l'identité `DUCK_REVISION` compilée n'était pas exportée explicitement. [PR #252](https://github.com/Jean-Philippe56520/Microduck/pull/252) prépare le profil **source-only** facultatif et identifiable, sans l'activer sur la cible. Succès **partiel PC** : archive B4/B8 compilée en Rust sur hôte au premier essai ; preuve complète au **dernier SHA et `bitbake -e`** à vérifier avant fusion. Ni nouvelle image DEV/WIC, ni ACL /run, ni source capture fraîche, ni service autonome ni test robot. L'étape suivante dépend des preuves de version réellement empaquetée et d'authenticité de détections ; **pas** de reconstruction BitBake/WIC automatique ni de deuxième capture. [Plan opérationnel](plan-action.md).
+
+---
+
+
 ## Situation V1 après consolidation — 1er novembre 2026
 
 **Code contrôlé :** [`main@89c6472fdf4afe472a41df9e4bd63186eb31d94f`](https://github.com/Jean-Philippe56520/Microduck/tree/89c6472fdf4afe472a41df9e4bd63186eb31d94f). **#230/#231/#235/#238–#248 sont fusionnées** ; les indications historiques « PR ouvertes » ou « image non construite » ci-dessous sont remplacées par ce tableau. [Plan d'action](plan-action.md) = autorité. Une fusion/CI n'est jamais une preuve de capacité robot.
