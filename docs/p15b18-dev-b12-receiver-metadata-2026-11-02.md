@@ -26,6 +26,14 @@
 
 **Négatifs/STOP** : B17 absent/altéré, couche absente/dupliquée ou modifiée, image shipping contaminée, module B6/base supprimé, compte `kwipi` autorisé au groupe `robot`, recette non reconnue, `SRC_URI` supplémentaire, SHA/nom/version erronés, `RDEPENDS` insuffisants, source non immuable, bbappend caché sous une recette shipping ou permissions plus larges ; échec de CI ou BitBake ⇒ ne pas fusionner. Un échec d'outil absent est un manque à diagnostiquer, pas une permission pour contourner les protections. Aucun secret environnemental publié.
 
+## Preuves effectives obtenues sur le SHA fonctionnel
+
+Sur `ccbe9590c4ad26df4253d9e636462fad7504afc1` : [CI B18 #41441640365](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41441640365) **PASS**, sans skip dans les gates spécifiques. La CI a réellement exécuté `bitbake -p`, `bitbake -e microduck-image-dev`, `bitbake -e microduck-image`, `bitbake -e kwipi-b12-receiver`, `bitbake-getvar` pour le SHA nommé `p15b17.sha256sum` et `bitbake-layers show-appends` depuis KAS 5.2 et les sources OEM/OE épinglées. **16/16 B18**, **12/12 B17**, **14/14 B10**, **8/8 B9**, **13/13 P14C** (63 tests de gates), aucun échec ; 19+5+4 modules, `kwipi-b12-receiver` sélectionné **exactement une fois en DEV**, **zéro dans shipping**, `LICENSE=CLOSED`, `PACKAGE_ARCH=all`, révision 0.1.0, dépendances et empreinte d'archive contrôlées. Empreinte des quatre sources dans ce test : `0921b7dacd7a683b0b90ba7a979e20e72aa4a5aeaecb4899ba9cc63a46c7ab6c` (liée à ce SHA, non constante pour le prochain HEAD).
+
+La [CI Python #41441640170](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41441640170) a exécuté **2 383 tests, dont 52 ignorés, aucun échec** ; les 7/7 workflows sont passés au SHA fonctionnel. Les fichiers `bitbake -e` restent privés (0600) ; seul un rapport JSON expurgé est téléversé. Le script vérificateur indique explicitement `bitbake_executed_by_this_gate=false` : **c'est l'étape CI, pas le script, qui atteste l'exécution réelle de BitBake**.
+
+Cette qualification **n'exécute pas** `do_unpack`, `do_package`, `do_rootfs`, WIC, RAUC ni le runtime AArch64, et ne valide aucune permission `/run` réelle. Les binaires B12 du rootfs B10, les 24 sources et les rapports historiques sont préservés. Les sept CI devront être revérifiées au SHA documentaire final, puis la PR fusionnée seulement après feu vert.
+
 ## Statut et limites
 
 **Préenregistrement avant implémentation/CI.** La réussite de tests synthétiques signifie `test_logiciel_seul`. Une réussite réelle de `-p/-e` signifie **métadonnées BitBake effectives vérifiées**, PAS `do_unpack/do_package/do_rootfs`, ni installation sur DEV, WIC/RAUC, signature ou robot. Le rootfs historique P16-B10 (24 modules, deux ELF et trois fichiers P15A) reste **immuable**, ses rapports/empreintes sont hors portée. Activation producteur, service OEM, ACL, capteur et ressources RK3566 restent des portes ultérieures.
