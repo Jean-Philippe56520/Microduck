@@ -5,6 +5,9 @@ on:
       - 'tests/test_per_p15b3_oem_unix_dac.py'
       - 'tests/test_per_p15b7_mediad_private_dac.py'
       - 'tests/test_p15b15_cross_uid_host_gate.py'
+      - 'tests/test_p15b16_oem_readonly_reader.py'
+      - 'microduck_companion/b16_oem_readonly_reader.py'
+      - 'docs/p15b16-oem-readonly-receiver-2026-11-02.md'
       - 'microduck_companion/b15_cross_uid_host_gate.py'
       - 'microduck_companion/b14_host_identity_gate.py'
       - 'microduck_companion/b12_local_wire_contract.py'
@@ -51,6 +54,9 @@ jobs:
           # Separate real Linux UIDs, B8 exact ACL + OEM-shaped identity,
           # B13 replay/clock checks; only temporary test inodes.
           sudo -n env PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s tests -p 'test_p15b15_cross_uid_host_gate.py' -v
+      - name: P15-B16 opt-in target-path receiver negative gates (unprivileged)
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s tests -p 'test_p15b16_oem_readonly_reader.py' -v
       - name: Check Python syntax without external dependency
         run: |
           python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("tests/test_per_p15b3_oem_unix_dac.py").read_text()); ast.parse(pathlib.Path("tests/test_per_p15b7_mediad_private_dac.py").read_text()); ast.parse(pathlib.Path("tests/test_p15b15_cross_uid_host_gate.py").read_text()); ast.parse(pathlib.Path("microduck_companion/b15_cross_uid_host_gate.py").read_text()); print("Python syntax OK, no pycache writes")'
