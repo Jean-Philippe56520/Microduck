@@ -11,8 +11,11 @@ class B16ReaderContractTests(unittest.TestCase):
     def test_default_is_inert(self):
         with patch("microduck_companion.b16_oem_readonly_reader._checked_once",
                    side_effect=AssertionError("unexpected OEM contact")):
-            self.assertEqual(B16OEMDetectionReader().read().status,
-                             "disabled_no_oem_contact")
+            result=B16OEMDetectionReader().read()
+            self.assertEqual(result.status,"disabled_no_oem_contact")
+            self.assertEqual(result.provenance,"none")
+            self.assertIsNone(result.peer_uid)
+            self.assertFalse(result.verified_sensor)
 
     def test_invalid_parameters_refused(self):
         for opt in ({"enabled":1}, {"timeout_s":1}, {"timeout_s":float("nan")},
@@ -24,11 +27,22 @@ class B16ReaderContractTests(unittest.TestCase):
         from pathlib import Path
         from microduck_companion.b12_local_wire_contract import B12LocalSequenceGate
         from microduck_companion.b16_oem_readonly_reader import _checked_once
-        with self.assertRaises(B16Refused):
-            _checked_once(Path("/tmp/other"), mediad_uid=31052,
-                          mediad_gid=31064, kwipi_uid=31053,
-                          kwipi_gid=31062, robot_gid=31061,
-                          sequence_gate=B12LocalSequenceGate(), timeout_s=.1)
+        with patch("microduck_companion.b16_oem_readonly_reader.os.getuid",
+                   return_value=31053), patch(
+             "microduck_companion.b16_oem_readonly_reader.os.geteuid",
+             return_value=31053), patch(
+             "microduck_companion.b16_oem_readonly_reader.os.getgid",
+             return_value=31062), patch(
+             "microduck_companion.b16_oem_readonly_reader.os.getegid",
+             return_value=31062), patch(
+             "microduck_companion.b16_oem_readonly_reader.os.getgroups",
+             return_value=[]):
+            # A simulated correct UID must still fail BEFORE path inspection.
+            with self.assertRaises(B16Refused):
+                _checked_once(Path("/tmp/other"), mediad_uid=31052,
+                              mediad_gid=31064, kwipi_uid=31053,
+                              kwipi_gid=31062, robot_gid=31061,
+                              sequence_gate=B12LocalSequenceGate(), timeout_s=.1)
 
     def test_explicit_reader_only_returns_bounded_claim_and_rate_limits(self):
         receipt=B16ReadResult("oem_identity_and_b12_claim_consistent_not_sensor",
@@ -50,8 +64,10 @@ class B16ReaderContractTests(unittest.TestCase):
     def test_failure_is_not_promoted(self):
         with patch("microduck_companion.b16_oem_readonly_reader._observer_ids",
                    side_effect=B16Refused("absent")):
-            self.assertEqual(B16OEMDetectionReader(enabled=True).read().status,
-                             "unavailable_or_refused")
+            result=B16OEMDetectionReader(enabled=True).read()
+            self.assertEqual(result.status,"unavailable_or_refused")
+            self.assertEqual(result.provenance,"none")
+            self.assertIsNone(result.peer_pid)
 
 
 if __name__=="__main__":
