@@ -1,3 +1,7 @@
+## P15-B14 — préflight provenance locale (02/11/2026)
+
+**Code proposé, hôte uniquement :** garde du PID/UID Unix et de l'identité `mediad` OEM auto-publiée, sans `media.sock` ni groupe `robot` ; réutilise B13, non sélectionné dans B6/B10. **11/11 tests WSL2 opérateur réussis** en 0,224 s, CI complète GitHub à qualifier. Aucun capteur ou robot validé. Suite : prouver séparément les ACL et identité réelle `mediad/kwipi` et une compatibilité Linux cible sans modifier la sûreté, puis revue P16/P17 avant une nouvelle image. [Dossier de qualification](p15b14-identity-file-host-preflight-2026-11-02.md).
+
 ### P15-B13 — correctif de compatibilité avec les empreintes du rootfs B10 (02/11/2026)
 
 **CI initiale du HEAD 299a013e : STOP (2324 tests, 1 échec + 1 erreur).** Les deux causes sont identifiées : modification involontaire de deux modules P15-B6 épinglés par SHA-256 (porte P16-B10), et réutilisation du même pathname Unix sans unlink entre deux tests. Ne pas assouplir les empreintes ni reconstruire silencieusement le rootfs B10.
