@@ -1,3 +1,11 @@
+## P16-S2 sur le nouveau rootfs B10 — PASS WSL2, lecture seule (02/11/2026)
+
+**Preuve opérateur distincte des CI/du robot :** le checkout séparé a confirmé `P16_S2_SOURCE: VERIFIED` pour `scripts/per_p16_s2_rauc_rootfs_gate.py` (blob `e2386157698a88eb9e9f2550e740574b800c1a37`) et le dépôt Yocto OEM épinglé `1ee58387810cebb67ae0d634c351d95024483bce`. Exécution sur le **rootfs DEV B10 existant** sous `/home/jp/kwipi-build-v1` : `P16_S2_B10_EXIT: 0`, `status=p16_s2_rauc_pinned_ca_and_rootfs_mode_gate_pass` ; `dev_ca_matches_pinned_source=true`, **2 CA** publiques attendues dans le keyring, **11 champs** RAUC conformes, **5 fichiers sensibles** sans modes dangereux et groupe OEM `robot` présent. Aucun BitBake, WIC, signature, installation, service, moteur ou écritures rootfs pendant cet essai. Le résultat **S2 précédent du 31/10 concernait un autre rootfs** : la présente preuve qualifie spécifiquement le rootfs B10, sans remplacer les anciens audits.
+
+**Limites renvoyées par l'outil :** `target_uid_gid_verified=false` (cette vérification n'est pas dans S2 ; identité B9/B10 attestée séparément), `postinst_execution_causality_verified=false`, `all_package_scriptlets_audited=false`, `robot_socket_readonly_acl_verified=false`, `license_redistribution_approved=false`, `rauc_bundle_signed_verified=false`, `robot_validated=false`. `image_built=false` décrit **ce que S2 n'a pas fait** ; ce n'est pas une négation de la WIC historique. Les deux CA vérifiées sont des **certificats publics**, pas des clés de signature ; la paire de signature DEV restait absente au dernier préflight R0. **P16-S2/B10 clos dans son périmètre fichier/configuration**, mais ni bundle RAUC, ni boot, ni accès socket réel, ni production ne sont validés.
+
+**Lien P17 :** même source B10 que les vérifications B10 et S1 ; ne pas réexécuter P16-S2 à défaut d'écart nouveau. Voir [matrice P17-S0](per-p15-p17-v1-release-gates-2026-10-31.md). Les passages historiques relatifs à un rootfs plus ancien ci-dessous restent archivés.
+
 # P16 — contrôle hors ligne du rootfs DEV, sans construction (31/10/2026)
 
 ## P16-RAUC-R0 — vérification effective des varflags réussie sur WSL2 (31 octobre 2026)
