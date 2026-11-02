@@ -202,9 +202,11 @@ jobs:
           python -B - <<'PY'
           import json, os
           from pathlib import Path
+          from scripts.per_p15b18_dev_receiver_env_gate import STATUS as B18_STATUS
           p = Path(os.environ["RUNNER_TEMP"]) / "p15b19-metadata-proof.json"
           r = json.loads(p.read_text())
-          assert r["status"] == "p15b19_supplied_effective_dev_only_metadata_verified_not_image"
+          # B19 reuses B18 unchanged: effective metadata is still a B18 claim.
+          assert r["status"] == B18_STATUS
           assert (r["base_modules"],r["passive_modules"],r["receiver_modules"]) == (19,5,4)
           assert (r["dev_receiver_count"],r["shipping_receiver_count"]) == (1,0)
           assert r["oem_packages_preserved"]
