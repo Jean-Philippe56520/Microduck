@@ -1,0 +1,70 @@
+name: PER-P15-B17 B12 receiver source-only packaging (NOT image or robot)
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/per-p15b17-oem-receiver-package.yml"
+      - "scripts/per_p15b17_oem_receiver_package.py"
+      - "tests/test_per_p15b17_oem_receiver_package.py"
+      - "microduck_companion/b12_local_wire_contract.py"
+      - "microduck_companion/b14_host_identity_gate.py"
+      - "microduck_companion/b15_cross_uid_host_gate.py"
+      - "microduck_companion/b16_oem_readonly_reader.py"
+      - "docs/p15b17-dev-oem-receiver-package-2026-11-02.md"
+      - "README.md"
+      - "docs/plan-action.md"
+      - "docs/roadmap.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-passive-source-candidate:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 8
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          submodules: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Preserve actual Git SHA and both immutable OEM gitlinks
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git ls-tree HEAD upstream/microduck | awk '{print $3}')" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git ls-tree HEAD upstream/microduck_rl | awk '{print $3}')" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+      - name: Run 12 actual positive/negative source-only gate tests
+        run: |
+          set -euo pipefail
+          python -B -m unittest discover -s tests -p 'test_per_p15b17_oem_receiver_package.py' -v
+      - name: Stage two isolated identical source layers, verify without BitBake
+        run: |
+          set -euo pipefail
+          python -B -m scripts.per_p15b17_oem_receiver_package stage --output "$RUNNER_TEMP/b17-first"
+          python -B -m scripts.per_p15b17_oem_receiver_package stage --output "$RUNNER_TEMP/b17-second"
+          diff -rq "$RUNNER_TEMP/b17-first" "$RUNNER_TEMP/b17-second"
+          python -B -m scripts.per_p15b17_oem_receiver_package verify --layer "$RUNNER_TEMP/b17-first"
+          python -B - <<'PY'
+          import json, os, pathlib
+          p = pathlib.Path(os.environ["RUNNER_TEMP"]) / "b17-first/kwipi-oem-receiver-source-provenance.json"
+          report = json.loads(p.read_text())
+          assert report["status"] == "b17_source_only_b12_receiver_candidate_not_bitbake"
+          assert (report["historical_python_modules"], report["new_modules"]) == (24, 4)
+          assert len(report["new_sha256"]) == 4
+          assert all(report[k] is False for k in (
+              "bitbake_executed", "bitbake_parsed", "dev_image_selected",
+              "shipping_image_selected", "rootfs_modified", "service_installed",
+              "oem_producer_enabled", "oem_sensor_verified", "robot_validated",
+              "license_redistribution_approved",
+          ))
+          assert report["motor_commands_issued"] == 0
+          print("P15-B17: candidate-only 24+4 source closure; no image, OEM service, robot or motor")
+          PY
+          test -z "$(git status --porcelain --untracked-files=no)"
+          git diff --exit-code -- upstream/
