@@ -13,7 +13,10 @@ from microduck_companion.passive_media_router import (
     MAX_BOXES, MAX_NOTIFICATION_BYTES, MAX_SOUND_FIXTURE_BYTES,
     MOCK_AUDIO_CUES, OEM_NOTIFICATION_METHODS, OEM_REVISION_REVIEWED,
     MediaMetadata, MockAudioCueRouter, PassiveMediaError,
-    parse_oem_shape_notification, parse_b12_local_shape_notification,
+    parse_oem_shape_notification,
+)
+from microduck_companion.b12_local_wire_contract import (
+    parse_b12_local_shape_notification, B12LocalSequenceGate,
 )
 from microduck_companion.passive_sources import (
     OEM_API_VERSION, OEM_SOCKET, PINNED_OEM_REVISION,
@@ -458,6 +461,24 @@ class B12LocalWireTests(unittest.TestCase):
             with self.subTest(now=now), self.assertRaises(PassiveMediaError):
                 parse_b12_local_shape_notification(
                     encoded(b12_local()), now_monotonic_ns=now)
+
+
+    def test_b12_sequence_gate_enforces_duplicate_and_capture_regression(self):
+        gate = B12LocalSequenceGate()
+        first = parse_b12_local_shape_notification(
+            encoded(b12_local(seq=10)), now_monotonic_ns=100_000_000_000)
+        self.assertTrue(gate.accept(first))
+        self.assertFalse(gate.accept(first))
+        older_stamp = parse_b12_local_shape_notification(
+            encoded(b12_local(seq=11, age_ns=200_000_000)),
+            now_monotonic_ns=100_000_000_000)
+        self.assertFalse(gate.accept(older_stamp))
+        new = parse_b12_local_shape_notification(
+            encoded(b12_local(seq=12, age_ns=0)),
+            now_monotonic_ns=100_000_000_000)
+        self.assertTrue(gate.accept(new))
+        with self.assertRaises(TypeError):
+            gate.accept("untrusted string")
 
     def test_b12_rejects_untrusted_commands_legacy_bulk_and_bad_boxes(self):
         for change in ("robot", "frame", "extra_id", "invalid_box", "oversize"):

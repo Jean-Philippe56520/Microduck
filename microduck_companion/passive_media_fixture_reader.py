@@ -18,7 +18,7 @@ from typing import Callable
 from .passive_media_router import (
     MAX_NOTIFICATION_BYTES,
     PassiveMediaError,
-    parse_oem_shape_notification, parse_b12_local_shape_notification,
+    parse_oem_shape_notification,
 )
 from .passive_sources import PassiveSourceError, _connect_unix, _recv_line
 
@@ -65,9 +65,9 @@ class MediaFixtureReader:
     """One connection and one bounded OEM-shaped notification per attempt.
 
     0.5 s min interval prevents a second media poll within the same budget.
-    A new connection never replays the previous look. The legacy OEM-shaped
-    fixture has no sequence or capture time. The explicitly opted-in P15-B12
-    fixture tests those fields without authenticating a physical sensor.
+    A new connection never replays the previous look. The OEM notification
+    lacks sequence and capture timestamp, so receiving it cannot establish
+    freshness or remove an uncertain/missing detection.
     """
 
     def __init__(
@@ -76,11 +76,8 @@ class MediaFixtureReader:
         *,
         timeout_s: float = MAX_READ_S,
         clock: Callable[[], float] = time.monotonic,
-        b12_local_shape: bool = False,
     ) -> None:
         validate_media_fixture_path(path)
-        if type(b12_local_shape) is not bool:
-            raise TypeError("b12_local_shape must be an explicit boolean")
         if (type(timeout_s) not in (int, float)
                 or not math.isfinite(timeout_s)
                 or not .05 <= timeout_s <= MAX_READ_S):
@@ -91,8 +88,6 @@ class MediaFixtureReader:
         self.timeout_s = float(timeout_s)
         self._clock = clock
         self._last_attempt: float | None = None
-        self._last_b12_sequence: int | None = None
-        self._b12_local_shape = b12_local_shape
 
     def read(self) -> MediaFixtureRead:
         try:
@@ -119,21 +114,9 @@ class MediaFixtureReader:
                 raw = _recv_line(
                     conn, remaining, max_bytes=MAX_NOTIFICATION_BYTES,
                 )
-            if self._b12_local_shape:
-                received = self._clock()
-                if (type(received) not in (int, float)
-                        or not math.isfinite(received) or received < now):
-                    return MediaFixtureRead("clock_reset")
-                decoded = parse_b12_local_shape_notification(
-                    raw, now_monotonic_ns=int(received * 1_000_000_000))
-                if (self._last_b12_sequence is not None
-                        and decoded.look_seq <= self._last_b12_sequence):
-                    return MediaFixtureRead("duplicate_or_out_of_order")
-                self._last_b12_sequence = decoded.look_seq
-            else:
-                decoded = parse_oem_shape_notification(raw)
-                if decoded.method != "media.detections":
-                    return MediaFixtureRead("unavailable_or_invalid")
+            decoded = parse_oem_shape_notification(raw)
+            if decoded.method != "media.detections":
+                return MediaFixtureRead("unavailable_or_invalid")
             if decoded.category != "unknown" or decoded.verified_sensor:
                 return MediaFixtureRead("unavailable_or_invalid")
             if decoded.reported_boxes:
