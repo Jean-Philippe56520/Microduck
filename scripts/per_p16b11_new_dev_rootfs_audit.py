@@ -1,7 +1,8 @@
 """P16-B11: read-only inspection of a NEW DEV rootfs with 19+5+4 Python files.
 
-Reuses B17's source closure, B10's immutable OEM executable pins,
+Reuses B17's source closure, B10's immutable historical comparison,
 P15-B9's account+inactive-unit policy, and P16's probe and manifest parser.
+The actually built B11 daemon is a distinct, precisely pinned release.
 Never invokes BitBake, systemctl, robotd, mediad, a camera, an actuator,
 a model or SQLite. A caller-declared exit code is not proof of do_rootfs.
 """
@@ -25,6 +26,18 @@ from scripts.per_p15b9_rootfs_identity_gate import verify_rootfs as verify_ident
 SCHEMA = "kwipi-p16b11-independent-dev-28-module-rootfs-offline-v1"
 STATUS = "p16b11_supplied_new_dev_rootfs_28_source_modules_verified_only"
 B19_ARCHIVE_SHA256 = "0921b7dacd7a683b0b90ba7a979e20e72aa4a5aeaecb4899ba9cc63a46c7ab6c"
+# WSL2 B11 do_rootfs succeeded on this exact Companion source; NOT B10.
+B11_BUILD_HEAD = "659008ecf5d3a1eccd957e9ea2b1df4abaab21a1"
+# P12 derives the daemon PV and embedded DUCK_REVISION from Companion HEAD.
+B11_DAEMON_VERSION = "0.17.8+kwipi.p12." + B11_BUILD_HEAD[:12]
+# OE-core package_setup_pkgv appends the pinned BMI088 source suffix.
+B11_DAEMON_PKG_VERSION = B11_DAEMON_VERSION + "0+bd113f317b"
+# The AArch64 installed files matched exactly their B11 PKGDEST splits on WSL2.
+# These SHA-256 are operator-supplied measurements, not a proof of robot runtime.
+B11_DAEMON_BINARIES = {
+    "mediad": (11160240, "9b344b8ad0e503a2d438d8fe70060ace704effa10f689d85924f342574d743b4"),
+    "robotd": (6435872, "3006d653fc5a657af2e18fbc12d2b02791c8cefa4658eb743c29c019491cca3b"),
+}
 NEW_PACKAGE = b17.PACKAGE
 KWIPI_PACKAGES = frozenset((*b10.KWIPI_PACKAGES, NEW_PACKAGE))
 REQUIRED = frozenset((*b10.REQUIRED_PACKAGES, NEW_PACKAGE))
@@ -62,7 +75,7 @@ def _manifest(manifest: Path) -> dict[str, str]:
     if any(p.startswith("kwipi-") and p not in KWIPI_PACKAGES for p in packages):
         raise Refused("unreviewed Kwipi package in new DEV rootfs manifest")
     locked = {
-        "microduck-daemon": (b10.B12_PKG_VERSION,),
+        "microduck-daemon": (B11_DAEMON_PKG_VERSION,),
         "kwipi-companion": ("0.2.0a1", "0.2.0a1-r0"),
         "kwipi-passive-fixture": ("0.1.0", "0.1.0-r0"),
         "kwipi-readonly-probe": ("0.1", "0.1-r0"),
@@ -130,6 +143,36 @@ def _verify_python(rootfs: Path, expected: dict[str, str]) -> dict[str, str]:
     return result
 
 
+
+def _b11_binary_checks(rootfs: Path) -> dict[str, str]:
+    """Read-only B11 release identity and exact AArch64 ELF payload; never B10."""
+    daemon_root = rootfs / "opt/robot/daemon"
+    current = daemon_root / "current"
+    for directory in (rootfs / "opt", rootfs / "opt/robot", daemon_root):
+        if directory.is_symlink() or not directory.is_dir():
+            raise Refused("B11 daemon directory unavailable or linked")
+    if (not current.is_symlink()
+            or current.readlink().as_posix() != "releases/" + B11_DAEMON_VERSION):
+        raise Refused("B11 current daemon release differs from pinned source revision")
+    release = daemon_root / "releases" / B11_DAEMON_VERSION
+    if (release.is_symlink() or not release.is_dir()
+            or current.resolve(strict=True) != release.resolve(strict=True)):
+        raise Refused("B11 current release escapes pinned directory")
+    found = {}
+    for name, (size, digest) in B11_DAEMON_BINARIES.items():
+        file = p16a._under(rootfs, "opt/robot/daemon/releases/"
+                            + B11_DAEMON_VERSION + "/bin/" + name)
+        data = file.read_bytes()
+        if (len(data) != size or data[:6] != b"\\x7fELF\\x02\\x01"
+                or int.from_bytes(data[18:20], "little") != 183
+                or not (file.stat().st_mode & stat.S_IXUSR)):
+            raise Refused("B11 daemon ELF AArch64, size or execute mode changed: " + name)
+        if _sha(data) != digest:
+            raise Refused("B11 daemon binary SHA-256 mismatch: " + name)
+        found[name] = digest
+    return found
+
+
 def _metadata(proof: dict, source: dict) -> None:
     if (proof.get("schema") != b18.SCHEMA
             or proof.get("status") != b18.STATUS
@@ -156,15 +199,14 @@ def validate(rootfs: Path, historical_rootfs: Path, manifest: Path,
              metadata: dict) -> dict:
     if type(builder_exit) is not int or builder_exit != 0:
         raise Refused("do_rootfs exit zero must be separately supplied")
+    if source_head != B11_BUILD_HEAD:
+        raise Refused("only the built B11 Companion source revision is accepted")
     root = _distinct_paths(rootfs, historical_rootfs)
     packages = _manifest(manifest)
     sources, source_proof = _source_closure(source_root, source_head)
     _metadata(metadata, source_proof)
     installed = _verify_python(root, sources)
-    try:
-        binaries = b10._binary_checks(root)
-    except b10.Refused as exc:
-        raise Refused("OEM B12 executables differ from the B10 pins") from exc
+    binaries = _b11_binary_checks(root)
     probe = {}
     for name, sha in p16a.PROBE_HASHES.items():
         item = p16a._under(root, name)
@@ -191,8 +233,12 @@ def validate(rootfs: Path, historical_rootfs: Path, manifest: Path,
         "p15b6_modules_verified": 5,
         "b13_b16_modules_verified": 4,
         "python_sha256": installed,
-        "b12_release": b10.B12_VERSION,
+        "b12_release": B11_DAEMON_VERSION,
         "b12_sha256": binaries,
+        "b11_daemon_pkgv": B11_DAEMON_PKG_VERSION,
+        "b11_built_source_head": B11_BUILD_HEAD,
+        "installed_binaries_match_pinned_wsl2_b11_hashes": True,
+        "pkgdest_match_independently_attested_by_this_gate": False,
         "probe_sha256": probe,
         "kwipi_account_isolated_from_motor": True,
         "oem_operator_preserved": True,
