@@ -1,5 +1,9 @@
 # P15-B17 — préparation d'un paquet DEV inerte pour le lecteur B12 (02/11/2026)
 
+## Résultat hôte, sans distribution
+
+[CI P15-B17 #41439809872](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41439809872) au SHA fonctionnel `f588c4cbc018e541c83289212fbd9276f07a32cd` : **12/12 tests PASS**, sans skipped dans la porte dédiée ; deux couches sources préparées indépendamment et comparées par `diff -rq` (identiques), archivage et vérification SHA réussis, sélection 19+5+4 respectée, refus des changements B10/symlinks/source/arbitrary imports/écritures. Les contrôles OEM gitlinks sont verts. **Cette CI n'a exécuté ni BitBake ni la recette dans une image :** les champs de provenance restent `bitbake_executed=false`, `dev_image_selected=false`, `shipping_image_selected=false`, `service_installed=false`, `oem_producer_enabled=false`, `robot_validated=false`. Les autres CI GitHub au dernier HEAD, après documentation, devront être vertes avant fusion. Le paquet B17 n'est donc toujours pas livré.
+
 ## Objectif et écart mesurable, fixés avant code
 
 **Base** : `main@f2ab144e23f13729495b31959e34c4110c48cad7`, PR #270 fusionnée après 5/5 CI vertes. P16-B10 a audité le **rootfs DEV B10 existant** : 19 modules P14A + 5 modules B6, deux binaires AArch64 B12, compte `kwipi` isolé. Les quatre sources `b12_local_wire_contract.py`, `b14_host_identity_gate.py`, `b15_cross_uid_host_gate.py` et `b16_oem_readonly_reader.py` ne sont pas dans ces 24 modules et **ne peuvent pas être importées par la distribution B10**. Les recoder serait un doublon ; le résultat B16 reste une affirmation cohérente d'un producteur Linux, pas une attestation du capteur.
