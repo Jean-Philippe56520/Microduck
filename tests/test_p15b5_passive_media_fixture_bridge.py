@@ -356,5 +356,89 @@ class SidecarLifecycleTests(unittest.TestCase):
         self.assertEqual(0, payload["motor_commands_issued"])
 
 
+
+def b12_packet(*, look_seq=1, capture_ns=100_000_000_000, boxes=1) -> bytes:
+    data = json.loads(packet(boxes))
+    data["params"].update({
+        "look_seq": look_seq,
+        "captured_at_monotonic_ns": capture_ns,
+        "captured_at_unix_us": 1_800_000_000_000_000,
+    })
+    return (json.dumps(data, separators=(",", ":")) + "\n").encode()
+
+
+@unittest.skipUnless(UNIX, "requires Linux/Unix fixture transport")
+class B12LocalFixtureBridgeTests(unittest.TestCase):
+    """Existing Unix transport, no P15-B6 pinned reader is modified."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.media = self.root / "b12.sock"
+
+    def _read(self, path, now_ns=100_200_000_000):
+        from microduck_companion.passive_sources import _connect_unix, _recv_line
+        from microduck_companion.passive_media_fixture_reader import validate_media_fixture_path
+        from microduck_companion.b12_local_wire_contract import parse_b12_local_shape_notification
+        validate_media_fixture_path(path)  # Never connect to any real OEM path.
+        with _connect_unix(path, .4) as conn:
+            raw = _recv_line(conn, .4, max_bytes=4096)
+        return parse_b12_local_shape_notification(
+            raw, now_monotonic_ns=now_ns)
+
+    def test_b12_wire_on_real_unix_fixture_no_request_or_sensor_claim(self):
+        from microduck_companion.b12_local_wire_contract import B12LocalSequenceGate
+        raw = b12_packet(capture_ns=100_000_000_000)
+        with push_only_server(self.media, raw) as sent:
+            r = self._read(self.media)
+        self.assertEqual([b""], sent)
+        self.assertEqual("b12_shape_unverified", r.status)
+        self.assertEqual("unknown", r.category)
+        self.assertFalse(r.verified_sensor)
+        self.assertEqual(0, r.motor_commands_issued)
+        self.assertEqual(0, r.media_bytes_stored)
+        self.assertTrue(B12LocalSequenceGate().accept(r))
+        # The historical B6 reader remains strictly legacy and cannot parse B12.
+        old = self.root / "legacy.sock"
+        with push_only_server(old, raw):
+            legacy = MediaFixtureReader(old).read()
+        self.assertEqual("unavailable_or_invalid", legacy.status)
+
+    def test_b12_duplicate_and_regressing_capture_filtered(self):
+        from microduck_companion.b12_local_wire_contract import B12LocalSequenceGate
+        gate = B12LocalSequenceGate()
+        raw = b12_packet(capture_ns=100_000_000_000, look_seq=3)
+        with _fictional_unix_server(self.media, (raw, raw)):
+            first = self._read(self.media)
+            replay = self._read(self.media)
+        self.assertTrue(gate.accept(first))
+        self.assertFalse(gate.accept(replay))
+        # A higher sequence with an older timestamp is not new evidence.
+        higher = self.root / "clock-regression.sock"
+        with push_only_server(higher, b12_packet(look_seq=4,
+                              capture_ns=99_900_000_000)):
+            invalid = self._read(higher)
+        self.assertFalse(gate.accept(invalid))
+
+    def test_b12_stale_or_future_fixture_fails_closed(self):
+        from microduck_companion.passive_media_router import PassiveMediaError
+        for i, stamp in enumerate((97_000_000_000, 101_000_000_000)):
+            path = self.root / f"invalid-{i}.sock"
+            with push_only_server(path, b12_packet(capture_ns=stamp)):
+                with self.assertRaises(PassiveMediaError):
+                    self._read(path)
+
+    def test_b12_transport_cannot_connect_oem_path_or_symlink(self):
+        from microduck_companion.passive_media_fixture_reader import validate_media_fixture_path
+        with self.assertRaises(ValueError):
+            validate_media_fixture_path(
+                Path("/run/mediad/kwipi/detections.sock"))
+        link = self.root / "alias.sock"
+        link.symlink_to("/run/mediad/kwipi/detections.sock")
+        with self.assertRaises(ValueError):
+            validate_media_fixture_path(link)
+
+
 if __name__ == "__main__":
     unittest.main()

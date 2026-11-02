@@ -15,6 +15,9 @@ from microduck_companion.passive_media_router import (
     MediaMetadata, MockAudioCueRouter, PassiveMediaError,
     parse_oem_shape_notification,
 )
+from microduck_companion.b12_local_wire_contract import (
+    parse_b12_local_shape_notification, B12LocalSequenceGate,
+)
 from microduck_companion.passive_sources import (
     OEM_API_VERSION, OEM_SOCKET, PINNED_OEM_REVISION,
 )
@@ -370,6 +373,138 @@ class MockSoundTests(unittest.TestCase):
                               now_monotonic_s=100.1)
         self.assertEqual("fixture_hypothesis_only", r.status)
         self.assertEqual(1, r.sequence)
+
+
+def b12_local(*, now_ns=100_000_000_000, age_ns=100_000_000,
+              seq=1, count=1):
+    data = detections(count=count)
+    data["params"].update({
+        "captured_at_monotonic_ns": now_ns - age_ns,
+        "captured_at_unix_us": 1_800_000_000_000_000,
+        "look_seq": seq,
+    })
+    return data
+
+
+class B12LocalWireTests(unittest.TestCase):
+    """Real P15-B12 key contract on independent bytes; no real source claims."""
+
+    def test_fresh_capture_shape_is_unknown_and_not_a_motor_grant(self):
+        raw = encoded(b12_local(seq=7))
+        with self.assertRaises(PassiveMediaError):
+            parse_oem_shape_notification(raw)  # Keep pre-B12 WebRTC strict.
+        actual = parse_b12_local_shape_notification(
+            raw, now_monotonic_ns=100_000_000_000)
+        self.assertEqual("b12_shape_unverified", actual.status)
+        self.assertEqual(7, actual.look_seq)
+        self.assertEqual(1, actual.reported_boxes)
+        self.assertEqual(1.38, actual.raw_score_max)
+        self.assertEqual("unknown", actual.category)
+        self.assertFalse(actual.verified_sensor)
+        self.assertEqual(0, actual.motor_commands_issued)
+        self.assertEqual(0, actual.media_bytes_stored)
+        self.assertNotIn("ball", str(actual))
+        self.assertNotIn("person", str(actual))
+
+    def test_zero_boxes_and_capture_timestamp_boundary(self):
+        data = b12_local(age_ns=2_000_000_000, count=0)
+        actual = parse_b12_local_shape_notification(
+            encoded(data), now_monotonic_ns=100_000_000_000)
+        self.assertEqual("b12_empty_look_unverified", actual.status)
+        self.assertEqual(0, actual.reported_boxes)
+        self.assertEqual("unknown", actual.category)
+        for age_ns in (-1, 2_000_000_001):
+            with self.subTest(age_ns=age_ns), self.assertRaises(PassiveMediaError):
+                parse_b12_local_shape_notification(
+                    encoded(b12_local(age_ns=age_ns)),
+                    now_monotonic_ns=100_000_000_000)
+
+    def test_exact_b12_keys_and_source_revision_are_not_identity(self):
+        from scripts.per_p15b12_apply_oem_capture_provenance import LOCAL_SERIALIZER
+        for k in ("captured_at_monotonic_ns", "captured_at_unix_us", "look_seq"):
+            self.assertIn(k, LOCAL_SERIALIZER)
+        p = b12_local()
+        for key in list(p["params"]):
+            bad = b12_local()
+            bad["params"].pop(key)
+            with self.subTest(missing=key), self.assertRaises(PassiveMediaError):
+                parse_b12_local_shape_notification(
+                    encoded(bad), now_monotonic_ns=100_000_000_000)
+        for name, value in (("category", "dog"), ("sensor", "true"),
+                            ("safe_area", True), ("raw_image", "secret")):
+            bad = b12_local()
+            bad["params"][name] = value
+            with self.subTest(extra=name), self.assertRaises(PassiveMediaError):
+                parse_b12_local_shape_notification(
+                    encoded(bad), now_monotonic_ns=100_000_000_000)
+
+    def test_b12_rejects_clock_sequence_types_and_limits(self):
+        for key, value in (
+            ("captured_at_monotonic_ns", True),
+            ("captured_at_monotonic_ns", -1),
+            ("captured_at_monotonic_ns", 0),
+            ("captured_at_monotonic_ns", 2**64),
+            ("captured_at_monotonic_ns", 1.0),
+            ("captured_at_unix_us", 0),
+            ("captured_at_unix_us", "today"),
+            ("look_seq", 0),
+            ("look_seq", -1),
+            ("look_seq", True),
+            ("look_seq", 2**64),
+        ):
+            bad = b12_local()
+            bad["params"][key] = value
+            with self.subTest(key=key, value=value), self.assertRaises(PassiveMediaError):
+                parse_b12_local_shape_notification(
+                    encoded(bad), now_monotonic_ns=100_000_000_000)
+        for now in (0, -1, True, 100.5, "100", 2**64):
+            with self.subTest(now=now), self.assertRaises(PassiveMediaError):
+                parse_b12_local_shape_notification(
+                    encoded(b12_local()), now_monotonic_ns=now)
+
+
+    def test_b12_sequence_gate_enforces_duplicate_and_capture_regression(self):
+        gate = B12LocalSequenceGate()
+        first = parse_b12_local_shape_notification(
+            encoded(b12_local(seq=10)), now_monotonic_ns=100_000_000_000)
+        self.assertTrue(gate.accept(first))
+        self.assertFalse(gate.accept(first))
+        older_stamp = parse_b12_local_shape_notification(
+            encoded(b12_local(seq=11, age_ns=200_000_000)),
+            now_monotonic_ns=100_000_000_000)
+        self.assertFalse(gate.accept(older_stamp))
+        new = parse_b12_local_shape_notification(
+            encoded(b12_local(seq=12, age_ns=0)),
+            now_monotonic_ns=100_000_000_000)
+        self.assertTrue(gate.accept(new))
+        with self.assertRaises(TypeError):
+            gate.accept("untrusted string")
+
+    def test_b12_rejects_untrusted_commands_legacy_bulk_and_bad_boxes(self):
+        for change in ("robot", "frame", "extra_id", "invalid_box", "oversize"):
+            bad = b12_local()
+            if change == "robot":
+                bad["method"] = "robot.do"
+            elif change == "frame":
+                bad["method"] = "media.frame"
+            elif change == "extra_id":
+                bad["id"] = 123
+            elif change == "invalid_box":
+                bad["params"]["boxes"][0]["score"] = 101.0
+            else:
+                bad["params"]["boxes"] *= MAX_BOXES + 1
+            with self.subTest(change=change), self.assertRaises(PassiveMediaError):
+                parse_b12_local_shape_notification(
+                    encoded(bad), now_monotonic_ns=100_000_000_000)
+        for raw in (
+            encoded(detections()),  # B4 legacy shape cannot masquerade as B12.
+            b'{"jsonrpc":"2.0","jsonrpc":"2.0","method":"media.detections","params":{}}',
+            b"x" * (MAX_NOTIFICATION_BYTES + 1),
+            encoded(b12_local()) + b"\n",
+        ):
+            with self.subTest(size=len(raw)), self.assertRaises(PassiveMediaError):
+                parse_b12_local_shape_notification(
+                    raw, now_monotonic_ns=100_000_000_000)
 
 
 if __name__ == "__main__":
