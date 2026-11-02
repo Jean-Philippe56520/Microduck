@@ -14,6 +14,16 @@ Gitlink `upstream/microduck@942e58e3aa6dbb28e7037203fff11866122c7567`, simulateu
 - `/run/mediad/identity.json` est une **auto-déclaration**, non une signature du code réellement chargé. Sa révision B12 est vérifiée par B14/B16 mais ne certifie pas l'exécutable en mémoire.
 - Le rootfs DEV P16-B10 audité reste inchangé (24 modules Python, deux ELF, trois fichiers P15A). B13/B14/B15/B16 ne sont **pas** inclus dans cette composition, ni dans une image shipping.
 
+## Qualification Linux ajoutée après la revue
+
+Au SHA `70247e1b12e4668e03fedb36d14ae3624fdcdd41`, [CI Linux DAC #41437366004](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41437366004) réussie. Le workflow exécute réellement sous Linux `sudo` (et non `skipped`) **8 tests B3 + 8 B7 + 14 tests B15/B16** ; **5 autres tests de contrat B16** exécutés en utilisateur normal, soit 35 tests réussis sur ce workflow. Cinq tests B16 de bout en bout réutilisent le serveur B15 avec `fork`, changement irréversible d'UID/GID et ACL kernel, font passer les octets par le **vrai code B16**, et refusent ACL manquante, mauvaise révision, séquence répétée, date future/périmée. Le cas positif passe aussi par `B16OEMDetectionReader` (chemin redirigé **uniquement dans la fixture**) et reste `unknown`, `verified_sensor=false`, `executable_verified=false`.
+
+Une révision B16 refuse maintenant toute provenance dans les résultats désactivés ou refusés (`provenance=none`) et applique la garde de fixture indépendamment de la constante publique du chemin de production. Les tests Linux de la CI ne prouvent ni un `mediad` exécuté depuis le vrai paquet Yocto, ni la compatibilité des ACL du vrai `/run` de RK3566.
+
+**Limite de reprise** : la séquence B13 est conservée dans l'instance du lecteur ; si `mediad` redémarre et recommence à `look_seq=1`, l'instance refuse conservativement les séquences régressives. Aucun réarmement automatique sur une simple identité auto-déclarée. La politique de réinitialisation après cycle de vie OEM réel nécessite une porte supplémentaire avant exploitation continue. Ne pas transformer ce refus sûr en acceptation silencieuse.
+
+**CI finale** : les cinq workflows devront être verts au dernier HEAD de la PR et le `main` vérifié après fusion ; les preuves ci-dessus restent attachées au SHA de test nommé, pas à une image embarquée.
+
 ## Code candidat et arrêts décidés avant essais
 
 `microduck_companion/b16_oem_readonly_reader.py` expose un lecteur **désactivé par défaut**, chemin de production fixé à `/run/mediad/kwipi/detections.sock`. Il vérifie comptes Unix existants, UID/eUID/GID/groupes isolés, propriétaire/type/mode des répertoires, ACL B8 exactes, `SO_PEERCRED`, identité B12 stable, inode du socket stable, JSON B12 strict, horloge et séquence croissante. Au plus une tentative / 500 ms, timeout ≤500 ms, au plus 4096 octets. Aucune requête émise, ni lecture de `media.sock`, mémoire SQLite, image, catégorie reconnue, commande moteur ou modification du service.
