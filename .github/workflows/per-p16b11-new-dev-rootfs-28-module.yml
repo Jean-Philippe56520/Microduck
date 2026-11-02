@@ -65,7 +65,7 @@ jobs:
       - name: Confirm the B11 verifier never constructs or installs a rootfs
         run: |
           set -euo pipefail
-          python3 -B -m py_compile scripts/per_p16b11_new_dev_rootfs_audit.py
+          python3 -B -c "import ast; from pathlib import Path; ast.parse(Path('scripts/per_p16b11_new_dev_rootfs_audit.py').read_text())"
           python3 -B - <<'PY'
           from pathlib import Path
           script=Path("scripts/per_p16b11_new_dev_rootfs_audit.py").read_text()
