@@ -163,7 +163,7 @@ def _b11_binary_checks(rootfs: Path) -> dict[str, str]:
         file = p16a._under(rootfs, "opt/robot/daemon/releases/"
                             + B11_DAEMON_VERSION + "/bin/" + name)
         data = file.read_bytes()
-        if (len(data) != size or data[:6] != b"\\x7fELF\\x02\\x01"
+        if (len(data) != size or data[:6] != b"\x7fELF\x02\x01"
                 or int.from_bytes(data[18:20], "little") != 183
                 or not (file.stat().st_mode & stat.S_IXUSR)):
             raise Refused("B11 daemon ELF AArch64, size or execute mode changed: " + name)
