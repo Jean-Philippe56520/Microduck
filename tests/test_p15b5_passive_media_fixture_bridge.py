@@ -356,5 +356,74 @@ class SidecarLifecycleTests(unittest.TestCase):
         self.assertEqual(0, payload["motor_commands_issued"])
 
 
+def b12_packet(*, look_seq=1, capture_ns=100_000_000_000, boxes=1) -> bytes:
+    data = json.loads(packet(boxes))
+    data["params"].update({
+        "look_seq": look_seq,
+        "captured_at_monotonic_ns": capture_ns,
+        "captured_at_unix_us": 1_800_000_000_000_000,
+    })
+    return (json.dumps(data, separators=(",", ":")) + "\n").encode()
+
+
+@unittest.skipUnless(UNIX, "requires Linux/Unix fixture transport")
+class B12LocalFixtureBridgeTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.media = Path(self.temp.name) / "b12.sock"
+
+    def test_new_b12_fixture_requires_explicit_opt_in(self):
+        raw = b12_packet(capture_ns=100_000_000_000)
+        stamps = iter((100.1, 100.2))
+        with push_only_server(self.media, raw) as sent:
+            r = MediaFixtureReader(self.media, b12_local_shape=True,
+                                   clock=lambda: next(stamps)).read()
+        self.assertEqual([b""], sent)
+        self.assertEqual("shape_only_untrusted", r.status)
+        self.assertEqual(1, r.reported_boxes)
+        self.assertFalse(r.physical_sensor_verified)
+        self.assertFalse(r.fresh_capture_verified)
+        self.assertEqual("unknown", r.category)
+        self.assertEqual(0, r.memory_writes)
+        self.assertEqual(0, r.camera_frames_requested)
+        self.assertEqual(0, r.motor_commands_issued)
+        with push_only_server(self.media, raw):
+            legacy = MediaFixtureReader(self.media).read()
+        self.assertEqual("unavailable_or_invalid", legacy.status)
+
+    def test_b12_duplicate_sequence_cannot_replay_boxes(self):
+        stamps = iter((100.1, 100.2, 100.7, 100.8))
+        raw = b12_packet(capture_ns=100_000_000_000, look_seq=3)
+        with _fictional_unix_server(self.media, (raw, raw)):
+            reader = MediaFixtureReader(self.media, b12_local_shape=True,
+                                        clock=lambda: next(stamps))
+            self.assertEqual("shape_only_untrusted", reader.read().status)
+            repeat = reader.read()
+        self.assertEqual("duplicate_or_out_of_order", repeat.status)
+        self.assertEqual(0, repeat.reported_boxes)
+        self.assertEqual(0, repeat.memory_writes)
+
+    def test_b12_stale_or_future_mock_frame_fails_closed(self):
+        for i, stamp in enumerate((97_000_000_000, 101_000_000_000)):
+            with self.subTest(stamp=stamp):
+                tmp = Path(self.temp.name) / f"wrong-{i}.sock"
+                times = iter((100.1, 100.2))
+                with push_only_server(tmp, b12_packet(capture_ns=stamp)):
+                    r = MediaFixtureReader(tmp, b12_local_shape=True,
+                                           clock=lambda: next(times)).read()
+                self.assertEqual("unavailable_or_invalid", r.status)
+                self.assertEqual(0, r.reported_boxes)
+                self.assertFalse(r.physical_sensor_verified)
+
+    def test_b12_fixture_cannot_connect_oem_or_enable_by_string(self):
+        with self.assertRaises(ValueError):
+            MediaFixtureReader(
+                Path("/run/mediad/kwipi/detections.sock"), b12_local_shape=True)
+        with self.assertRaises(TypeError):
+            MediaFixtureReader(self.media, b12_local_shape="true")
+
+
+
 if __name__ == "__main__":
     unittest.main()
