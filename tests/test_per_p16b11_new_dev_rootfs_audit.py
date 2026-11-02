@@ -327,7 +327,7 @@ class P16B11OfflineRootfsFixtures(unittest.TestCase):
         current.symlink_to("releases/" + b11.B11_DAEMON_VERSION)
         target = self.rootfs / "opt/robot/daemon/releases" / b11.B11_DAEMON_VERSION / "bin/robotd"
         original = target.read_bytes()
-        target.write_bytes(original[:18] + b"\\x3e\\x00" + original[20:])
+        target.write_bytes(original[:18] + b"\x3e\x00" + original[20:])
         with self.assertRaisesRegex(b11.Refused, "AArch64"):
             self.check()
 
