@@ -2,7 +2,7 @@ name: P15-B19 REAL pinned B12 receiver do_package and strict four-file split (NO
 on:
   pull_request:
     paths:
-      - ".github/workflows/per-p15b19-dev-b12-receiver-selection.yml"
+      - ".github/workflows/per-p15b19-real-b12-receiver-package.yml"
       - "yocto/meta-kwipi-p15-b12-receiver-selection/**"
       - "scripts/per_p15b17_oem_receiver_package.py"
       - "scripts/per_p15b18_dev_receiver_env_gate.py"
@@ -62,7 +62,8 @@ jobs:
           test "$(git ls-tree HEAD upstream/microduck_rl | awk '{print $3}')" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
           test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
           test "$(git -C upstream/microduck_rl rev-parse HEAD)" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
-          python -B -m unittest discover -s tests -p 'test_per_p15b19_dev_receiver_env_gate.py' -v
+          python -B -m unittest discover -s tests -p 'test_per_p15b19_real_b12_package_gate.py' -v
+          python -B -m unittest discover -s tests -p 'test_per_p15b18_dev_receiver_env_gate.py' -v
           python -B -m unittest discover -s tests -p 'test_per_p15b17_oem_receiver_package.py' -v
           python -B -m unittest discover -s tests -p 'test_per_p15b10_dev_passive_selection.py' -v
           python -B -m unittest discover -s tests -p 'test_per_p15b9_dev_account_env_gate.py' -v
