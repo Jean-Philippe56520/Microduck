@@ -1,4 +1,4 @@
-## P15-B16 — lecteur OEM B12 opt-in en PR, non livré (02/11/2026)
+## P15-B16 — lecteur OEM B12 opt-in (PR #270), non livré (02/11/2026)
 
 **Baseline** `main@7371a2684abdaab7703eacaa4dfad1c4f8dbb26a` ; PR #267–269 fusionnées. B15 prouve la séparation Linux de deux UID dans `/tmp`, pas l'accès réel à `mediad`. Le candidat B16 réutilise B12/B14/B15 pour lire seulement `/run/mediad/kwipi/detections.sock`, sous UID `kwipi` isolé, avec ACL nominative exacte, `SO_PEERCRED`, `identity.json`, fraîcheur et séquence. Désactivé par défaut ; aucune image, moteur, SQLite ni qualification capteur. **La source OEM déclare `duck_detector.enabled=false` et l'endpoint B4 est lui aussi off sans `--kwipi-local-detections` ; `mediad.service` épinglé ne passe pas cet argument.** Le vrai producteur/compte/ACL sur cible, l'exécutable en mémoire, les ressources RK3566 et l'activation restent non vérifiés. Ne pas intégrer au rootfs B10 historique sans nouvelle porte P16/P17. [Audit et arrêts B16](p15b16-oem-readonly-receiver-2026-11-02.md).
 
