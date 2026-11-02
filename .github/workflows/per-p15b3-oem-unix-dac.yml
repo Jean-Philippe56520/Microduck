@@ -4,6 +4,11 @@ on:
     paths:
       - 'tests/test_per_p15b3_oem_unix_dac.py'
       - 'tests/test_per_p15b7_mediad_private_dac.py'
+      - 'tests/test_p15b15_cross_uid_host_gate.py'
+      - 'microduck_companion/b15_cross_uid_host_gate.py'
+      - 'microduck_companion/b14_host_identity_gate.py'
+      - 'microduck_companion/b12_local_wire_contract.py'
+      - 'docs/p15b15-cross-uid-host-acl-2026-11-02.md'
       - '.github/workflows/per-p15b3-oem-unix-dac.yml'
       - 'docs/per-p15b3-oem-unix-dac-revision-gate-2026-10-31.md'
       - 'docs/per-p15b7-mediad-private-socket-dac-2026-11-01.md'
@@ -43,6 +48,9 @@ jobs:
           # Same Linux credential/ACL gate for a private 0700 mediad metadata directory.
           # No /run sockets, group assignment, camera, robotd or persistent changes.
           sudo -n env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_per_p15b7_mediad_private_dac.py' -v
+          # Separate real Linux UIDs, B8 exact ACL + OEM-shaped identity,
+          # B13 replay/clock checks; only temporary test inodes.
+          sudo -n env PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s tests -p 'test_p15b15_cross_uid_host_gate.py' -v
       - name: Check Python syntax without external dependency
         run: |
-          python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("tests/test_per_p15b3_oem_unix_dac.py").read_text()); ast.parse(pathlib.Path("tests/test_per_p15b7_mediad_private_dac.py").read_text()); print("Python syntax OK, no pycache writes")'
+          python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("tests/test_per_p15b3_oem_unix_dac.py").read_text()); ast.parse(pathlib.Path("tests/test_per_p15b7_mediad_private_dac.py").read_text()); ast.parse(pathlib.Path("tests/test_p15b15_cross_uid_host_gate.py").read_text()); ast.parse(pathlib.Path("microduck_companion/b15_cross_uid_host_gate.py").read_text()); print("Python syntax OK, no pycache writes")'

@@ -1,3 +1,13 @@
+### P15-B15 — preuves CI sur le candidat fonctionnel `c6e05a4` (02/11/2026)
+
+[PR #269](https://github.com/Jean-Philippe56520/Microduck/pull/269) : **5/5 CI vertes** au SHA fonctionnel `c6e05a435bfdcb3684f0df28c5f28aa8d9d9860f`. Le workflow Linux dédié a **exécuté** 8 tests B3 + 8 tests B7 + **9 tests B15**, tous PASS sur de vrais sockets Unix/ACL et deux UID distincts. Suite Python standard : **2 345 tests, 47 ignorés, aucun échec** ; les **neuf tests B15 y sont ignorés normalement** parce que l'utilisateur standard n'est pas root ; leur exécution root dédiée est attestée séparément. CI finale au HEAD de fusion exigée ; qualification limitée PC hôte, aucun code B15 embarqué ni robot physique validé.
+
+## P15-B15 — vraie séparation Linux des UID, prototype hôte seulement (02/11/2026)
+
+**Gain par rapport à B7+B14 :** les tests Linux de B7 prouvaient les ACL entre utilisateurs, et B14 validait l'identité et la forme B12 avec un UID commun. B15 réunit ces deux contraintes dans un **seul parcours hôte** : émetteur `mediad` fictif UID `31052`, lecteur `kwipi` fictif UID `31053`, UID/GID et PID vérifiés via `SO_PEERCRED`, ACL B8 exactes sur répertoire/socket, lecture de `identity.json` (0644), payload B12 frais et séquence. Les enfants se privent définitivement de groupes supplémentaires ; les faux sockets `media.sock` et `robotd.sock` restent inaccessibles. Les nombres sont **strictement des fixtures**, pas les UID du robot.
+
+**Preuve locale limitée :** 9/9 tests kernel Linux x86_64 sous root, avec dépendances B13/B14 simulées ; la CI dédiée B3/B7 réutilisée doit exécuter réellement les tests B15 pour une qualification GitHub. Code B15 **non empaqueté** ; modules B6 et rootfs B10 inchangés. Aucune identité cryptographique, capteur, accès `/run` cible, mémoire ou permission moteur prouvée. STOP si permissions élargies, ACL/séquence/PID incohérents ou CI rouge. [Détails et critères](docs/p15b15-cross-uid-host-acl-2026-11-02.md).
+
 ## P15-B14 — identité locale OEM, préflight PC/WSL2 (02/11/2026)
 
 **Preuve WSL2 opérateur :** le patch P15-B14 sur checkout séparé `main@4362682534aaf68c11497bc89f217ac57a405c4c` a réussi **11/11 tests** en **0,224 s**, `P15_B14_TESTS: PASS`, `P15_B14_EXIT: 0`. Le code et les tests P15-B14 publiés sur la branche de revue ont des blobs Git correspondant au patch évalué. La **CI complète de la branche reste une porte distincte**.

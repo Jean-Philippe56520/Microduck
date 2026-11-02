@@ -1,3 +1,11 @@
+### P15-B15 — résultat Linux candidat (02/11/2026)
+
+[PR #269](https://github.com/Jean-Philippe56520/Microduck/pull/269), SHA fonctionnel `c6e05a435bfdcb3684f0df28c5f28aa8d9d9860f` : **5/5 CI PASS**, 9/9 nouveaux tests **effectivement exécutés** sous root Linux, suites DAC historiques B3/B7 16/16 PASS ; Python générale **2 345 tests, 47 ignorés**, OK. Ne pas interpréter les skipped de la suite standard comme l'absence de couverture dédiée. Aucun droit `robot`, aucune collecte image ou mémoire, aucun artefact B10 modifié, aucune validation RK3566. Passage PR uniquement après CI verte au dernier SHA.
+
+## P15-B15 — vérification Linux des deux UID et des ACL (02/11/2026)
+
+**Préflight hôte :** modèle UNIX à deux UIDs réels factices, `SO_PEERCRED`, `identity.json`, ACL B8 exactes, B12 payload et B13 anti-replay, avec rejet explicite des sockets moteur/caméra. 9/9 tests Linux isolés avec stubs B13/B14 ; CI dédiée B3/B7 en attente du dernier HEAD. Pas de module dans B10, pas de nouvel appareil/permission ni validation robot. Porte suivante : vérifier Yocto et `/run`/compte réels sur cible, puis qualification de la chaîne sans privilèges moteurs. [Limites détaillées](p15b15-cross-uid-host-acl-2026-11-02.md).
+
 ## P15-B14 — préflight provenance locale (02/11/2026)
 
 **Code proposé, hôte uniquement :** garde du PID/UID Unix et de l'identité `mediad` OEM auto-publiée, sans `media.sock` ni groupe `robot` ; réutilise B13, non sélectionné dans B6/B10. **11/11 tests WSL2 opérateur réussis** en 0,224 s, CI complète GitHub à qualifier. Aucun capteur ou robot validé. Suite : prouver séparément les ACL et identité réelle `mediad/kwipi` et une compatibilité Linux cible sans modifier la sûreté, puis revue P16/P17 avant une nouvelle image. [Dossier de qualification](p15b14-identity-file-host-preflight-2026-11-02.md).
