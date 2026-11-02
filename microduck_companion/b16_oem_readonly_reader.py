@@ -52,7 +52,7 @@ class B16ReadResult:
     peer_uid: int | None = None
     revision_claim: str | None = None
     category: str = "unknown"
-    provenance: str = "b12_oem_peer_self_claim_not_sensor"
+    provenance: str = "none"
     verified_sensor: bool = False
     executable_verified: bool = False
     media_bytes_stored: int = 0
@@ -99,7 +99,10 @@ def _checked_once(
             or any(group != kwipi_gid for group in os.getgroups())
             or robot_gid in os.getgroups()):
         raise B16Refused("observer requires the isolated Kwipi identity")
-    if run_root != _RUN:
+    # Do not use the overridable public-reader path constant to determine
+    # whether a fixture path is authorized. Even in tests the production
+    # root remains a literal /run and alternate paths undergo strict checks.
+    if run_root != Path("/run"):
         tmp = Path(tempfile.gettempdir()).resolve(strict=True)
         if (run_root.parent.resolve(strict=True) != tmp
                 or not run_root.name.startswith("kwipi-b15-")):
@@ -167,7 +170,8 @@ def _checked_once(
                 reported_boxes=shape.reported_boxes,
                 look_seq=shape.look_seq,
                 captured_at_monotonic_ns=shape.captured_at_monotonic_ns,
-                peer_pid=pid, peer_uid=uid, revision_claim=revision)
+                peer_pid=pid, peer_uid=uid, revision_claim=revision,
+                provenance="b12_oem_peer_self_claim_not_sensor")
     except (B16Refused, B15HostRefused, B14IdentityRefused,
             PassiveSourceError, PassiveMediaError, OSError, ValueError,
             struct.error) as exc:
