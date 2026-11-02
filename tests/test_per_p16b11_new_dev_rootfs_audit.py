@@ -34,7 +34,7 @@ class P16B11OfflineRootfsFixtures(unittest.TestCase):
         (self.historical / "B10-KEEP-UNMODIFIED").write_bytes(b"immutable historical")
         self.manifest = self.work / "microduck-image-dev-microduck-zero3.rootfs-20261102151000.manifest"
         self.packages = {
-            "microduck-daemon": b10.B12_PKG_VERSION,
+            "microduck-daemon": b11.B11_DAEMON_PKG_VERSION,
             "microduck-data": "0.17.8-r0",
             "kwipi-companion": "0.2.0a1-r0",
             "kwipi-passive-fixture": "0.1.0-r0",
@@ -58,7 +58,7 @@ class P16B11OfflineRootfsFixtures(unittest.TestCase):
             target.write_bytes(data)
             target.chmod(0o644)
         self.hashes = {name: sha(raw) for name, raw in self.new.items()}
-        self.source_head = "a" * 40
+        self.source_head = b11.B11_BUILD_HEAD
         self.source = self.work / "checkout"
         self.source.mkdir()
         self.archive = {
@@ -123,7 +123,7 @@ class P16B11OfflineRootfsFixtures(unittest.TestCase):
         self.addCleanup(p.stop)
 
     def _fake_executables(self):
-        release = self.rootfs / "opt/robot/daemon/releases" / b10.B12_VERSION / "bin"
+        release = self.rootfs / "opt/robot/daemon/releases" / b11.B11_DAEMON_VERSION / "bin"
         release.mkdir(parents=True)
         expected = {}
         for name in ("robotd", "mediad"):
@@ -134,8 +134,8 @@ class P16B11OfflineRootfsFixtures(unittest.TestCase):
             binary.chmod(0o755)
             expected[name] = (len(blob), sha(blob))
         (self.rootfs / "opt/robot/daemon/current").symlink_to(
-            "releases/" + b10.B12_VERSION)
-        p = patch.dict(b10.B12_BINARIES, expected, clear=True)
+            "releases/" + b11.B11_DAEMON_VERSION)
+        p = patch.dict(b11.B11_DAEMON_BINARIES, expected, clear=True)
         p.start()
         self.addCleanup(p.stop)
 
@@ -158,6 +158,10 @@ class P16B11OfflineRootfsFixtures(unittest.TestCase):
                           result["b13_b16_modules_verified"]), (19, 5, 4))
         self.assertEqual(len(result["python_sha256"]), 28)
         self.assertEqual(len(result["b12_sha256"]), 2)
+        self.assertEqual(result["b12_release"], b11.B11_DAEMON_VERSION)
+        self.assertEqual(result["b11_daemon_pkgv"], b11.B11_DAEMON_PKG_VERSION)
+        self.assertTrue(result["installed_binaries_match_pinned_wsl2_b11_hashes"])
+        self.assertFalse(result["pkgdest_match_independently_attested_by_this_gate"])
         self.assertTrue(result["kwipi_account_isolated_from_motor"])
         self.assertTrue(result["historical_b10_rootfs_distinct_and_unmodified_by_gate"])
         for k in ("manifest_rootfs_association_independently_attested",
@@ -280,7 +284,7 @@ class P16B11OfflineRootfsFixtures(unittest.TestCase):
             self.check()
 
     def test_oem_executable_sha_and_mode_refused(self):
-        f = self.rootfs / "opt/robot/daemon/releases" / b10.B12_VERSION / "bin/mediad"
+        f = self.rootfs / "opt/robot/daemon/releases" / b11.B11_DAEMON_VERSION / "bin/mediad"
         data = f.read_bytes()
         f.write_bytes(data + b"x")
         with self.assertRaises(b11.Refused):
@@ -289,6 +293,59 @@ class P16B11OfflineRootfsFixtures(unittest.TestCase):
         f.chmod(0o644)
         with self.assertRaises(b11.Refused):
             self.check()
+
+    def test_only_the_actually_built_b11_source_revision_is_accepted(self):
+        with self.assertRaisesRegex(b11.Refused, "built B11 Companion"):
+            b11.validate(self.rootfs, self.historical, self.manifest,
+                         self.source, b10.SOURCE_HEAD, builder_exit=0,
+                         metadata=self.metadata)
+
+    def test_b10_or_unpinned_b11_daemon_package_version_refused(self):
+        original = self.packages["microduck-daemon"]
+        for bad in (
+            b10.B12_PKG_VERSION,
+            b11.B11_DAEMON_VERSION,
+            b11.B11_DAEMON_PKG_VERSION + "-r0",
+            b11.B11_DAEMON_VERSION + "0+bd113f317c",
+            "0.17.8+kwipi.p12.9999999999990+bd113f317b",
+        ):
+            with self.subTest(bad=bad):
+                self.packages["microduck-daemon"] = bad
+                self._write_manifest()
+                with self.assertRaisesRegex(b11.Refused, "package version"):
+                    self.check()
+        self.packages["microduck-daemon"] = original
+        self._write_manifest()
+
+    def test_b11_current_release_and_wrong_machine_refused(self):
+        current = self.rootfs / "opt/robot/daemon/current"
+        current.unlink()
+        current.symlink_to("releases/" + b10.B12_VERSION)
+        with self.assertRaisesRegex(b11.Refused, "current daemon release"):
+            self.check()
+        current.unlink()
+        current.symlink_to("releases/" + b11.B11_DAEMON_VERSION)
+        target = self.rootfs / "opt/robot/daemon/releases" / b11.B11_DAEMON_VERSION / "bin/robotd"
+        original = target.read_bytes()
+        target.write_bytes(original[:18] + b"\\x3e\\x00" + original[20:])
+        with self.assertRaisesRegex(b11.Refused, "AArch64"):
+            self.check()
+
+    def test_b11_binary_symlink_refused(self):
+        target = self.rootfs / "opt/robot/daemon/releases" / b11.B11_DAEMON_VERSION / "bin/robotd"
+        target.unlink()
+        target.symlink_to(self.historical / "B10-KEEP-UNMODIFIED")
+        with self.assertRaises((b11.Refused, p16.Refused)):
+            self.check()
+
+    def test_b11_fixture_pin_and_historical_b10_are_distinct(self):
+        self.assertEqual(b11.B11_BUILD_HEAD,
+                         "659008ecf5d3a1eccd957e9ea2b1df4abaab21a1")
+        self.assertNotEqual(b11.B11_DAEMON_PKG_VERSION, b10.B12_PKG_VERSION)
+        self.assertNotEqual(b11.B11_DAEMON_VERSION, b10.B12_VERSION)
+        self.assertEqual(set(b11.B11_DAEMON_BINARIES), {"robotd", "mediad"})
+        self.assertEqual(len(b11.B11_DAEMON_BINARIES["robotd"][1]), 64)
+        self.assertEqual(len(b11.B11_DAEMON_BINARIES["mediad"][1]), 64)
 
     def test_supplied_b18_metadata_must_not_claim_activation(self):
         for key, value in (
