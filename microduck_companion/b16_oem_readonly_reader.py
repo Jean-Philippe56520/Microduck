@@ -209,12 +209,11 @@ class B16OEMDetectionReader:
                 if now - self._last_attempt < _MIN_INTERVAL_S:
                     return B16ReadResult("rate_limited")
             self._last_attempt = now
+            mediad_uid, mediad_gid, kwipi_uid, kwipi_gid, robot_gid = _observer_ids()
             return _checked_once(
-                _RUN, mediad_uid=_observer_ids()[0],
-                mediad_gid=_observer_ids()[1],
-                kwipi_uid=_observer_ids()[2],
-                kwipi_gid=_observer_ids()[3],
-                robot_gid=_observer_ids()[4],
+                _RUN, mediad_uid=mediad_uid, mediad_gid=mediad_gid,
+                kwipi_uid=kwipi_uid, kwipi_gid=kwipi_gid,
+                robot_gid=robot_gid,
                 sequence_gate=self._sequence_gate, timeout_s=self.timeout_s)
         except (B16Refused, OSError, ValueError, KeyError):
             return B16ReadResult("unavailable_or_refused")
