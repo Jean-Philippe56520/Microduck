@@ -1,3 +1,7 @@
+## Mise en perspective P15-B18 / P16 (02/11/2026)
+
+[PR #272](https://github.com/Jean-Philippe56520/Microduck/pull/272) : la CI [#41441640365](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41441640365) a prouvé une nouvelle **sélection de métadonnées DEV uniquement** de `kwipi-b12-receiver` (source B17, 4 modules B13–B16), en complément de la baseline 19+5 ; `microduck-image` shipping n'en sélectionne aucun. **Cela ne constitue PAS un rootfs nouveau, ni un RPM `do_package`, WIC/RAUC, package sous licence redistribuable, capteur, boot ou service exécuté.** La preuve réelle B10 (24 modules/2 ELF B12/3 fichiers P15A) est un artefact antérieur séparé. La version candidate destinée à l'installation doit être qualifiée après une porte `do_package/do_rootfs` distincte et ses empreintes propres ; aucune preuve B10 ne doit être écrasée.
+
 ## P17-S0 — réconciliation des preuves V1 après P16-B10/S1/S2 (02/11/2026, décision documentaire)
 
 **Objectif / manque concret :** éviter d'annoncer une « image V1 prête » en additionnant des contrôles qui ont porté sur **deux artefacts différents**. Référence `main@1e44ec0b7e60a354a19aede3c4e7281e8e77a310` après fusion #265 ; gitlinks OEM `upstream/microduck@942e58e3aa6dbb28e7037203fff11866122c7567` et simulation `upstream/microduck_rl@b02fdea4902c2b93b7d34a83a6f05da4ececb7d3` inchangés. Réemploi des rapports P16 déjà produits et de la matrice P15–P17 existante ; **aucun nouvel utilitaire ou PR de code nécessaire pour ce constat**.
