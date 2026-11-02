@@ -1,3 +1,11 @@
+## P15-B14 — identité locale OEM, préflight PC/WSL2 (02/11/2026)
+
+**Preuve WSL2 opérateur :** le patch P15-B14 sur checkout séparé `main@4362682534aaf68c11497bc89f217ac57a405c4c` a réussi **11/11 tests** en **0,224 s**, `P15_B14_TESTS: PASS`, `P15_B14_EXIT: 0`. Le code et les tests P15-B14 publiés sur la branche de revue ont des blobs Git correspondant au patch évalué. La **CI complète de la branche reste une porte distincte**.
+
+**Choix OEM :** utiliser l'identité auto-publiée dans `/run/mediad/identity.json` (OEM `duck-ipc-proto::publish_identity`) et le PID/UID `SO_PEERCRED` du **seul socket de détections**, sans accéder au socket `/run/mediad/media.sock` (groupe moteur `robot`) ni ajouter Kwipi à ce groupe. La révision déclarée n'atteste ni les octets du processus ni une capture physique. Tests positifs/négatifs Linux sur **fixtures temporaires de même UID**, sans connexion à `/run`. B14 est un **module source non empaqueté** ; B6/B10, services, Yocto, OEM et sous-modules inchangés ; pas de SQLite, caméra, mouvement ou mémoire réelle.
+
+**STOP pour lecteur sur robot :** valider ACL de `/run` et du compte `kwipi`, différence d'UID `mediad/kwipi`, identité du binaire réellement lancé, rebind, fréquence NPU et sécurité. Sans ces preuves : inconnu/inaction. [Source, risques et tests](docs/p15b14-identity-file-host-preflight-2026-11-02.md). Fusion seulement au dernier HEAD et CI verte.
+
 ### P15-B13 — correctif de compatibilité avec les empreintes du rootfs B10 (02/11/2026)
 
 **CI initiale du HEAD 299a013e : STOP (2324 tests, 1 échec + 1 erreur).** Les deux causes sont identifiées : modification involontaire de deux modules P15-B6 épinglés par SHA-256 (porte P16-B10), et réutilisation du même pathname Unix sans unlink entre deux tests. Ne pas assouplir les empreintes ni reconstruire silencieusement le rootfs B10.
