@@ -1,3 +1,17 @@
+## P17-S0 — réconciliation des preuves V1 après P16-B10/S1/S2 (02/11/2026, décision documentaire)
+
+**Objectif / manque concret :** éviter d'annoncer une « image V1 prête » en additionnant des contrôles qui ont porté sur **deux artefacts différents**. Référence `main@1e44ec0b7e60a354a19aede3c4e7281e8e77a310` après fusion #265 ; gitlinks OEM `upstream/microduck@942e58e3aa6dbb28e7037203fff11866122c7567` et simulation `upstream/microduck_rl@b02fdea4902c2b93b7d34a83a6f05da4ececb7d3` inchangés. Réemploi des rapports P16 déjà produits et de la matrice P15–P17 existante ; **aucun nouvel utilitaire ou PR de code nécessaire pour ce constat**.
+
+| Porte / objet effectivement vérifié | Verdict borné | Ne prouve pas |
+| --- | --- | --- |
+| Rootfs DEV B10 (nouvelle composition P15-B9/B10) | P16-B10 `PASS_FILES_ONLY` : 24 Python, 2 ELF B12, 3 fichiers P15A, compte isolé et manifeste DEV | WIC reconstruite avec B10 ou boot réel |
+| Services/présélections du même rootfs B10 | P16-S1 `P16_S1_EXIT=0` : 226 autres fichiers systemd, 17 presets, 0 référence d'autoactivation P15A, 0 postinst différé dans les répertoires connus | Scriptlets de tous les RPM, état service au démarrage, ACL du socket moteur |
+| RAUC/configuration et modes du même rootfs B10 | P16-S2 `P16_S2_B10_EXIT=0` : 2 CA, 11 champs, 5 modes, groupe `robot` présent | Paire privée de signature, bundle signé/validé, rollback A/B |
+| WIC DEV privée qualifiée au 31/10 (12 968 805 376 octets, SHA-256 `c1140e7508559ebc9467c3f97d3c9891452228f05b3baf999ccaa3c0a5f11bc8`) | Intégrité/GPT historiques PASS sur WSL2 ; `rootfs_a` de cette WIC avait **absence du compte kwipi** | Installation du nouveau rootfs B10 ; la WIC historique **n'est pas** la V1 avec B9/B10 |
+| RAUC DEV signé, image shipping, licences, runtime P15 complet, robot | **EN ATTENTE** : clés privées DEV non attestées, redistribution `CLOSED` à revoir, P15A oneshot inactif, B6 lanceur de fixtures | Déploiement, autonomie, lecture seule OS, sûreté physique et ressources RK3566 |
+
+**Critères de poursuite (préenregistrés, avant tout nouvel essai P17) :** positif = identifier un seul candidat versionné et **rattacher par empreintes** sources, manifeste, paquets, rootfs, WIC et recette de démarrage effectivement correspondants ; vérifier séparément les scriptlets RPM pertinents, droits d'accès et stratégie de repli, sans prétendre les avoir testés ici. Négatifs/STOP = WIC historique présentée comme contenant B10 ; CA publiques interprétées comme clés de signature ; `robot` interprété comme ACL RPC lecture seule ; entrée de fixture présentée comme Companion autonome ; `status=accepted` présenté comme effet moteur ; sortie S1/S2 interprétée comme validation d'une image shipping/robot. **Prochaine action utile sans robot :** inventaire P17 **lecture seule** de la correspondance artefacts/dev-rootfs et des scriptlets existants, en réutilisant les manifestes/pkdgata/recettes OEM ; **pas de BitBake ni de nouvelle WIC tant que l'écart précis, le budget et les critères de la prochaine construction ne sont pas établis**. P15 service réel sûr est une porte indépendante et demeure ouverte. Retour arrière = conserver le rootfs B10 et la WIC ancienne privés, ainsi que leurs rapports, sans les remplacer.
+
 # PER-P15–P17 — portes de livraison V1 après P14B (31 octobre 2026)
 
 ## Preuves et arrêt avant essais
