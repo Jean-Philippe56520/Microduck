@@ -21,6 +21,10 @@ from microduck_companion.b14_host_identity_gate import B12_REVISION
 from microduck_companion.b15_cross_uid_host_gate import (
     B15HostRefused, _expected_acl, read_b15_cross_uid_host_fixture,
 )
+from microduck_companion.b16_oem_readonly_reader import (
+    B16OEMDetectionReader, B16Refused, _checked_once,
+)
+from unittest.mock import patch
 
 UID_MEDIAD = 31052
 GID_MEDIAD = 31064
@@ -150,7 +154,8 @@ class B15CrossUidHostTests(unittest.TestCase):
         self.assertEqual(UID_MEDIAD,self.sock.stat().st_uid)
         self.assertEqual(UID_MEDIAD,(self.runtime/"identity.json").stat().st_uid)
 
-    def _client(self, *, n=1) -> list[dict]:
+    def _client(self, *, n=1, reader="b15") -> list[dict]:
+        self.assertIn(reader, ("b15", "b16", "b16-public"))
         rd,wr=os.pipe()
         pid=os.fork()
         if pid==0:
@@ -161,17 +166,35 @@ class B15CrossUidHostTests(unittest.TestCase):
                 gate=B12LocalSequenceGate()
                 for _ in range(n):
                     try:
-                        x=read_b15_cross_uid_host_fixture(
-                            self.root,mediad_uid=UID_MEDIAD,
-                            mediad_gid=GID_MEDIAD,kwipi_uid=UID_KWIPI,
-                            robot_gid=GID_ROBOT,sequence_gate=gate,
-                            timeout_s=.5)
+                        if reader == "b15":
+                            x=read_b15_cross_uid_host_fixture(
+                                self.root,mediad_uid=UID_MEDIAD,
+                                mediad_gid=GID_MEDIAD,kwipi_uid=UID_KWIPI,
+                                robot_gid=GID_ROBOT,sequence_gate=gate,
+                                timeout_s=.5)
+                        elif reader == "b16":
+                            x=_checked_once(
+                                self.root,mediad_uid=UID_MEDIAD,
+                                mediad_gid=GID_MEDIAD,kwipi_uid=UID_KWIPI,
+                                kwipi_gid=GID_KWIPI,robot_gid=GID_ROBOT,
+                                sequence_gate=gate,timeout_s=.5)
+                        else:
+                            # Only the Linux fixture may patch target paths;
+                            # production B16 hardcodes /run and installed NSS.
+                            with patch("microduck_companion.b16_oem_readonly_reader._RUN",
+                                       self.root), patch(
+                                "microduck_companion.b16_oem_readonly_reader._observer_ids",
+                                return_value=(UID_MEDIAD,GID_MEDIAD,UID_KWIPI,
+                                              GID_KWIPI,GID_ROBOT)):
+                                x=B16OEMDetectionReader(enabled=True).read()
                         answers.append({"ok":True,"status":x.status,
                             "pid":x.peer_pid,"uid":x.peer_uid,
                             "seq":x.look_seq,"category":x.category,
                             "sensor":x.verified_sensor,"media":x.media_bytes_stored,
-                            "memory":x.memory_writes,"motors":x.motor_commands_issued})
-                    except B15HostRefused:
+                            "memory":x.memory_writes,"motors":x.motor_commands_issued,
+                            "executable":getattr(x,"executable_verified",False),
+                            "frames":getattr(x,"camera_frames_requested",0)})
+                    except (B15HostRefused,B16Refused):
                         answers.append({"ok":False})
                 answers.append({"groups":os.getgroups(),"uid":os.geteuid()})
             except BaseException as exc:
@@ -300,6 +323,41 @@ class B15CrossUidHostTests(unittest.TestCase):
         response=self._client(n=2)
         self.assertTrue(response[0]["ok"],response)
         self.assertFalse(response[1]["ok"],response)
+
+    def test_b16_public_reader_real_linux_cross_uid_stays_unverified(self):
+        self._launch_daemon()
+        values=self._client(reader="b16-public")
+        self.assertEqual(1,len(values))
+        self.assertTrue(values[0]["ok"],values)
+        self.assertEqual("oem_identity_and_b12_claim_consistent_not_sensor",
+                         values[0]["status"])
+        self.assertEqual(self.daemon_pid,values[0]["pid"])
+        self.assertEqual(UID_MEDIAD,values[0]["uid"])
+        self.assertEqual("unknown",values[0]["category"])
+        self.assertFalse(values[0]["sensor"])
+        self.assertFalse(values[0]["executable"])
+        self.assertEqual((0,0,0,0),
+                         tuple(values[0][k] for k in ("media","frames","memory","motors")))
+
+    def test_b16_missing_socket_acl_denies_real_linux_peer(self):
+        self._launch_daemon(grant_sock=False)
+        self.assertEqual([{"ok":False}],self._client(reader="b16"))
+
+    def test_b16_wrong_oem_revision_denies_real_linux_peer(self):
+        self._launch_daemon()
+        _publish_identity(self.runtime,self.daemon_pid,revision="942e58e3")
+        self.assertEqual([{"ok":False}],self._client(reader="b16"))
+
+    def test_b16_replay_and_stale_capture_rejected(self):
+        self._launch_daemon(n=2,seqs=[8,8])
+        results=self._client(n=2,reader="b16")
+        self.assertTrue(results[0]["ok"],results)
+        self.assertFalse(results[1]["ok"],results)
+
+    def test_b16_future_and_stale_capture_both_refused(self):
+        self._launch_daemon(n=2,ages=[-3_000_000_000,3_000_000_000])
+        self.assertEqual([{"ok":False},{"ok":False}],
+                         self._client(n=2,reader="b16"))
 
 
 if __name__=="__main__":unittest.main()
