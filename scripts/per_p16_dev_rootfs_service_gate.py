@@ -97,23 +97,83 @@ def _text_lines(path: Path) -> list[str]:
     return path.read_text(encoding="utf-8", errors="replace").splitlines()
 
 
-def validate(base: Path) -> dict:
+def _read_report(base: Path, report_path: Path | None,
+                 report_sha256: str | None) -> tuple[dict, bool]:
+    """Select a private B10 report by absolute path + pinned bytes.
+
+    The historic P16-A report is *never* rewritten or repurposed for B10.
+    Omitting --report selects only the original P16-A contract.
+    """
+    historical = base / "proofs/p16-rootfs-audit.json"
+    explicit_b10 = report_path is not None
+    if explicit_b10:
+        if not report_path.is_absolute():
+            _fail("P16-B10 report path must be absolute")
+        if report_path.resolve(strict=False) == historical.resolve(strict=False):
+            _fail("historical P16-A report cannot serve as explicit B10 input")
+        if report_sha256 is None or re.fullmatch(r"[0-9a-f]{64}", report_sha256) is None:
+            _fail("P16-B10 report requires pinned SHA-256")
+        selected = report_path
+    else:
+        if report_sha256 is not None:
+            _fail("report SHA-256 without explicit B10 report")
+        selected = historical
+    if selected.is_symlink() or not selected.is_file():
+        _fail(("P16-B10" if explicit_b10 else "P16-A")
+              + " report not found or symlinked")
+    if selected.stat().st_size > 1024 * 1024:
+        _fail("P16-A/B10 report exceeds bounded size")
+    raw = selected.read_bytes()
+    if explicit_b10 and hashlib.sha256(raw).hexdigest() != report_sha256:
+        _fail("P16-B10 report SHA-256 mismatch")
+    try:
+        report = json.loads(raw)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise Stop("invalid P16-A/B10 JSON report") from exc
+    if not isinstance(report, dict):
+        _fail("P16-A/B10 report must be a JSON object")
+    if explicit_b10 and report.get("status") != b10.STATUS:
+        _fail("explicit report must be P16-B10")
+    if not explicit_b10 and report.get("status") != REPORT_STATUS:
+        _fail("historical report path requires P16-A status")
+    return report, explicit_b10
+
+
+def validate(base: Path, *, report_path: Path | None = None,
+             report_sha256: str | None = None) -> dict:
     base = base.resolve(strict=True)
     roots = [p for p in (base / "build/tmp/work").glob(
         "*/microduck-image-dev/*/rootfs") if p.is_dir() and not p.is_symlink()]
     if len(roots) != 1:
         _fail("expected exactly one existing DEV rootfs")
     root = roots[0].resolve(strict=True)
-    report_path = base / "proofs/p16-rootfs-audit.json"
-    if not report_path.is_file() or report_path.is_symlink():
-        _fail("P16-A report not found or symlinked")
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report, explicit_b10 = _read_report(base, report_path, report_sha256)
     status = report.get("status")
     if status == REPORT_STATUS:
         modules = 19  # Preserve legacy P16-A rootfs-only contract.
     elif status == b10.STATUS:
         modules = 24
-        if (report.get("p14b_modules_verified") != 19
+        packages = report.get("packages")
+        python_hashes = report.get("python_sha256")
+        required_packages = {
+            "microduck-daemon": (b10.B12_PKG_VERSION,),
+            "kwipi-companion": ("0.2.0a1", "0.2.0a1-r0"),
+            "kwipi-passive-fixture": ("0.1.0", "0.1.0-r0"),
+            "kwipi-readonly-probe": ("0.1", "0.1-r0"),
+        }
+        if (report.get("schema") != "kwipi-p16b10-existing-dev-rootfs-audit-v1"
+                or report.get("source_head_verified_against_checkout") != b10.SOURCE_HEAD
+                or report.get("p14b_archive_sha256")
+                    != b10.p16a.PINNED_P14B_ARCHIVE_SHA256
+                or not isinstance(packages, dict)
+                or set(packages) != set(b10.REQUIRED_PACKAGES)
+                or any(packages.get(name) not in versions
+                       for name, versions in required_packages.items())
+                or not isinstance(python_hashes, dict)
+                or len(python_hashes) != 24
+                or any(python_hashes.get(name) != digest
+                       for name, digest in b10.B6_SHA256.items())
+                or report.get("p14b_modules_verified") != 19
                 or report.get("p15b6_modules_verified") != 5
                 or report.get("b12_release") != b10.B12_VERSION
                 or report.get("b12_sha256") != {
@@ -125,14 +185,26 @@ def validate(base: Path) -> dict:
             _fail("P16-B10 proof incomplete for service audit")
     else:
         _fail("unreviewed P16-A/B10 proof status")
-    if (report.get("python_modules_verified") != modules or
-        report.get("probe_systemd_symlink_found") is not False or
-        len(report.get("probe_sha256", {})) != 3):
+    if explicit_b10:
+        # Pin the selected report to the actual existing rootfs, not merely a
+        # matching P15A unit that could also exist in the historical image.
+        # Reuse B10's fail-closed file/ELF gates; no build, install or writes.
+        try:
+            b10._installed_modules(root, python_hashes)
+            b10._binary_checks(root)
+        except (ValueError, OSError) as exc:
+            # B10 also calls the P16-A helper which has its own Refused type.
+            raise Stop("current rootfs differs from pinned B10 proof: " + str(exc)) from exc
+
+    if (report.get("python_modules_verified") != modules
+            or report.get("probe_systemd_symlink_found") is not False
+            or not isinstance(report.get("probe_sha256"), dict)
+            or set(report["probe_sha256"]) != set(EXPECTED_SHA256)):
         _fail("existing P16-A/B10 proof does not match expected scope")
     for rel, digest in EXPECTED_SHA256.items():
         file = _safe_file(root, rel)
         if report["probe_sha256"].get(rel) != digest:
-            _fail("P16-A report checksum mismatch: " + rel)
+            _fail("P16-A/B10 report checksum mismatch: " + rel)
         if hashlib.sha256(file.read_bytes()).hexdigest() != digest:
             _fail("rootfs installed bytes changed: " + rel)
 
@@ -198,7 +270,12 @@ def validate(base: Path) -> dict:
 
     return {
         "status": "p16_s1_no_observed_probe_autostart_references_in_scanned_rootfs",
-        "p16_a_report_rechecked": True,
+        "p16_a_report_rechecked": not explicit_b10,
+        "p16_b10_report_rechecked": explicit_b10,
+        "b10_report_sha256_verified": explicit_b10,
+        "input_report_kind": "P16-B10" if explicit_b10 else "P16-A",
+        "b10_installed_python_rehashed": 24 if explicit_b10 else 0,
+        "b10_oem_binaries_rehashed": 2 if explicit_b10 else 0,
         "installed_probe_files_rehashed": 3,
         "other_systemd_files_examined": examined,
         "systemd_preset_files_examined": checked_presets,
@@ -217,9 +294,14 @@ def main() -> int:
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", type=Path, default=Path.cwd())
+    parser.add_argument("--report", type=Path,
+                        help="absolute path to private P16-B10 proof; never the historical P16-A path")
+    parser.add_argument("--report-sha256",
+                        help="required 64-character lowercase SHA-256 of explicit B10 report")
     args = parser.parse_args()
     try:
-        result = validate(args.base)
+        result = validate(args.base, report_path=args.report,
+                          report_sha256=args.report_sha256)
     except (Stop, OSError, UnicodeError, json.JSONDecodeError) as exc:
         parser.exit(1, "P16_S1_STOP: " + str(exc) + "\n")
     print(json.dumps(result, sort_keys=True, separators=(",", ":")))
