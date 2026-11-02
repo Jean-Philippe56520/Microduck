@@ -1,0 +1,76 @@
+name: P16-B11 new DEV rootfs 28-module offline audit (fixtures, NOT do_rootfs)
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/per-p16b11-new-dev-rootfs-28-module.yml"
+      - "scripts/per_p16b11_new_dev_rootfs_audit.py"
+      - "tests/test_per_p16b11_new_dev_rootfs_audit.py"
+      - "scripts/per_p15b17_oem_receiver_package.py"
+      - "scripts/per_p16b10_dev_rootfs_audit.py"
+      - "scripts/per_p15b9_rootfs_identity_gate.py"
+      - "docs/p16b11-new-dev-rootfs-28-module-audit-2026-11-02.md"
+      - "docs/p15b19-real-b12-receiver-package-2026-11-02.md"
+      - "README.md"
+      - "docs/plan-action.md"
+      - "docs/roadmap.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-and-adversarial-rootfs-fixtures-only:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          submodules: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify exact checkout and OEM gitlinks remain immutable
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git ls-tree HEAD upstream/microduck | awk '{print $3}')" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git ls-tree HEAD upstream/microduck_rl | awk '{print $3}')" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+      - name: Verify real immutable source archive and 28-module closure
+        run: |
+          set -euo pipefail
+          python3 -B - <<'PY'
+          from pathlib import Path
+          from scripts.per_p14b_yocto_python_layer import repo_sha
+          from scripts.per_p16b11_new_dev_rootfs_audit import _source_closure, B19_ARCHIVE_SHA256
+          root=Path.cwd()
+          hashes, archive = _source_closure(root, repo_sha(root))
+          assert len(hashes) == 28
+          assert archive["archive_sha256"] == B19_ARCHIVE_SHA256
+          assert archive["historical_python_modules"] == 24
+          print("P16-B11: real B19 source SHA, original B10 closure and 19+5+4 checked")
+          PY
+      - name: Run B11 negative/positive offline rootfs and B10 regression fixtures
+        run: |
+          set -euo pipefail
+          python3 -B -m unittest discover -s tests -p 'test_per_p16b11_new_dev_rootfs_audit.py' -v
+          python3 -B -m unittest discover -s tests -p 'test_per_p16b10_dev_rootfs_audit.py' -v
+          python3 -B -m unittest discover -s tests -p 'test_per_p15b9_rootfs_identity_gate.py' -v
+          python3 -B -m unittest discover -s tests -p 'test_per_p15b17_oem_receiver_package.py' -v
+          test -z "$(git status --porcelain --untracked-files=no)"
+          git diff --exit-code -- upstream/
+      - name: Confirm the B11 verifier never constructs or installs a rootfs
+        run: |
+          set -euo pipefail
+          python3 -B -c "import ast; from pathlib import Path; ast.parse(Path('scripts/per_p16b11_new_dev_rootfs_audit.py').read_text())"
+          python3 -B - <<'PY'
+          from pathlib import Path
+          script=Path("scripts/per_p16b11_new_dev_rootfs_audit.py").read_text()
+          for operation in ("subprocess.run(", "os.system(", "bitbake -c rootfs", "systemctl start",
+                            "robot.do(", "sqlite3.connect(", "IMAGE_INSTALL:append"):
+              assert operation not in script, operation
+          print("P16-B11: only the offline validator was exercised, no do_rootfs")
+          PY

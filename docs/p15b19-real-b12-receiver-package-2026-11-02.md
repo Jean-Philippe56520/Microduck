@@ -22,8 +22,14 @@ Les versions OEM épinglées restent le comparateur. `mediad.service` lance `med
 
 **Négatifs** : chemin hors `TMPDIR`, `PKGDEST` absent, lié ou réassigné, faux dossier `microduck_companion`, doublon/fichier `__init__.py`, modèle ou service supplémentaire, symlink, exécutable, source falsifiée, version/Python ABI/RDEPENDS/SRC_URI/empreinte fausse, DEV manquant ou shipping contaminé, compte moteur autorisé, couche non reconnue. **STOP** sur une de ces violations, timeout ou CI rouge ; aucune fusion en l'absence de véritable preuve du job `bitbake -c package`. Il n'est pas permis de « corriger » en modifiant B10/B17 ou la politique OEM sans nouveau contrat.
 
+## Résultat final effectivement obtenu
+
+Au HEAD `dc0c80dfb92179d8610acea88e93954939c40539`, les **8/8 CI** de la [PR #273](https://github.com/Jean-Philippe56520/Microduck/pull/273) sont vertes. [CI B19 #41455743181](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41455743181) : `bitbake -c package kwipi-b12-receiver`, 522/522 tâches réussies ; `PKGDEST` analysé : 4/4 modules Python source, tous ordinaires 0644, SHA identiques à B17, autres splits vides ; empreinte TAR source `0921b7dacd7a683b0b90ba7a979e20e72aa4a5aeaecb4899ba9cc63a46c7ab6c`. Les tests Python ont exécuté 2 395 cas (52 ignorés), sans échec. La PR a été **fusionnée** sur `main@d8d9047d8433043c0e518e089a2f331daf501003`, gitlinks OEM et simulation inchangés.
+
+**Portée maintenue** : compilation/empaquetage sur Linux hôte, pas `do_rootfs`, WIC, RAUC, exécution du Python du robot, service `mediad`, détection active, identité binaire en mémoire, ACL réelles ni validation du robot. B10 n'est pas modifié. Nouvelle porte : [P16-B11 — rootfs DEV distinct à 28 modules](p16b11-new-dev-rootfs-28-module-audit-2026-11-02.md).
+
 ## Frontières et retour arrière
 
 Le build GitHub sera **éphemère** (runner, cache temporaire) ; rapport JSON épuré seulement, aucun `bitbake -e`, RPM privé, archive source propriétaire ou secret en artifact. Le script contrôleur ne peut pas attester à lui seul qu'une commande BitBake a été exécutée ; seul le workflow et son journal peuvent le faire. Aucune `do_rootfs`, WIC, RAUC, package installé, environnement Python AArch64 exécuté, ACL réelle `/run`, perception, moteur ou robot validé. Reprise après succès : **nouveau** rootfs DEV versionné et contrôlé avec son manifeste, sans effacer B10 ; l'activation du producteur est séparée. Retour arrière : revert B19 et aucun changement sur rootfs B10 ou OEM.
 
-**Statut initial** : protocole fixé, paquet réel **en attente de CI**.
+**Statut final** : paquet B19 validé par vraie tâche BitBake et audit du split ; aucun rootfs nouveau fabriqué.
