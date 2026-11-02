@@ -1,0 +1,271 @@
+name: P15-B19 REAL pinned B12 receiver do_package and strict four-file split (NO rootfs)
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/per-p15b19-real-b12-receiver-package.yml"
+      - "yocto/meta-kwipi-p15-b12-receiver-selection/**"
+      - "scripts/per_p15b17_oem_receiver_package.py"
+      - "scripts/per_p15b18_dev_receiver_env_gate.py"
+      - "scripts/per_p15b19_real_b12_package_gate.py"
+      - "tests/test_per_p15b18_dev_receiver_env_gate.py"
+      - "tests/test_per_p15b19_real_b12_package_gate.py"
+      - "docs/p15b18-dev-b12-receiver-metadata-2026-11-02.md"
+      - "docs/p15b19-real-b12-receiver-package-2026-11-02.md"
+      - "README.md"
+      - "docs/plan-action.md"
+      - "docs/roadmap.md"
+  workflow_dispatch:
+
+concurrency:
+  group: p15b19-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-receiver-do-package-and-strict-split-only:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      P15B19_YOCTO: /tmp/p15b19-yocto
+      P15B19_SOURCE: /tmp/p15b19-p11-source
+      P15B19_OEM: /tmp/p15b19-meta-kwipi
+      P15B19_BASE: /tmp/p15b19-meta-kwipi-python
+      P15B19_ADDON: /tmp/p15b19-meta-kwipi-passive
+      P15B19_RECEIVER: /tmp/p15b19-meta-kwipi-b12-receiver
+      P15B19_DEV_ENV: /tmp/p15b19-dev-env-private.txt
+      P15B19_SHIP_ENV: /tmp/p15b19-shipping-env-private.txt
+      P15B19_RECIPE_ENV: /tmp/p15b19-receiver-env-private.txt
+      P15B19_CHECKSUM: /tmp/p15b19-receiver-checksum-private.txt
+      P15B19_APPENDS: /tmp/p15b19-show-appends.txt
+      KAS_WORK_DIR: /tmp/p15b19-kas-work
+      KAS_BUILD_DIR: /tmp/p15b19-kas-build
+      KAS_CLONE_DEPTH: "1"
+    steps:
+      - name: Checkout exact candidate and pinned OEM gitlinks
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: dtolnay/rust-toolchain@1.89.0
+      - name: Confirm exact HEAD, OEM pins and positive/negative source gates
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git ls-tree HEAD upstream/microduck | awk '{print $3}')" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git ls-tree HEAD upstream/microduck_rl | awk '{print $3}')" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git -C upstream/microduck_rl rev-parse HEAD)" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          python -B -m unittest discover -s tests -p 'test_per_p15b19_real_b12_package_gate.py' -v
+          python -B -m unittest discover -s tests -p 'test_per_p15b18_dev_receiver_env_gate.py' -v
+          python -B -m unittest discover -s tests -p 'test_per_p15b17_oem_receiver_package.py' -v
+          python -B -m unittest discover -s tests -p 'test_per_p15b10_dev_passive_selection.py' -v
+          python -B -m unittest discover -s tests -p 'test_per_p15b9_dev_account_env_gate.py' -v
+          python -B -m unittest discover -s tests -p 'test_per_p14c_dev_image_env_gate.py' -v
+          git diff --exit-code -- upstream/
+      - name: Fetch exactly pinned Yocto OEM source (not current branch)
+        run: |
+          set -euo pipefail
+          mkdir -p "$P15B19_YOCTO"
+          git -C "$P15B19_YOCTO" init -q
+          git -C "$P15B19_YOCTO" remote add origin https://github.com/pollen-robotics/microduck_yocto.git
+          GIT_TERMINAL_PROMPT=0 git -C "$P15B19_YOCTO" fetch --depth 1 origin 1ee58387810cebb67ae0d634c351d95024483bce
+          git -C "$P15B19_YOCTO" checkout --detach FETCH_HEAD
+          test "$(git -C "$P15B19_YOCTO" rev-parse HEAD)" = "1ee58387810cebb67ae0d634c351d95024483bce"
+          test "$(git -C "$P15B19_YOCTO" hash-object meta-microduck/recipes-core/images/microduck-image.bb)" = "6ee5d14f7a8ebca2441bdff525ce41705bec935e"
+          test "$(git -C "$P15B19_YOCTO" hash-object meta-microduck/recipes-core/images/microduck-image-dev.bb)" = "ec7fa8f82b7685a7da1807c2fee597f9e98e4f8d"
+      - name: Reuse P11/P12 and exact 19+5+4 private source layers, no edits
+        run: |
+          set -euo pipefail
+          python -B -m scripts.per_p11_v1_source_release \
+            --oem-checkout upstream/microduck --output-dir "$P15B19_SOURCE"
+          python -B -m scripts.per_p12_yocto_layer stage \
+            --yocto "$P15B19_YOCTO" --source-dir "$P15B19_SOURCE" --output "$P15B19_OEM"
+          python -B -m scripts.per_p14b_yocto_python_layer stage --output "$P15B19_BASE"
+          python -B -m scripts.per_p15b6_passive_python_addon stage --output "$P15B19_ADDON"
+          python -B -m scripts.per_p15b17_oem_receiver_package stage --output "$P15B19_RECEIVER"
+          python -B -m scripts.per_p12_yocto_layer verify --layer "$P15B19_OEM"
+          python -B -m scripts.per_p14b_yocto_python_layer verify --layer "$P15B19_BASE"
+          python -B -m scripts.per_p15b6_passive_python_addon verify --layer "$P15B19_ADDON"
+          python -B -m scripts.per_p15b17_oem_receiver_package verify --layer "$P15B19_RECEIVER"
+          test "$(git -C "$P15B19_YOCTO" status --porcelain --untracked-files=no)" = ""
+          git diff --exit-code -- upstream/
+      - name: Install pinned host metadata-parser prerequisites, no image build
+        run: |
+          set -euo pipefail
+          test "$(df -Pk /tmp | awk 'NR==2 {print $4}')" -ge 12000000 || {
+            echo "P15-B19 STOP: insufficient temporary disk for metadata" >&2
+            exit 1
+          }
+          timeout 120s sudo apt-get update -qq
+          timeout 240s sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends chrpath diffstat
+          python -m venv "$RUNNER_TEMP/p15b19-kas-venv"
+          timeout 120s "$RUNNER_TEMP/p15b19-kas-venv/bin/pip" install --no-cache-dir --disable-pip-version-check 'kas==5.2.0'
+          mkdir -p "$KAS_WORK_DIR" "$KAS_BUILD_DIR"
+          echo "$RUNNER_TEMP/p15b19-kas-venv/bin" >> "$GITHUB_PATH"
+      - name: Compose ephemeral KAS opt-in DEV source layers; OEM tracked unchanged
+        run: |
+          set -euo pipefail
+          cat > "$P15B19_YOCTO/kas/per-p15b19-opt-in.yml" <<EOF
+          header:
+            version: 14
+          repos:
+            kwipi:
+              path: $P15B19_OEM
+              layers:
+                .:
+            kwipipy:
+              path: $P15B19_BASE
+              layers:
+                .:
+            kwipipassive:
+              path: $P15B19_ADDON
+              layers:
+                .:
+            kwipib17:
+              path: $P15B19_RECEIVER
+              layers:
+                .:
+            kwipidev:
+              path: $GITHUB_WORKSPACE/yocto/meta-kwipi-dev-image
+              layers:
+                .:
+            kwipip15:
+              path: $GITHUB_WORKSPACE/yocto/meta-kwipi-p15-readonly
+              layers:
+                .:
+            kwipiaccount:
+              path: $GITHUB_WORKSPACE/yocto/meta-kwipi-p15-account
+              layers:
+                .:
+            kwipib10:
+              path: $GITHUB_WORKSPACE/yocto/meta-kwipi-p15-passive-selection
+              layers:
+                .:
+            kwipib18:
+              path: $GITHUB_WORKSPACE/yocto/meta-kwipi-p15-b12-receiver-selection
+              layers:
+                .:
+          EOF
+          test "$(git -C "$P15B19_YOCTO" status --porcelain --untracked-files=no)" = ""
+      - name: Parse real -p/-e AND actually run BitBake -c package on B17 only
+        run: |
+          set -euo pipefail
+          umask 022
+          for private_env in "$P15B19_DEV_ENV" "$P15B19_SHIP_ENV" "$P15B19_RECIPE_ENV" "$P15B19_CHECKSUM"; do
+            if [ -e "$private_env" ] || [ -L "$private_env" ]; then
+              echo "P15-B19 STOP: private environment path already exists" >&2
+              exit 1
+            fi
+          done
+          (umask 077; : > "$P15B19_DEV_ENV"; : > "$P15B19_SHIP_ENV"; : > "$P15B19_RECIPE_ENV"; : > "$P15B19_CHECKSUM")
+          test "$(stat -c %a "$P15B19_DEV_ENV")" = 600
+          test "$(stat -c %a "$P15B19_SHIP_ENV")" = 600
+          test "$(stat -c %a "$P15B19_RECIPE_ENV")" = 600
+          test "$(stat -c %a "$P15B19_CHECKSUM")" = 600
+          cfg="$P15B19_YOCTO/kas/microduck.yml:$P15B19_YOCTO/kas/per-p15b19-opt-in.yml"
+          timeout 2650s kas shell "$cfg" -c \
+            "bitbake -p && bitbake -e microduck-image-dev > $P15B19_DEV_ENV && bitbake -e microduck-image > $P15B19_SHIP_ENV && bitbake -e kwipi-b12-receiver > $P15B19_RECIPE_ENV && bitbake-getvar -r kwipi-b12-receiver -f p15b17.sha256sum --value SRC_URI > $P15B19_CHECKSUM && bitbake-layers show-appends > $P15B19_APPENDS && bitbake -c package kwipi-b12-receiver"
+          test -s "$P15B19_DEV_ENV"
+          test -s "$P15B19_SHIP_ENV"
+          test -s "$P15B19_RECIPE_ENV"
+          test -s "$P15B19_CHECKSUM"
+          test -s "$P15B19_APPENDS"
+          test "$(stat -c %a "$P15B19_DEV_ENV")" = 600
+          test "$(stat -c %a "$P15B19_SHIP_ENV")" = 600
+          test "$(stat -c %a "$P15B19_RECIPE_ENV")" = 600
+          test "$(stat -c %a "$P15B19_CHECKSUM")" = 600
+      - name: Verify actual DEV-only B17 selection, exact 19+5+4 and safe OEM identity
+        run: |
+          set -euo pipefail
+          python -B -m scripts.per_p15b18_dev_receiver_env_gate \
+            --project "$GITHUB_WORKSPACE" \
+            --selection-layer "$GITHUB_WORKSPACE/yocto/meta-kwipi-p15-b12-receiver-selection" \
+            --b10-selection "$GITHUB_WORKSPACE/yocto/meta-kwipi-p15-passive-selection" \
+            --receiver-layer "$P15B19_RECEIVER" \
+            --addon-layer "$P15B19_ADDON" \
+            --dev-layer "$GITHUB_WORKSPACE/yocto/meta-kwipi-dev-image" \
+            --python-layer "$P15B19_BASE" \
+            --account-layer "$GITHUB_WORKSPACE/yocto/meta-kwipi-p15-account" \
+            --dev-env "$P15B19_DEV_ENV" \
+            --shipping-env "$P15B19_SHIP_ENV" \
+            --recipe-env "$P15B19_RECIPE_ENV" \
+            --checksum-value-file "$P15B19_CHECKSUM" \
+            --appends "$P15B19_APPENDS" \
+            --report "$RUNNER_TEMP/p15b19-metadata-proof.json"
+          python -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          from scripts.per_p15b18_dev_receiver_env_gate import STATUS as B18_STATUS
+          p = Path(os.environ["RUNNER_TEMP"]) / "p15b19-metadata-proof.json"
+          r = json.loads(p.read_text())
+          # B19 reuses B18 unchanged: effective metadata is still a B18 claim.
+          assert r["status"] == B18_STATUS
+          assert (r["base_modules"],r["passive_modules"],r["receiver_modules"]) == (19,5,4)
+          assert (r["dev_receiver_count"],r["shipping_receiver_count"]) == (1,0)
+          assert r["oem_packages_preserved"]
+          assert r["kwipi_account_isolated_by_effective_metadata"]
+          assert r["receiver_rdepends_checked"]
+          assert not any(r[k] for k in (
+            "bitbake_executed_by_this_gate","rootfs_or_package_built_by_this_gate",
+            "new_dev_rootfs_installed","shipping_image_changed",
+            "systemd_service_activated","oem_producer_activated",
+            "robot_sensor_validated","robot_validated","motor_commands_issued"
+          ))
+          print("P15-B19: real pinned BitBake metadata verified by CI; NOT a package/rootfs/robot")
+          PY
+          test "$(git -C "$P15B19_YOCTO" status --porcelain --untracked-files=no)" = ""
+          git diff --exit-code -- upstream/
+      - name: Inspect actual B17 PKGDEST split, 4 x SHA256 and no extra payload
+        run: |
+          set -euo pipefail
+          python -B -m scripts.per_p15b19_real_b12_package_gate \
+            --project "$GITHUB_WORKSPACE" \
+            --selection-layer "$GITHUB_WORKSPACE/yocto/meta-kwipi-p15-b12-receiver-selection" \
+            --b10-selection "$GITHUB_WORKSPACE/yocto/meta-kwipi-p15-passive-selection" \
+            --receiver-layer "$P15B19_RECEIVER" \
+            --addon-layer "$P15B19_ADDON" \
+            --dev-layer "$GITHUB_WORKSPACE/yocto/meta-kwipi-dev-image" \
+            --python-layer "$P15B19_BASE" \
+            --account-layer "$GITHUB_WORKSPACE/yocto/meta-kwipi-p15-account" \
+            --dev-env "$P15B19_DEV_ENV" \
+            --shipping-env "$P15B19_SHIP_ENV" \
+            --recipe-env "$P15B19_RECIPE_ENV" \
+            --checksum-value-file "$P15B19_CHECKSUM" \
+            --appends "$P15B19_APPENDS" \
+            --report "$RUNNER_TEMP/p15b19-package-proof.json"
+          python -B - <<'PY'
+          import json, os
+          from pathlib import Path
+          r = json.loads((Path(os.environ["RUNNER_TEMP"]) /
+                          "p15b19-package-proof.json").read_text())
+          assert r["status"] == "b19_supplied_pkgdest_four_b12_python_files_verified_not_rootfs"
+          assert r["receiver_modules_in_package_split"] == 4
+          assert r["historical_python_modules_preserved_in_source"] == 24
+          assert len(r["packaged_source_sha256"]) == 4
+          assert r["main_package_has_only_four_python_sources"]
+          assert r["other_splits_contain_no_files"]
+          assert r["shipping_receiver_count"] == 0
+          assert not any(r[x] for x in (
+              "bitbake_do_package_execution_attested_by_gate",
+              "rootfs_built", "dev_image_installed", "shipping_image_changed",
+              "service_installed", "oem_detector_activated",
+              "sensor_verified", "physical_robot_verified",
+              "motor_commands_issued"))
+          print("P15-B19 CI: actual do_package exited 0; PKGDEST exactly 4 source modules; no rootfs")
+          PY
+          test "$(git -C "$P15B19_YOCTO" status --porcelain --untracked-files=no)" = ""
+          git diff --exit-code -- upstream/
+      - name: Upload only sanitized B19 package-split proof JSON (no BitBake -e, RPM or credentials)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p15b19-private-do-package-split-audit
+          path: ${{ runner.temp }}/p15b19-package-proof.json
+          retention-days: 7
