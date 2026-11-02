@@ -1,3 +1,7 @@
+## Résultat candidat de CI (02/11/2026)
+
+**PR #269 / HEAD fonctionnel `c6e05a435bfdcb3684f0df28c5f28aa8d9d9860f` : 5/5 workflows réussis.** La CI Linux privilégiée existante a réellement exécuté **8/8 tests B3, 8/8 tests B7 et 9/9 tests B15** sur le même SHA (aucun skipped dans la porte dédiée). La suite Python non-root a exécuté **2 345 tests, 47 skipped, 0 erreur/échec** ; neuf skips B15 attendus. Les contrôles P15A, P16 (fixtures de rootfs) et N1 sont verts. Après mise à jour documentaire, la CI devra être recontrôlée au dernier SHA avant fusion. **Toujours non testé sur robot, NPU, service ou fichier `/run` de la cible.**
+
 # P15-B15 — preuve Linux multi-UID et contrat ACL OEM B8 (02/11/2026)
 
 ## Décision avant essais

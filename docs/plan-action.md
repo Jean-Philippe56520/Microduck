@@ -1,3 +1,7 @@
+### P15-B15 — preuves CI du candidat fonctionnel (02/11/2026)
+
+**Candidat `c6e05a435bfdcb3684f0df28c5f28aa8d9d9860f`, PR #269 : 5/5 GitHub Actions PASS.** Workflow Linux dédié `PER-P15-B3 Linux isolated ToF socket DAC gate` : **8/8 B3 + 8/8 B7 + 9/9 B15**, non skipped, avec vrais UIDs séparés et ACL kernel, sans compte créé ni accès OEM cible. Suite Python générale : **2 345 tests, 47 skipped, zéro erreur/échec** (les neuf B15 y sont skipped par défaut, mais **exécutés** dans le workflow Linux root). Les quatre autres CI, dont P16 fixtures de composition B10, sont vertes. Cette preuve de hôte n'est ni une qualification NPU ni un service de lecture sur robot. Exiger CI verte aussi au **dernier HEAD de fusion** et vérifier gitlinks/sha du code B6.
+
 ## P15-B15 — contrat B8 ACL + provenance B14 entre deux vrais UID Linux (02/11/2026)
 
 **Objectif et manque démontré :** B7 confirme les permissions nominatives Linux de `detections.sock` contre `robotd/media.sock`, B14 la lecture d'une identité et le format B12 sous **un seul UID**. Leur composition avec deux comptes distincts n'était pas testée. Comparateur B7+B14 conservé ; réutiliser leurs fonctions, les ACL B8 exactes et le workflow Linux root existant. Ne pas modifier les 24 fichiers B6 figés, l'OEM ni le rootfs B10. **Nouveau** : garde hôte `b15_cross_uid_host_gate.py` non empaqueté, tests multi-UID sur vrais sockets Unix/ACL, sans processus ni droits cible.
