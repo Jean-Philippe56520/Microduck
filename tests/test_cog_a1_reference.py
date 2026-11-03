@@ -59,6 +59,38 @@ class CogA1ReferenceTests(unittest.TestCase):
         self.assertEqual(len(read_bundled_references().for_concept("ball")) + 1,
                          len(augmented.for_concept("ball")))
 
+    def test_printable_french_reference_text_stays_accepted(self):
+        data = self.raw_data()
+        data["rules"][0]["statement"] = (
+            "Une balle peut rouler ; l'effet reste à vérifier.")
+        data["sources"][0]["citation"] = (
+            "Brouillon rédigé en français, soumis à relecture.")
+        parsed = self.parse(data)
+        self.assertEqual(data["rules"][0]["statement"],
+                         parsed.for_concept("ball")[0].statement)
+
+    def test_reject_hidden_unicode_in_all_human_reviewed_text(self):
+        # Human reviewers should never see visual reordering, zero-width
+        # controls, an unpaired surrogate or an invisible line separator in
+        # a source, statement, condition or counterexample.
+        for marker in ("\u200b", "\u202e", "\u202c", "\u2028", "\ud800"):
+            for field in ("statement", "conditions", "counterexamples",
+                          "author_citation"):
+                data = self.raw_data()
+                disguised = "preuve" + marker + "incertaine"
+                if field == "author_citation":
+                    data["sources"][0]["citation"] = disguised
+                elif field == "statement":
+                    data["rules"][0]["statement"] = disguised
+                else:
+                    data["rules"][0][field][0] = disguised
+                # ASCII-escaped JSON allows the parser itself to inspect even
+                # invalid Unicode scalar values, rather than failing encode().
+                raw = json.dumps(data, ensure_ascii=True).encode("ascii")
+                with self.subTest(field=field, codepoint=ord(marker)), \
+                        self.assertRaises(ValueError):
+                    parse_reference_bytes(raw)
+
     def test_reject_duplicate_key_and_rule_id(self):
         with self.assertRaises(ValueError):
             parse_reference_bytes(b'{"schema_version":1,"schema_version":1}')
