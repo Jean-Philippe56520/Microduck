@@ -80,7 +80,7 @@ def _fixed_camera(a: dict, b: dict) -> tuple[bool, float]:
     import numpy as np
 
     xyz_a, xyz_b = np.asarray(a["camera_xyz"]), np.asarray(b["camera_xyz"])
-    mat_a = np.asarray(a["camera_rot"]), np.asarray(b["camera_rot"])
+    mat_a, mat_b = np.asarray(a["camera_rot"]), np.asarray(b["camera_rot"])
     if (xyz_a.shape != (3,) or xyz_b.shape != (3,)
             or mat_a.shape != (3, 3) or mat_b.shape != (3, 3)
             or not np.isfinite(xyz_a).all() or not np.isfinite(xyz_b).all()
