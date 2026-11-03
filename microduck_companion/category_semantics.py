@@ -225,7 +225,7 @@ class CategorySemantics:
             raise ValueError("category outside controlled vocabulary")
         rows=self._memory.conn.execute("""
             SELECT s.observation_id,s.category,s.kind,s.reported_confidence,
-                   s.recorded_epoch_s
+                   s.recorded_epoch_s,s.correction_reason
             FROM f4a_semantic_categories s
             JOIN passive_observation_log j ON j.id=s.observation_id
             JOIN passive_learning_events l ON l.observation_id=s.observation_id
@@ -240,11 +240,18 @@ class CategorySemantics:
               AND (? IS NULL OR s.category=?)
             ORDER BY s.recorded_epoch_s DESC,s.observation_id DESC LIMIT ?
         """,(now-RETENTION_S,now,category,category,limit)).fetchall()
-        return tuple(HistoricalCategory(
-            row["category"],"visual_label" if row["kind"]=="object_label"
-            else "sound_label",_confidence(row["reported_confidence"]),
-            int(row["observation_id"]),float(row["recorded_epoch_s"])
-        ) for row in rows)
+        result=[]
+        for row in rows:
+            # COG-A3-R2: a still-active fixture cannot also be marked
+            # corrected. Reject in read-only recall, as in hypotheses().
+            if row["correction_reason"] is not None:
+                raise ValueError("inconsistent active historical correction")
+            result.append(HistoricalCategory(
+                row["category"],"visual_label" if row["kind"]=="object_label"
+                else "sound_label",_confidence(row["reported_confidence"]),
+                int(row["observation_id"]),float(row["recorded_epoch_s"])
+            ))
+        return tuple(result)
 
     def forget_observation(self, observation_id: int, *,
                            reason: str) -> bool:
