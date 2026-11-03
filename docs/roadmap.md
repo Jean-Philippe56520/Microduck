@@ -1,3 +1,21 @@
+## P17-S17 — statut DEV B11 stabilise, prochain chantier cognitif et perception (03/11/2026)
+
+**Reference au lancement :** `main@22cda2f3fc2da84c53639d6c11d6cae5c798e634`, [PR documentaire #278 fusionnee (9/9 CI)](https://github.com/Jean-Philippe56520/Microduck/pull/278). La WIC B11 reste la reference **DEV**, B10 historique preservee. 28 fichiers Python Kwipi, deux rootfs, GPT et donnees OEM verifies sur WSL2 (S12). **Aucun essai robot, service actif, image shipping ni autonomie validee.**
+
+| Porte | Etat au 03/11/2026 |
+| --- | --- |
+| S13 — BMAP | `PASS_READ_ONLY` : SHA-256 du fichier BMAP et 54/54 plages pour 1 078 481 920 octets / 263 302 blocs mappes ; checksums des zones non mappees non revendiques. [Preuve](https://github.com/Jean-Philippe56520/Microduck/pull/278#issuecomment-6600002207). |
+| S14 — devkey / padd | 2 RPM B11 lus sans execution, scripts OEM coherents, risques DEV et systemd identifies. [Preuve](https://github.com/Jean-Philippe56520/Microduck/pull/278#issuecomment-6600172914). |
+| S15 — inventaire | 1 336 entrees uniques dans le manifeste, neuf paquets de mise a jour critiques presents ; **inventaire seulement**. [Preuve](https://github.com/Jean-Philippe56520/Microduck/pull/278#issuecomment-6600313248). |
+| S16 — RAUC et services | 5 RPM cibles lus, dont `rauc-conf-dev-ca` et son postinst ; 13 RPM cibles cumules (6 precedents + 2 + 5), **pas** les 1 336 audites. [Preuve](https://github.com/Jean-Philippe56520/Microduck/pull/278#issuecomment-6600627374). |
+| S17 — `.raucb` | 0 bundle dans le repertoire deploy B11 inspecte ; **RAUC signe/rollback en attente**, aucun nouvel artefact a forcer. [Preuve](https://github.com/Jean-Philippe56520/Microduck/pull/278#issuecomment-6600679013). |
+
+**Decision pour la V1 :** figer les controles B11 sans nouveau BitBake ; image DEV non distribuable. La recette constructeur prevoit un endpoint HTTP de mise a jour TCP 8090 dont la protection par simple en-tete ne suffit pas pour une livraison ouverte ; exposition reelle inconnue et audit shipping reserve pour plus tard. La chaine de confiance, les licences, la verite des services actifs, le boot et le retour A/B restent non qualifies.
+
+**Ordre de la suite :** (1) confronter [#214](https://github.com/Jean-Philippe56520/Microduck/pull/214) a des scenes/GT inedites et a ses criteres, **sinon STOP/pivot** ; (2) en parallele memoire C/F2 avec/sans rappel dans une SQLite unique et Qwen 9B PC seulement sur question utile (documentation [#237](https://github.com/Jean-Philippe56520/Microduck/pull/237) non fusionnee) ; (3) scenario E inedit avec/sans memoire/PC et effet separe ; (4) audit P15/ressources OEM/gestes seulement quand le Microduck sera disponible ; (5) V1 shipping avec signatures/rollback et securite verifies. [Le plan directeur](plan-action.md) fait foi ; aucune fonction nouvelle n'est livree par cette documentation. Les anciennes sections S12 et precedentes sont conservees pour l'historique.
+
+---
+
 ## P17-S12 — distribution DEV B11 construite et qualifiee sur WSL2 (03/11/2026)
 
 **Jalon concret realise :** rootfs B11 de 28 sources Python dans `rootfs_a` et `rootfs_b`, GPT primaire/secondaire, seed `data` et permissions de securite verifies en lecture seule ; `bitbake microduck-image-dev` **6118 taches toutes reussies**. Artefacts finaux OEM (WIC, ZST, BMAP, checksum, manifeste) dans `build/tmp/deploy/images/microduck-zero3`, WIC SHA-256 `5c1d033962cdd19444192e4c06cd496f924531913ac0db3adb18278cc241d411` ; ZSTD SHA-256 `c2b727f7261589576889b72689165d91a5f57d61b6b78dda8e1156c50c38bc3f`, decompression en flux = WIC brute ; manifeste B11 preserve ; `P17_B11_DISTRIBUTION_INTEGRITY: PASS_READ_ONLY`, BMAP valide **structurellement** (263302 blocs indexes). **CI/documentation et artefacts operateur restent des preuves de nature differente.** WIC historique B10 preservee ; aucun robot.
