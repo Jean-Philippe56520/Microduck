@@ -80,7 +80,7 @@ def load_features(folder: Path) -> dict[tuple[int, int, int], bytes]:
                 h.update(chunk)
         if h.hexdigest() != digest:
             raise StopStudy("unapproved source checksum")
-        with tarfile.open(path, "r:") as archive:
+        with tarfile.open(path, "r:*") as archive:
             kinds = {v: {k: {} for k in KINDS} for v in VIDEOS}
             names = set()
             for member in archive.getmembers():
