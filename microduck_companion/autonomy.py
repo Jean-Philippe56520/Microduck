@@ -332,7 +332,7 @@ class AutonomyBrain:
             "explore": "Curiosity outweighs familiarity",
             "look_at_person": "Attend to a person without speaking",
             "inspect_object": "Novel object deserves closer observation",
-            "play_with_object": "Known safe toy with learned preference",
+            "play_with_object": "Candidate play interest from a category label; suitability, contact and effect unverified",
         }
         return self._record(Plan(intent, reasons[intent],
                                  obj.identifier if obj else None, request))
