@@ -1,3 +1,19 @@
+## MEM-C-TIME — garde de source historique fusionnée (03/11/2026)
+
+Après [#281 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/281), `main@ff500691887d07575bd813a7c7bc8986b7d0fcdf`, les **3 CI réussies** valident sur fixtures la concordance stricte des horodatages F4-A/F1-C avant rappel, y compris après correction et réouverture. [Protocole](mem-c-f4a-timestamp-provenance-2026-11-03.md). Ce gain est une **fiabilisation des données**, pas la reconnaissance d'un individu ni une intelligence autonome démontrée.
+
+**Suite :** priorité C/E aux véritables observations/contre-exemples nouveaux, réutilisant F2/DET-1/M1-B/MEM-2B et une seule SQLite, sans promotion de similarité ou de conseil Qwen au rang de fait. En leur absence, **EN ATTENTE** ; perception PER-P4L1 (#280) reste 0/3 sur les cibles GT basses, modèle OEM non sélectionné, ressources robot inconnu. DEV B11 inchangée, aucune validation robot ou shipping.
+
+---
+
+## PER-P4L1 — nouvelle preuve PC négative, perception bas-angle STOP (03/11/2026)
+
+Après [fusion P17-S17/#279](https://github.com/Jean-Philippe56520/Microduck/pull/279), le banc expérimental [#280](https://github.com/Jean-Philippe56520/Microduck/pull/280) a réellement évalué **YOLO26n et YOLO26n-seg** sur trois vues basses géométriquement vérifiées du simulateur OEM, plus un négatif sol vide. [CI spécialisée réussie](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41627165137) : 3/3 cibles GT valides, **0/3 régions détectées à IoU50 par chaque modèle**, zéro forte proposition de cinq classes sur sol vide, masques non notables faute de région appariée ; valeur requise ≥2/3 **échouée**. C'est une preuve de faible performance **sur ces quelques images synthétiques**, pas un benchmark du monde réel ou du NPU. [Protocole et résultat](per-p4l1-yolo26-lowview-prereg-2026-11-03.md).
+
+**Décision / ordre** : ne pas adapter ces poids/poses, conserver les données de l'échec sans code expérimental permanent ; nouvelle GT indépendante obligatoire avant autre choix vision. Axe **C / mémoire** ensuite, avec/sans rappel sur données nouvelles et faux rapprochements mesurés ; axe B/Qwen PC facultatif en parallèle si questions motivées. Image DEV B11 conservée, robot/RAUC/shipping, sources OEM, ressources RK3566, actions/effets autonomes **non validés**.
+
+---
+
 ## P17-S17 — statut DEV B11 stabilise, prochain chantier cognitif et perception (03/11/2026)
 
 **Reference au lancement :** `main@22cda2f3fc2da84c53639d6c11d6cae5c798e634`, [PR documentaire #278 fusionnee (9/9 CI)](https://github.com/Jean-Philippe56520/Microduck/pull/278). La WIC B11 reste la reference **DEV**, B10 historique preservee. 28 fichiers Python Kwipi, deux rootfs, GPT et donnees OEM verifies sur WSL2 (S12). **Aucun essai robot, service actif, image shipping ni autonomie validee.**
