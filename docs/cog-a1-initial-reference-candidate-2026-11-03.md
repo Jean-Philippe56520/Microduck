@@ -1,5 +1,13 @@
 # COG-A1-R0 — catalogue initial de references generales candidates
 
+## Qualification finale apres fusion — 03/11/2026
+
+La [PR #287](https://github.com/Jean-Philippe56520/Microduck/pull/287) a ete **fusionnee** apres 9/9 CI `success` sur le HEAD `99d3187eba149803f81f3d3a86f961cb9cc955cc`, squash `3eea4fc88c3e65e6dd0f416a216aa7ef492b9e7f`. Les PR parentes #285/#286 sont egalement fusionnees avec 9/9 CI. Le workflow N1 a construit le **wheel Python normal du depot** et compare exactement les octets du JSON embarque a ceux de la source ; la CI Python complete est verte. Les tests unitaires de provenance recus en revue exigent l'URL **integralement exacte** de la cheatsheet OEM au SHA epingle (mauvais chemin, suffixes, autre SHA rejetes). La table de qualification et les phrases temporelles ci-dessous conservent l'etat **historique avant fusion**, sans requalifier les tests de maquette en validation robot.
+
+**Statut livre :** lecteur `initial_knowledge.py`, huit references `candidate_for_operator_review`, JSON version 1 conditionnel et lecture seule ; six relations indexables par le vocabulaire F1, deux hors F1 (`chair`, `cloth`). Aucun F1 authentifie ne mesure pour autant leur usage physique : **0/8 proprietes/effets physiques verifiables via le seul contrat F1**, resultat de couverture d'API et non precision de modele. Pas de couplage F2/ExperienceMemory, moteur `robotd`, Qwen, nouveau modele, NPU, robot, distribution B11 ou fin OEM. **COG-A2 EN ATTENTE** de scenes independantes avec propriete verifiable, temoin complet F2/DET-1 + mock_social_cues + category_inspection + memoire, 4 positifs et 8 negatifs preregistrés. Ni `play_cue` ni inspection de contour ne constituent une nouvelle capacite A1 ; STOP si absence de gain mesurable. Aucun changement de seuil ou de scripts sensoriels pour faire passer un essai.
+
+---
+
 **03/11/2026 — premier lot fonctionnel *de lecture*, sans integrer les decisions F2.** Autorite : [plan d'action](plan-action.md) (COG-BASE-0, PR #285) et [audit COG-A0](cog-a0-reuse-knowledge-oem-matrix-2026-11-03.md) (PR #286). Cette PR A1 est volontairement issue de la branche d'audit tant que les PR #285/#286 ne sont pas fusionnees. Leur ordre et la revue du corpus restent une condition avant fusion d'A1.
 
 ## 1. Besoin, preuve, hypothese et arret predefini
