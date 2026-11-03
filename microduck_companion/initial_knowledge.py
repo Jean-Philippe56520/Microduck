@@ -117,7 +117,7 @@ def _token(value: object) -> str:
 
 def _text(value: object) -> str:
     if (type(value) is not str or not 1 <= len(value) <= 260
-            or value != value.strip() or any(ord(ch) < 32 for ch in value)):
+            or value != value.strip() or not value.isprintable()):
         raise ValueError("invalid reference text")
     return value
 
