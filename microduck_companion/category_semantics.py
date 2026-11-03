@@ -287,16 +287,34 @@ class CategorySemantics:
         if type(limit) is not int or not 1<=limit<=MAX_QUERY:
             raise ValueError("invalid hypothesis limit")
         rows=self._memory.conn.execute("""
-            SELECT id,category,property,value,proposed_confidence
+            SELECT id,category,property,value,proposed_confidence,
+                   source,active,correction_reason
             FROM f4a_property_hypotheses
             WHERE active=1 AND category=?
               AND proposed_epoch_s BETWEEN ? AND ?
             ORDER BY proposed_epoch_s DESC,id DESC LIMIT ?
         """,(category,now-RETENTION_S,now,limit)).fetchall()
-        return tuple(PropertyHypothesis(
-            int(row["id"]),row["category"],row["property"],
-            row["value"],_confidence(row["proposed_confidence"])
-        ) for row in rows)
+        # COG-A3-R1: the original DB schema does not constrain property/value
+        # vocabulary or active-vs-correction consistency. _prune() audits at
+        # write time, but recall MUST also reject altered persisted evidence
+        # without opening a writer or silently promoting a corrupted claim.
+        result=[]
+        for row in rows:
+            prop,value=row["property"],row["value"]
+            if (type(row["id"]) is not int or row["id"]<=0
+                    or type(row["category"]) is not str
+                    or row["category"]!=category
+                    or type(prop) is not str or prop not in PROPERTIES
+                    or type(value) is not str or value not in PROPERTIES[prop]
+                    or row["source"]!="fictional_llm_hypothesis_only"
+                    or row["active"]!=1
+                    or row["correction_reason"] is not None):
+                raise ValueError("inconsistent persisted mock property hypothesis")
+            result.append(PropertyHypothesis(
+                row["id"],row["category"],prop,value,
+                _confidence(row["proposed_confidence"])
+            ))
+        return tuple(result)
 
     def retract_hypothesis(self, hypothesis_id: int, *,
                            reason: str) -> bool:
