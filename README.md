@@ -1,3 +1,11 @@
+## MEM-C-TIME — garde d'intégrité des souvenirs F4-A fusionnée (03/11/2026)
+
+**Correctif validé :** [PR #281 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/281), `main@ff500691887d07575bd813a7c7bc8986b7d0fcdf`, **3/3 CI réussies**. Le rappel F4-A exige désormais que la date mémorisée corresponde exactement à la date du journal F1-C d'origine, comme C1. Deux nouveaux tests positifs/négatifs rejettent la re-datation d'une source, le rajeunissement d'une projection périmée et la réapparition après réouverture SQLite. [Protocole gelé et limites](docs/mem-c-f4a-timestamp-provenance-2026-11-03.md).
+
+**Portée :** intégrité des **fixtures PC**, aucune nouvelle capacité d'identification, apprentissage sur scènes physiques, preuve d'effet causal, NPU ou robot. L'unique `ExperienceMemory` est conservée ; B11 DEV non rebuild/non shipping. Le prochain gain cognitif doit être démontré sur données inédites avec/sans rappel, sinon **EN ATTENTE**. L'étude PER-P4L1/#280 ci-dessous reste indépendante.
+
+---
+
 ## Reprise active PER-P4L1 — perception basse non validée, STOP et pivot mémoire (03/11/2026)
 
 **Base vérifiée :** `main@318c8fb01f00ba55e2facafb4d7958bce4eb3e87`, [PR #279 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/279). L'image Linux **DEV B11 reste conservée et inchangée**, non shipping et non testée sur robot.
