@@ -234,6 +234,7 @@ class CategorySemantics:
               AND s.source='mock_fixture_journal'
               AND s.category=j.category AND s.kind=j.kind
               AND s.reported_confidence=j.confidence
+              AND s.recorded_epoch_s=j.recorded_epoch_s
               AND l.outcome IN ('new_information','repeated_observation')
               AND s.recorded_epoch_s BETWEEN ? AND ?
               AND (? IS NULL OR s.category=?)
