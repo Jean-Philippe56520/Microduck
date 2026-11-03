@@ -82,7 +82,7 @@ def recall_category(
     # silently left out of the denominator.
     rows = c.execute("""
         SELECT s.kind,s.reported_confidence,s.recorded_epoch_s,
-               j.session_id,j.sequence
+               s.correction_reason,j.session_id,j.sequence
         FROM f4a_semantic_categories s
         JOIN passive_observation_log j ON j.id=s.observation_id
         JOIN passive_learning_events l ON l.observation_id=s.observation_id
@@ -103,6 +103,10 @@ def recall_category(
 
     grouped: dict[str, dict[str, object]] = {}
     for row in rows:
+        # COG-A3-R2: the existing schema permits active=1 alongside a
+        # correction marker. Never count that row as uncorrected history.
+        if row["correction_reason"] is not None:
+            raise ValueError("inconsistent active historical correction")
         modality = ("visual_label" if row["kind"] == "object_label"
                     else "sound_label" if row["kind"] == "sound_label"
                     else None)
