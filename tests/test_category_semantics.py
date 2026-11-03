@@ -269,6 +269,96 @@ class SemanticMemoryTests(unittest.TestCase):
         self.assertEqual(0,self.mem.conn.execute(
             "SELECT COUNT(*) FROM f4a_semantic_categories").fetchone()[0])
 
+    def test_cog_a3_corrupt_active_mock_hypotheses_fail_closed_on_read(self):
+        # SQL permits unsupported property/value and an active correction
+        # marker. Unlike write-time _prune(), hypotheses() is read-only and
+        # must revalidate persisted provenance before C1 consumes it.
+        from microduck_companion.memory_consolidation import recall_category
+
+        hid = self.semantic.hypothesize(
+            category="cat", property="texture", value="soft",
+            confidence=.72, now_wall_epoch_s=WALL)
+        self.assertIsInstance(hid, int)
+        (valid,) = self.semantic.hypotheses(
+            category="cat", now_wall_epoch_s=WALL)
+        self.assertEqual(("texture", "soft", .72),
+                         (valid.property, valid.value, valid.proposed_confidence))
+        self.assertFalse(valid.confirmed)
+        self.assertFalse(valid.can_authorize_actions)
+
+        for column, wrong, original in (
+            ("property", "motor_permission", "texture"),
+            ("value", "safe_to_kick", "soft"),
+            ("correction_reason", "source_retracted", None),
+            ("id", -hid, hid),
+        ):
+            with self.subTest(field=column):
+                with self.mem.conn:
+                    self.mem.conn.execute(
+                        f"UPDATE f4a_property_hypotheses SET {column}=? "
+                        "WHERE id=?", (wrong, hid))
+                before = self.mem.conn.total_changes
+                with self.assertRaises(ValueError):
+                    self.semantic.hypotheses(
+                        category="cat", now_wall_epoch_s=WALL)
+                with self.assertRaises(ValueError):
+                    recall_category(self.semantic, category="cat",
+                                    now_wall_epoch_s=WALL)
+                self.assertEqual(before, self.mem.conn.total_changes)
+                with self.mem.conn:
+                    self.mem.conn.execute(
+                        f"UPDATE f4a_property_hypotheses SET {column}=? "
+                        "WHERE id=?", (original, -hid if column == "id" else hid))
+                restored = self.semantic.hypotheses(
+                    category="cat", now_wall_epoch_s=WALL)
+                self.assertEqual((valid,), restored)
+                self.assertEqual("hypotheses_only", recall_category(
+                    self.semantic, category="cat",
+                    now_wall_epoch_s=WALL).status)
+
+        self.assertTrue(self.semantic.retract_hypothesis(
+            hid, reason="source_retracted"))
+        before = self.mem.conn.total_changes
+        self.assertEqual((), self.semantic.hypotheses(
+            category="cat", now_wall_epoch_s=WALL))
+        self.assertEqual("unknown", recall_category(
+            self.semantic, category="cat",
+            now_wall_epoch_s=WALL).status)
+        self.assertEqual(before, self.mem.conn.total_changes)
+
+    def test_cog_a3_invalid_persisted_hypothesis_source_is_not_silently_trusted(self):
+        # The ordinary schema CHECK rejects this. Test the reader against an
+        # independently corrupted scratch DB, without disabling any guard in
+        # production code or using a second SQLite writer.
+        hid = self.semantic.hypothesize(
+            category="cat", property="texture", value="hard",
+            confidence=.51, now_wall_epoch_s=WALL)
+        self.assertIsInstance(hid, int)
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.mem.conn.execute(
+                "UPDATE f4a_property_hypotheses SET source='sensor' WHERE id=?",
+                (hid,))
+        self.mem.conn.execute("PRAGMA ignore_check_constraints=ON")
+        try:
+            self.mem.conn.execute(
+                "UPDATE f4a_property_hypotheses SET source='sensor' WHERE id=?",
+                (hid,))
+        finally:
+            self.mem.conn.execute("PRAGMA ignore_check_constraints=OFF")
+        before = self.mem.conn.total_changes
+        with self.assertRaises(ValueError):
+            self.semantic.hypotheses(category="cat", now_wall_epoch_s=WALL)
+        self.assertEqual(before, self.mem.conn.total_changes)
+        with self.mem.conn:
+            self.mem.conn.execute(
+                "UPDATE f4a_property_hypotheses "
+                "SET source='fictional_llm_hypothesis_only' WHERE id=?", (hid,))
+        (restored,) = self.semantic.hypotheses(
+            category="cat", now_wall_epoch_s=WALL)
+        self.assertEqual("fictional_llm_hypothesis_only", restored.source)
+        self.assertFalse(restored.confirmed)
+        self.assertFalse(restored.can_authorize_actions)
+
     def test_hypothesis_not_fact_and_stays_unverified(self):
         hid=self.semantic.hypothesize(
             category="cat",property="texture",value="soft",
