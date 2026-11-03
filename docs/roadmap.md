@@ -1,3 +1,11 @@
+## COG-BASE-0 — feuille de route active, cognition locale d'abord (03/11/2026)
+
+**Décision d'architecture, non capacité livrée :** conformément à [docs/plan-action.md](plan-action.md), réaliser d'abord **COG-A0** (audit en lecture seule de `ExperienceMemory`, F1/F2/DET-1, F4-A/C1, EX1–EX4 et du catalogue OEM épinglé), et publier une matrice *compétence constructeur / connaissance générale / observation fiable / intention admissible / effet indépendant / lacune démontrée*. Ensuite seulement, si l'audit établit un gain vérifiable : **COG-A1** données initiales versionnées et sourcées (pas de souvenirs vécus fictifs), **COG-A2** recombinaison sans Qwen avec abstention sûre et contre-exemples, puis **COG-A3** consolidation/diagnostic filtré sans second écrivain. Sûreté et ONNX uniquement chez `robotd`, une SQLite `ExperienceMemory`, aucune mise à jour des gitlinks, modèles, B11 ou services.
+
+**Qwen3.5 9B sur PC : option non bloquante, nouveaux essais suspendus.** Les modules des PR #97–99 restent acquis, #237 n'est pas fusionnée ; P1 ne démontre aucun gain cognitif. La perception OEM multicatégorie, la validation NPU/2 Hz, l'efficacité mémoire sur scènes nouvelles, la fin d'action OEM et les effets causaux sur robot sont **EN ATTENTE**. Les anciennes suites P17/MEM-C-TIME et leurs ordres de priorité (#214, B/Qwen) ci-dessous sont conservés comme historique ; **le présent ordre COG-BASE-0 et le plan directeur prévalent**.
+
+---
+
 ## MEM-C-TIME — garde de source historique fusionnée (03/11/2026)
 
 Après [#281 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/281), `main@ff500691887d07575bd813a7c7bc8986b7d0fcdf`, les **3 CI réussies** valident sur fixtures la concordance stricte des horodatages F4-A/F1-C avant rappel, y compris après correction et réouverture. [Protocole](mem-c-f4a-timestamp-provenance-2026-11-03.md). Ce gain est une **fiabilisation des données**, pas la reconnaissance d'un individu ni une intelligence autonome démontrée.
@@ -28,7 +36,7 @@ Après [fusion P17-S17/#279](https://github.com/Jean-Philippe56520/Microduck/pul
 
 **Decision pour la V1 :** figer les controles B11 sans nouveau BitBake ; image DEV non distribuable. La recette constructeur prevoit un endpoint HTTP de mise a jour TCP 8090 dont la protection par simple en-tete ne suffit pas pour une livraison ouverte ; exposition reelle inconnue et audit shipping reserve pour plus tard. La chaine de confiance, les licences, la verite des services actifs, le boot et le retour A/B restent non qualifies.
 
-**Ordre de la suite :** (1) confronter [#214](https://github.com/Jean-Philippe56520/Microduck/pull/214) a des scenes/GT inedites et a ses criteres, **sinon STOP/pivot** ; (2) en parallele memoire C/F2 avec/sans rappel dans une SQLite unique et Qwen 9B PC seulement sur question utile (documentation [#237](https://github.com/Jean-Philippe56520/Microduck/pull/237) non fusionnee) ; (3) scenario E inedit avec/sans memoire/PC et effet separe ; (4) audit P15/ressources OEM/gestes seulement quand le Microduck sera disponible ; (5) V1 shipping avec signatures/rollback et securite verifies. [Le plan directeur](plan-action.md) fait foi ; aucune fonction nouvelle n'est livree par cette documentation. Les anciennes sections S12 et precedentes sont conservees pour l'historique.
+**Ordre de la suite (historique P17-S17, remplacé par COG-BASE-0) :** (1) confronter [#214](https://github.com/Jean-Philippe56520/Microduck/pull/214) a des scenes/GT inedites et a ses criteres, **sinon STOP/pivot** ; (2) en parallele memoire C/F2 avec/sans rappel dans une SQLite unique et Qwen 9B PC seulement sur question utile (documentation [#237](https://github.com/Jean-Philippe56520/Microduck/pull/237) non fusionnee) ; (3) scenario E inedit avec/sans memoire/PC et effet separe ; (4) audit P15/ressources OEM/gestes seulement quand le Microduck sera disponible ; (5) V1 shipping avec signatures/rollback et securite verifies. [Le plan directeur](plan-action.md) fait foi ; aucune fonction nouvelle n'est livree par cette documentation. Les anciennes sections S12 et precedentes sont conservees pour l'historique.
 
 ---
 
