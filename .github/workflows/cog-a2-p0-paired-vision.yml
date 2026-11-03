@@ -1,0 +1,132 @@
+name: COG-A2-P0 paired OEM optical position cue (PC only, NOT rolling)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/cog-a2-p0-paired-vision.yml"
+      - "experiments/cog_a2_p0_paired_vision.py"
+      - "tests/test_cog_a2_p0_paired_vision.py"
+      - "docs/cog-a2-p0-paired-vision-prereg-2026-11-03.md"
+
+permissions:
+  contents: read
+
+jobs:
+  paired-oem-optical-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      MUJOCO_GL: osmesa
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Verify exact source and immutable OEM simulations
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$(git -C upstream/microduck rev-parse HEAD)" = '942e58e3aa6dbb28e7037203fff11866122c7567'
+          test "$(git -C upstream/microduck_rl rev-parse HEAD)" = 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
+          for n in scene.xml scene_ball.xml scene_apartment.xml; do
+            test -f "upstream/microduck_rl/src/mjlab_microduck/robot/microduck/$n"
+          done
+          test ! -e kwipi_photos_privees_tests_2026-10-30.zip
+          git diff --exit-code -- upstream/
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "upstream/microduck_rl/uv.lock"
+
+      - name: Install isolated OEM renderer and existing ONNX runtime
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libosmesa6 libgl1-mesa-dri
+          uv python install 3.12
+          uv venv --python 3.12 "$RUNNER_TEMP/cog-a2-p0-venv"
+          uv pip install --python "$RUNNER_TEMP/cog-a2-p0-venv/bin/python" \
+            'mujoco==3.10.0' 'numpy==2.5.4' 'onnxruntime==1.28.0' \
+            'Pillow==11.3.0' 'PyOpenGL==3.1.10'
+
+      - name: Run preregistered positive/negative optical fixtures (NOT detector proof)
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/upstream/microduck_rl/src"
+          "$RUNNER_TEMP/cog-a2-p0-venv/bin/python" -m unittest discover \
+            -s tests -p test_cog_a2_p0_paired_vision.py -v
+          "$RUNNER_TEMP/cog-a2-p0-venv/bin/python" -m compileall -q \
+            experiments/cog_a2_p0_paired_vision.py \
+            tests/test_cog_a2_p0_paired_vision.py
+
+      - name: Two-view OEM geometry preflight BEFORE any weight download
+        id: preflight
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/upstream/microduck_rl/src"
+          "$RUNNER_TEMP/cog-a2-p0-venv/bin/python" \
+            -m experiments.cog_a2_p0_paired_vision \
+            --scene-dir upstream/microduck_rl/src/mjlab_microduck/robot/microduck \
+            --preflight-only \
+            --output "$RUNNER_TEMP/cog-a2-p0-preflight.json" \
+            --authorize-static-oem-render
+          valid=$("$RUNNER_TEMP/cog-a2-p0-venv/bin/python" -c \
+            'import json,sys; print("true" if json.load(open(sys.argv[1]))["preflight_geometry_valid"] else "false")' \
+            "$RUNNER_TEMP/cog-a2-p0-preflight.json")
+          echo "valid=$valid" >> "$GITHUB_OUTPUT"
+          if [ "$valid" != "true" ]; then
+            echo 'COG-A2-P0 STOP: optical geometry invalid; skip ALL model inference'
+          fi
+
+      - name: Download existing SHA-pinned Megvii YOLOX model (no new model)
+        if: steps.preflight.outputs.valid == 'true'
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error \
+            --connect-timeout 10 --max-time 90 \
+            'https://huggingface.co/skillsafe-ai/yolox-nano/resolve/8e308810ede488f742901a4ac597dc7796798e46/yolox_nano.onnx' \
+            --output "$RUNNER_TEMP/cog-a2-p0-yolox.onnx"
+          echo "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d  $RUNNER_TEMP/cog-a2-p0-yolox.onnx" | sha256sum -c -
+
+      - name: One prospective 8-frame ONNX pass with fixed negative controls
+        if: steps.preflight.outputs.valid == 'true'
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/upstream/microduck_rl/src"
+          "$RUNNER_TEMP/cog-a2-p0-venv/bin/python" \
+            -m experiments.cog_a2_p0_paired_vision \
+            --scene-dir upstream/microduck_rl/src/mjlab_microduck/robot/microduck \
+            --model "$RUNNER_TEMP/cog-a2-p0-yolox.onnx" \
+            --output "$RUNNER_TEMP/cog-a2-p0-numeric.json" \
+            --authorize-static-oem-render
+          "$RUNNER_TEMP/cog-a2-p0-venv/bin/python" - <<'PY'
+          import json, os
+          from pathlib import Path
+          r = json.loads((Path(os.environ["RUNNER_TEMP"]) /
+                          "cog-a2-p0-numeric.json").read_text())
+          assert r["model_inferences"] == 8
+          assert r["images_saved"] is False
+          assert r["physical_rolling_or_identity_verified"] is False
+          assert r["motor_commands"] == 0 and r["memory_writes"] == 0
+          assert r["qwen_calls"] == 0 and r["f2_calls"] == 0
+          print("COG-A2-P0 preregistered OPTICAL result:", r["status"])
+          print("Quality gate is separate from CI pass:", r["decision"])
+          PY
+
+      - name: Publish numeric evidence only (never frames, masks or weights)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cog-a2-p0-static-oem-paired-numbers-only
+          path: |
+            ${{ runner.temp }}/cog-a2-p0-preflight.json
+            ${{ runner.temp }}/cog-a2-p0-numeric.json
+          if-no-files-found: warn
+          retention-days: 7
