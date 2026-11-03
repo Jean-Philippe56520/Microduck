@@ -282,8 +282,17 @@ def score_pair(spec: PairSpec, oracle: dict, proposals: tuple[dict | None, dict 
         if all(item is not None for item in proposals) else None
     )
     gt_delta = oracle["gt_delta_px"]
-    delta_err = (abs(model_delta - gt_delta)
-                 if model_delta is not None and gt_delta is not None else None)
+    # Compare the 2D *vector*, not just its magnitude: opposite directions
+    # are not evidence of tracking a displaced target.
+    delta_err = None
+    if (all(item is not None for item in proposals)
+            and box_a is not None and box_b is not None):
+        ax, ay = _center(proposals[0]["xyxy"])
+        bx, by = _center(proposals[1]["xyxy"])
+        gx0, gy0 = _center(box_a)
+        gx1, gy1 = _center(box_b)
+        delta_err = math.hypot((bx - ax) - (gx1 - gx0),
+                               (by - ay) - (gy1 - gy0))
     both_localized = all(v >= IOU_PASS for v in ious)
     candidate_move = bool(
         model_delta is not None and model_delta >= MOVE_MIN_PX)
