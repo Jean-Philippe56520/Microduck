@@ -29,3 +29,32 @@ Inventaire source attesté sans extraction : respectivement **820 / 783 / 809** 
 **Critère de passage qualitatif gelé** : au moins **18/36** réponses positives correctes, **0/36** confusion de balles connues, **0/18** rapprochement erroné de la balle inconnue. Sinon **`INSUFFICIENT` et STOP** : pas d'affinage du seuil, de changement des poses ou de relance opportuniste. Tests/CI qui réussissent = exécution technique, **pas** preuve du passage qualitatif. Un passage ne certifierait au maximum qu'une candidature visuelle hôte sur trois objets, aucun apprentissage autonome.
 
 **Conditions d'arrêt technique** : source/licence invalide, SHA, nombre de membres, boîtes, PNG/contraste, budget ou comparateur non conformes, fuite média ou rupture de confinement : pas de score. Retour arrière : supprimer fichiers/CI expérimentaux de la PR si aucun gain, ne conserver que la décision ; aucune migration SQLite, aucun changement OEM, sous-module, modèle, WIC B11 ou service. Les changements GitHub restent dans une PR brouillon jusqu'aux tests.
+
+
+---
+
+## Bilan de l'essai, ajouté APRÈS le préenregistrement — 03/11/2026
+
+**Résultat hôte réel** : [GitHub Actions `41645037894`, job `125948029878`](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41645037894/job/125948029878), SHA d'exécution `5729979a75b7cd89ff5673fc5e8c64c52cfc9710`. Le workflow a téléchargé les **trois archives officielles HTTPS**, et vérifié **3/3** tailles/SHA-256 indiqués ci-dessus. Les quatre tests nouveaux de contrats synthétiques, les neuf tests MEM-2B et les treize tests R2-B+2 ont réussi (**26 tests source-free**), sans commandes motrices ni média publié. **24 PNG RGB sélectionnés** ont été réellement décodés et convertis en empreintes via la fonction M1-A existante ; **54 décisions** sur trois plis ont été évaluées par le comparateur pur MEM-2B déjà présent. Aucune photo/empreinte insérée en SQLite, aucun modèle téléchargé/entraîné, aucune image publiée.
+
+| Mesure préfixée | Résultat observé | Interprétation |
+| --- | ---: | --- |
+| Candidats corrects sur connus | **0/36** | **Porte ≥18/36 échouée** |
+| Abstentions sur connus | **36/36** | Aucun rapprochement utile entre hauteurs |
+| Erreurs de candidats entre connus | **0** | Aucune fausse acceptation, mais zéro rappel |
+| Rejets de l'inconnue | **18/18** | Négatifs respectés sur ces 3 objets |
+| Faux rapprochements d'inconnues | **0/18** | Critère conservateur respecté |
+| Abstentions pour ambiguïté | **0** | Les non-correspondances dominent |
+| Vidéos 2 et 4 | **0/18** connus corrects chacune | Aucun gain à ces deux hauteurs |
+| Chaque pli (1/2/3 inconnu) | **0/12** connus corrects, **6/6** inconnus rejetés | Trois configurations toutes insuffisantes |
+| Témoin « mémoire OFF » | 36 connues abstentions et 18 inconnues rejetées | **Même nombre de rapprochements corrects que mémoire ON : zéro** |
+
+**Hôte CI uniquement** : temps pour décodage/sélection/comparaison après téléchargement `0,509 s`, pic `ru_maxrss=34 308 KiB` du processus Python. Ces valeurs **ne mesurent ni le téléchargement, ni la consommation RAM/RSS globale de la CI, ni le NPU et la thermique RK3566**. Les 54 requêtes sont des vues de **seulement trois objets** filmés sur plateaux tournants : elles ne sont pas 54 rencontres physiques indépendantes.
+
+**Incident technique distinct de la qualité** : une première exécution au SHA d'avant correction s'est arrêtée sur `tarfile.ReadError` **avant toute lecture d'image ou prédiction**, car le code utilisait `tarfile.open(..., 'r:')`. Le mode est passé à `r:*`, identique à l'inventaire WSL2 antérieur, et le même protocole gelé a été exécuté une fois. Aucun seuil, rang de vue, image, modèle ou sélection n'a changé, aucun score antérieur n'existait. [Preuve détaillée/commentaire](https://github.com/Jean-Philippe56520/Microduck/pull/282#issuecomment-6605175006).
+
+### Décision formelle et limites
+
+**`INSUFFICIENT_STOP_NO_TUNING`**. La politique actuelle `MATCH_IMAGE=0.94` / `AMBIGUITY_GAP=0.025` est très conservatrice et **ne retrouve aucune vue interhauteur parmi ces trois balles**. Il serait erroné d'annoncer un apprentissage ou un rappel utile, ou de modifier le seuil après avoir vu ces données. Les résultats ABO précédents (`0/48`) restent une autre étude et ne se combinent pas statistiquement à celle-ci.
+
+Le code, les tests et le workflow expérimentaux ont été **retirés du dernier HEAD de cette PR** après qualification négative ; ils restent inspectables uniquement dans le SHA historique `5729979a75b7cd89ff5673fc5e8c64c52cfc9710`. La PR finale ne doit conserver que ce document de protocole + décision. Pas de changement à la SQLite, au robot, au firmware B11, à l'OEM ou aux sous-modules. **Usage commercial/redistribution des photographies : toujours non qualifié.** Un futur comparateur alternatif exigerait **de nouvelles données indépendantes**, une licence démontrée et un autre protocole gelé avant essai ; ne jamais régler sur ces 54 sorties.
