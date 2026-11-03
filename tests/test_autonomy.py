@@ -65,6 +65,57 @@ class AutonomyTests(unittest.TestCase):
             Scene(**self.safe)
         ).intention)
 
+    def test_legacy_play_explanation_does_not_certify_safety_or_learning(self):
+        # COG: the old planner is synthetic and supplies no execution/effect
+        # receipt. A play proposal must not claim a proven-safe toy or reward.
+        brain = AutonomyBrain(self.memory, Motivations(curiosity=.2, play=1.))
+        plan = brain.choose(Scene(
+            **self.safe, environment="mock", object_source="mock",
+            object_id="fixture-ball", object_label="ball",
+        ))
+        self.assertEqual("play_with_object", plan.intention)
+        self.assertIn("Candidate play interest", plan.explanation)
+        self.assertIn("unverified", plan.explanation)
+        self.assertNotIn("safe toy", plan.explanation.lower())
+        self.assertNotIn("learned preference", plan.explanation.lower())
+        self.assertFalse(plan.request_pc_analysis)
+        self.assertEqual(0, self.memory.experience_count())
+        self.assertEqual(0., self.memory.get("fixture-ball").preference)
+
+    def test_legacy_play_requires_matching_current_label_and_source(self):
+        brain = AutonomyBrain(self.memory, Motivations(curiosity=.2, play=1.))
+        self.memory.observe("llm-only", "unknown", source="mock")
+        self.memory.suggest_label("llm-only", "ball")
+        self.assertEqual("llm_suggestion", self.memory.get("llm-only").label_source)
+        plan = brain.choose(Scene(
+            **self.safe, environment="mock", object_source="mock",
+            object_id="llm-only", object_label="unknown",
+        ))
+        self.assertNotEqual("play_with_object", plan.intention)
+        plan = brain.choose(Scene(
+            **self.safe, environment="robot", object_source="mock",
+            object_id="mock-object", object_label="ball",
+        ))
+        self.assertNotEqual("play_with_object", plan.intention)
+        self.assertEqual(0, self.memory.experience_count())
+
+    def test_legacy_play_does_not_override_existing_safety_refusal(self):
+        brain = AutonomyBrain(self.memory, Motivations(curiosity=.2, play=1.))
+        scene = dict(
+            environment="mock", object_source="mock",
+            object_id="fixture-ball", object_label="ball",
+        )
+        self.assertEqual("halt", brain.choose(Scene(
+            safe_area=True, floor_clear=False, **scene,
+        )).intention)
+        self.assertEqual("halt", brain.choose(Scene(
+            **self.safe, obstacle_m=.1, **scene,
+        )).intention)
+        self.assertEqual("rest", brain.choose(Scene(
+            **self.safe, battery_pct=12., **scene,
+        )).intention)
+        self.assertEqual(0, self.memory.experience_count())
+
     def test_legacy_feedback_does_not_reward_unverified_proposal(self):
         self.memory.observe("ball", "ball")
         initial = self.memory.get("ball").preference
