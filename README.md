@@ -1,3 +1,13 @@
+## Reprise active PER-P4L1 — perception basse non validée, STOP et pivot mémoire (03/11/2026)
+
+**Base vérifiée :** `main@318c8fb01f00ba55e2facafb4d7958bce4eb3e87`, [PR #279 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/279). L'image Linux **DEV B11 reste conservée et inchangée**, non shipping et non testée sur robot.
+
+**Nouveau résultat PC, sans extrapolation** : [PER-P4L1/#280](https://github.com/Jean-Philippe56520/Microduck/pull/280) a exécuté 8 inférences réelles YOLO26n vs YOLO26n-seg dans 4 scènes OEM MuJoCo à caméra basse, avec **3/3 masques GT valides** (cube, fauteuil, pilier) + 1 sol vide. **0/3** cible localisée à IoU50 pour chacun des deux modèles, zéro proposition de catégorie prioritaire forte sur négatif, aucun appariement permettant de noter les masques. La [CI de l'essai est verte](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41627165137) mais **la porte de valeur échoue** ; ne pas adapter modèle, seuil, poids ou sous-module sur ces vues. [Protocole et résultat](docs/per-p4l1-yolo26-lowview-prereg-2026-11-03.md). Une CI verte n'est pas une perception fiable.
+
+**Décision suivante** : priorité à l'axe **C / mémoire prudente** et aux observations inédites avec/sans rappel, en réutilisant l'unique `ExperienceMemory` et F2/DET-1 ; Qwen 9B PC facultatif, sans moteur ni promotion d'hypothèse. D / perception attend un autre jeu indépendant et les portes OEM/licence/NPU. Aucune nouvelle compilation B11, capture, installation, déplacement, signature RAUC ou action sur le robot. [Plan directeur actualisé](docs/plan-action.md).
+
+---
+
 ## Reprise active P17-S17 — distribution DEV B11 conservee ; pivot fonctionnel (03/11/2026)
 
 **Autorite de reprise :** [plan directeur](docs/plan-action.md). Base GitHub au lancement de ce lot : `main@22cda2f3fc2da84c53639d6c11d6cae5c798e634` ; [PR #278 fusionnee](https://github.com/Jean-Philippe56520/Microduck/pull/278), 9/9 CI vertes sur le HEAD de cette PR. Les nouveaux resultats **S13-S17 proviennent des commandes WSL2 de l'operateur**, consignees dans les commentaires de #278, et non de la CI ni du robot. Checkout image B11 : Companion `659008ecf5d3`, Yocto OEM `1ee58387810c`. WIC B10 historique preservee.
