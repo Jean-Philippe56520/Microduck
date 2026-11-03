@@ -1,0 +1,100 @@
+name: R2-C-EMB1 source and ONNX graph preflight (NO inference)
+on:
+  pull_request:
+    paths:
+      - docs/r2c-emb1-prelogits-independent-mug-can-2026-11-03.md
+      - .github/workflows/r2c-emb1-preflight.yml
+permissions:
+  contents: read
+
+jobs:
+  washington-source-and-pinned-model-structure-only:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 12
+    steps:
+      - name: Read candidate protocol at exact GitHub commit
+        uses: actions/checkout@v4
+      - name: Python 3.11 host
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ONNX reader only (no inference runtime)
+        run: python -m pip install --disable-pip-version-check --no-cache-dir onnx==1.18.0
+      - name: Inventory SHA and RGB sessions of eight independent object archives, no extraction
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONDONTWRITEBYTECODE=1
+          TMP="$RUNNER_TEMP/r2c-emb1-structure"
+          mkdir -p "$TMP"
+          trap 'rm -rf -- "$TMP"' EXIT
+          BASE="https://rgbd-dataset.cs.washington.edu/dataset/rgbd-dataset"
+          for label in coffee_mug_1 coffee_mug_2 coffee_mug_3 coffee_mug_4 soda_can_1 soda_can_2 soda_can_3 soda_can_4; do
+            curl --fail --show-error --silent --location --retry 1 \
+              --proto '=https' --proto-redir '=https' \
+              --connect-timeout 10 --max-time 90 --max-filesize 12000000 \
+              --output "$TMP/$label.tar" "$BASE/$label.tar"
+          done
+          python - "$TMP" <<'PY'
+          import collections, hashlib, pathlib, re, sys, tarfile
+          root=pathlib.Path(sys.argv[1])
+          labels=[f"{c}_{n}" for c in ("coffee_mug","soda_can") for n in range(1,5)]
+          kinds=("crop.png","depthcrop.png","maskcrop.png","loc.txt")
+          pattern=re.compile(r"rgbd-dataset/(coffee_mug|soda_can)/((coffee_mug|soda_can)_[1-4])/\2_([124])_(\d+)_(crop\.png|depthcrop\.png|maskcrop\.png|loc\.txt)\Z")
+          total=0
+          for label in labels:
+              p=root/(label+".tar")
+              if p.is_symlink() or not p.is_file() or not 1<=p.stat().st_size<=12_000_000:
+                  raise SystemExit("SOURCE_STOP_SIZE")
+              total+=p.stat().st_size
+              h=hashlib.sha256(p.read_bytes()).hexdigest()
+              by=collections.defaultdict(lambda:collections.defaultdict(set))
+              seen=set()
+              with tarfile.open(p,"r:*") as t:
+                  for m in t:
+                      name=m.name
+                      if m.isdir(): continue
+                      if not m.isfile() or name.startswith("/") or ".." in pathlib.PurePosixPath(name).parts or name in seen or m.size>2_000_000:
+                          raise SystemExit("SOURCE_STOP_UNSAFE_MEMBER")
+                      seen.add(name)
+                      match=pattern.fullmatch(name)
+                      if match is None or match.group(2)!=label or match.group(1)!=match.group(3).rsplit("_",1)[0]:
+                          raise SystemExit("SOURCE_STOP_MISMATCHED_NAME")
+                      video=int(match.group(4)); frame=int(match.group(5)); kind=match.group(6)
+                      if frame in by[video][kind]: raise SystemExit("SOURCE_STOP_DUPLICATE")
+                      by[video][kind].add(frame)
+              if set(by)!={1,2,4} or any(
+                  len(by[vid]["crop.png"])<16 or
+                  any(by[vid][kind]!=by[vid]["crop.png"] for kind in kinds)
+                  for vid in (1,2,4)
+              ):
+                  raise SystemExit("SOURCE_STOP_INCOMPLETE_VIDEO")
+              counts=[len(by[v]["crop.png"]) for v in (1,2,4)]
+              print(f"R2C_PIN {label} BYTES={p.stat().st_size} SHA256={h} RGB_VIDEOS_1_2_4={','.join(map(str,counts))}")
+          if total>96_000_000: raise SystemExit("SOURCE_STOP_SUM_BUDGET")
+          print("R2C_SOURCE_PREFLIGHT: PASS_METADATA_ONLY", "total_bytes",total)
+          PY
+      - name: Inspect SHA-pinned pretrained MobileNetV2 graph without running it
+        shell: bash
+        run: |
+          set -euo pipefail
+          TMP="$RUNNER_TEMP/r2c-emb1-model"
+          mkdir -p "$TMP"
+          trap 'rm -rf -- "$TMP"' EXIT
+          curl --fail --show-error --silent --location --retry 1 \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 10 --max-time 100 --max-filesize 15000000 \
+            --output "$TMP/mobilenetv2-12.onnx" \
+            "https://huggingface.co/onnxmodelzoo/mobilenetv2-12/resolve/main/mobilenetv2-12.onnx"
+          printf '%s  %s\n' "c0c3f76d93fa3fd6580652a45618618a220fced18babf65774ed169de0432ad5" "$TMP/mobilenetv2-12.onnx" | sha256sum -c -
+          python - "$TMP/mobilenetv2-12.onnx" <<'PY'
+          import collections,onnx,sys
+          m=onnx.load(sys.argv[1])
+          onnx.checker.check_model(m)
+          initial={i.name:tuple(i.dims) for i in m.graph.initializer}
+          print("R2C_MODEL_OUTPUTS",[(x.name,[d.dim_value for d in x.type.tensor_type.shape.dim]) for x in m.graph.output])
+          print("R2C_LAST_NODES",[(n.op_type, list(n.input)[:3], list(n.output)) for n in list(m.graph.node)[-12:]])
+          dense=[(n.op_type, list(n.input),list(n.output),initial.get(n.input[1])) for n in m.graph.node if n.op_type in ("Gemm","MatMul") and len(n.input)>1]
+          print("R2C_DENSE_LAST_10",dense[-10:])
+          print("R2C_MODEL_GRAPH_PREFLIGHT: COMPLETE_READ_ONLY_NO_INFERENCE")
+          PY
