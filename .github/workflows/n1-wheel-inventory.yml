@@ -22,6 +22,9 @@ on:
       - 'docs/plan-action.md'
       - '.github/workflows/n1-wheel-inventory.yml'
       - 'pyproject.toml'
+      - 'microduck_companion/initial_knowledge.py'
+      - 'microduck_companion/initial_knowledge_v1.json'
+      - 'tests/test_cog_a1_reference.py'
   workflow_dispatch:
 
 jobs:
@@ -43,6 +46,23 @@ jobs:
         run: |
           python scripts/n1_inventory.py --wheel "$(find "$RUNNER_TEMP/n1-wheel" -maxdepth 1 -name '*.whl' -print -quit)" --output "$RUNNER_TEMP/n1-inventory.json"
           python -c 'import json,os; r=json.load(open(os.environ["RUNNER_TEMP"]+"/n1-inventory.json")); w=r["wheel_inspection"]; assert r["module_count"] == w["python_file_count"]; print("modules",r["module_count"],"lab candidates shipped",len(w["lab_candidates_included"]))'
+      - name: COG-A1 verify real normal wheel contains exact local reference bytes (host only)
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import os
+          import sys
+          wheels = list((Path(os.environ["RUNNER_TEMP"]) / "n1-wheel").glob("*.whl"))
+          if len(wheels) != 1:
+              sys.exit("COG_A1_WHEEL_COUNT_MISMATCH")
+          source = Path("microduck_companion/initial_knowledge_v1.json").read_bytes()
+          with ZipFile(wheels[0]) as wheel:
+              key = "microduck_companion/initial_knowledge_v1.json"
+              if wheel.namelist().count(key) != 1 or wheel.read(key) != source:
+                  sys.exit("COG_A1_WHEEL_REFERENCE_MISMATCH")
+          print("COG_A1_WHEEL_REFERENCE: PASS_HOST_BYTES_ONLY")
+          PY
       - name: Verify N1b source-slice tests (fixture-only)
         run: python -m unittest discover -s tests -p 'test_n1_public_slice.py' -v
       - name: Generate isolated public-API ZIP (host-only, no installation)

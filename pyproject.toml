@@ -10,3 +10,6 @@ requires-python = ">=3.10"
 
 [tool.setuptools.packages.find]
 include = ["microduck_companion*"]
+
+[tool.setuptools.package-data]
+microduck_companion = ["initial_knowledge_v1.json"]
