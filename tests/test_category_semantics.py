@@ -147,6 +147,75 @@ class SemanticMemoryTests(unittest.TestCase):
         self.assertEqual(0,self.mem.conn.execute(
             "SELECT COUNT(*) FROM objects").fetchone()[0])
 
+    def test_f4a_projection_date_cannot_refresh_expired_source(self):
+        # Tamper only with the derived historical projection, not the F1-C
+        # journal. A new projection timestamp is NOT a new encounter.
+        from microduck_companion.memory_consolidation import recall_category
+
+        sid = self.record("cat")
+        self.assertTrue(self.remember(sid))
+        self.assertEqual(1, len(self.semantic.recall(now_wall_epoch_s=WALL)))
+        with self.mem.conn:
+            self.mem.conn.execute(
+                "UPDATE f4a_semantic_categories SET recorded_epoch_s=? "
+                "WHERE observation_id=?",
+                (WALL + RETENTION_S + .5, sid))
+        now = WALL + RETENTION_S + 1
+        before = self.mem.conn.total_changes
+        self.assertEqual((), self.semantic.recall(now_wall_epoch_s=now))
+        self.assertEqual("unknown", recall_category(
+            self.semantic, category="cat",
+            now_wall_epoch_s=now).status)
+        self.assertEqual(before, self.mem.conn.total_changes)
+
+        # Repair of the projection alone cannot extend source TTL.
+        with self.mem.conn:
+            self.mem.conn.execute(
+                "UPDATE f4a_semantic_categories SET recorded_epoch_s=? "
+                "WHERE observation_id=?", (WALL, sid))
+        self.assertEqual((), self.semantic.recall(now_wall_epoch_s=now))
+        self.assertEqual(1, len(
+            self.semantic.recall(now_wall_epoch_s=WALL + 1)))
+
+    def test_f4a_changed_source_timestamp_does_not_survive_reopen(self):
+        # Both dates are inside the freshness window, but a disagreement
+        # must fail closed. This guards replay after process restart.
+        from microduck_companion.memory_consolidation import recall_category
+
+        sid = self.record("dog")
+        self.assertTrue(self.remember(sid))
+        with self.mem.conn:
+            self.mem.conn.execute(
+                "UPDATE passive_observation_log SET recorded_epoch_s=? "
+                "WHERE id=?", (WALL + .25, sid))
+        before = self.mem.conn.total_changes
+        self.assertEqual((), self.semantic.recall(
+            now_wall_epoch_s=WALL + 1))
+        self.assertEqual("unknown", recall_category(
+            self.semantic, category="dog",
+            now_wall_epoch_s=WALL + 1).status)
+        self.assertEqual(before, self.mem.conn.total_changes)
+
+        self.mem.close()
+        reopened = ExperienceMemory(self.path)
+        try:
+            semantics = CategorySemantics(reopened)
+            self.assertEqual((), semantics.recall(
+                now_wall_epoch_s=WALL + 1))
+            with reopened.conn:
+                reopened.conn.execute(
+                    "UPDATE passive_observation_log "
+                    "SET recorded_epoch_s=? WHERE id=?", (WALL, sid))
+            self.assertEqual(1, len(semantics.recall(
+                now_wall_epoch_s=WALL + 1)))
+            learning = PassiveLearning(reopened)
+            self.assertTrue(learning.retract(
+                sid, reason="source_retracted"))
+            self.assertEqual((), semantics.recall(
+                now_wall_epoch_s=WALL + 1))
+        finally:
+            reopened.close()
+
     def test_f4a_forgetting_reversible_source_but_not_resurrected(self):
         sid=self.record("toy")
         self.assertTrue(self.remember(sid))
