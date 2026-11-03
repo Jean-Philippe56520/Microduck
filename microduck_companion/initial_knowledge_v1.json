@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "status": "candidate_for_operator_review",
+  "sources": [
+    {
+      "id": "cog-a1-editorial-draft",
+      "kind": "author_draft",
+      "citation": "Propositions conditionnelles redactees pour l'audit COG-A1 le 03/11/2026; non validees comme faits observes ni approuvees par l'operateur."
+    },
+    {
+      "id": "oem-skills-pinned",
+      "kind": "pinned_oem_documentation",
+      "citation": "https://github.com/pollen-robotics/microduck/blob/942e58e3aa6dbb28e7037203fff11866122c7567/docs/robot/cheatsheet.md"
+    }
+  ],
+  "rules": [
+    {
+      "id": "ball.possible_rolling",
+      "concept": "ball",
+      "kind": "property",
+      "statement": "Certaines balles peuvent rouler; l'effet depend de l'objet et de son environnement.",
+      "conditions": [
+        "Forme et interaction avec la surface a verifier",
+        "Aucun mouvement observe ne peut etre deduit du seul label ball"
+      ],
+      "counterexamples": [
+        "Balle immobile, coincee ou representative sur un ecran"
+      ],
+      "source_ids": [
+        "cog-a1-editorial-draft"
+      ],
+      "oem_skill_reference": null
+    },
+    {
+      "id": "ball.possible_kick_game",
+      "concept": "ball",
+      "kind": "possible_use",
+      "statement": "Un coup de pied peut etre une interaction de jeu avec certaines balles, sans garantir le contact ni l'effet.",
+      "conditions": [
+        "Cible localisee independamment, trajectoire et contact acceptables",
+        "Skill OEM effectivement charge et conditions de securite acceptees par robotd"
+      ],
+      "counterexamples": [
+        "Personne ou animal sur une trajectoire risquee",
+        "Skill charge mais geste sans contact ou sans effet",
+        "Image ou dessin d'une balle"
+      ],
+      "source_ids": [
+        "cog-a1-editorial-draft",
+        "oem-skills-pinned"
+      ],
+      "oem_skill_reference": "kick_left"
+    },
+    {
+      "id": "toy.possible_game",
+      "concept": "toy",
+      "kind": "possible_use",
+      "statement": "Certains jouets sont destines au jeu, sans impliquer qu'ils sont manipulables par Kwipi.",
+      "conditions": [
+        "Proprietes et contexte de l'objet a etablir"
+      ],
+      "counterexamples": [
+        "Jouet fragile, dangereux, trop grand ou non accessible"
+      ],
+      "source_ids": [
+        "cog-a1-editorial-draft"
+      ],
+      "oem_skill_reference": null
+    },
+    {
+      "id": "cloth.deformability_candidate",
+      "concept": "cloth",
+      "kind": "property",
+      "statement": "Certains tissus se déforment et peuvent parfois être saisis ; cela ne prouve aucune prise.",
+      "conditions": [
+        "Materiau, taille et position a verifier",
+        "La categorie cloth n'est pas exposee par F1"
+      ],
+      "counterexamples": [
+        "Tissu fixe, trop volumineux ou prise impossible"
+      ],
+      "source_ids": [
+        "cog-a1-editorial-draft",
+        "oem-skills-pinned"
+      ],
+      "oem_skill_reference": "ground_pick"
+    },
+    {
+      "id": "chair.human_seating",
+      "concept": "chair",
+      "kind": "possible_use",
+      "statement": "Certaines chaises permettent a une personne de s'asseoir; sit_toggle ne sert pas a y monter.",
+      "conditions": [
+        "Nature de l'objet a verifier",
+        "La categorie chair n'est pas exposee par F1"
+      ],
+      "counterexamples": [
+        "Assise inadaptee, chaise en image ou objet mal identifie"
+      ],
+      "source_ids": [
+        "cog-a1-editorial-draft",
+        "oem-skills-pinned"
+      ],
+      "oem_skill_reference": null
+    },
+    {
+      "id": "person.social_participation_uncertain",
+      "concept": "person",
+      "kind": "limitation",
+      "statement": "Une personne peut participer volontairement a une interaction; sa participation ne se deduit pas de sa simple detection.",
+      "conditions": [
+        "Presence physique et participation a etablir par des preuves distinctes"
+      ],
+      "counterexamples": [
+        "Personne visible sur une television",
+        "Photo, dessin ou personne non participante"
+      ],
+      "source_ids": [
+        "cog-a1-editorial-draft"
+      ],
+      "oem_skill_reference": null
+    },
+    {
+      "id": "cat.not_a_toy",
+      "concept": "cat",
+      "kind": "limitation",
+      "statement": "Un chat n'est pas automatiquement une cible de jeu ou de contact pour Kwipi.",
+      "conditions": [
+        "Verifier le contexte et les risques de contact avant toute intention physique"
+      ],
+      "counterexamples": [
+        "Chat représenté sur un écran",
+        "Un chat hors de portee ou non visible"
+      ],
+      "source_ids": [
+        "cog-a1-editorial-draft"
+      ],
+      "oem_skill_reference": null
+    },
+    {
+      "id": "dog.not_a_toy",
+      "concept": "dog",
+      "kind": "limitation",
+      "statement": "Un chien n'est pas automatiquement une cible de jeu ou de contact pour Kwipi.",
+      "conditions": [
+        "Verifier le contexte et les risques de contact avant toute intention physique"
+      ],
+      "counterexamples": [
+        "Chien represente sur un ecran",
+        "Chien hors du contexte observe"
+      ],
+      "source_ids": [
+        "cog-a1-editorial-draft"
+      ],
+      "oem_skill_reference": null
+    }
+  ]
+}
