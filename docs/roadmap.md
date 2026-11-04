@@ -1,3 +1,19 @@
+## Priorité perception — PER-YOLOX-SM-0 : reconnaissance multiclasse, distincte du suivi temporel (04/11/2026)
+
+**Avancement positif de la phase 0 :** deux véritables poids officiels S/M téléchargés/empreintes vérifiées et **testés sur PC avec un tenseur noir synthétique** dans [#41922006466](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41922006466), 3 sorties conformes : **S=35,9 Mo SHA `a39c8476d10c242298d6a8654cb29937a9cc3c062358f4d96367689df23d1796`, M=101,3 Mo SHA `47a76546f3a499b2dbf55cdf2c5ea49bf2b7fa8c943de40edf1ee39b20e45f29`**. Poids épinglés sans redistribution. **La source photo reste STOP**, aucun score sur vrai objet et aucune mesure NPU Microduck. [DATA-INV-1 préenregistré](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643354377) cherche un jeu de GT fraîche admissible par licence photo, sans changer silencieusement de seuil, cohortes ou droits.
+
+
+**Premier essai CI source : STOP vérifié (04/11/2026)** : [run #41921084487](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41921084487), `sports_ball available=0 required=6` sous licence photo CC BY 2.0 après les 1 316 images exclues ; tests offline et SHA des GT positifs. **Aucun poids ou JPEG ouvert dans cette tentative**. La [porte amendée #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643245238) vérifie **séparément** S/M ONNX sur **noir synthétique** ; le corpus de 42 images demeure NON QUALIFIÉ, les scores Nano/S/M non exécutés. Rechercher des droits/GT admissibles avant la comparaison photographique ; ne jamais déclarer SOURCE PASS d'après le seul ABI.
+
+
+**Autorisation utilisateur** : comparer YOLOX-S et YOLOX-M Rockchip compatibles RK3566 annoncés, plutôt que d'arrêter toute perception parce que le corpus vidéo suivi A2 est indisponible. [Porte prospective #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643049833) · [rapport expérimental](per-yolox-sm-rockchip-host-preflight-2026-11-04.md). Base avant branche `main@420664d97f33fff9ffeb8e4caea26f096799da59` ; #309 mémoire demeure un lot séparé.
+
+**Phase 0 active, sans JPEG :** Rockchip `rknn_model_zoo@837db8e`, 42 **nouvelles images** sélectionnées par GT COCO/Sama parmi 5 000 val après exclusion exacte de 1 316 anciennes ; **photos CC BY 2.0 uniquement**, GT et mapping COCO-ID/YOLOX-index contrôlés ; vérification SHA/3 sorties ONNX de S/M et smoke synthétique CPU. **Phase 1 conditionnelle :** épingler SHA des deux poids, Nano/S/M sur exactement 42 JPEG inédits, même GT indépendantes des prédictions et métriques IoU50/p50/p95/RSS hôte. Aucun score ni précision candidat revendiqués avant CI effective et pixels réels. La corrélation des deux annotations humaines est déclarée.
+
+**Promotion RKNN/robot :** seulement après gains démontrés et contrôle des droits des modèles, RSS/NPU/latence/température sur matériel avec robotd 50 Hz indépendant, mediad conservé. VIS-FOCUS-A2 reste **STOP** sur la continuité/occlusion temporelle ; EX4-C2 attend toujours preuve fin OEM + effet indépendant. Pas de second pilote, seconde caméra, deuxième SQLite, refonte OEM ou cadence adaptative.
+
+---
+
 ## Mise à jour de reprise : C/E-2, fiabilité des écritures MEM-1 (04/11/2026)
 
 **Base vérifiée** `main@420664d97f33fff9ffeb8e4caea26f096799da59` : #305/#307/#308 fusionnées, PR #306 **fermée sans fusion**, 1 316 IDs COCO consommés non rejoués. VIS-FOCUS-A2 **bloqué en données temporelles/GT**, EX4-C2 **bloqué en attestation OEM de fin/effet réel** : aucune nouvelle capacité physique en conséquence.

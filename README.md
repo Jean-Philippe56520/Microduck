@@ -1,3 +1,19 @@
+# Priorité de perception PER-YOLOX-SM-0 — pilotes S/M Rockchip sur PC (04/11/2026)
+
+**Résultat nouveau (CI #41922006466) :** YOLOX-S et YOLOX-M officiels Rockchip ont été téléchargés, SHA-256 contrôlés, et **exécutés chacun une fois sur PC avec une image noire synthétique** ; entrée [1,3,640,640] et trois sorties vérifiées. [SHA S/M et poids réels](docs/per-yolox-sm-rockchip-host-preflight-2026-11-04.md) épinglés dans le banc ; ce n'est **pas** une reconnaissance réelle ni une preuve NPU. Le STOP de source photo reste vrai. [DATA-INV-1 préenregistré sur #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643354377) : compter sur GT les balles restantes par licence, **sans images ni inférence**, et décider ensuite de la source des nouvelles photos. CI du dernier commit encore à qualifier avant fusion.
+
+
+**Mise à jour après premier essai source réel (04/11/2026) :** la [CI #41921084487](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41921084487) a passé les tests et les SHA de métadonnées mais a correctement refusé la sélection : `STOP_SOURCE class=sports_ball available=0 required=6` après 1 316 exclusions sous licence photo CC BY 2.0. Aucun JPEG, poids S/M ou inférence réelle à ce stade. [Amendement préenregistré sur #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643245238) : la PR teste maintenant **indépendamment** les 2 ONNX Rockchip sur image noire synthétique ; cette preuve ABI ne transforme **pas** la cohorte photo STOP en cohorte valide. Bench Nano/S/M sur images : **non lancé**, nouvelle source requise ; ne pas contourner le critère de droits.
+
+
+**Choix utilisateur validé :** reprendre les essais de **reconnaissance YOLOX-S et YOLOX-M**, sans attendre une GT vidéo de suivi. [Protocole fixé AVANT code sur l'issue #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643049833) · [rapport et limites](docs/per-yolox-sm-rockchip-host-preflight-2026-11-04.md). Base GitHub `main@420664d97f33fff9ffeb8e4caea26f096799da59`; PR C/E-2 #309 indépendante, toujours soumise à ses propres CI et à sa fusion séparée.
+
+**Phase 0 en cours :** réutiliser Rockchip [`rknn_model_zoo@837db8e`](https://github.com/airockchip/rknn_model_zoo/tree/837db8e992815ff8647eadb709f07067f4bc3a71/examples/yolox), vérifier 1 316 anciennes images COCO exclues, choisir **42 nouvelles vues CC BY 2.0** par GT COCO/Sama avant JPEG, enregistrer les SHA des ONNX optimisés S/M, contrôler les 3 sorties et un smoke ONNX CPU sur entrée **synthétique**. Aucun score d'image réelle encore ; la phase 1 inférera Nano/S/M sur exactement les mêmes 42 JPEG **uniquement après pin SHA des deux modèles**. Les sorties Nano/ S-M sont incompatibles sans décodage distinct.
+
+**Frontière :** `mediad` seul caméra et détecteur OEM, `robotd` seul pilote 50 Hz, mémoire SQLite et 19+5+4 sources B11 inchangés, Qwen PC facultatif. Les FPS publiés par Rockchip **ne sont pas** des mesures Microduck. VIS-FOCUS-A2 reste STOP pour le suivi temporel jusqu'à GT indépendante ; EX4-C2 reste en attente de fin OEM/effet réel. 1 316 photos historiques **jamais rejouées**. CI et SHA final à qualifier avant fusion.
+
+---
+
 # Reprise complémentaire — C/E-2, garde d'écriture MEM-1 sur fixtures (04/11/2026)
 
 **Base GitHub vérifiée avant ce lot :** `main@420664d97f33fff9ffeb8e4caea26f096799da59`, [#308 VIS-FOCUS-A2](https://github.com/Jean-Philippe56520/Microduck/pull/308) fusionnée après 9/9 CI. **PR #306** fermée sans fusion comme doublon historique de la [#307](https://github.com/Jean-Philippe56520/Microduck/pull/307) ; ses 12 tests ne sont pas sur `main`. **A2 reste `STOP_A2_SOURCE_NOT_QUALIFIED`**, aucune comparaison réelle 2/1,5/1 Hz ; **EX4-C2 reste en attente** d'un reçu OEM de fin et d'un effet indépendant, aucun apprentissage causal robot autorisé. Les 1 316 images COCO consommées ne sont pas rejouées.
