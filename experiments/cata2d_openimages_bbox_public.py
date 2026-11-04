@@ -195,7 +195,9 @@ def select_public_cases(
             )
             if len(options) < per_label:
                 raise PhotoBaselineError(
-                    "not enough distinct human-verified official cases"
+                    f"not enough official cases: class={cat} "
+                    f"human_present={int(present)} available={len(options)} "
+                    f"required={per_label}; no inference performed"
                 )
             for image_id in options[:per_label]:
                 selected.append(PublicCase(
