@@ -1,3 +1,13 @@
+# Priorité de perception PER-YOLOX-SM-0 — pilotes S/M Rockchip sur PC (04/11/2026)
+
+**Choix utilisateur validé :** reprendre les essais de **reconnaissance YOLOX-S et YOLOX-M**, sans attendre une GT vidéo de suivi. [Protocole fixé AVANT code sur l'issue #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643049833) · [rapport et limites](docs/per-yolox-sm-rockchip-host-preflight-2026-11-04.md). Base GitHub `main@420664d97f33fff9ffeb8e4caea26f096799da59`; PR C/E-2 #309 indépendante, toujours soumise à ses propres CI et à sa fusion séparée.
+
+**Phase 0 en cours :** réutiliser Rockchip [`rknn_model_zoo@837db8e`](https://github.com/airockchip/rknn_model_zoo/tree/837db8e992815ff8647eadb709f07067f4bc3a71/examples/yolox), vérifier 1 316 anciennes images COCO exclues, choisir **42 nouvelles vues CC BY 2.0** par GT COCO/Sama avant JPEG, enregistrer les SHA des ONNX optimisés S/M, contrôler les 3 sorties et un smoke ONNX CPU sur entrée **synthétique**. Aucun score d'image réelle encore ; la phase 1 inférera Nano/S/M sur exactement les mêmes 42 JPEG **uniquement après pin SHA des deux modèles**. Les sorties Nano/ S-M sont incompatibles sans décodage distinct.
+
+**Frontière :** `mediad` seul caméra et détecteur OEM, `robotd` seul pilote 50 Hz, mémoire SQLite et 19+5+4 sources B11 inchangés, Qwen PC facultatif. Les FPS publiés par Rockchip **ne sont pas** des mesures Microduck. VIS-FOCUS-A2 reste STOP pour le suivi temporel jusqu'à GT indépendante ; EX4-C2 reste en attente de fin OEM/effet réel. 1 316 photos historiques **jamais rejouées**. CI et SHA final à qualifier avant fusion.
+
+---
+
 # Reprise active — VIS-FOCUS-A2 : source temporelle à qualifier (04/11/2026)
 
 **Dernier `main` confirmé avant ce lot documentaire :** `fce5d138bb1a1130091d921ba10352a8ec770400`. [#305 QUAL-R0](https://github.com/Jean-Philippe56520/Microduck/pull/305) fusionnée après **10/10 CI** ; [#307 VIS-FOCUS-A1](https://github.com/Jean-Philippe56520/Microduck/pull/307) fusionnée après **9/9 CI** au HEAD `de12252599b109c016b853d699998d2cc0a96442`. **15/15 tests spécialisés et 2 517 tests Python généraux réussis** sur des fixtures PC ; **pas** de perception multi-objets OEM, tracker physique, robot ou modèle validé. La tentative de toucher `autonomy.py` a été arrêtée à cause des empreintes historiques B10/B11 ; ce fichier a été rétabli exactement, le comparateur final restant `experiments/vis_focus_a1_host.py` **hors logiciel livré**. Les gitlinks OEM sont inchangés.
