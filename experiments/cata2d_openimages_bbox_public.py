@@ -195,9 +195,14 @@ def select_public_cases(
             )
             if len(options) < per_label:
                 raise PhotoBaselineError(
-                    f"not enough official cases: class={cat} "
-                    f"human_present={int(present)} available={len(options)} "
-                    f"required={per_label}; no inference performed"
+                    "not enough official cases before inference: "
+                    + json.dumps({
+                        f"{klass}/{int(label)}": len(pool)
+                        for (klass, label), pool in sorted(pools.items())
+                    }, sort_keys=True)
+                    + f"; first shortfall class={cat} "
+                    + f"human_present={int(present)} available={len(options)} "
+                    + f"required={per_label}"
                 )
             for image_id in options[:per_label]:
                 selected.append(PublicCase(
