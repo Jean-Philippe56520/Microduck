@@ -1,3 +1,13 @@
+# Reprise perception — PER-OI-V7-COHORT-1, source GT-only (04/11/2026)
+
+**GitHub confirmé :** `main@e4909805644adfe9dbedd9870033a9b016aa7fb5`, [#309 C/E-2](https://github.com/Jean-Philippe56520/Microduck/pull/309) fusionnée (9/9 CI), [#311 Open Images V7](https://github.com/Jean-Philippe56520/Microduck/pull/311) fusionnée (4/4 CI). **PR #310 YOLOX-S/M ONNX Rockchip** : modèle S (SHA `a39c8476d10c242298d6a8654cb29937a9cc3c062358f4d96367689df23d1796`) et M (SHA `47a76546f3a499b2dbf55cdf2c5ea49bf2b7fa8c943de40edf1ee39b20e45f29`) **exécutés sur PC noir synthétique uniquement**, 3 têtes validées, PR encore ouverte tant que sa CI P15-B19 est en cours ; **aucune précision réelle**. Ne pas confondre déploiement RK3566 fournisseur et mesure Microduck.
+
+**Nouveau lot indépendant, candidat GT-only :** [porte préenregistrée avant code](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643789216) · [rapport/tests](docs/per-oi-v7-frozen-42-cohort-2026-11-04.md). Les trois sources CSV Open Images V7 et leurs SHA ont été vérifiés par la CI #311 sans JPEG. Ce lot propose **42 photos de validation inédites sur Open Images, six par étiquette**, sélectionnées sur les seules GT `Tennis ball,Book,Bottle,Chair,Cat,Dog,Person`, sous licence **déclarée** CC BY 2.0, MD5 unique/rotation 0 et sans image téléchargée. `Tennis ball` → `sports_ball` reste **une hypothèse de correspondance**, pas un fait ; droits individuels et absence de duplicata avec les **1 316 JPEG COCO déjà consommés** restent **non vérifiés**. Seuls le manifeste agrégé et le SHA du roster pourront être publiés. **Ne fusionner qu'après réussite des tests et de toutes les CI finales au SHA exact.**
+
+**Frontières :** aucun changement de `mediad`, `robotd` 50 Hz, NPU/poids actifs, OEM/gitlinks, SQLite, Qwen, Yocto ou archives B10/B11 ; aucun progrès sur le suivi temporel A2 (STOP) ou la causalité EX4-C2 (attente). `docs/plan-action.md` fait autorité ; les comptes rendus de reprise précédents ci-dessous sont historiques.
+
+---
+
 # Reprise complémentaire — C/E-2, garde d'écriture MEM-1 sur fixtures (04/11/2026)
 
 **Base GitHub vérifiée avant ce lot :** `main@420664d97f33fff9ffeb8e4caea26f096799da59`, [#308 VIS-FOCUS-A2](https://github.com/Jean-Philippe56520/Microduck/pull/308) fusionnée après 9/9 CI. **PR #306** fermée sans fusion comme doublon historique de la [#307](https://github.com/Jean-Philippe56520/Microduck/pull/307) ; ses 12 tests ne sont pas sur `main`. **A2 reste `STOP_A2_SOURCE_NOT_QUALIFIED`**, aucune comparaison réelle 2/1,5/1 Hz ; **EX4-C2 reste en attente** d'un reçu OEM de fin et d'un effet indépendant, aucun apprentissage causal robot autorisé. Les 1 316 images COCO consommées ne sont pas rejouées.
