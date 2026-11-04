@@ -74,6 +74,18 @@ class TestOIV7HumanLabels(unittest.TestCase):
         self.assertEqual(0,r['per_target']['Tennis ball']['candidate_boxed_and_human_positive'])
         self.assertEqual(1,r['per_target']['Tennis ball']['boxed_without_human_positive'])
 
+    def test_positive_decimal_binary_values_still_verified(self):
+        for row in self.human:
+            row['Confidence'] = ('1.000000' if row['Confidence']=='1' else '0.000000')
+        self.flush(); r=self.run_qualify()
+        self.assertEqual(1,r['per_target']['Tennis ball']['candidate_boxed_and_human_positive'])
+
+    def test_negative_fractional_human_label_refused(self):
+        self.human[0]['Confidence']='0.5'
+        self.flush()
+        with self.assertRaisesRegex(OpenImagesSourceStop,'nonbinary verified label'):
+            self.run_qualify()
+
     def test_negative_human_label_conflict_excluded(self):
         self.human.append(dict(ImageID='0000000000000007',Source='crowdsource-verification',
                                LabelName=self.mids['Tennis ball'],Confidence='0'))
