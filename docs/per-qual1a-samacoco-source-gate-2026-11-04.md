@@ -2,6 +2,17 @@
 
 **Date :** 04/11/2026. Autorité : [plan d'action](plan-action.md) ; [préenregistrement avant scores, issue #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6637584606). **Aucune inférence, aucun modèle et aucun JPEG dans ce premier lot.**
 
+## Première preuve réelle de source, vérifiée avant modèle
+
+[GitHub Actions #41879626743](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41879626743), SHA de la première version `eb252aa7ecdde42a6ba45acb0e2b92c9950a7f6a` : téléchargements **uniquement de deux jeux d'annotations** réussis, 42/42 nouvelles photos sélectionnées sur GT 7×6, **1 232 exclusions**, 5/5 tests source sur ce SHA, **0 JPEG et 0 inférence**. Empreintes observées lors du run et désormais **gelées dans le vérificateur avant toute prédiction** :
+
+- ZIP Sama validation SHA256 : `c55454f6657ce63891783136cc5dfe5f1e9c5e1748c0d8ca08b456a804eab15f`
+- Liste prospective des 42 IDs/catégories SHA256 : `709718feba6185ddd79e2aa492c7eaf74bb2d904dfa6c30e81a25c31dbdb53d5`
+
+**Anomalie découverte sur fixture avant accès aux pixels** : le comptage d'accords IoU50 glouton dépendait de l'ordre des boîtes (contre-exemple 1 au lieu de 2). Correctif de cardinalité maximale et contrôle de permutation préenregistrés dans [commentaire PR #300](https://github.com/Jean-Philippe56520/Microduck/pull/300#issuecomment-6637793098). **Ne pas utiliser les comptes IoU50 de la première CI comme résultat final**, ni inférer un défaut de détection à partir d'un désaccord COCO/Sama ; les boîtes sont deux annotations corrélées, et non une vérité physique. Tests locaux après correctif et gel SHA : **7/7 sur fixtures** ; seules CI complètes du SHA final pourront autoriser `PASS_A`.
+
+Le lot #299 d'assouplissement de hauteur est **fusionné** au squash `19bdab9c905aa60ab245a58760f1b5efb31890e7` après 10/10 CI vertes. Cela n'autorise toujours pas l'attribution d'une qualité de perception depuis la caméra OEM sans mesures sur le robot.
+
 ## Question et témoin
 
 Les évaluations #296 (800 JPEG COCO val) et #298 (48 JPEG Open Images) sont acquises. Des propositions non appariées à COCO ne sont pas nécessairement de faux positifs physiques : une annotation peut omettre un objet. [Sama-COCO, source primaire](https://www.sama.com/sama-coco-dataset), a fait réannoter les mêmes photos COCO2017 par d'autres humains, **en partant des préannotations COCO**. Cette seconde annotation est donc **corrélée** à COCO et ne constitue **pas** un nouveau corpus d'images ni une GT entièrement indépendante. Sama a aussi volontairement exclu les objets inférieurs à 10×10 px.
