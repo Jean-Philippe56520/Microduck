@@ -224,14 +224,32 @@ def _iou(a, b):
 
 
 def _paired_iou50(a, b):
-    matched = set()
+    """Maximum one-to-one IoU50 matches, independent of annotation order.
+
+    Greedy pairing is not sufficient: overlapping objects can give fewer
+    matches when the first GT consumes the only match of the second GT.
+    """
+    edges = []
     for box in a:
-        overlap = [(_iou(box, other), i) for i, other in enumerate(b)
-                   if i not in matched]
-        score, idx = max(overlap, default=(0., -1))
-        if score >= .5:
-            matched.add(idx)
-    return len(matched)
+        candidates = [(i, _iou(box, other)) for i, other in enumerate(b)]
+        edges.append(tuple(i for i, score in sorted(
+            (entry for entry in candidates if entry[1] >= .5),
+            key=lambda entry: (-entry[1], entry[0]),
+        )))
+
+    owners = {}  # index into b -> index into a
+
+    def augment(index, visited):
+        for target in edges[index]:
+            if target in visited:
+                continue
+            visited.add(target)
+            if target not in owners or augment(owners[target], visited):
+                owners[target] = index
+                return True
+        return False
+
+    return sum(augment(index, set()) for index in range(len(a)))
 
 
 def summarize_ground_truth(cases, targets, orig_boxes, sama_boxes):
