@@ -27,6 +27,7 @@ from microduck_companion.cata2c_openimages_human_labels import (
 )
 
 SEED = "kwipi-per-oi-v7-v2-exclude-288-v1-20261104"
+FROZEN_V2_SHA256 = "282d67af8f97975b55149f4b104eaef79bcef1e94beb9522b207ff8a7193c28c"
 TARGETS = ("Tennis ball", "Book", "Bottle", "Chair", "Cat", "Dog", "Person")
 PER_TARGET = 6
 EXPECTED_TOTAL = 42
@@ -271,6 +272,8 @@ def audit(classes: Path, images: Path, human: Path, boxes: Path, coco: Path):
     digest=(sha256("|".join(
         f"{label}/{ident}" for ident,label in chosen
     ).encode("ascii")).hexdigest() if success else None)
+    if success and digest != FROZEN_V2_SHA256:
+        raise OpenImagesSourceStop("STOP_ROSTER: official V2 photo roster SHA drifted")
     return {
         "status": ("V2_GT_42_FROZEN_SOURCE_ONLY_NOT_LICENSED"
                    if success else "STOP_V2_SOURCE_NOT_QUALIFIED"),
