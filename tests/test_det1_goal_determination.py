@@ -531,5 +531,46 @@ class DET1DeterminationTests(unittest.TestCase):
 
 
 
+
+    def test_ce1_corrupt_active_goal_cannot_focus_or_resume_via_f2(self):
+        # N3: the REAL F2-B path catches invalid MEM-1 read-only evidence
+        # and abstains in both DET-1 and DET-2, without SQL or motor effects.
+        self.add_goal()
+        for reason in ("source_retracted", "fixture_annotation_error"):
+            with self.subTest(reason=reason):
+                with self.memory.conn:
+                    self.memory.conn.execute(
+                        "UPDATE mem1_mock_goals SET correction_reason=? "
+                        "WHERE goal_id=? AND active=1", (reason, GOAL_DOG))
+                for guarded, expected in (
+                    (False, "det1_goal_memory_unavailable"),
+                    (True, "det2_goal_history_unavailable"),
+                ):
+                    with self.subTest(guarded=guarded):
+                        brain = AutonomyBrain(
+                            self.memory, Motivations(determination=1.))
+                        before = self.memory.conn.total_changes
+                        energy = brain.motives.energy
+                        decision = brain.propose_balanced_passive(
+                            read("dog", "ball"), journal=self.journal,
+                            goals=self.goals, guard_attempted_goals=guarded,
+                            now_monotonic_s=100.1, now_wall_epoch_s=WALL+1)
+                        self.assertEqual(("idle", expected),
+                                         (decision.intention, decision.reason))
+                        self.assertEqual(energy, brain.motives.energy)
+                        self.assertEqual(before, self.memory.conn.total_changes)
+                        self.assertFalse(decision.executed)
+                        self.assertFalse(decision.request_pc_analysis)
+                        self.assertEqual(0, decision.motor_commands_issued)
+                with self.memory.conn:
+                    self.memory.conn.execute(
+                        "UPDATE mem1_mock_goals SET correction_reason=NULL "
+                        "WHERE goal_id=?", (GOAL_DOG,))
+                _, valid = self.choose(determination=1.)
+                self.assertEqual(
+                    ("observe", "dog", "det1_mock_goal_focus"),
+                    (valid.intention, valid.target_category, valid.reason))
+
+
 if __name__ == "__main__":
     unittest.main()

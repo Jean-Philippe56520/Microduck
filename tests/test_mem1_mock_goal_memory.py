@@ -380,5 +380,90 @@ finally:
         self.assertEqual(0, self.mem.experience_count())
 
 
+    def test_ce1_active_goal_with_correction_marker_is_refused_read_only(self):
+        # N1/N2: SQL permits active=1 and a correction_reason simultaneously.
+        # All existing MEM-1 readers must refuse, not hide or repair it.
+        self.active()
+        self.assertEqual("active", self.goals.get(GOAL_ID).state)
+        self.assertEqual((("observe", "ball"),),
+                         tuple(sorted(self.goals.attention_focus(
+                             now_wall_epoch_s=NOW+1))))
+        for reason in ("source_retracted", "fixture_annotation_error"):
+            with self.subTest(reason=reason):
+                with self.mem.conn:
+                    self.mem.conn.execute("""
+                        UPDATE mem1_mock_goals SET correction_reason=?
+                        WHERE goal_id=? AND active=1
+                    """, (reason, GOAL_ID))
+                before = self.mem.conn.total_changes
+                queries = (
+                    lambda: self.goals.get(GOAL_ID),
+                    lambda: self.goals.get(GOAL_ID, include_withdrawn=True),
+                    lambda: self.goals.recent(),
+                    lambda: self.goals.recent(include_withdrawn=True),
+                    lambda: self.goals.attention_focus(now_wall_epoch_s=NOW+1),
+                    lambda: self.goals.retry_attention(now_wall_epoch_s=NOW+1),
+                )
+                for query in queries:
+                    with self.assertRaisesRegex(ValueError,
+                                                "inconsistent active mock goal correction"):
+                        query()
+                self.assertEqual(before, self.mem.conn.total_changes)
+                row = self.mem.conn.execute(
+                    "SELECT active,correction_reason FROM mem1_mock_goals "
+                    "WHERE goal_id=?", (GOAL_ID,)).fetchone()
+                self.assertEqual((1, reason), tuple(row))
+                # Repair ONLY the adversarial fixture, never a recall side effect.
+                with self.mem.conn:
+                    self.mem.conn.execute("""
+                        UPDATE mem1_mock_goals SET correction_reason=NULL
+                        WHERE goal_id=?
+                    """, (GOAL_ID,))
+                self.assertEqual("active", self.goals.get(GOAL_ID).state)
+                self.assertEqual(1, len(self.goals.recent()))
+                self.assertEqual(frozenset({("observe", "ball")}),
+                                 self.goals.attention_focus(
+                                     now_wall_epoch_s=NOW+1))
+                self.assertEqual((), self.goals.retry_attention(
+                    now_wall_epoch_s=NOW+1).resume_once)
+
+    def test_ce1_active_corrected_goal_remains_refused_after_reopen(self):
+        # N4/P2: a real disk reopen does not revalidate corrupt active rows.
+        self.active()
+        with self.mem.conn:
+            self.mem.conn.execute("""
+                UPDATE mem1_mock_goals
+                SET correction_reason='source_retracted'
+                WHERE goal_id=?
+            """, (GOAL_ID,))
+        self.mem.close()
+        reopened = ExperienceMemory(self.path)
+        try:
+            goals = MockGoalMemory(reopened, MockExperienceLedger(reopened))
+            before = reopened.conn.total_changes
+            with self.assertRaises(ValueError):
+                goals.get(GOAL_ID)
+            with self.assertRaises(ValueError):
+                goals.recent()
+            with self.assertRaises(ValueError):
+                goals.attention_focus(now_wall_epoch_s=NOW+1)
+            self.assertEqual(before, reopened.conn.total_changes)
+            with reopened.conn:
+                reopened.conn.execute("""
+                    UPDATE mem1_mock_goals
+                    SET correction_reason=NULL WHERE goal_id=?
+                """, (GOAL_ID,))
+            self.assertEqual("active", goals.get(GOAL_ID).state)
+            self.assertTrue(goals.retract(
+                goal_id=GOAL_ID, reason="source_retracted"))
+            self.assertIsNone(goals.get(GOAL_ID))
+            self.assertEqual((), goals.recent())
+            self.assertTrue(goals.get(
+                GOAL_ID, include_withdrawn=True).corrected)
+        finally:
+            reopened.close()
+
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -321,6 +321,10 @@ class MockGoalMemory:
         if (row["state"] not in STATES or row["resume_when"] not in RESUME_CONDITIONS
                 or row["source"] != SOURCE):
             raise ValueError("untrusted persisted goal")
+        # C/E-1: an active goal cannot simultaneously be retracted. Refuse
+        # contradictory persisted fixture data without mutating the SQLite.
+        if row["active"] == 1 and row["correction_reason"] is not None:
+            raise ValueError("inconsistent active mock goal correction")
         return MockGoal(
             goal_id=row["goal_id"], kind=row["kind"], category=row["category"],
             state=row["state"], resume_when=row["resume_when"],
@@ -336,7 +340,7 @@ class MockGoalMemory:
             raise ValueError("invalid include_withdrawn flag")
         row = self._memory.conn.execute("""
             SELECT goal_id,kind,category,state,resume_when,
-                   created_at_epoch_s,updated_at_epoch_s,revision,source,active
+                   created_at_epoch_s,updated_at_epoch_s,revision,source,active,correction_reason
             FROM mem1_mock_goals WHERE goal_id=?
         """, (key,)).fetchone()
         if row is None or (row["active"] != 1 and not include_withdrawn):
@@ -352,14 +356,14 @@ class MockGoalMemory:
         if include_withdrawn:
             rows = self._memory.conn.execute("""
                 SELECT goal_id,kind,category,state,resume_when,
-                       created_at_epoch_s,updated_at_epoch_s,revision,source,active
+                       created_at_epoch_s,updated_at_epoch_s,revision,source,active,correction_reason
                 FROM mem1_mock_goals WHERE source='mock_fixture_only'
                 ORDER BY created_at_epoch_s DESC,id DESC LIMIT ?
             """, (limit,)).fetchall()
         else:
             rows = self._memory.conn.execute("""
                 SELECT goal_id,kind,category,state,resume_when,
-                       created_at_epoch_s,updated_at_epoch_s,revision,source,active
+                       created_at_epoch_s,updated_at_epoch_s,revision,source,active,correction_reason
                 FROM mem1_mock_goals
                 WHERE source='mock_fixture_only' AND active=1
                 ORDER BY created_at_epoch_s DESC,id DESC LIMIT ?
@@ -375,7 +379,7 @@ class MockGoalMemory:
         """
         now = _epoch(now_wall_epoch_s)
         rows = self._memory.conn.execute("""
-            SELECT g.kind,g.category,g.source,g.state,g.active,
+            SELECT g.kind,g.category,g.source,g.state,g.active,g.correction_reason,
                    g.updated_at_epoch_s
             FROM mem1_mock_goals g
             WHERE g.active=1 AND g.state='active'
@@ -395,6 +399,8 @@ class MockGoalMemory:
             if (row["source"] != SOURCE or row["state"] != "active"
                     or row["active"] != 1):
                 raise ValueError("untrusted DET-1 goal evidence")
+            if row["correction_reason"] is not None:
+                raise ValueError("inconsistent active mock goal correction")
             if row["kind"] == "observe_category":
                 focus.add(("observe", row["category"]))
             elif row["category"] == "unknown":
