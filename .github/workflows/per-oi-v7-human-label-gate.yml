@@ -1,0 +1,86 @@
+name: PER-OI-V7-HUMAN-1 validation source GT human labels only (NO PIXELS)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "experiments/per_oi_v7_human_label_gate.py"
+      - "tests/test_per_oi_v7_human_label_gate.py"
+      - ".github/workflows/per-oi-v7-human-label-gate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  human-source-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Verify unchanged OEM and simulation gitlinks
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-tree HEAD upstream/microduck | grep -F '942e58e3aa6dbb28e7037203fff11866122c7567'
+          git ls-tree HEAD upstream/microduck_rl | grep -F 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Offline positive and negative fixture tests BEFORE network
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q experiments/per_oi_v7_human_label_gate.py tests/test_per_oi_v7_human_label_gate.py
+          python -m unittest discover -s tests -p 'test_per_oi_v7_human_label_gate.py' -v
+      - name: Download only four official CSV metadata/GT sources (NO JPEG/weights)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 1000000 \
+            -o "$RUNNER_TEMP/oid-classes.csv" \
+            'https://storage.googleapis.com/openimages/v7/oidv7-class-descriptions-boxable.csv'
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 40000000 \
+            -o "$RUNNER_TEMP/oid-images.csv" \
+            'https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv'
+          curl --fail --location --retry 2 --max-time 300 --max-filesize 180000000 \
+            -o "$RUNNER_TEMP/oid-boxes.csv" \
+            'https://storage.googleapis.com/openimages/v5/validation-annotations-bbox.csv'
+          curl --fail --location --retry 2 --max-time 300 --max-filesize 120000000 \
+            -o "$RUNNER_TEMP/oid-human.csv" \
+            'https://storage.googleapis.com/openimages/v7/oidv7-val-annotations-human-imagelabels.csv'
+      - name: Aggregate verified positive/negative/unknown classes; never publish IDs
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 300s python -m experiments.per_oi_v7_human_label_gate \
+            --approved-public-metadata --official-pins \
+            --classes "$RUNNER_TEMP/oid-classes.csv" \
+            --images "$RUNNER_TEMP/oid-images.csv" \
+            --boxes "$RUNNER_TEMP/oid-boxes.csv" \
+            --human "$RUNNER_TEMP/oid-human.csv" > "$RUNNER_TEMP/oi-v7-human-aggregate.json"
+          python - "$RUNNER_TEMP/oi-v7-human-aggregate.json" <<'PY'
+          import json,sys
+          with open(sys.argv[1],encoding='utf-8') as fp:
+              r=json.load(fp)
+          assert r['status'] in ('METADATA_42_POSSIBLE_NOT_LICENSED','STOP_GT_POOL_LT6_NOT_LICENSED')
+          assert not r['rights_verified_individually']
+          assert not r['cross_corpus_dedup_verified']
+          assert not r['cohort_selected'] and not r['scores_measured']
+          assert r['real_pixels_loaded']==r['models_loaded']==r['motor_commands']==r['sqlite_writes']==0
+          assert r['exact_tennis_ball_only']
+          assert len(r['source_sha256'])==4
+          print(json.dumps(r,sort_keys=True))
+          PY
+          cp "$RUNNER_TEMP/oi-v7-human-aggregate.json" oi-v7-human-numeric-only.json
+      - name: Upload aggregate only, no GT IDs, pixels, sources or model
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oi-v7-human-numeric-only
+          path: oi-v7-human-numeric-only.json
+          retention-days: 14
+          if-no-files-found: error
