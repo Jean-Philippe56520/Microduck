@@ -1,5 +1,8 @@
 # Priorité de perception PER-YOLOX-SM-0 — pilotes S/M Rockchip sur PC (04/11/2026)
 
+**Résultat nouveau (CI #41922006466) :** YOLOX-S et YOLOX-M officiels Rockchip ont été téléchargés, SHA-256 contrôlés, et **exécutés chacun une fois sur PC avec une image noire synthétique** ; entrée [1,3,640,640] et trois sorties vérifiées. [SHA S/M et poids réels](docs/per-yolox-sm-rockchip-host-preflight-2026-11-04.md) épinglés dans le banc ; ce n'est **pas** une reconnaissance réelle ni une preuve NPU. Le STOP de source photo reste vrai. [DATA-INV-1 préenregistré sur #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643354377) : compter sur GT les balles restantes par licence, **sans images ni inférence**, et décider ensuite de la source des nouvelles photos. CI du dernier commit encore à qualifier avant fusion.
+
+
 **Mise à jour après premier essai source réel (04/11/2026) :** la [CI #41921084487](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41921084487) a passé les tests et les SHA de métadonnées mais a correctement refusé la sélection : `STOP_SOURCE class=sports_ball available=0 required=6` après 1 316 exclusions sous licence photo CC BY 2.0. Aucun JPEG, poids S/M ou inférence réelle à ce stade. [Amendement préenregistré sur #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643245238) : la PR teste maintenant **indépendamment** les 2 ONNX Rockchip sur image noire synthétique ; cette preuve ABI ne transforme **pas** la cohorte photo STOP en cohorte valide. Bench Nano/S/M sur images : **non lancé**, nouvelle source requise ; ne pas contourner le critère de droits.
 
 
