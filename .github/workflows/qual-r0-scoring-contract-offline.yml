@@ -1,0 +1,48 @@
+name: QUAL-R0 real-reader paired GT scoring contract (fixtures only)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "experiments/per_qual_r0_scoring_contract.py"
+      - "tests/test_per_qual_r0_scoring_contract.py"
+      - ".github/workflows/qual-r0-scoring-contract-offline.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-source-and-scoring-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: OEM and simulation pins must remain unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-tree HEAD upstream/microduck | grep -F '942e58e3aa6dbb28e7037203fff11866122c7567'
+          git ls-tree HEAD upstream/microduck_rl | grep -F 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run realistic reader type fixtures without media or inference
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q experiments/per_qual_r0_scoring_contract.py tests/test_per_qual_r0_scoring_contract.py
+          python -m unittest discover -s tests -p 'test_per_qual_r0_scoring_contract.py' -v
+      - name: Confirm no direct image/model/network dependency in QUAL-R0
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          sources = [Path("experiments/per_qual_r0_scoring_contract.py"), Path("tests/test_per_qual_r0_scoring_contract.py")]
+          for path in sources:
+              text = path.read_text(encoding="utf-8")
+              for pattern in ("onnxruntime", "requests.get(", "urllib.request", "_official_jpeg(", "session.run(", "robotctl", "robotd."):
+                  assert pattern not in text, (path, pattern)
+          print("QUAL_R0_NO_MODEL_NO_IMAGES: PASS")
+          PY
