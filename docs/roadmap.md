@@ -1,3 +1,15 @@
+## Reprise active — VIS-FOCUS-A2 : source/GT temporelle avant tout nouvel essai (04/11/2026)
+
+**État GitHub vérifié** : QUAL-R0 [#305](https://github.com/Jean-Philippe56520/Microduck/pull/305) fusionnée (10/10 CI) ; VIS-FOCUS-A1 [#307](https://github.com/Jean-Philippe56520/Microduck/pull/307) fusionnée (9/9 CI) ; `main@fce5d138bb1a1130091d921ba10352a8ec770400` après #307. **15/15 tests A1 et 2 517 tests Python généraux réussis sur fixtures**, sans validation de perception/mémoire physique. Archives B10/B11, `autonomy.py` original et gitlinks OEM conservés. Ancien A1 « candidat » des sections suivantes = **historique**.
+
+**A1 livré à titre expérimental PC seulement** : `experiments/vis_focus_a1_host.py` propose un seul indice de fixture F1 *courant et frais* après décision du F2 existant. Aucune identité réelle, reconnaissance multi-catégorie `mediad`, position ni permission moteur. Le comparateur n'est **pas** intégré dans l'image DEV ou le Companion embarqué.
+
+**Priorité A2 : STOP tant que la source n'est pas qualifiée** : [audit](vis-focus-a2-temporal-source-readiness-2026-11-04.md) · [porte préenregistrée #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6641402524). Le simulateur OEM sait rendre à 15 FPS des images sans GT/IDs dans son flux ; les bancs SIM-VIS-B/D/F ont des **poses statiques**, le témoin SIM-VIS-F occultation a échoué. **Aucun** corpus vidéo inédit avec GT d'identité, timestamps, catégories et droits n'a encore été audité/testé pour nos objets. **PUMaVOS 30 FPS, CC BY 4.0 déclarée, candidat de métadonnées prioritaire** (scènes ≥3 instances, classe et droits tiers toujours inconnus) ; **SA-V CC BY 4.0**, pistes temporelles mais **pas de catégories**. DAVIS 2017 est sous **CC BY-NC 4.0 pour les données**, YouTube-VIS réservé à la recherche non commerciale ; **aucune vidéo téléchargée**. TAO : annotations à 1 FPS insuffisantes pour mesurer honnêtement les trois cadences. **Ne coder ni tracker, ni modèle, ni cadence adaptative** dans ce lot.
+
+**Après source admise seulement** : préenregistrer séquences inédites + cas négatifs, source/GT indépendante et masquée au candidat, fenêtre temporelle identique ; comparer F2 vs A1 et éventuellement 2 / 1,5 / 1 Hz avec mesures et critères de réussite/arrêt avant inférence. Ne pas rejouer les **1 316 images COCO** ; #301/#304 invalides, non fusionnées. `robotd` 50 Hz moteur/sûreté, `mediad` caméra et `ExperienceMemory` unique restent intacts, Qwen PC facultatif. Aucune autonomie/effet OEM revendiquée.
+
+---
+
 ## Reprise active post QUAL-R0 — VIS-FOCUS-A1 (04/11/2026)
 
 **Fusion acquise :** [#305 QUAL-R0](https://github.com/Jean-Philippe56520/Microduck/pull/305) 10/10 CI vertes, `main@432c2e7e3628b2defdabd7fa9024f7f18af8b44a` confirmé après fusion. 13 tests du contrat COCO/Sama sur fixtures, **aucune performance YOLOX réelle** ni validation NPU. 1 316 images COCO consommées, #301/#304 fermées non fusionnées, scores invalides ; ne pas les rejouer. Les paragraphes QUAL-R0 plus bas sont historiques.
