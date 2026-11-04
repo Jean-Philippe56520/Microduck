@@ -1,0 +1,86 @@
+name: PER-OI-V7-OVERLAP-1 known 288-ID reuse and 42-human GT gate (NO PIXELS)
+on:
+  pull_request:
+    branches:
+      - experiment/per-oi-v7-frozen-42-20261104
+    paths:
+      - "experiments/per_oi_v7_overlap_288_gate.py"
+      - "tests/test_per_oi_v7_overlap_288_gate.py"
+      - ".github/workflows/per-oi-v7-overlap-288.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-42-overlap-readonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Pinned OEM identity without loading or modifying upstream
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-tree HEAD upstream/microduck | grep -F '942e58e3aa6dbb28e7037203fff11866122c7567'
+          git ls-tree HEAD upstream/microduck_rl | grep -F 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Exact source-only fixtures before any network
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q experiments/per_oi_v7_overlap_288_gate.py tests/test_per_oi_v7_overlap_288_gate.py
+          python -m unittest discover -s tests -p 'test_per_oi_v7_overlap_288_gate.py' -v
+          python -m unittest discover -s tests -p 'test_per_oi_v7_frozen_cohort.py' -v
+      - name: Download only FOUR official Open Images V7 CSVs (NO JPEG/ONNX)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 1000000 -o "$RUNNER_TEMP/classes.csv" \
+            'https://storage.googleapis.com/openimages/v7/oidv7-class-descriptions-boxable.csv'
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 40000000 -o "$RUNNER_TEMP/images.csv" \
+            'https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv'
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 55000000 -o "$RUNNER_TEMP/human.csv" \
+            'https://storage.googleapis.com/openimages/v7/oidv7-val-annotations-human-imagelabels.csv'
+          curl --fail --location --retry 2 --max-time 300 --max-filesize 180000000 -o "$RUNNER_TEMP/boxes.csv" \
+            'https://storage.googleapis.com/openimages/v5/validation-annotations-bbox.csv'
+      - name: Exact roster and historic source-only overlap with human votes
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 240s python -m experiments.per_oi_v7_overlap_288_gate \
+            --approved-public-metadata \
+            --classes "$RUNNER_TEMP/classes.csv" \
+            --images "$RUNNER_TEMP/images.csv" \
+            --human "$RUNNER_TEMP/human.csv" \
+            --boxes "$RUNNER_TEMP/boxes.csv" > "$RUNNER_TEMP/oi-v7-overlap-only.json"
+          python - "$RUNNER_TEMP/oi-v7-overlap-only.json" <<'PY'
+          import json,sys
+          with open(sys.argv[1],encoding="utf-8") as fp: r=json.load(fp)
+          assert r["status"] in (
+            "OI_42_DISJOINT_FROM_288_WITH_HUMAN_GT_METADATA_ONLY",
+            "STOP_FROZEN_42_SOURCE_NOT_QUALIFIED")
+          assert r["roster_sha256"]=="1026cb395a8b817c43d8e03fbafa695aabc0b9c927464cf9f81d39e686703bc3"
+          assert r["historical_w1_sha256"]=="6954c9a0136d262a01eeba44b1da35319cf5323d270c73bc306cfd7f5f33179a"
+          assert r["historical_openimages_ids_reconstructed"]==288
+          assert r["frozen_candidate_images"]==42
+          assert not r["individual_photo_rights_verified"] and not r["cohort_commercially_approved"]
+          assert not r["coco_val_5000_flickr_overlap_checked"]
+          assert r["jpeg_downloaded"]==r["model_inferences"]==r["motor_commands"]==r["sqlite_writes"]==0
+          assert not r["scores_measured"] and not r["robot_rknn_validated"]
+          print(json.dumps(r,sort_keys=True))
+          PY
+          cp "$RUNNER_TEMP/oi-v7-overlap-only.json" oi-v7-overlap-numeric-only.json
+      - name: Publish aggregate counts and hashes ONLY; never IDs/media/URLs/weights
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oi-v7-288-overlap-numeric-only
+          path: oi-v7-overlap-numeric-only.json
+          retention-days: 14
+          if-no-files-found: error
