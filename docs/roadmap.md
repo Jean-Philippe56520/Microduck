@@ -1,3 +1,11 @@
+## Reprise active PER-OI-V7-V2 source-only (04/11/2026)
+
+**#310 YOLOX-S/M Rockchip fusionnée** (10/10 CI, PC/noir synthétique uniquement), **#313 labels humains Open Images fusionnée**. **#312/#314 fermées sans fusion**, car le vrai contrôle source des 42 images V1 a prouvé **4 chevauchements avec les 288 anciennes photos Open Images inférées**. **#315 V2 candidate** : [CI spécialisée #41930839947](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41930839947) réussie, exclusion préalable des 288 OI, 5 000/5 000 identifiants Flickr COCO, 4 collisions sources candidates évitées ; **nouvelle sélection GT-only 42 = 7×6**, SHA `282d67af8f97975b55149f4b104eaef79bcef1e94beb9522b207ff8a7193c28c` **figé avant image/ONNX**. CI du dernier HEAD #315 à vérifier avant toute fusion. [Rapport](per-oi-v7-v2-source-2026-11-04.md) ; [plan directeur, autorité](plan-action.md).
+
+**Porte de suite non levée :** droits/attribution vérifiés **image par image** et absence de doublons de pixels/perceptuels intercorpus, sous-type `Tennis ball` limité, puis seulement premier benchmark Nano/S/M **sur les mêmes JPEG** et GT humaine, sans modèle choisi sur ces images. Pour le robot, mediad seul caméra, robotd seul moteur/sûreté 50 Hz, RK3566/NPU/thermique/RSS et 2 Hz à mesurer après réception ; VIS-FOCUS-A2/EX4-C2 restent en attente. Aucun pixel, poids ou mouvement testé dans V2.
+
+---
+
 ## Priorité perception — PER-YOLOX-SM-0 : reconnaissance multiclasse, distincte du suivi temporel (04/11/2026)
 
 **Avancement positif de la phase 0 :** deux véritables poids officiels S/M téléchargés/empreintes vérifiées et **testés sur PC avec un tenseur noir synthétique** dans [#41922006466](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41922006466), 3 sorties conformes : **S=35,9 Mo SHA `a39c8476d10c242298d6a8654cb29937a9cc3c062358f4d96367689df23d1796`, M=101,3 Mo SHA `47a76546f3a499b2dbf55cdf2c5ea49bf2b7fa8c943de40edf1ee39b20e45f29`**. Poids épinglés sans redistribution. **La source photo reste STOP**, aucun score sur vrai objet et aucune mesure NPU Microduck. [DATA-INV-1 préenregistré](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643354377) cherche un jeu de GT fraîche admissible par licence photo, sans changer silencieusement de seuil, cohortes ou droits.
