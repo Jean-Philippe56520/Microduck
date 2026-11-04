@@ -94,7 +94,7 @@ class OiV7SourceTests(unittest.TestCase):
         for label in EXACT_CANDIDATES:
             self.assertEqual(1,result["per_label"][label]["validation_images_with_licensed_declared_gt"])
         self.assertEqual("UNKNOWN_NOT_INFERRED_FROM_BALL",result["sports_ball_coco_mapping"])
-        self.assertEqual(1,result["skipped_annotations"]["group_depiction_or_inside"]//2)
+        self.assertEqual(2,result["skipped_annotations"]["group_depiction_or_inside"])
         self.assertEqual(1,result["skipped_annotations"]["invalid_rect"])
         self.assertEqual(result["real_pixels_loaded"],0)
         self.assertEqual(result["models_loaded"],0)
