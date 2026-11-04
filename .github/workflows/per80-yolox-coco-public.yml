@@ -1,0 +1,120 @@
+name: PER-80 YOLOX Nano 80-category COCO public host benchmark
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "experiments/per80_yolox_coco_public.py"
+      - "tests/test_per80_yolox_coco_public.py"
+      - ".github/workflows/per80-yolox-coco-public.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-coco80:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Verify unchanged OEM gitlinks and no private media
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-tree HEAD upstream/microduck | grep -F '942e58e3aa6dbb28e7037203fff11866122c7567'
+          git ls-tree HEAD upstream/microduck_rl | grep -F 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install existing approved YOLOX host-only dependencies
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0 numpy==1.26.4 onnxruntime==1.21.0
+      - name: Run offline nominal and negative contract tests
+        run: |
+          python -m compileall -q experiments/per80_yolox_coco_public.py tests/test_per80_yolox_coco_public.py
+          python -m unittest discover -s tests -p 'test_per80_yolox_coco_public.py' -v
+      - name: Download pinned public COCO validation GT only
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 180 \
+            --output "$RUNNER_TEMP/instances_val2017.json" \
+            "https://huggingface.co/datasets/LibreYOLO/coco2017/resolve/main/instances_val2017.json"
+          echo "e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aeefa635b8c810b6f  $RUNNER_TEMP/instances_val2017.json" | sha256sum --check
+      - name: Fix 800 new public photos and verify all 80 categories before model access
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m experiments.per80_yolox_coco_public \
+            --approved-public-media --validate-only \
+            --annotations "$RUNNER_TEMP/instances_val2017.json" \
+            > "$RUNNER_TEMP/per80-source-gate.json"
+          python - "$RUNNER_TEMP/per80-source-gate.json" <<'PY'
+          import json,sys
+          with open(sys.argv[1],encoding="utf-8") as fp:
+              r=json.load(fp)
+          assert r["status"] == "SOURCE_GATE_PASS_NO_INFERENCE"
+          assert r["public_photos_selected"] == 800
+          assert r["gt_class_names_count"] == 80
+          assert len(r["photos_with_target_gt_by_category"]) == 80
+          assert r["excluded_previous_public_cohorts"] == 432
+          assert not r["robot_rknn_validated"]
+          assert r["motor_commands"] == r["sqlite_writes"] == r["qwen_calls"] == 0
+          print(json.dumps({
+              "selection_sha256": r["roster_sha256"],
+              "classes_with_8_plus_GT_photos": sum(
+                  n >= 8 for n in r["photos_with_target_gt_by_category"].values()
+              ),
+              "class_names_80": r["gt_class_names"],
+              "public_photos_selected": r["public_photos_selected"],
+          },sort_keys=True))
+          PY
+      - name: Download unchanged Apache-2.0 YOLOX Nano ONNX after preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --max-time 180 \
+            --output "$RUNNER_TEMP/yolox_nano.onnx" \
+            "https://huggingface.co/skillsafe-ai/yolox-nano/resolve/8e308810ede488f742901a4ac597dc7796798e46/yolox_nano.onnx"
+          echo "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d  $RUNNER_TEMP/yolox_nano.onnx" | sha256sum --check
+      - name: Infer real 800 public photos and score all 80 COCO category boxes
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 2200s python -m experiments.per80_yolox_coco_public \
+            --approved-public-media \
+            --annotations "$RUNNER_TEMP/instances_val2017.json" \
+            --model "$RUNNER_TEMP/yolox_nano.onnx" \
+            > "$RUNNER_TEMP/per80-public-aggregate.json"
+          python - "$RUNNER_TEMP/per80-public-aggregate.json" <<'PY'
+          import json,sys
+          with open(sys.argv[1],encoding="utf-8") as fp:
+              r=json.load(fp)
+          assert r["status"]=="HOST_PUBLIC_INFERENCE_COMPLETED"
+          assert r["inference_on_real_public_pixels"] is True
+          assert r["public_photos_selected"]==800
+          assert r["class_count_model"]==80
+          assert len(r["categories"])==80
+          assert r["excluded_previous_public_cohorts"]==432
+          assert not r["all_80_category_safe_use"]
+          assert not r["camera_height_verified"]
+          assert not r["robot_rknn_validated"]
+          assert r["no_private_photos"]
+          assert r["motor_commands"]==r["sqlite_writes"]==r["qwen_calls"]==0
+          print(json.dumps(r,sort_keys=True))
+          PY
+          cp "$RUNNER_TEMP/per80-public-aggregate.json" per80-public-aggregate.json
+      - name: Publish aggregate only; no public or private JPEGs, weights or IDs
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: per80-public-coco-yolox-numeric-only
+          path: per80-public-aggregate.json
+          if-no-files-found: error
+          retention-days: 14
