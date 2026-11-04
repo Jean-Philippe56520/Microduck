@@ -127,7 +127,7 @@ class NewCohortFixtures(unittest.TestCase):
                 allowed_license_ids=frozenset({4}))
         with self.assertRaisesRegex(SourceGateError, "duplicate or leaked"):
             select_new_after_consumed(orig, sama, names=names,
-                historical_ids=hist | frozenset({prior[0][0]}),
+                historical_ids=frozenset((hist - {min(hist)}) | {prior[0][0]}),
                 old_cases=prior, allowed_license_ids=frozenset({4}))
 
     def test_coarse_class_ids_or_missing_gt_are_not_accepted(self):
