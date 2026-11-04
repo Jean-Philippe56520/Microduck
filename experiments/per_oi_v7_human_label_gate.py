@@ -107,8 +107,12 @@ def qualify_metadata(classes: Path, images: Path, boxes: Path, human: Path,
     for row in _rows(human, ("ImageID", "Source", "LabelName", "Confidence")):
         if row["Source"] not in ("verification", "crowdsource-verification"):
             raise OpenImagesSourceStop("STOP_SCHEMA: non-human label in human labels CSV")
-        if row["Confidence"] not in ("0", "1") or not _HEX_ID.fullmatch(row["ImageID"]):
-            raise OpenImagesSourceStop("STOP_SCHEMA: invalid verified label/confidence")
+        confidence_ok = row["Confidence"] in ("0", "1")
+        id_ok = bool(_HEX_ID.fullmatch(row["ImageID"]))
+        if not confidence_ok or not id_ok:
+            raise OpenImagesSourceStop(
+                f"STOP_SCHEMA: invalid verified label/confidence "
+                f"(confidence_binary={confidence_ok}, image_id_hex16={id_ok})")
         n_valid_rows += 1
         name = name_by_mid.get(row["LabelName"])
         if name is None or row["ImageID"] not in eligible:
