@@ -170,10 +170,13 @@ class MockGoalMemory:
         con = self._memory.conn
         with con:
             old = con.execute("""
-                SELECT kind,category,resume_when,created_at_epoch_s,active
+                SELECT kind,category,resume_when,created_at_epoch_s,active,correction_reason
                 FROM mem1_mock_goals WHERE goal_id=?
             """, (key,)).fetchone()
             if old is not None:
+                # C/E-2: do not report idempotence for an active but corrected row.
+                if old["active"] == 1 and old["correction_reason"] is not None:
+                    raise ValueError("inconsistent active mock goal correction")
                 if (tuple(old[:4]) == (kind, category, resume_when, at)
                         and old["active"] == 1):
                     return False
@@ -203,11 +206,13 @@ class MockGoalMemory:
         con = self._memory.conn
         with con:
             row = con.execute("""
-                SELECT id,state,resume_when,revision,updated_at_epoch_s,active
+                SELECT id,state,resume_when,revision,updated_at_epoch_s,active,correction_reason
                 FROM mem1_mock_goals WHERE goal_id=?
             """, (key,)).fetchone()
             if row is None or row["active"] != 1:
                 raise ValueError("missing or retracted mock goal")
+            if row["correction_reason"] is not None:
+                raise ValueError("inconsistent active mock goal correction")
             if row["revision"] != expected_revision:
                 raise ValueError("stale goal revision")
             if at < row["updated_at_epoch_s"]:
@@ -250,11 +255,13 @@ class MockGoalMemory:
         con = self._memory.conn
         with con:
             goal = con.execute("""
-                SELECT id,state,category,created_at_epoch_s,updated_at_epoch_s,active
+                SELECT id,state,category,created_at_epoch_s,updated_at_epoch_s,active,correction_reason
                 FROM mem1_mock_goals WHERE goal_id=?
             """, (key,)).fetchone()
             if goal is None or goal["active"] != 1 or goal["state"] != "active":
                 raise ValueError("goal must be active and non-retracted")
+            if goal["correction_reason"] is not None:
+                raise ValueError("inconsistent active mock goal correction")
             event = con.execute("""
                 SELECT id,intention,target_kind,target_category,
                        proposed_at_epoch_s,status,source,active
