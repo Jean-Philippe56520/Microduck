@@ -1,5 +1,8 @@
 ## Priorité perception — PER-YOLOX-SM-0 : reconnaissance multiclasse, distincte du suivi temporel (04/11/2026)
 
+**Avancement positif de la phase 0 :** deux véritables poids officiels S/M téléchargés/empreintes vérifiées et **testés sur PC avec un tenseur noir synthétique** dans [#41922006466](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41922006466), 3 sorties conformes : **S=35,9 Mo SHA `a39c8476d10c242298d6a8654cb29937a9cc3c062358f4d96367689df23d1796`, M=101,3 Mo SHA `47a76546f3a499b2dbf55cdf2c5ea49bf2b7fa8c943de40edf1ee39b20e45f29`**. Poids épinglés sans redistribution. **La source photo reste STOP**, aucun score sur vrai objet et aucune mesure NPU Microduck. [DATA-INV-1 préenregistré](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643354377) cherche un jeu de GT fraîche admissible par licence photo, sans changer silencieusement de seuil, cohortes ou droits.
+
+
 **Premier essai CI source : STOP vérifié (04/11/2026)** : [run #41921084487](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41921084487), `sports_ball available=0 required=6` sous licence photo CC BY 2.0 après les 1 316 images exclues ; tests offline et SHA des GT positifs. **Aucun poids ou JPEG ouvert dans cette tentative**. La [porte amendée #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643245238) vérifie **séparément** S/M ONNX sur **noir synthétique** ; le corpus de 42 images demeure NON QUALIFIÉ, les scores Nano/S/M non exécutés. Rechercher des droits/GT admissibles avant la comparaison photographique ; ne jamais déclarer SOURCE PASS d'après le seul ABI.
 
 
