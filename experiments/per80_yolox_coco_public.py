@@ -175,7 +175,7 @@ def select_cases(data: dict, excluded_ids: frozenset[int], *,
             or type(image_count) is not int or image_count < 80
             or image_count > MAX_PUBLIC_IMAGES
             or type(per_class) is not int or not 1 <= per_class <= 8):
-        raise ValueError("invalid prospective cohort request")
+        raise ValueError("invalid prospective cohort budget or class quota")
     licenses = _valid_license_ids(data)
     images = {}
     for image in data.get("images", []):
