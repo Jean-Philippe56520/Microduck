@@ -16,6 +16,7 @@ from pathlib import Path, PurePosixPath
 import zipfile
 
 SEED = "kwipi-per-qual1a-samacoco-paired-20261104-v1"
+SEED_C1 = "kwipi-per-qual1c1-samacoco-20261104-v1"
 TARGETS = ("sports_ball", "book", "bottle", "chair", "dog", "cat", "person")
 SAMPLES_PER_CLASS = 6
 MAX_SAMA_ZIP = 20_000_000
@@ -177,9 +178,11 @@ def _index_boxes(data: dict, images: dict, eligible: set[int]) -> tuple[dict, se
 
 def choose_paired_cohort(original: dict, sama: dict, *,
                          old_ids: frozenset[int], allowed_license_ids: frozenset[int],
-                         per_class: int = SAMPLES_PER_CLASS):
+                         per_class: int = SAMPLES_PER_CLASS,
+                         selection_seed: str = SEED):
     """Prospective 42-image cohort; selection sees only ground-truth metadata."""
-    if (type(per_class) is not int or per_class != SAMPLES_PER_CLASS
+    if (type(selection_seed) is not str or selection_seed not in (SEED, SEED_C1)
+            or type(per_class) is not int or per_class != SAMPLES_PER_CLASS
             or type(old_ids) is not frozenset or type(allowed_license_ids) is not frozenset
             or any(type(i) is not int or i < 0 for i in old_ids | allowed_license_ids)):
         raise SourceGateError("invalid frozen prospective selection parameters")
@@ -203,7 +206,7 @@ def choose_paired_cohort(original: dict, sama: dict, *,
         pools[name] = sorted((ident for ident in eligible
                  if orig_boxes.get((ident, category_id)) and
                     sama_boxes.get((ident, category_id))),
-            key=lambda ident: (sha256(f"{SEED}/{name}/{ident}".encode()).digest(), ident))
+            key=lambda ident: (sha256(f"{selection_seed}/{name}/{ident}".encode()).digest(), ident))
     taken = set(old_ids)
     cases = []
     # Rare classes first avoids allocating a shared scene to a common class.

@@ -1,0 +1,96 @@
+name: PER-QUAL-1C1 new 42 COCO/Sama GT-only holdout after excluding 1274 IDs
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "experiments/per_qual1_sama_gt_gate.py"
+      - "experiments/per_qual1c1_new42_source.py"
+      - "tests/test_per_qual1c1_new42_source.py"
+      - ".github/workflows/per-qual1c1-new42-source-only.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  new-public-source-cohort:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Verify OEM and RL gitlinks unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-tree HEAD upstream/microduck | grep -F '942e58e3aa6dbb28e7037203fff11866122c7567'
+          git ls-tree HEAD upstream/microduck_rl | grep -F 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Offline positive/adversarial fixtures before access to public metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q experiments/per_qual1_sama_gt_gate.py experiments/per_qual1c1_new42_source.py tests/test_per_qual1c1_new42_source.py
+          python -m unittest discover -s tests -p 'test_per_qual1c1_new42_source.py' -v
+          python -m unittest discover -s tests -p 'test_per_qual1_sama_gt_gate.py' -v
+      - name: Retrieve only frozen public COCO and Sama annotation files
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 35000000 \
+            --output "$RUNNER_TEMP/instances_val2017.json" \
+            'https://huggingface.co/datasets/LibreYOLO/coco2017/resolve/main/instances_val2017.json'
+          echo "e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aeefa635b8c810b6f  $RUNNER_TEMP/instances_val2017.json" | sha256sum --check
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 20000000 \
+            --output "$RUNNER_TEMP/sama-coco-val.zip" \
+            'https://sama-documentation-assets.s3.amazonaws.com/sama-coco/sama-coco-val.zip'
+          echo "c55454f6657ce63891783136cc5dfe5f1e9c5e1748c0d8ca08b456a804eab15f  $RUNNER_TEMP/sama-coco-val.zip" | sha256sum --check
+      - name: Select GT-only prospectively, require 1274 historical exclusions and correct ID domains
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 120s python -m experiments.per_qual1c1_new42_source \
+            --approved-public-metadata \
+            --annotations "$RUNNER_TEMP/instances_val2017.json" \
+            --sama-zip "$RUNNER_TEMP/sama-coco-val.zip" \
+            > "$RUNNER_TEMP/perqual1c1-new42-source.json"
+          python - "$RUNNER_TEMP/perqual1c1-new42-source.json" <<'PY'
+          import json,sys
+          from experiments.per80_yolox_coco_public import COCO80_ID_ORDER
+          with open(sys.argv[1],encoding='utf-8') as fp: r=json.load(fp)
+          assert r['status']=='NEW_SOURCE_COHORT_SELECTED_NO_INFERENCE'
+          assert r['historical_coco_images_excluded']==1232
+          assert r['failed_pr301_images_excluded']==42
+          assert r['total_coco_ids_excluded']==1274
+          assert r['new_selected_photos']==42 and r['per_target_allocated']==6
+          assert r['selection_seed']=='kwipi-per-qual1c1-samacoco-20261104-v1'
+          assert r['new_cohort_sha256']=='04bae5d7af2e379b81762a75b7965e849d6d972d40dd56ce16bf28a984122b92'
+          assert r['previous_42_cohort_sha256']=='709718feba6185ddd79e2aa492c7eaf74bb2d904dfa6c30e81a25c31dbdb53d5'
+          assert r['sama_source_sha256']=='c55454f6657ce63891783136cc5dfe5f1e9c5e1748c0d8ca08b456a804eab15f'
+          assert len(r['class_id_domains'])==len(r['paired_annotations'])==7
+          for cat,ids in r['class_id_domains'].items():
+              assert COCO80_ID_ORDER[ids['yolox_head_idx']]==ids['coco_category_id']
+              assert r['paired_annotations'][cat]['allocated_photos']==6
+              assert r['paired_annotations'][cat]['original_gt_boxes']>=6
+              assert r['paired_annotations'][cat]['sama_gt_boxes']>=6
+          assert r['viewpoint_height']=='unknown'
+          assert not r['model_accessed'] and not r['promotion']
+          assert r['image_fetches']==r['inferences_executed']==r['motor_commands']==r['sqlite_writes']==r['qwen_calls']==0
+          print('PER_QUAL1C1_SOURCE_ONLY_GATE: PASS')
+          print(json.dumps({'new_cohort_sha256':r['new_cohort_sha256'],
+              'paired_annotations':r['paired_annotations'],
+              'class_id_domains':r['class_id_domains'],
+              'total_coco_ids_excluded':r['total_coco_ids_excluded']},
+              sort_keys=True))
+          PY
+          cp "$RUNNER_TEMP/perqual1c1-new42-source.json" perqual1c1-new42-source.json
+      - name: Publish aggregate metadata only, no photos IDs model or bbox coordinates
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perqual1c1-new42-source-only
+          path: perqual1c1-new42-source.json
+          retention-days: 14
+          if-no-files-found: error
