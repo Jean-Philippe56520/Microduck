@@ -156,6 +156,37 @@ class RockchipYoloxSMTests(unittest.TestCase):
         self.assertEqual(0,out["input_photo_download_count"])
         self.assertEqual({"s":0,"m":0,"nano":0},out["inferences_executed"])
 
+    def test_positive_synthetic_abi_does_not_depend_on_unavailable_coco(self):
+        # Vendor structural compatibility is independently testable even
+        # when the third COCO cohort has zero licensed sports balls.
+        session_s, session_m = mock.Mock(), mock.Mock()
+        session_s.run.return_value = blank_heads()
+        session_m.run.return_value = blank_heads()
+        vendor = {"s": (session_s, "input"), "m": (session_m, "input")}
+        proofs = {"s": {"sha256": "1"*64}, "m": {"sha256": "2"*64}}
+        with mock.patch.object(sm, "source_and_truth") as forbidden:
+            with mock.patch.object(sm, "open_vendor_models",
+                                   return_value=(vendor, proofs)) as opened:
+                result = sm.run(None, None, stage="abi",
+                                model_s=object(), model_m=object())
+        forbidden.assert_not_called()
+        opened.assert_called_once()
+        self.assertEqual("HOST_VENDOR_ABI_SMOKE_ONLY_NO_PUBLIC_PIXELS",
+                         result["status"])
+        self.assertEqual("NOT_EVALUATED_ABI_ONLY",
+                         result["source"]["status"])
+        self.assertFalse(result["source"]["cohort_qualified"])
+        self.assertEqual({"s":1,"m":1,"nano":0}, result["inferences_executed"])
+        self.assertEqual(0, result["input_photo_download_count"])
+        self.assertFalse(result["actual_rk3566_npu_inference"])
+        self.assertFalse(result["model_promoted"])
+
+    def test_negative_source_without_metadata_is_not_accidentally_passed(self):
+        with mock.patch.object(sm, "source_and_truth") as forbidden:
+            with self.assertRaisesRegex(SourceGateError, "metadata files"):
+                sm.run(None, None, stage="source")
+        forbidden.assert_not_called()
+
     def test_negative_no_benchmark_before_frozen_vendor_hash(self):
         cases,maps,ca,sa,_=scored_case_fixtures()
         with mock.patch.object(sm,"source_and_truth",
