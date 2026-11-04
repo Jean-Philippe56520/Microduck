@@ -1,5 +1,7 @@
 # PER-OI-V7-V2-SRC-0 — échantillon prospectif source-only après STOP des 42 V1
 
+**Source réelle déjà contrôlée par [CI spécialisée #41930839947](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41930839947) :** 5/5 sources officielles épinglées, sélecteurs historiques **288/288 OI**, **5 000/5 000** références Flickr COCO val lisibles, **quatre collisions Flickr candidates éliminées** ; **42 nouveaux couples GT/image identifiés, 7×6, 0 pixels/inférences**. **SHA V2 figé avant toute inférence** : `282d67af8f97975b55149f4b104eaef79bcef1e94beb9522b207ff8a7193c28c` ; contrôle codé et re-CI au SHA final en attente. Disponibilités candidates après filtres : Tennis ball 9, Book 33, Bottle 142, Chair 164, Cat 257, Dog 1 320, Person 4 422. **PAS de droit individuel ou de mesure de précision**, pas de robot. [Bilan déclaré sur issue #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6644476453).
+
 **04/11/2026. Candidat.** [Porte fixée avant code](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6644374649), [amendement de cardinalité AVANT code](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6644380772). Base de branche `main@801d87dec0da7820fce58d94533fd04d525545aa` après [#310 fusionnée](https://github.com/Jean-Philippe56520/Microduck/pull/310) et #313 fusionnée. Le [plan directeur](plan-action.md) demeure autoritaire ; ce rapport conserve les preuves, pas un déploiement.
 
 ## Pourquoi une étude V2 distincte ?
@@ -14,7 +16,7 @@ Réutiliser les sélecteurs source historiques `select_human_verified_cases` (#1
 
 **Sources et empreintes SHA-256 connues :** cinq sources officielles/vérifiées indépendamment :
 - Catégories OI : `1839e0e7e84130ae281f7f67413768601b031581c0c42e7fc17527b8e2a99aa9`.
-- Images OI val : `ed93a0e121fe345effdfc73563157cb500b33a17`.
+- Images OI val : `ed93a0e121fe345effdfc7359b848dbc64a1ff6778c8c73563157cb500b33a17`.
 - Labels humains OI : `92ddbdfceb3626e044df5e89100b24f6c22a79c1888a4bddd00a6f231d86d56a`.
 - Boîtes OI val : `d8bbd59410af14835d7733165a7bb8a3f0213981b22dd5077b0b9f7878991ff2`.
 - COCO val 2017 annotations miroir SHA contrôlé : `e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aeefa635b8c810b6f`.
