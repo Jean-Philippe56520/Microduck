@@ -1,0 +1,96 @@
+name: PER-OI-W1 independent Open Images low-performing classes (host only)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "experiments/per_oi_w1_openimages_stress.py"
+      - "tests/test_per_oi_w1_openimages_stress.py"
+      - ".github/workflows/per-oi-w1-openimages.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-openimages-w1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Freeze OEM pins
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-tree HEAD upstream/microduck | grep -F '942e58e3aa6dbb28e7037203fff11866122c7567'
+          git ls-tree HEAD upstream/microduck_rl | grep -F 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install existing pinned host-only dependencies
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0 numpy==1.26.4 onnxruntime==1.21.0
+      - name: Offline positive and negative gates
+        run: |
+          python -m compileall -q experiments/per_oi_w1_openimages_stress.py tests/test_per_oi_w1_openimages_stress.py
+          python -m unittest discover -s tests -p 'test_per_oi_w1_openimages_stress.py' -v
+      - name: Download only official public metadata and ground truth
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 180 --output "$RUNNER_TEMP/classes.csv" "https://storage.googleapis.com/openimages/v7/oidv7-class-descriptions-boxable.csv"
+          curl --fail --location --retry 2 --max-time 180 --output "$RUNNER_TEMP/meta.csv" "https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv"
+          curl --fail --location --retry 2 --max-time 180 --output "$RUNNER_TEMP/votes.csv" "https://storage.googleapis.com/openimages/v7/oidv7-val-annotations-human-imagelabels.csv"
+          curl --fail --location --retry 2 --max-time 180 --output "$RUNNER_TEMP/boxes.csv" "https://storage.googleapis.com/openimages/v5/validation-annotations-bbox.csv"
+      - name: Freeze 48 disjoint public JPEG selections before model access
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m experiments.per_oi_w1_openimages_stress --approved-public-media --validate-only --classes "$RUNNER_TEMP/classes.csv" --metadata "$RUNNER_TEMP/meta.csv" --votes "$RUNNER_TEMP/votes.csv" --boxes "$RUNNER_TEMP/boxes.csv" > "$RUNNER_TEMP/w1-gate.json"
+          python - "$RUNNER_TEMP/w1-gate.json" <<'PY'
+          import json,sys
+          with open(sys.argv[1],encoding="utf-8") as fp: r=json.load(fp)
+          assert r["status"]=="SOURCE_GATE_PASS_NO_INFERENCE"
+          assert r["public_images_selected"]==48
+          assert r["previous_openimages_ids_excluded"]==240
+          assert r["positive_negative_per_class"]==8
+          assert r["targets"]==["book","bottle","chair"]
+          assert r["motor_commands"]==r["sqlite_writes"]==r["qwen_calls"]==0
+          assert not r["camera_height_verified"]
+          print("PER_OI_W1_SOURCE_GATE: PASS")
+          PY
+      - name: Retrieve unchanged pinned YOLOX host model only after source gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 180 --output "$RUNNER_TEMP/yolox.onnx" "https://huggingface.co/skillsafe-ai/yolox-nano/resolve/8e308810ede488f742901a4ac597dc7796798e46/yolox_nano.onnx"
+          echo "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d  $RUNNER_TEMP/yolox.onnx" | sha256sum --check
+      - name: Infer 48 new JPEGs, 3 classes, 8 positives/negatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 950s python -m experiments.per_oi_w1_openimages_stress --approved-public-media --classes "$RUNNER_TEMP/classes.csv" --metadata "$RUNNER_TEMP/meta.csv" --votes "$RUNNER_TEMP/votes.csv" --boxes "$RUNNER_TEMP/boxes.csv" --model "$RUNNER_TEMP/yolox.onnx" > "$RUNNER_TEMP/per-oi-w1-report.json"
+          python - "$RUNNER_TEMP/per-oi-w1-report.json" <<'PY'
+          import json,sys
+          with open(sys.argv[1],encoding="utf-8") as fp: r=json.load(fp)
+          assert r["status"]=="HOST_PUBLIC_INFERENCE_COMPLETED"
+          assert r["public_images_selected"]==48
+          assert r["inference_on_real_public_pixels"]
+          assert len(r["classwise_results"])==3
+          assert all(x["positive_images"]==x["negative_images"]==8 for x in r["classwise_results"].values())
+          assert r["decision"] in ("HOST_METRIC_GATE_ONLY_NO_PROMOTION","STOP_PROMOTION")
+          assert not r["promotion"] and not r["robot_rknn_validated"]
+          assert r["motor_commands"]==r["sqlite_writes"]==r["qwen_calls"]==0
+          print(json.dumps(r,sort_keys=True))
+          PY
+          cp "$RUNNER_TEMP/per-oi-w1-report.json" per-oi-w1-report.json
+      - name: Publish aggregate only, never photos, IDs or model
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: per-oi-w1-numeric-only
+          path: per-oi-w1-report.json
+          if-no-files-found: error
+          retention-days: 14
