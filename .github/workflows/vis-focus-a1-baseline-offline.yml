@@ -1,0 +1,31 @@
+name: VIS-FOCUS-A1 existing F1 F2 baseline (mock-only)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "tests/test_vis_focus_a1_baseline.py"
+      - ".github/workflows/vis-focus-a1-baseline-offline.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  baseline-f1-f2-mock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Pinned OEM and simulation sources unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-tree HEAD upstream/microduck | grep -F '942e58e3aa6dbb28e7037203fff11866122c7567'
+          git ls-tree HEAD upstream/microduck_rl | grep -F 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Observe baseline only; no camera, ONNX or robot
+        run: |
+          python -m unittest discover -s tests -p 'test_vis_focus_a1_baseline.py' -v
