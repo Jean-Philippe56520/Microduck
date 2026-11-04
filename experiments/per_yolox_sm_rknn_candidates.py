@@ -439,7 +439,7 @@ def run(annotations: Path, sama_zip: Path, *,
         if model_s is None or model_m is None:
             raise SourceGateError("STOP_MODEL: both vendor variants required")
         sessions,model_proofs=open_vendor_models(
-            model_s,model_m,require_frozen=False)
+            model_s,model_m,require_frozen=True)
         import numpy as np
         synthetic=np.zeros((1,3,SIZE,SIZE),dtype=np.float32)
         for key,(session,name) in sessions.items():
