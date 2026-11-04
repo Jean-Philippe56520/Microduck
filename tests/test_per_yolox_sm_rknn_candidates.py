@@ -150,7 +150,11 @@ class RockchipYoloxSMTests(unittest.TestCase):
         with mock.patch.object(sm,"source_and_truth",
                                return_value=(cases,maps,ca,sa,{},metadata)):
             with mock.patch.object(sm,"open_vendor_models") as forbidden:
-                out=sm.run(None,None,stage="source")
+                # Source branch requires metadata paths even when its
+                # implementation is mocked to prohibit actual file access.
+                from pathlib import Path
+                out=sm.run(Path("unopened-coco.json"),
+                           Path("unopened-sama.zip"),stage="source")
         self.assertEqual("SOURCE_PASS_NO_MODELS_NO_PIXELS",out["status"])
         forbidden.assert_not_called()
         self.assertEqual(0,out["input_photo_download_count"])
