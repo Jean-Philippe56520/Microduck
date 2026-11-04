@@ -280,9 +280,35 @@ def summarize_ground_truth(cases, targets, orig_boxes, sama_boxes):
     return result
 
 
+def validate_dual_class_map(names, source_category_ids, coco_id_order):
+    """Lock the semantic distinction between COCO GT IDs and YOLOX indices.
+
+    A source box is indexed by its official COCO category_id; a model head
+    is indexed from zero. Substituting either for the other invalidates TP.
+    """
+    if (type(names) is not tuple or len(names) != 80
+            or len(set(names)) != 80 or
+            type(coco_id_order) is not tuple or len(coco_id_order) != 80
+            or len(set(coco_id_order)) != 80 or
+            any(type(x) is not int or x < 1 for x in coco_id_order)
+            or type(source_category_ids) is not dict
+            or set(source_category_ids) != set(TARGETS)
+            or any(type(v) is not int for v in source_category_ids.values())
+            or any(name not in names for name in TARGETS)):
+        raise SourceGateError("STOP_SCHEMA: invalid 80-class ID domains")
+    result = {}
+    for name in TARGETS:
+        head_idx = names.index(name)
+        category_id = source_category_ids[name]
+        if coco_id_order[head_idx] != category_id:
+            raise SourceGateError("STOP_SCHEMA: COCO category_id vs YOLOX index mismatch")
+        result[name] = dict(coco_category_id=category_id, yolox_head_idx=head_idx)
+    return result
+
+
 def run_source_gate(annotations: Path, sama_zip: Path):
     from experiments.per80_yolox_coco_public import (
-        P4_IDS, _cohort_from_pinned_source, _valid_license_ids,
+        P4_IDS, COCO80_ID_ORDER, _cohort_from_pinned_source, _valid_license_ids,
     )
     from experiments.vis_att2_eighth_coco_category_vs_region import eighth_disjoint
     from microduck_companion.cata2_bbox_eval import MAX_COCO_JSON_BYTES
@@ -292,7 +318,7 @@ def run_source_gate(annotations: Path, sama_zip: Path):
                 or not 100 <= file.stat().st_size <= limit):
             raise SourceGateError("invalid bounded or symlinked metadata source")
     original_blob = annotations.read_bytes()
-    _, old_cases, _, _, _ = _cohort_from_pinned_source(original_blob)
+    names, old_cases, _, _, _ = _cohort_from_pinned_source(original_blob)
     eighth, original, _, older = eighth_disjoint(original_blob)
     history = frozenset(older | {c.image_id for c in eighth} | P4_IDS |
                         {case.image_id for case, _ in old_cases})
@@ -305,6 +331,13 @@ def run_source_gate(annotations: Path, sama_zip: Path):
     cases, targets, orig_gt, sama_gt, source = choose_paired_cohort(
         original, sama, old_ids=history,
         allowed_license_ids=_valid_license_ids(original))
+    class_spaces = validate_dual_class_map(names, targets, COCO80_ID_ORDER)
+    paired = summarize_ground_truth(cases, targets, orig_gt, sama_gt)
+    if any(row["allocated_photos"] != SAMPLES_PER_CLASS or
+           row["original_gt_boxes"] < SAMPLES_PER_CLASS or
+           row["sama_gt_boxes"] < SAMPLES_PER_CLASS
+           for row in paired.values()):
+        raise SourceGateError("STOP_SCHEMA: missing target GT on source positives")
     roster = "|".join(f"{ident}/{cat}" for ident, cat in cases)
     roster_sha = _frozen_sha256(
         roster.encode(), FROZEN_COHORT_SHA256, "prospective cohort")
@@ -319,7 +352,8 @@ def run_source_gate(annotations: Path, sama_zip: Path):
         "per_target_allocation": SAMPLES_PER_CLASS,
         "categories": list(TARGETS),
         "source": source,
-        "paired_annotations": summarize_ground_truth(cases,targets,orig_gt,sama_gt),
+        "paired_annotations": paired,
+        "class_id_domains": class_spaces,
         "gt_processes_independent_of_yolox_predictions": True,
         "gt_processes_statistically_independent": False,
         "images_fetched": 0,
