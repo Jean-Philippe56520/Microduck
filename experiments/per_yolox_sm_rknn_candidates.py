@@ -23,7 +23,8 @@ from experiments.per80_yolox_coco_public import (
 from experiments.per_qual1_sama_gt_gate import (
     FROZEN_COHORT_SHA256, SEED_C1, SAMPLES_PER_CLASS, TARGETS,
     SourceGateError, _frozen_sha256, _images, _paired_iou50,
-    choose_paired_cohort, unpack_sama_archive, validate_dual_class_map,
+    _category_ids, _index_boxes, choose_paired_cohort,
+    unpack_sama_archive, validate_dual_class_map,
 )
 from experiments.per_qual1c1_new42_source import (
     FROZEN_NEW_COHORT_SHA256, source_gate,
@@ -35,9 +36,12 @@ MODEL_URLS = {
     "s": "https://ftrg.zbox.filez.com/v2/delivery/data/95f00b0fc900458ba134f8b180b3f7a1/examples/yolox/yolox_s.onnx",
     "m": "https://ftrg.zbox.filez.com/v2/delivery/data/95f00b0fc900458ba134f8b180b3f7a1/examples/yolox/yolox_m.onnx",
 }
-# Filled only AFTER the vendor downloads and numerical ABI smoke pass;
-# until then benchmark mode refuses before fetching any public JPEG.
-FROZEN_VENDOR_SHA256 = {"s": None, "m": None}
+# Actual official Rockchip optimized ONNX bytes: GitHub CI run 41922006466,
+# after 1 real synthetic RGB/3-head pass PER variant. NOT an RKNN or media score.
+FROZEN_VENDOR_SHA256 = {
+    "s": "a39c8476d10c242298d6a8654cb29937a9cc3c062358f4d96367689df23d1796",
+    "m": "47a76546f3a499b2dbf55cdf2c5ea49bf2b7fa8c943de40edf1ee39b20e45f29",
+}
 EXPECTED_HEADS = {(1, 85, 80, 80), (1, 85, 40, 40), (1, 85, 20, 20)}
 N_IMAGES = 42
 HISTORICAL = 1316
@@ -71,8 +75,8 @@ def combine_exclusions(historical_1232: frozenset[int],
     return new
 
 
-def source_and_truth(annotations: Path, sama_zip: Path):
-    """Reconstruct all 1316 USED IDs before selecting another 42 using GT only."""
+def _historical_sources(annotations: Path, sama_zip: Path):
+    """Verify pinned GT/rosters and reconstruct all 1316 USED COCO VAL IDs."""
     old = source_gate(annotations, sama_zip)  # verifies COCO/Sama and old 1274
     if (old["status"] != "NEW_SOURCE_COHORT_SELECTED_NO_INFERENCE"
             or old["total_coco_ids_excluded"] != 1274
@@ -107,6 +111,69 @@ def source_and_truth(annotations: Path, sama_zip: Path):
         FROZEN_NEW_COHORT_SHA256, "second 42 photos already consumed",
     )
     excluded = combine_exclusions(historical_1232, earlier_42, newest_42)
+    return old, names, coco, sama, excluded
+
+
+def license_inventory(annotations: Path, sama_zip: Path) -> dict:
+    """Count paired bbox-positives by photo license, never fetch media.
+
+    These are pool cardinalities, NOT a usable 42-image allocation or a
+    legal determination. Two label sets are correlated, not independent.
+    """
+    old, names, coco, sama, excluded = _historical_sources(
+        annotations, sama_zip)
+    del old, names
+    orig_images, sama_images = _images(coco), _images(sama)
+    if set(orig_images) != set(sama_images):
+        raise SourceGateError("STOP_SOURCE: image IDs differ in two GT files")
+    licensed = _valid_license_ids(coco)
+    eligible = set()
+    for ident, image in orig_images.items():
+        if (image[:3] != sama_images[ident][:3]
+                or type(image[3]) is not int):
+            raise SourceGateError("STOP_SOURCE: image geometry/license invalid")
+        if ident not in excluded and image[3] in licensed:
+            eligible.add(ident)
+    original_gt, orig_bad = _index_boxes(coco, orig_images, eligible)
+    sama_gt, sama_bad = _index_boxes(sama, sama_images, eligible)
+    eligible -= orig_bad | sama_bad
+    ids = _category_ids(coco, sama)
+    counts = {}
+    for lic in sorted(licensed):
+        licensed_images = [
+            ident for ident in eligible if orig_images[ident][3] == lic
+        ]
+        counts[str(lic)] = {
+            "images_with_valid_gt": len(licensed_images),
+            "paired_positive_by_category": {
+                name: sum(bool(original_gt.get((ident, ids[name]))
+                               and sama_gt.get((ident, ids[name])))
+                          for ident in licensed_images)
+                for name in TARGETS
+            },
+        }
+    if len(excluded) != HISTORICAL or "4" not in counts:
+        raise SourceGateError("STOP_SOURCE: eligibility audit drift")
+    return {
+        "status": "LICENSE_COUNTS_ONLY_NO_SOURCE_PROMOTION",
+        "photo_pool_qualified": False,
+        "historical_coco_val_ids_excluded": len(excluded),
+        "licenses_are_not_interchangeable": True,
+        "required_assigned_per_target": SAMPLES_PER_CLASS,
+        "licence_id4_CC_BY_2_0_sports_ball_paired": counts["4"][
+            "paired_positive_by_category"]["sports_ball"],
+        "counts_by_coco_photo_license": counts,
+        "individual_ids_or_boxes_published": 0,
+        "jpeg_bytes_accessed": 0,
+        "models_loaded": 0,
+        "motor_commands": 0,
+    }
+
+
+def source_and_truth(annotations: Path, sama_zip: Path):
+    """Require a complete 42-image CC BY cohort before any photo benchmark."""
+    old, names, coco, sama, excluded = _historical_sources(
+        annotations, sama_zip)
     # Restrict NEW images to CC BY 2.0. Do not retroactively alter the
     # historical rosters, which used six declared COCO licenses.
     allowed = _valid_license_ids(coco)
@@ -345,7 +412,7 @@ def score_same_images(cases, class_maps, coco_gt, sama_gt,
 def run(annotations: Path, sama_zip: Path, *,
         stage: str, model_s: Path | None = None,
         model_m: Path | None = None, model_nano: Path | None = None):
-    if stage not in ("source","abi","benchmark"):
+    if stage not in ("inventory","source","abi","benchmark"):
         raise ValueError("unapproved stage")
     base={
         "experiment":"PER-YOLOX-SM-0 Rockchip host evidence",
@@ -360,6 +427,12 @@ def run(annotations: Path, sama_zip: Path, *,
         "input_photo_download_count":0,
         "inferences_executed":{"s":0,"m":0,"nano":0}
     }
+    if stage=="inventory":
+        if annotations is None or sama_zip is None:
+            raise SourceGateError("STOP_SOURCE: metadata files required")
+        base["source"] = license_inventory(annotations, sama_zip)
+        base["status"] = "HOST_GT_LICENSE_INVENTORY_ONLY_NO_MEDIA"
+        return base
     if stage=="abi":
         # Static ONNX compatibility does NOT depend on COCO media or GT.
         # The separate COCO/Sama source gate may legitimately be STOPped.
@@ -454,7 +527,7 @@ def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("--approved-public-metadata",action="store_true")
     p.add_argument("--approved-public-media",action="store_true")
-    p.add_argument("--stage",choices=("source","abi","benchmark"),required=True)
+    p.add_argument("--stage",choices=("inventory","source","abi","benchmark"),required=True)
     p.add_argument("--annotations",type=Path)
     p.add_argument("--sama-zip",type=Path)
     p.add_argument("--model-s",type=Path)
