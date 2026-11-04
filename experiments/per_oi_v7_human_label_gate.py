@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from experiments.per_oi_v7_source_inventory import (
@@ -107,12 +108,20 @@ def qualify_metadata(classes: Path, images: Path, boxes: Path, human: Path,
     for row in _rows(human, ("ImageID", "Source", "LabelName", "Confidence")):
         if row["Source"] not in ("verification", "crowdsource-verification"):
             raise OpenImagesSourceStop("STOP_SCHEMA: non-human label in human labels CSV")
-        confidence_ok = row["Confidence"] in ("0", "1")
+        raw_confidence = row["Confidence"]
         id_ok = bool(_HEX_ID.fullmatch(row["ImageID"]))
+        if len(raw_confidence) > 12 or not raw_confidence or any(
+                ch not in "01." for ch in raw_confidence):
+            raise OpenImagesSourceStop(
+                f"STOP_SCHEMA: invalid label confidence encoding (image_id_hex16={id_ok})")
+        try:
+            decimal_confidence = Decimal(raw_confidence)
+        except InvalidOperation as exc:
+            raise OpenImagesSourceStop("STOP_SCHEMA: invalid label confidence decimal") from exc
+        confidence_ok = decimal_confidence.is_finite() and decimal_confidence in (0, 1)
         if not confidence_ok or not id_ok:
             raise OpenImagesSourceStop(
-                f"STOP_SCHEMA: invalid verified label/confidence "
-                f"(confidence_binary={confidence_ok}, image_id_hex16={id_ok})")
+                f"STOP_SCHEMA: nonbinary verified label (confidence_binary={confidence_ok}, image_id_hex16={id_ok})")
         n_valid_rows += 1
         name = name_by_mid.get(row["LabelName"])
         if name is None or row["ImageID"] not in eligible:
