@@ -191,20 +191,67 @@ class RockchipYoloxSMTests(unittest.TestCase):
                 sm.run(None, None, stage="source")
         forbidden.assert_not_called()
 
+    def test_positive_inventory_counts_photo_licences_without_ids_or_pixels(self):
+        excluded = frozenset(range(1, 1317))
+        images = {
+            1317: (640, 480, "a.jpg", 4),
+            1318: (640, 480, "b.jpg", 5),
+        }
+        official = {name: COCO80_ID_ORDER.index(COCO80_ID_ORDER[0]) + i
+                    for i, name in enumerate(TARGETS)}
+        boxes = {
+            (1317, official["person"]): ((4., 4., 20., 20.),),
+            (1318, official["sports_ball"]): ((4., 4., 20., 20.),),
+        }
+        with mock.patch.object(sm, "_historical_sources",
+                               return_value=({}, (), {}, {}, excluded)):
+            with mock.patch.object(sm, "_images", return_value=images):
+                with mock.patch.object(sm, "_valid_license_ids",
+                                       return_value=frozenset({4, 5})):
+                    with mock.patch.object(sm, "_category_ids",
+                                           return_value=official):
+                        with mock.patch.object(sm, "_index_boxes",
+                                               return_value=(boxes, set())):
+                            r = sm.license_inventory(None, None)
+        self.assertEqual("LICENSE_COUNTS_ONLY_NO_SOURCE_PROMOTION", r["status"])
+        self.assertEqual(0,r["licence_id4_CC_BY_2_0_sports_ball_paired"])
+        self.assertEqual(1,r["counts_by_coco_photo_license"]["5"]
+                         ["paired_positive_by_category"]["sports_ball"])
+        self.assertFalse(r["photo_pool_qualified"])
+        self.assertEqual(0,r["jpeg_bytes_accessed"])
+        self.assertEqual(0,r["models_loaded"])
+        self.assertNotIn("photo_ids",r)
+
+    def test_positive_inventory_stage_never_downloads_or_opens_models(self):
+        inventory = {"status":"LICENSE_COUNTS_ONLY_NO_SOURCE_PROMOTION",
+                     "photo_pool_qualified":False}
+        with mock.patch.object(sm,"license_inventory",return_value=inventory):
+            with mock.patch.object(sm,"open_vendor_models") as unopened:
+                result=sm.run(object(),object(),stage="inventory")
+        unopened.assert_not_called()
+        self.assertEqual("HOST_GT_LICENSE_INVENTORY_ONLY_NO_MEDIA",result["status"])
+        self.assertFalse(result["source"]["photo_pool_qualified"])
+        self.assertEqual(0,result["input_photo_download_count"])
+
     def test_negative_no_benchmark_before_frozen_vendor_hash(self):
         cases,maps,ca,sa,_=scored_case_fixtures()
         with mock.patch.object(sm,"source_and_truth",
                                return_value=(cases,maps,ca,sa,{},{})):
-            with mock.patch.object(sm,"open_vendor_models",
-                                   return_value=({"s":(None,"x"),"m":(None,"y")},{})):
-                with self.assertRaises(SourceGateError):
-                    sm.run(None,None,stage="benchmark",
-                           model_s=object(),model_m=object(),model_nano=object())
+            with mock.patch.object(sm,"FROZEN_VENDOR_SHA256",{"s":None,"m":None}):
+                with mock.patch.object(sm,"open_vendor_models",
+                                       return_value=({"s":(None,"x"),"m":(None,"y")},{})):
+                    with self.assertRaises(SourceGateError):
+                        sm.run(None,None,stage="benchmark",
+                               model_s=object(),model_m=object(),model_nano=object())
 
     def test_provenance_and_rights_are_not_misrepresented(self):
         self.assertEqual(4,sm.LICENSE_ID)
-        self.assertIsNone(sm.FROZEN_VENDOR_SHA256["s"])
-        self.assertIsNone(sm.FROZEN_VENDOR_SHA256["m"])
+        self.assertEqual(
+            "a39c8476d10c242298d6a8654cb29937a9cc3c062358f4d96367689df23d1796",
+            sm.FROZEN_VENDOR_SHA256["s"])
+        self.assertEqual(
+            "47a76546f3a499b2dbf55cdf2c5ea49bf2b7fa8c943de40edf1ee39b20e45f29",
+            sm.FROZEN_VENDOR_SHA256["m"])
         self.assertEqual(640,sm.SIZE)
         self.assertEqual(0.25,sm.SCORE_THRESHOLD)
         self.assertEqual(0.45,sm.NMS_THRESHOLD)
