@@ -66,6 +66,7 @@ jobs:
           assert r['total_coco_ids_excluded']==1274
           assert r['new_selected_photos']==42 and r['per_target_allocated']==6
           assert r['selection_seed']=='kwipi-per-qual1c1-samacoco-20261104-v1'
+          assert r['new_cohort_sha256']=='04bae5d7af2e379b81762a75b7965e849d6d972d40dd56ce16bf28a984122b92'
           assert r['previous_42_cohort_sha256']=='709718feba6185ddd79e2aa492c7eaf74bb2d904dfa6c30e81a25c31dbdb53d5'
           assert r['sama_source_sha256']=='c55454f6657ce63891783136cc5dfe5f1e9c5e1748c0d8ca08b456a804eab15f'
           assert len(r['class_id_domains'])==len(r['paired_annotations'])==7
