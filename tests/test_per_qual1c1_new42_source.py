@@ -56,6 +56,18 @@ def select_fixture(orig, sama, names, history):
 
 
 class NewCohortFixtures(unittest.TestCase):
+    def test_frozen_new_roster_digest_rejects_any_changed_selection(self):
+        from experiments.per_qual1_sama_gt_gate import _frozen_sha256
+        from experiments.per_qual1c1_new42_source import FROZEN_NEW_COHORT_SHA256
+        self.assertEqual(len(FROZEN_NEW_COHORT_SHA256), 64)
+        self.assertNotEqual(
+            FROZEN_NEW_COHORT_SHA256,
+            "709718feba6185ddd79e2aa492c7eaf74bb2d904dfa6c30e81a25c31dbdb53d5",
+        )
+        with self.assertRaisesRegex(SourceGateError, "frozen SHA256 mismatch"):
+            _frozen_sha256(b"altered source-only prospective cohort",
+                           FROZEN_NEW_COHORT_SHA256, "prospective roster")
+
     def test_positive_42_new_and_1274_excluded(self):
         original, sama, names, hist = synthetic_sources()
         prior, (next_cases, maps, paired, _inventory) = select_fixture(
