@@ -146,5 +146,63 @@ class SamaSourceGateFixtures(unittest.TestCase):
             unpack_sama_archive(b"not a zip archive" * 8)
 
 
+class DualIdContract(unittest.TestCase):
+    """A real COCO category_id must never be used as a YOLOX head index."""
+
+    ANCHORS = {
+        "person": (1, 0), "cat": (17, 15), "dog": (18, 16),
+        "sports_ball": (37, 32), "bottle": (44, 39),
+        "chair": (62, 56), "book": (84, 73),
+    }
+
+    @classmethod
+    def valid(cls):
+        from experiments.per80_yolox_coco_public import COCO80_ID_ORDER
+        names = [f"other_class_{i}" for i in range(80)]
+        for name, (coco_id, head_index) in cls.ANCHORS.items():
+            names[head_index] = name
+        source_ids = {name: coco_id for name, (coco_id, _) in cls.ANCHORS.items()}
+        return tuple(names), source_ids, COCO80_ID_ORDER
+
+    def test_official_head_indexes_and_gt_ids_are_distinct(self):
+        from experiments.per_qual1_sama_gt_gate import validate_dual_class_map
+        spaces = validate_dual_class_map(*self.valid())
+        self.assertEqual(set(spaces), set(TARGETS))
+        for name, (coco_id, head_index) in self.ANCHORS.items():
+            self.assertEqual(spaces[name]["coco_category_id"], coco_id)
+            self.assertEqual(spaces[name]["yolox_head_idx"], head_index)
+            self.assertNotEqual(coco_id, head_index)
+
+    def test_swapped_source_gt_ids_rejected(self):
+        from experiments.per_qual1_sama_gt_gate import validate_dual_class_map
+        names, source_ids, ordered_ids = self.valid()
+        source_ids["person"], source_ids["cat"] = (
+            source_ids["cat"], source_ids["person"])
+        with self.assertRaisesRegex(SourceGateError, "STOP_SCHEMA"):
+            validate_dual_class_map(names, source_ids, ordered_ids)
+
+    def test_zero_based_gt_ids_rejected(self):
+        from experiments.per_qual1_sama_gt_gate import validate_dual_class_map
+        names, _, ordered_ids = self.valid()
+        wrong = {name: head_index
+                 for name, (coco_id, head_index) in self.ANCHORS.items()}
+        with self.assertRaisesRegex(SourceGateError, "STOP_SCHEMA"):
+            validate_dual_class_map(names, wrong, ordered_ids)
+
+    def test_missing_duplicate_or_non80_head_rejected(self):
+        from experiments.per_qual1_sama_gt_gate import validate_dual_class_map
+        names, source_ids, order = self.valid()
+        variants = (
+            names[:-1], names[:-1] + (names[-2],),
+            tuple("other" if n == "chair" else n for n in names),
+        )
+        for variant in variants:
+            with self.assertRaisesRegex(SourceGateError, "STOP_SCHEMA"):
+                validate_dual_class_map(variant, source_ids, order)
+        with self.assertRaisesRegex(SourceGateError, "STOP_SCHEMA"):
+            validate_dual_class_map(names, source_ids, order[:-1] + (order[-2],))
+
+
+
 if __name__=="__main__":
     unittest.main()
