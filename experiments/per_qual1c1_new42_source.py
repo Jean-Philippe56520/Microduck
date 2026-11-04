@@ -21,6 +21,8 @@ PREVIOUS_COUNT = 1232
 FAILED_RUN_CONSUMED = 42
 TOTAL_EXCLUSIONS = PREVIOUS_COUNT + FAILED_RUN_CONSUMED
 NEW_COUNT = SAMPLES_PER_CLASS * len(TARGETS)
+# Observed on REAL GT-only CI #41886534156 before ANY model or JPEG access.
+FROZEN_NEW_COHORT_SHA256 = "04bae5d7af2e379b81762a75b7965e849d6d972d40dd56ce16bf28a984122b92"
 
 
 def select_new_after_consumed(original, sama, *, names, historical_ids,
@@ -94,13 +96,16 @@ def source_gate(annotations_path: Path, sama_zip_path: Path):
         old_cases=old_cases, allowed_license_ids=rights)
 
     prospective_roster = "|".join(f"{ident}/{label}" for ident, label in cases)
+    prospective_sha = _frozen_sha256(prospective_roster.encode(),
+                                   FROZEN_NEW_COHORT_SHA256,
+                                   "new prospective 42-image roster")
     return {
         "experiment": "PER-QUAL-1C1 frozen next public COCO/Sama cohort SOURCE ONLY",
         "status": "NEW_SOURCE_COHORT_SELECTED_NO_INFERENCE",
         "coco_source_sha256": original_gate["original_coco_annotation_sha256"],
         "sama_source_sha256": original_gate["sama_zip_sha256"],
         "previous_42_cohort_sha256": original_gate["cohort_selection_sha256"],
-        "new_cohort_sha256": sha256(prospective_roster.encode()).hexdigest(),
+        "new_cohort_sha256": prospective_sha,
         "selection_seed": SEED_C1,
         "historical_coco_images_excluded": PREVIOUS_COUNT,
         "failed_pr301_images_excluded": FAILED_RUN_CONSUMED,
