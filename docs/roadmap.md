@@ -1,3 +1,9 @@
+## VIS-FOCUS-A1 — qualification du témoin, pas de suivi livré (04/11/2026)
+
+QUAL-R0 [#305](https://github.com/Jean-Philippe56520/Microduck/pull/305) fusionnée (10/10 CI vertes, squash `main@432c2e7e3628b2defdabd7fa9024f7f18af8b44a`). [VIS-FOCUS-A0 audité](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6640377031) : perception multi-événement et classement par catégorie F2-B déjà présents ; absence d'identification fiable de **la même cible physique** entre trames. **A1 candidat** = [témoin fixture-only](vis-focus-a1-existing-baseline-2026-11-04.md) avec 4 positifs + 8 négatifs sur modules actuels, tests/CI à vérifier avant fusion, sans adaptation de perception, modèle, moteur ou base. Résultats de fixtures ≠ suivi sur robot. Prochaine décision : réutiliser si témoin suffisant, sinon démontrer un gain sur séquences **indépendantes** avant adaptation F2 minimale, puis portage OEM uniquement après preuves matérielles et licence. Cadences 2/1,5/1 Hz seulement à comparer ultérieurement sur mêmes séquences ; aucune nouvelle photo privée ni reprise des 1 316 COCO consommées.
+
+---
+
 ## Reprise active QUAL-R0 / VIS-FOCUS — 04/11/2026
 
 **Base GitHub avant QUAL-R0 :** `main@fec98d46de5787651ff1ba379887278b7edbe741` ; #302/#303 fusionnées, #301/#304 fermées **sans fusion** et leurs scores invalides, **1 316 IDs COCO consommés**. Ne pas rejouer les JPEG ni confondre CI hôte et compétence embarquée. [Plan autoritatif](plan-action.md) · [rapport QUAL-R0](qual-r0-host-scoring-contract-2026-11-04.md) · [préenregistrement et critères STOP #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6639358263).
