@@ -1,0 +1,132 @@
+name: PER-YOLOX-SM-0 Rockchip S M source and three-head ABI (HOST ONLY)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "experiments/per_yolox_sm_rknn_candidates.py"
+      - "tests/test_per_yolox_sm_rknn_candidates.py"
+      - ".github/workflows/per-yolox-sm-rknn-candidate-host.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rockchip-host-source-abi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Verify OEM and simulation gitlinks exactly pinned
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-tree HEAD upstream/microduck | grep -F '942e58e3aa6dbb28e7037203fff11866122c7567'
+          git ls-tree HEAD upstream/microduck_rl | grep -F 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install host research-only dependencies (no RKNN or robot)
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0 numpy==1.26.4 onnxruntime==1.21.0 opencv-python-headless==4.10.0.84
+      - name: Offline tests before external source, weights or JPEGs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q experiments/per_yolox_sm_rknn_candidates.py tests/test_per_yolox_sm_rknn_candidates.py
+          python -m unittest discover -s tests -p 'test_per_yolox_sm_rknn_candidates.py' -v
+          python -m unittest discover -s tests -p 'test_per_qual1c1_new42_source.py' -v
+          python -m unittest discover -s tests -p 'test_per_qual_r0_scoring_contract.py' -v
+      - name: Retrieve strictly pinned public COCO and Sama GT files only
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 35000000 \
+            --output "$RUNNER_TEMP/instances_val2017.json" \
+            'https://huggingface.co/datasets/LibreYOLO/coco2017/resolve/main/instances_val2017.json'
+          echo "e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aeefa635b8c810b6f  $RUNNER_TEMP/instances_val2017.json" | sha256sum --check
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 20000000 \
+            --output "$RUNNER_TEMP/sama-coco-val.zip" \
+            'https://sama-documentation-assets.s3.amazonaws.com/sama-coco/sama-coco-val.zip'
+          echo "c55454f6657ce63891783136cc5dfe5f1e9c5e1748c0d8ca08b456a804eab15f  $RUNNER_TEMP/sama-coco-val.zip" | sha256sum --check
+      - name: Source-only GT license 1316-exclusion and third-42 freeze (no pixels)
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 160s python -m experiments.per_yolox_sm_rknn_candidates \
+            --approved-public-metadata --stage source \
+            --annotations "$RUNNER_TEMP/instances_val2017.json" \
+            --sama-zip "$RUNNER_TEMP/sama-coco-val.zip" \
+            > "$RUNNER_TEMP/yolox-sm-source.json"
+          python - "$RUNNER_TEMP/yolox-sm-source.json" <<'PY'
+          import json,sys
+          with open(sys.argv[1],encoding="utf-8") as f: r=json.load(f)
+          s=r["source"]
+          assert r["status"]=="SOURCE_PASS_NO_MODELS_NO_PIXELS"
+          assert s["old_coco_val_ids_excluded"]==1316
+          assert s["new_public_photos"]==42
+          assert s["photo_license_id"]==4
+          assert s["assigned_photos_per_category"]==6
+          assert len(s["target_categories"])==7
+          assert len(s["new_cohort_sha256"])==64
+          assert not s["robot_rknn_validated"] and not s["model_promoted"]
+          assert r["input_photo_download_count"]==0
+          assert r["inferences_executed"]=={"s":0,"m":0,"nano":0}
+          print(json.dumps({"gate":"SOURCE_PASS", "cohort_sha256":s["new_cohort_sha256"],
+                            "prior_used_excluded":1316,"new_photos":42,
+                            "photo_license_id":s["photo_license_id"]},sort_keys=True))
+          PY
+      - name: Obtain OFFICIAL Rockchip 3-head S and M ONNX weights AFTER source gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 540 --max-filesize 150000000 \
+            --output "$RUNNER_TEMP/yolox_s.onnx" \
+            'https://ftrg.zbox.filez.com/v2/delivery/data/95f00b0fc900458ba134f8b180b3f7a1/examples/yolox/yolox_s.onnx'
+          curl --fail --location --retry 2 --max-time 540 --max-filesize 150000000 \
+            --output "$RUNNER_TEMP/yolox_m.onnx" \
+            'https://ftrg.zbox.filez.com/v2/delivery/data/95f00b0fc900458ba134f8b180b3f7a1/examples/yolox/yolox_m.onnx'
+          sha256sum "$RUNNER_TEMP/yolox_s.onnx" "$RUNNER_TEMP/yolox_m.onnx"
+      - name: Validate real ONNX tensor ABI and numeric pass on black synthetic input
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 240s python -m experiments.per_yolox_sm_rknn_candidates \
+            --approved-public-metadata --stage abi \
+            --annotations "$RUNNER_TEMP/instances_val2017.json" \
+            --sama-zip "$RUNNER_TEMP/sama-coco-val.zip" \
+            --model-s "$RUNNER_TEMP/yolox_s.onnx" \
+            --model-m "$RUNNER_TEMP/yolox_m.onnx" \
+            > "$RUNNER_TEMP/yolox-sm-abi.json"
+          python - "$RUNNER_TEMP/yolox-sm-abi.json" <<'PY'
+          import json,sys
+          with open(sys.argv[1],encoding="utf-8") as f: r=json.load(f)
+          assert r["status"]=="HOST_VENDOR_ABI_SMOKE_ONLY_NO_PUBLIC_PIXELS"
+          assert r["input_photo_download_count"]==0
+          assert r["inferences_executed"]=={"s":1,"m":1,"nano":0}
+          assert set(r["vendor_models"])=={"s","m"}
+          assert all(len(v["sha256"])==64 and
+                     v["inputs"]==[1,3,640,640] and
+                     sorted(v["outputs"])==[[1,85,20,20],[1,85,40,40],[1,85,80,80]]
+                     for v in r["vendor_models"].values())
+          assert not r["actual_rk3566_npu_inference"] and not r["model_promoted"]
+          print(json.dumps({"gate":"VENDOR_ABI_SMOKE_ONLY",
+                            "models":r["vendor_models"],
+                            "source_cohort_sha":r["source"]["new_cohort_sha256"]},
+                            sort_keys=True))
+          PY
+          cp "$RUNNER_TEMP/yolox-sm-abi.json" yolox-sm-abi-numeric-only.json
+      - name: Publish numerical source and model fingerprints only, NO pixels or weights
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yolox-sm-rockchip-abi-numeric-only
+          path: yolox-sm-abi-numeric-only.json
+          retention-days: 14
+          if-no-files-found: error
