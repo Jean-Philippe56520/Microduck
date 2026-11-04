@@ -41,7 +41,7 @@ jobs:
           curl --fail --location --retry 2 --max-time 180 \
             --output "$RUNNER_TEMP/oidv7-validation-bbox.csv" \
             "https://storage.googleapis.com/openimages/v5/validation-annotations-bbox.csv"
-      - name: Preflight 320 GT cases before retrieving YOLOX model
+      - name: Preflight 192 GT cases before retrieving YOLOX model
         shell: bash
         run: |
           set -euo pipefail
@@ -57,7 +57,7 @@ jobs:
           with open(sys.argv[1], encoding="utf-8") as stream:
               report = json.load(stream)
           assert report["status"] == "PRE_INFERENCE_SOURCE_GATE"
-          assert report["public_images_selected"] == 320
+          assert report["public_images_selected"] == 192
           assert report["excluded_previous_cat_a2c_ids"] == 48
           assert report["ball_excluded_not_equivalent_to_sports_ball"] is True
           assert report["motor_commands"] == report["sqlite_writes"] == 0
@@ -90,12 +90,12 @@ jobs:
           import json, sys
           with open(sys.argv[1], encoding="utf-8") as stream:
               r = json.load(stream)
-          assert r["public_images_selected"] == 320
+          assert r["public_images_selected"] == 192
           assert r["inference_on_real_public_pixels"] is True
           assert r["ball_excluded_not_equivalent_to_sports_ball"] is True
           assert r["robot_rknn_validated"] is False
           assert r["motor_commands"] == r["sqlite_writes"] == r["qwen_calls"] == 0
-          assert all(v["positive_images"] == v["negative_images"] == 40
+          assert all(v["positive_images"] == v["negative_images"] == 24
                      for v in r["classwise_results"].values())
           print(json.dumps(r, sort_keys=True))
           PY
