@@ -1,7 +1,17 @@
 """Offline positive/negative gates for prospective PER-OI-W1, no network."""
 from __future__ import annotations
 import unittest
-from tests.test_cata2d_openimages_bbox_public import csv_bytes
+import csv
+from io import StringIO
+
+
+def csv_bytes(header, rows):
+    out=StringIO()
+    writer=csv.writer(out,lineterminator="\n")
+    if header is not None:
+        writer.writerow(header)
+    writer.writerows(rows)
+    return out.getvalue().encode()
 from experiments.per_oi_w1_openimages_stress import (
     TARGETS, PER_LABEL, target_mids, choose_cases, _matched,
 )
