@@ -55,34 +55,35 @@ jobs:
             --output "$RUNNER_TEMP/sama-coco-val.zip" \
             'https://sama-documentation-assets.s3.amazonaws.com/sama-coco/sama-coco-val.zip'
           echo "c55454f6657ce63891783136cc5dfe5f1e9c5e1748c0d8ca08b456a804eab15f  $RUNNER_TEMP/sama-coco-val.zip" | sha256sum --check
-      - name: Source-only GT license 1316-exclusion and third-42 freeze (no pixels)
+      - name: Verify real COCO 1316-exclusion and record honest CC BY ball STOP
         shell: bash
         run: |
           set -euo pipefail
-          timeout 160s python -m experiments.per_yolox_sm_rknn_candidates \
-            --approved-public-metadata --stage source \
-            --annotations "$RUNNER_TEMP/instances_val2017.json" \
-            --sama-zip "$RUNNER_TEMP/sama-coco-val.zip" \
-            > "$RUNNER_TEMP/yolox-sm-source.json"
-          python - "$RUNNER_TEMP/yolox-sm-source.json" <<'PY'
+          # The first real GT-only run found 0 eligible balls on CC BY 2.0.
+          # This separate STOP is not a model error and is NOT SOURCE PASS.
+          python - "$RUNNER_TEMP/instances_val2017.json" "$RUNNER_TEMP/sama-coco-val.zip" <<'PY'
           import json,sys
-          with open(sys.argv[1],encoding="utf-8") as f: r=json.load(f)
-          s=r["source"]
-          assert r["status"]=="SOURCE_PASS_NO_MODELS_NO_PIXELS"
-          assert s["old_coco_val_ids_excluded"]==1316
-          assert s["new_public_photos"]==42
-          assert s["photo_license_id"]==4
-          assert s["assigned_photos_per_category"]==6
-          assert len(s["target_categories"])==7
-          assert len(s["new_cohort_sha256"])==64
-          assert not s["robot_rknn_validated"] and not s["model_promoted"]
-          assert r["input_photo_download_count"]==0
-          assert r["inferences_executed"]=={"s":0,"m":0,"nano":0}
-          print(json.dumps({"gate":"SOURCE_PASS", "cohort_sha256":s["new_cohort_sha256"],
-                            "prior_used_excluded":1316,"new_photos":42,
-                            "photo_license_id":s["photo_license_id"]},sort_keys=True))
+          from pathlib import Path
+          from experiments.per_yolox_sm_rknn_candidates import source_and_truth
+          from experiments.per_qual1_sama_gt_gate import SourceGateError
+          try:
+              source_and_truth(Path(sys.argv[1]),Path(sys.argv[2]))
+          except SourceGateError as exc:
+              expected="STOP_SOURCE class=sports_ball available=0 required=6"
+              if str(exc)!=expected:
+                  raise
+              report={
+                  "status":"STOP_SOURCE_CC_BY_BALL_POOL_EMPTY",
+                  "source_cohort_qualified":False,
+                  "licensed_eligible_sports_ball_count":0,
+                  "historical_exclusions_validated_before_stop":1316,
+                  "jpeg_fetches":0,"model_inferences":0,"robot_npu_validated":False
+              }
+              print(json.dumps(report,sort_keys=True))
+          else:
+              raise AssertionError("Unexpected cohort availability; audit before any inference")
           PY
-      - name: Obtain OFFICIAL Rockchip 3-head S and M ONNX weights AFTER source gate
+      - name: Obtain OFFICIAL Rockchip S and M ONNX for INDEPENDENT ABI gate
         shell: bash
         run: |
           set -euo pipefail
@@ -99,8 +100,6 @@ jobs:
           set -euo pipefail
           timeout 240s python -m experiments.per_yolox_sm_rknn_candidates \
             --approved-public-metadata --stage abi \
-            --annotations "$RUNNER_TEMP/instances_val2017.json" \
-            --sama-zip "$RUNNER_TEMP/sama-coco-val.zip" \
             --model-s "$RUNNER_TEMP/yolox_s.onnx" \
             --model-m "$RUNNER_TEMP/yolox_m.onnx" \
             > "$RUNNER_TEMP/yolox-sm-abi.json"
@@ -116,9 +115,11 @@ jobs:
                      sorted(v["outputs"])==[[1,85,20,20],[1,85,40,40],[1,85,80,80]]
                      for v in r["vendor_models"].values())
           assert not r["actual_rk3566_npu_inference"] and not r["model_promoted"]
+          assert r["source"]["status"]=="NOT_EVALUATED_ABI_ONLY"
+          assert not r["source"]["cohort_qualified"]
           print(json.dumps({"gate":"VENDOR_ABI_SMOKE_ONLY",
                             "models":r["vendor_models"],
-                            "source_cohort_sha":r["source"]["new_cohort_sha256"]},
+                            "source_qualification":"UNQUALIFIED_CC_BY_BALL_POOL_0"},
                             sort_keys=True))
           PY
           cp "$RUNNER_TEMP/yolox-sm-abi.json" yolox-sm-abi-numeric-only.json
