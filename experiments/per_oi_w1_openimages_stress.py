@@ -43,12 +43,16 @@ def target_mids(raw: bytes) -> dict[str, str]:
     if type(raw) is not bytes or not 16 <= len(raw) <= 150_000:
         raise PhotoBaselineError("invalid bounded class metadata")
     lookup: dict[str, set[str]] = {c: set() for c in TARGETS}
+    seen_mids: set[str] = set()
     try:
         for row in csv.reader(StringIO(raw.decode("utf-8-sig")), strict=True):
             if row == ["LabelName", "DisplayName"]:
                 continue
             if len(row) != 2 or not row[0].startswith("/m/"):
                 raise PhotoBaselineError("malformed official class label")
+            if row[0] in seen_mids:
+                raise PhotoBaselineError("duplicate official MID")
+            seen_mids.add(row[0])
             for cat, (name, _) in TARGETS.items():
                 if row[1] == name:
                     lookup[cat].add(row[0])
