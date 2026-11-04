@@ -5,6 +5,7 @@ No network, image capture, robot, model weight or database in these tests.
 from __future__ import annotations
 
 import copy
+import importlib.util
 from hashlib import sha256
 import unittest
 
@@ -152,6 +153,8 @@ class Public80CocoContractTests(unittest.TestCase):
                 {"bbox": value}, 100, 100,
             ))
 
+    @unittest.skipUnless(importlib.util.find_spec("numpy") is not None,
+                         "NumPy available only in focused PER-80 benchmark CI")
     def test_all80_decoder_preserves_five_class_geometry_on_one_head(self):
         import numpy as np
         a = np.zeros((1, 3549, 85), dtype=np.float32)
@@ -170,6 +173,8 @@ class Public80CocoContractTests(unittest.TestCase):
                 self.assertAlmostEqual(x,y,places=4)
             self.assertAlmostEqual(old.confidence,candidate.confidence,places=5)
 
+    @unittest.skipUnless(importlib.util.find_spec("numpy") is not None,
+                         "NumPy available only in focused PER-80 benchmark CI")
     def test_invalid_output_refused_before_classification(self):
         import numpy as np
         for raw in (
