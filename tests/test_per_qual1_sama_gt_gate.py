@@ -40,6 +40,16 @@ def archive(shards):
 
 
 class SamaSourceGateFixtures(unittest.TestCase):
+    def test_maximum_pairing_is_order_independent(self):
+        from experiments.per_qual1_sama_gt_gate import _paired_iou50
+        original = ((0., 0., 10., 10.), (2., 0., 12., 10.))
+        secondary = ((1., 0., 11., 10.), (-2., 0., 8., 10.))
+        for left in (original, tuple(reversed(original))):
+            for right in (secondary, tuple(reversed(secondary))):
+                self.assertEqual(_paired_iou50(left, right), 2)
+        self.assertEqual(_paired_iou50(original, ((20., 20., 30., 30.),)), 0)
+        self.assertEqual(_paired_iou50((original[0],), (original[0], original[0])), 1)
+
     def test_disjoint_balance_and_determinism(self):
         o, s = fixture()
         args = dict(old_ids=frozenset(), allowed_license_ids=frozenset({4}))
