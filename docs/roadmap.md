@@ -1,3 +1,11 @@
+## Mise à jour de reprise : C/E-2, fiabilité des écritures MEM-1 (04/11/2026)
+
+**Base vérifiée** `main@420664d97f33fff9ffeb8e4caea26f096799da59` : #305/#307/#308 fusionnées, PR #306 **fermée sans fusion**, 1 316 IDs COCO consommés non rejoués. VIS-FOCUS-A2 **bloqué en données temporelles/GT**, EX4-C2 **bloqué en attestation OEM de fin/effet réel** : aucune nouvelle capacité physique en conséquence.
+
+**C/E-2 candidat, indépendant des deux blocages :** après C/E-1 (#294 fusionnée), les **écrivains** MEM-1 `create/transition/link_attempt` peuvent encore traiter une ligne de fixtures `active=1,correction_reason!=NULL` comme valide, contrairement aux lecteurs déjà protégés. Adapter seulement trois gardes SQL sur l'unique `ExperienceMemory` et quatre tests `tests/test_mem1_mock_goal_memory.py` ; ne promouvoir qu'après tests positifs/négatifs et CI finale verte. [Porte avant code](https://github.com/Jean-Philippe56520/Microduck/pull/294#issuecomment-6642577539) · [rapport](ce2-mem1-corrected-goal-write-2026-11-04.md). Résultat limité : **intégrité de mémoire fictive sur PC**, aucune nouvelle perception, identité ou fin d'action. `robotd` 50 Hz, OEM/Yocto/gates B11, mediad, Qwen facultatif, et SQLite unique inchangés.
+
+---
+
 ## Reprise active — VIS-FOCUS-A2 : source/GT temporelle avant tout nouvel essai (04/11/2026)
 
 **État GitHub vérifié** : QUAL-R0 [#305](https://github.com/Jean-Philippe56520/Microduck/pull/305) fusionnée (10/10 CI) ; VIS-FOCUS-A1 [#307](https://github.com/Jean-Philippe56520/Microduck/pull/307) fusionnée (9/9 CI) ; `main@fce5d138bb1a1130091d921ba10352a8ec770400` après #307. **15/15 tests A1 et 2 517 tests Python généraux réussis sur fixtures**, sans validation de perception/mémoire physique. Archives B10/B11, `autonomy.py` original et gitlinks OEM conservés. Ancien A1 « candidat » des sections suivantes = **historique**.

@@ -465,5 +465,119 @@ finally:
 
 
 
+    # C/E-2: an active row that also carries a correction must not be
+    # writable. The SQLite fixture schema deliberately permits corruption
+    # so existing C/E-1 readers and these three writers are tested honestly.
+
+    def test_ce2_create_rejects_active_corrected_duplicate_before_idempotence(self):
+        self.active()
+        self.assertFalse(self.create())  # P1 legitimate idempotence survives.
+        for reason in ("source_retracted", "fixture_annotation_error"):
+            with self.mem.conn:
+                self.mem.conn.execute("""
+                    UPDATE mem1_mock_goals SET correction_reason=?
+                    WHERE goal_id=?
+                """, (reason, GOAL_ID))
+            before = self.mem.conn.total_changes
+            with self.subTest(reason=reason), self.assertRaisesRegex(
+                    ValueError, "inconsistent active mock goal correction"):
+                self.create()
+            self.assertEqual(before, self.mem.conn.total_changes)
+            row = self.mem.conn.execute("""
+                SELECT state,revision,active,correction_reason
+                FROM mem1_mock_goals WHERE goal_id=?
+            """, (GOAL_ID,)).fetchone()
+            self.assertEqual(("active", 2, 1, reason), tuple(row))
+
+    def test_ce2_transition_rejects_active_corrected_without_revision_change(self):
+        self.active()
+        for reason in ("source_retracted", "fixture_annotation_error"):
+            with self.mem.conn:
+                self.mem.conn.execute("""
+                    UPDATE mem1_mock_goals SET correction_reason=?
+                    WHERE goal_id=?
+                """, (reason, GOAL_ID))
+            before = self.mem.conn.total_changes
+            with self.subTest(reason=reason), self.assertRaisesRegex(
+                    ValueError, "inconsistent active mock goal correction"):
+                self.goals.transition(
+                    goal_id=GOAL_ID, expected_revision=2,
+                    next_state="suspended", reason="uncertain",
+                    at_epoch_s=NOW + 3,
+                )
+            self.assertEqual(before, self.mem.conn.total_changes)
+            row = self.mem.conn.execute("""
+                SELECT state,revision,active,correction_reason
+                FROM mem1_mock_goals WHERE goal_id=?
+            """, (GOAL_ID,)).fetchone()
+            self.assertEqual(("active", 2, 1, reason), tuple(row))
+
+    def test_ce2_link_rejects_active_corrected_even_with_valid_ex1(self):
+        self.active()
+        self.event()  # Real mock EX1 proposal exists and is linked normally.
+        for reason in ("source_retracted", "fixture_annotation_error"):
+            with self.mem.conn:
+                self.mem.conn.execute("""
+                    UPDATE mem1_mock_goals SET correction_reason=?
+                    WHERE goal_id=?
+                """, (reason, GOAL_ID))
+            before = self.mem.conn.total_changes
+            with self.subTest(reason=reason), self.assertRaisesRegex(
+                    ValueError, "inconsistent active mock goal correction"):
+                self.link()
+            self.assertEqual(before, self.mem.conn.total_changes)
+            self.assertEqual(0, self.mem.conn.execute(
+                "SELECT count(*) FROM mem1_mock_goal_links"
+            ).fetchone()[0])
+            self.assertEqual(0, self.mem.experience_count())
+            self.assertEqual(0., self.mem.intent_preference("robot", "explore"))
+
+    def test_ce2_persisted_corruption_is_refused_by_all_writers_and_can_retract(self):
+        self.active()
+        self.event()
+        with self.mem.conn:
+            self.mem.conn.execute("""
+                UPDATE mem1_mock_goals
+                SET correction_reason='source_retracted' WHERE goal_id=?
+            """, (GOAL_ID,))
+        self.mem.close()
+        reopened = ExperienceMemory(self.path)
+        try:
+            goals = MockGoalMemory(reopened, MockExperienceLedger(reopened))
+            before = reopened.conn.total_changes
+            with self.assertRaisesRegex(ValueError, "inconsistent active"):
+                goals.create(
+                    goal_id=GOAL_ID, kind="observe_category", category="ball",
+                    resume_when="new_view", at_epoch_s=NOW,
+                )
+            with self.assertRaisesRegex(ValueError, "inconsistent active"):
+                goals.transition(
+                    goal_id=GOAL_ID, expected_revision=2,
+                    next_state="suspended", reason="uncertain",
+                    at_epoch_s=NOW + 3,
+                )
+            with self.assertRaisesRegex(ValueError, "inconsistent active"):
+                goals.link_attempt(
+                    goal_id=GOAL_ID, session=SESSION, sequence=1,
+                    strategy="observe_from_distance", context="initial",
+                    at_epoch_s=NOW + 2,
+                )
+            self.assertEqual(before, reopened.conn.total_changes)
+            self.assertEqual(0, reopened.conn.execute(
+                "SELECT count(*) FROM mem1_mock_goal_links"
+            ).fetchone()[0])
+            # Explicit correction remains permitted, never implicit repair.
+            self.assertTrue(goals.retract(
+                goal_id=GOAL_ID, reason="source_retracted"))
+            self.assertIsNone(goals.get(GOAL_ID))
+            self.assertTrue(goals.get(
+                GOAL_ID, include_withdrawn=True).corrected)
+            self.assertEqual(0, reopened.conn.execute(
+                "SELECT count(*) FROM mem1_mock_goal_links"
+            ).fetchone()[0])
+        finally:
+            reopened.close()
+
+
 if __name__ == "__main__":
     unittest.main()
