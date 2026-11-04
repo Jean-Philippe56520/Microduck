@@ -1,5 +1,8 @@
 # PER-YOLOX-SM-0 — modèles Rockchip S/M, source COCO neuve et préflight ONNX sur PC
 
+> **Statut observé après le premier préflight réel (04/11/2026) :** la CI [#41921084487](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41921084487) a validé 12 tests hôte et les SHA des deux GT officielles, mais **STOP_SOURCE class=sports_ball available=0 required=6** sur une nouvelle cohorte de CC BY 2.0, après 1 316 anciens ID exclus. **Aucun JPEG, poids ou score produit.** [Amendement de protocole enregistré avant l'essai suivant](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643245238) : conserver ce STOP comme résultat scientifique et **exécuter l'ABI ONNX S/M indépendamment** de l'absence de balles licenciées, sur entrée synthétique seule. Le succès ABI éventuel ne qualifie **aucune** cohorte pour la phase 1 ; le choix d'une source complémentaire devra être documenté et gelé avant pixels.
+
+
 **Date :** 04/11/2026. **Autorisation utilisateur :** « Je valide » après proposition explicite de tester **YOLOX-S puis YOLOX-M** sur les mêmes images, sans changement OEM. **Source du projet avant branche :** `main@420664d97f33fff9ffeb8e4caea26f096799da59`. **Protocole préenregistré AVANT code, modèles et images :** [issue #78, commentaire #6643049833](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643049833). La PR C/E-2 #309 est indépendante et encore à qualifier/fusionner selon ses propres CI.
 
 ## Raison de cette expérience
