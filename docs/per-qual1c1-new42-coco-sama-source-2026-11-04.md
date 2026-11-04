@@ -2,6 +2,27 @@
 
 **Date :** 4 novembre 2026. **Autorité :** [plan d'action](plan-action.md). **Préenregistrement AVANT toute image, test modèle ou nouvelle inférence :** [issue #78, porte PER-QUAL-1C1](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6638495898). Le résultat doit rester **INCONNU** tant que le workflow réel n'est pas terminé.
 
+## Première preuve de source réelle, avant modèle
+
+[CI spécialisée #41886534156](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41886534156), version avant gel : **PASS** du contrôle des deux sources, 9/9 tests nouveaux et 11/11 tests historiques sur fixtures, 1 274 identifiants consommés exclus, 42 nouveaux IDs validés, 0 pixel/poids/inférence ; **les CI du SHA final après gel restent à vérifier**.
+
+**Nouvel identifiant d'échantillonnage figé AVANT toute prédiction :** `04bae5d7af2e379b81762a75b7965e849d6d972d40dd56ce16bf28a984122b92`. Cette empreinte est maintenant vérifiée par le code et par le workflow. Elle ne publie ni les IDs ni la position des boîtes.
+
+Sur les **six images allouées par catégorie seulement**, les décomptes d'annotations sont :
+
+| Catégorie | Boîtes COCO | Boîtes Sama | Appariées IoU50 |
+|---|---:|---:|---:|
+| book | 27 | 35 | 17 |
+| bottle | 9 | 11 | 7 |
+| cat | 8 | 8 | 8 |
+| chair | 15 | 14 | 9 |
+| dog | 6 | 6 | 6 |
+| person | 23 | 21 | 17 |
+| sports_ball | 8 | 7 | 7 |
+| **Total** | **96** | **102** | **71** |
+
+**ATTENTION :** ce sont des comptes de deux annotations CORRÉLÉES, pas des performances YOLOX. Les différences n'établissent pas laquelle est correcte, ne mesurent ni faux positifs du robot ni reconnaissance de présence réelle. L'absence d'annotation n'est pas un négatif humain vérifié.
+
 ## Pourquoi
 
 La PR #301 a réalisé 42 inférences YOLOX sur des JPEG COCO précédemment inédits, mais a utilisé les indices YOLOX pour lire des boîtes GT indexées par les IDs officiels COCO. Résultats de rappel invalides et PR fermée sans fusion. La PR #302, fusionnée avec 4/4 CI au SHA `8c8e5a05eb903cc9bb7dbf5a02eb7cb3a8e8a64b`, répare le **contrat entre deux espaces d'identifiants** dans la porte des sources, sans avoir validé un modèle embarqué.
