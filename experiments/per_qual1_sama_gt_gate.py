@@ -22,10 +22,22 @@ MAX_SAMA_ZIP = 20_000_000
 MAX_SAMA_UNCOMPRESSED = 80_000_000
 MIN_SIDE = 32
 MAX_SIDE = 4096
+# Captured from successful REAL label-only GitHub Actions #41879626743,
+# before downloading any of these 42 JPEGs or running any YOLOX inference.
+SAMA_ANNOTATION_ZIP_SHA256 = "c55454f6657ce63891783136cc5dfe5f1e9c5e1748c0d8ca08b456a804eab15f"
+FROZEN_COHORT_SHA256 = "709718feba6185ddd79e2aa492c7eaf74bb2d904dfa6c30e81a25c31dbdb53d5"
 
 
 class SourceGateError(ValueError):
     """An invalid or unqualified external ground-truth source."""
+
+
+def _frozen_sha256(payload: bytes, expected: str, description: str) -> str:
+    """Refuse source/roster drift; no model or image access."""
+    actual = sha256(payload).hexdigest()
+    if actual != expected:
+        raise SourceGateError(description + " frozen SHA256 mismatch")
+    return actual
 
 
 def unpack_sama_archive(blob: bytes) -> dict:
@@ -287,17 +299,21 @@ def run_source_gate(annotations: Path, sama_zip: Path):
     if len(history) != 1232:
         raise SourceGateError("historical COCO exclusion is not 432+800")
     archive_blob = sama_zip.read_bytes()
+    sama_sha = _frozen_sha256(
+        archive_blob, SAMA_ANNOTATION_ZIP_SHA256, "Sama source")
     sama = unpack_sama_archive(archive_blob)
     cases, targets, orig_gt, sama_gt, source = choose_paired_cohort(
         original, sama, old_ids=history,
         allowed_license_ids=_valid_license_ids(original))
     roster = "|".join(f"{ident}/{cat}" for ident, cat in cases)
+    roster_sha = _frozen_sha256(
+        roster.encode(), FROZEN_COHORT_SHA256, "prospective cohort")
     return {
         "experiment": "PER-QUAL-1A Sama-COCO secondary-human-GT source gate",
         "status": "SOURCE_GATE_PASS_NO_INFERENCE",
-        "sama_zip_sha256": sha256(archive_blob).hexdigest(),
+        "sama_zip_sha256": sama_sha,
         "original_coco_annotation_sha256": sha256(original_blob).hexdigest(),
-        "cohort_selection_sha256": sha256(roster.encode()).hexdigest(),
+        "cohort_selection_sha256": roster_sha,
         "excluded_previous_coco_val_images": len(history),
         "prospective_new_photos_selected": len(cases),
         "per_target_allocation": SAMPLES_PER_CLASS,
