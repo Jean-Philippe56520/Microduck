@@ -1,3 +1,13 @@
+## Reprise PERCEPTION-P1 — Open Images V7 GT-only et YOLOX-S/M (04/11/2026)
+
+**Main de base vérifié** `e4909805644adfe9dbedd9870033a9b016aa7fb5` après #309 et #311 fusionnées. #310 : **vrais modèles Rockchip ONNX YOLOX-S et YOLOX-M** reconnus par SHA, trois sorties, une inférence noire synthétique CPU/PC, **aucune précision sur image** ; fusion après 10/10 CI finales uniquement. La source historique COCO val 2017 reste **non admissible pour six sports-balls sous CC BY** après exclusions des 1 316 photos déjà consommées. Nouvelle source Open Images V7 #311 : GT et licences déclarées **CSV-only**, 35 826 métadonnées candidates, six classes exactes en nom et sous-classe candidate `Tennis ball` (9 vues) ; *ni droits individuels complets, ni équivalence sémantique, ni disjonction d'images inter-datasets prouvés*.
+
+**Lot candidat PER-OI-V7-COHORT-1**, [préenregistrement #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643789216), [rapport/tests](per-oi-v7-frozen-42-cohort-2026-11-04.md) : figer **42 GT-only** (7 labels × 6 photos source val), SHA roster, filtres CC BY 2.0 déclarée/MD5/rotation/box humaine, sans pixel ou modèle. **13 tests** positifs et adversariaux ; réussite des CI finale obligatoire. Prochaine porte *séparée* après cette preuve : droits et doublons d'images, sémantique `Tennis ball` vs `sports_ball`, même cohorte pour Nano/S/M 640/416 PC et mesures de rappel/lacunes/latence. **Aucune** adaptation `mediad` ni modification de l'OEM/RK3566 avant mesures sur robot.
+
+**Frontières conservées** : VIS-FOCUS-A2 (suivi temporel) toujours STOP, EX4-C2 (effet physique) en attente ; `robotd` seul contrôleur 50 Hz, gitlinks OEM et archives B10/B11 intacts, SQLite unique, Qwen facultatif. Les notes de C/E-2 « candidat » ci-dessous sont historiques puisque #309 est fusionnée.
+
+---
+
 ## Mise à jour de reprise : C/E-2, fiabilité des écritures MEM-1 (04/11/2026)
 
 **Base vérifiée** `main@420664d97f33fff9ffeb8e4caea26f096799da59` : #305/#307/#308 fusionnées, PR #306 **fermée sans fusion**, 1 316 IDs COCO consommés non rejoués. VIS-FOCUS-A2 **bloqué en données temporelles/GT**, EX4-C2 **bloqué en attestation OEM de fin/effet réel** : aucune nouvelle capacité physique en conséquence.
