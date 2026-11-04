@@ -347,11 +347,9 @@ def run(annotations: Path, sama_zip: Path, *,
         model_m: Path | None = None, model_nano: Path | None = None):
     if stage not in ("source","abi","benchmark"):
         raise ValueError("unapproved stage")
-    cases, maps, original_gt, sama_gt, image_info, source = source_and_truth(
-        annotations,sama_zip)
     base={
         "experiment":"PER-YOLOX-SM-0 Rockchip host evidence",
-        "stage":stage,"source":source,
+        "stage":stage,
         "rockchip_reference_sha":ROCKCHIP_PIN,
         "score_threshold":SCORE_THRESHOLD,
         "nms_threshold_vendor":NMS_THRESHOLD,
@@ -362,24 +360,37 @@ def run(annotations: Path, sama_zip: Path, *,
         "input_photo_download_count":0,
         "inferences_executed":{"s":0,"m":0,"nano":0}
     }
-    if stage=="source":
-        base["status"]="SOURCE_PASS_NO_MODELS_NO_PIXELS"
-        return base
-    if model_s is None or model_m is None:
-        raise SourceGateError("STOP_MODEL: both vendor variants required")
-    sessions,model_proofs=open_vendor_models(
-        model_s,model_m,require_frozen=(stage=="benchmark"))
-    base["vendor_models"]=model_proofs
     if stage=="abi":
-        # A real ONNX pass on a synthetic black input; still NOT a photo benchmark.
+        # Static ONNX compatibility does NOT depend on COCO media or GT.
+        # The separate COCO/Sama source gate may legitimately be STOPped.
+        if model_s is None or model_m is None:
+            raise SourceGateError("STOP_MODEL: both vendor variants required")
+        sessions,model_proofs=open_vendor_models(
+            model_s,model_m,require_frozen=False)
         import numpy as np
         synthetic=np.zeros((1,3,SIZE,SIZE),dtype=np.float32)
         for key,(session,name) in sessions.items():
             outputs=session.run(None,{name:synthetic})
             validate_heads(outputs)
             base["inferences_executed"][key]=1
+        base["vendor_models"]=model_proofs
+        base["source"]={
+            "status":"NOT_EVALUATED_ABI_ONLY",
+            "cohort_qualified":False,
+            "no_public_images_fetched":True,
+        }
         base["status"]="HOST_VENDOR_ABI_SMOKE_ONLY_NO_PUBLIC_PIXELS"
         return base
+    if annotations is None or sama_zip is None:
+        raise SourceGateError("STOP_SOURCE: metadata files required")
+    cases, maps, original_gt, sama_gt, image_info, source = source_and_truth(
+        annotations,sama_zip)
+    base["source"]=source
+    if stage=="source":
+        base["status"]="SOURCE_PASS_NO_MODELS_NO_PIXELS"
+        return base
+    if model_s is None or model_m is None:
+        raise SourceGateError("STOP_MODEL: both vendor variants required")
     if (not all(FROZEN_VENDOR_SHA256.values())
             or model_nano is None):
         raise SourceGateError("STOP_MODEL: weights not pinned before image access")
@@ -388,6 +399,11 @@ def run(annotations: Path, sama_zip: Path, *,
         MODEL_SHA256, prepare_image,validate_model_file)
     from experiments.per80_yolox_coco_public import decode_all_classes
     import onnxruntime as ort
+    # This is a future benchmark gate; no source or weight may be upgraded
+    # merely because an independent synthetic ABI test succeeded.
+    sessions,model_proofs=open_vendor_models(
+        model_s,model_m,require_frozen=True)
+    base["vendor_models"]=model_proofs
     validate_model_file(model_nano)
     opts=ort.SessionOptions()
     opts.intra_op_num_threads=opts.inter_op_num_threads=1
@@ -439,14 +455,16 @@ def main(argv=None):
     p.add_argument("--approved-public-metadata",action="store_true")
     p.add_argument("--approved-public-media",action="store_true")
     p.add_argument("--stage",choices=("source","abi","benchmark"),required=True)
-    p.add_argument("--annotations",required=True,type=Path)
-    p.add_argument("--sama-zip",required=True,type=Path)
+    p.add_argument("--annotations",type=Path)
+    p.add_argument("--sama-zip",type=Path)
     p.add_argument("--model-s",type=Path)
     p.add_argument("--model-m",type=Path)
     p.add_argument("--model-nano",type=Path)
     args=p.parse_args(argv)
     if not args.approved_public_metadata:
         p.error("explicit public source preflight required")
+    if args.stage != "abi" and (args.annotations is None or args.sama_zip is None):
+        p.error("the source and benchmark stages require both metadata inputs")
     if args.stage=="benchmark" and not args.approved_public_media:
         p.error("explicit public media access required")
     print(json.dumps(run(
