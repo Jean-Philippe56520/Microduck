@@ -1,0 +1,86 @@
+name: PER-OI-V7 source GT and licence inventory (NO PIXELS OR MODEL)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "experiments/per_oi_v7_source_inventory.py"
+      - "tests/test_per_oi_v7_source_inventory.py"
+      - ".github/workflows/per-oi-v7-source-only.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  metadata-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Verify pinned OEM simulation and no changed robot code
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-tree HEAD upstream/microduck | grep -F '942e58e3aa6dbb28e7037203fff11866122c7567'
+          git ls-tree HEAD upstream/microduck_rl | grep -F 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Positive and negative CSV fixtures BEFORE external data access
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q experiments/per_oi_v7_source_inventory.py tests/test_per_oi_v7_source_inventory.py
+          python -m unittest discover -s tests -p 'test_per_oi_v7_source_inventory.py' -v
+      - name: Download only THREE official Open Images validation CSVs (NO JPG)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 1000000 \
+            -o "$RUNNER_TEMP/oid-classes.csv" \
+            'https://storage.googleapis.com/openimages/v7/oidv7-class-descriptions-boxable.csv'
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 40000000 \
+            -o "$RUNNER_TEMP/oid-images.csv" \
+            'https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv'
+          curl --fail --location --retry 2 --max-time 300 --max-filesize 180000000 \
+            -o "$RUNNER_TEMP/oid-boxes.csv" \
+            'https://storage.googleapis.com/openimages/v5/validation-annotations-bbox.csv'
+          sha256sum "$RUNNER_TEMP/oid-classes.csv" "$RUNNER_TEMP/oid-images.csv" "$RUNNER_TEMP/oid-boxes.csv"
+      - name: Class and per-photo licence gate (NO model/pixels, STOP if source invalid)
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 240s python -m experiments.per_oi_v7_source_inventory \
+            --approved-public-metadata \
+            --classes "$RUNNER_TEMP/oid-classes.csv" \
+            --images "$RUNNER_TEMP/oid-images.csv" \
+            --boxes "$RUNNER_TEMP/oid-boxes.csv" \
+            > "$RUNNER_TEMP/oi-v7-numeric.json"
+          python - "$RUNNER_TEMP/oi-v7-numeric.json" <<'PY'
+          import json,sys
+          with open(sys.argv[1],encoding="utf-8") as fp:
+              r=json.load(fp)
+          assert r["status"]=="OI_V7_METADATA_INVENTORY_ONLY_NOT_QUALIFIED"
+          assert not r["image_rights_independently_verified"]
+          assert not r["cross_dataset_duplicate_absence_verified"]
+          assert not r["scores_measured"] and not r["cohort_selected"]
+          assert r["real_pixels_loaded"]==r["models_loaded"]==0
+          assert r["motor_commands"]==r["sqlite_writes"]==0
+          assert r["sports_ball_coco_mapping"]=="UNKNOWN_NOT_INFERRED_FROM_BALL"
+          assert len(r["source_sha256"])==3
+          assert len(r["exact_label_candidates_for_coco"])==6
+          print(json.dumps(r,sort_keys=True))
+          PY
+          cp "$RUNNER_TEMP/oi-v7-numeric.json" oi-v7-numeric-only.json
+      - name: Preserve aggregate only; NEVER photos, URLs, IDs, weights or bbox
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oi-v7-source-metadata-numeric-only
+          path: oi-v7-numeric-only.json
+          retention-days: 14
+          if-no-files-found: error
