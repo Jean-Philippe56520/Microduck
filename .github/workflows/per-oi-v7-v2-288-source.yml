@@ -1,0 +1,95 @@
+name: PER-OI-V7-V2 source-only 42 candidates after 288 OI and COCO Flickr identities
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "experiments/per_oi_v7_v2_288_source.py"
+      - "tests/test_per_oi_v7_v2_288_source.py"
+      - ".github/workflows/per-oi-v7-v2-288-source.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  v2-source-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Preserve OEM and MuJoCo pinned gitlinks; no submodule checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-tree HEAD upstream/microduck | grep -F '942e58e3aa6dbb28e7037203fff11866122c7567'
+          git ls-tree HEAD upstream/microduck_rl | grep -F 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Positive/negative fixture tests BEFORE any network
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q experiments/per_oi_v7_v2_288_source.py tests/test_per_oi_v7_v2_288_source.py
+          python -m unittest discover -s tests -p 'test_per_oi_v7_v2_288_source.py' -v
+          python -m unittest discover -s tests -p 'test_per_oi_v7_human_label_gate.py' -v
+      - name: Download ONLY official source GT/CSV metadata; no pixels or weights
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 1000000 -o "$RUNNER_TEMP/classes.csv" \
+            'https://storage.googleapis.com/openimages/v7/oidv7-class-descriptions-boxable.csv'
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 40000000 -o "$RUNNER_TEMP/images.csv" \
+            'https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv'
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 55000000 -o "$RUNNER_TEMP/human.csv" \
+            'https://storage.googleapis.com/openimages/v7/oidv7-val-annotations-human-imagelabels.csv'
+          curl --fail --location --retry 2 --max-time 300 --max-filesize 180000000 -o "$RUNNER_TEMP/boxes.csv" \
+            'https://storage.googleapis.com/openimages/v5/validation-annotations-bbox.csv'
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 35000000 -o "$RUNNER_TEMP/coco-val.json" \
+            'https://huggingface.co/datasets/LibreYOLO/coco2017/resolve/main/instances_val2017.json'
+      - name: Source-only V2 deterministic sampling / STOP (never score)
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 240s python -m experiments.per_oi_v7_v2_288_source \
+            --approved-public-metadata \
+            --classes "$RUNNER_TEMP/classes.csv" \
+            --images "$RUNNER_TEMP/images.csv" \
+            --human "$RUNNER_TEMP/human.csv" \
+            --boxes "$RUNNER_TEMP/boxes.csv" \
+            --coco "$RUNNER_TEMP/coco-val.json" > "$RUNNER_TEMP/v2-source-numeric.json"
+          python - "$RUNNER_TEMP/v2-source-numeric.json" <<'PY'
+          import json,sys
+          with open(sys.argv[1],encoding="utf-8") as fp: r=json.load(fp)
+          assert r["status"] in ("V2_GT_42_FROZEN_SOURCE_ONLY_NOT_LICENSED",
+                                 "STOP_V2_SOURCE_NOT_QUALIFIED")
+          assert r["historical_openimages_ids_excluded"]==288
+          assert r["coco_val_image_metadata"]==5000
+          assert r["selection_seed"]=="kwipi-per-oi-v7-v2-exclude-288-v1-20261104"
+          assert len(r["source_sha256"])==5
+          assert not r["rights_by_original_author_verified"]
+          assert not r["cross_corpus_perceptual_duplicate_absence_verified"]
+          assert not r["last_42_v1_roster_reused_as_a_selection"]
+          assert r["historical_288_reinferred"] is False
+          assert r["real_pixels_loaded"]==r["model_inferences"]==r["motor_commands"]==r["sqlite_writes"]==0
+          assert r["cohort_images"] in (0,42)
+          if r["status"]=="V2_GT_42_FROZEN_SOURCE_ONLY_NOT_LICENSED":
+              assert r["cohort_images"]==42 and len(r["roster_sha256"])==64
+              assert r["coco_flickr_photo_ids_unknown"]==0
+              assert r["insufficient_category"] is None
+          else:
+              assert r["roster_sha256"] is None
+          print(json.dumps(r,sort_keys=True))
+          PY
+          cp "$RUNNER_TEMP/v2-source-numeric.json" v2-source-numeric-only.json
+      - name: Upload aggregates ONLY without source IDs / URLs / JPEG / ONNX
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: per-oi-v7-v2-source-numeric-only
+          path: v2-source-numeric-only.json
+          retention-days: 14
+          if-no-files-found: error
