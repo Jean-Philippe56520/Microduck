@@ -34,6 +34,8 @@ from microduck_companion.visual_photo_mobilenet_demo import PhotoBaselineError
 SEED = "kwipi-oidv7-A2d-newholdout-v1-20261104"
 PER_LABEL = 24
 MAX_BOX_CSV_BYTES = 70_000_000
+# Frozen after first real public CI #41842797778, before any repeat run.
+BBOX_SOURCE_SHA256 = "d8bbd59410af14835d7733165a7bb8a3f0213981b22dd5077b0b9f7878991ff2"
 CATEGORIES = ("person", "cat", "dog", "chair")
 BBOX_FIELDS = frozenset({
     "ImageID", "Source", "LabelName", "Confidence",
@@ -235,6 +237,8 @@ def _load_sources(classes: Path, metadata: Path, labels: Path, boxes: Path):
         "bbox": _source_bytes(boxes, MAX_BOX_CSV_BYTES),
     }
     actual = {key: sha256(value).hexdigest() for key, value in data.items()}
+    if actual["bbox"] != BBOX_SOURCE_SHA256:
+        raise PhotoBaselineError("official box metadata digest changed")
     if any(actual[key] != hash_value
            for key, hash_value in SOURCE_SHA256.items()):
         raise PhotoBaselineError("previously pinned official metadata changed")
