@@ -111,7 +111,7 @@ def qualify_metadata(classes: Path, images: Path, boxes: Path, human: Path,
         raw_confidence = row["Confidence"]
         id_ok = bool(_HEX_ID.fullmatch(row["ImageID"]))
         if len(raw_confidence) > 12 or not raw_confidence or any(
-                ch not in "01." for ch in raw_confidence):
+                ch not in "0123456789." for ch in raw_confidence):
             raise OpenImagesSourceStop(
                 f"STOP_SCHEMA: invalid label confidence encoding (image_id_hex16={id_ok})")
         try:
@@ -128,7 +128,7 @@ def qualify_metadata(classes: Path, images: Path, boxes: Path, human: Path,
             continue
         states = human_states[name]
         prior = states.get(row["ImageID"])
-        state = int(row["Confidence"])
+        state = int(decimal_confidence)
         states[row["ImageID"]] = state if prior is None or prior == state else -1
     if n_valid_rows < 100:
         raise OpenImagesSourceStop("STOP_SOURCE: suspiciously few human label rows")
