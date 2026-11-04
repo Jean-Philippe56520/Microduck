@@ -1,3 +1,15 @@
+## Reprise active post QUAL-R0 — VIS-FOCUS-A1 (04/11/2026)
+
+**Fusion acquise :** [#305 QUAL-R0](https://github.com/Jean-Philippe56520/Microduck/pull/305) 10/10 CI vertes, `main@432c2e7e3628b2defdabd7fa9024f7f18af8b44a` confirmé après fusion. 13 tests du contrat COCO/Sama sur fixtures, **aucune performance YOLOX réelle** ni validation NPU. 1 316 images COCO consommées, #301/#304 fermées non fusionnées, scores invalides ; ne pas les rejouer. Les paragraphes QUAL-R0 plus bas sont historiques.
+
+**VIS-FOCUS-A0 audité** : l'arbitre unique F2 connaît déjà curiosité/sociabilité/jeu/prudence/énergie/détermination, consulte la même SQLite et décide entre catégories ; les événements F1 savent représenter plusieurs objets. Manque réel : **deux objets d'une même catégorie ne peuvent pas être désignés séparément** par la décision F2 et aucune continuité physique/position n'est validée. [Audit](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6639783194).
+
+**VIS-FOCUS-A1 candidat uniquement sur fixtures** : décrire après F2 un seul intérêt lié à un `track_id` mock explicitement présent et frais, sans deuxième tracker/arbitre ; la disparition ou ambiguïté supprime la cible, et l'identité physique n'est jamais revendiquée. **STOP d'intégration initiale** : modification de `autonomy.py` = empreinte d'archive B10/B11 invalidée par cinq CI ; fichier restauré exactement, comparateur déplacé hors production dans `experiments/vis_focus_a1_host.py` ([amendement #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6640611915)). Préenregistrement [A1](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6640438838) et [rapport](vis-focus-a1-f2-mock-current-token-2026-11-04.md) : 4 P + 8 N à réussir avant toute fusion, non-régression F2, SQLite écriture nulle, aucun moteur/sous-module/modèle modifié. Les 15 tests ajoutés sont **à qualifier par CI**. Résultat attendu = **mesure sur fixtures d'une aide cognitive possible, non intégrée à Kwipi**, ni focus moteur, ni reconnaissance multi-objets OEM, ni ré-identification d'objet.
+
+**Jalons suivants** : mesurer séquences indépendantes (taille apparente, occultations, angles/distance si référence vraie) et fausses associations ; choisir modèle multicatégorie seulement après gain et audit droits/RK3566 ; comparaison éventuelle **2, 1,5, 1 Hz** sur mêmes séquences et coûts réels, pas de nouveau système adaptatif. Robotd 50 Hz et mediad OEM restent propriétaires, Qwen PC facultatif, une SQLite, pas de photos privées requises. `STOP_PROMOTION` inchangé.
+
+---
+
 ## Reprise active QUAL-R0 / VIS-FOCUS — 04/11/2026
 
 **Base GitHub avant QUAL-R0 :** `main@fec98d46de5787651ff1ba379887278b7edbe741` ; #302/#303 fusionnées, #301/#304 fermées **sans fusion** et leurs scores invalides, **1 316 IDs COCO consommés**. Ne pas rejouer les JPEG ni confondre CI hôte et compétence embarquée. [Plan autoritatif](plan-action.md) · [rapport QUAL-R0](qual-r0-host-scoring-contract-2026-11-04.md) · [préenregistrement et critères STOP #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6639358263).
