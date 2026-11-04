@@ -21,7 +21,7 @@ from experiments.cata2d_openimages_bbox_public import (
     _source_bytes, PublicCase,
 )
 from experiments.per80_yolox_coco_public import decode_all_classes
-from microduck_companion.cata2_bbox_eval import Box, iou
+from microduck_companion.yolox_attention_candidates import _iou
 from microduck_companion.cata2c_openimages_human_labels import (
     _official_jpeg, IMAGE_ID_PATTERN, select_human_verified_cases,
 )
@@ -128,7 +128,7 @@ def _matched(case: PublicCase, predicted: tuple, width: int, height: int):
     matched = set()
     proposals = [p for p in predicted if p.class_idx == idx]
     for p in sorted(proposals, key=lambda x: -x.confidence):
-        remaining = [(iou(Box(case.category,p.box,p.confidence),Box(case.category,b,1.0)), i)
+        remaining = [(_iou(p.box,b), i)
                      for i,b in enumerate(truth) if i not in matched]
         score, key = max(remaining, default=(0.0, -1))
         if score >= MATCH_IOU:
