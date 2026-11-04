@@ -32,7 +32,7 @@ from microduck_companion.cata_yolox_categories import (
 from microduck_companion.visual_photo_mobilenet_demo import PhotoBaselineError
 
 SEED = "kwipi-oidv7-A2d-newholdout-v1-20261104"
-PER_LABEL = 40
+PER_LABEL = 24
 MAX_BOX_CSV_BYTES = 70_000_000
 CATEGORIES = ("person", "cat", "dog", "chair")
 BBOX_FIELDS = frozenset({
@@ -161,7 +161,7 @@ def select_public_cases(
     *, excluded_ids: frozenset[str], per_label: int = PER_LABEL,
 ) -> tuple[PublicCase, ...]:
     """Selection uses source ground truth only, NEVER predictions or pixels."""
-    if (type(per_label) is not int or not 1 <= per_label <= 40
+    if (type(per_label) is not int or not 1 <= per_label <= 24
             or type(excluded_ids) is not frozenset
             or any(type(x) is not str or not IMAGE_ID_PATTERN.fullmatch(x)
                    for x in excluded_ids)):
