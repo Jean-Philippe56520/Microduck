@@ -1,0 +1,110 @@
+name: Cat-A2d Open Images V7 independent public boxes (host only)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "experiments/cata2d_openimages_bbox_public.py"
+      - "tests/test_cata2d_openimages_bbox_public.py"
+      - ".github/workflows/cata2d-oidv7-boxes.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-openimages-boxes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install approved host dependencies
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0 numpy==1.26.4 onnxruntime==1.21.0
+      - name: Run positive and negative fixture gates before source access
+        run: python -m unittest discover -s tests -p 'test_cata2d_openimages_bbox_public.py' -v
+      - name: Download official metadata and GT, no images
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 180 \
+            --output "$RUNNER_TEMP/oidv7-classes.csv" \
+            "https://storage.googleapis.com/openimages/v7/oidv7-class-descriptions-boxable.csv"
+          curl --fail --location --retry 2 --max-time 180 \
+            --output "$RUNNER_TEMP/oidv7-validation-meta.csv" \
+            "https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv"
+          curl --fail --location --retry 2 --max-time 180 \
+            --output "$RUNNER_TEMP/oidv7-human-validation.csv" \
+            "https://storage.googleapis.com/openimages/v7/oidv7-val-annotations-human-imagelabels.csv"
+          curl --fail --location --retry 2 --max-time 180 \
+            --output "$RUNNER_TEMP/oidv7-validation-bbox.csv" \
+            "https://storage.googleapis.com/openimages/v5/validation-annotations-bbox.csv"
+      - name: Preflight 320 GT cases before retrieving YOLOX model
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m experiments.cata2d_openimages_bbox_public \
+            --approved-public-media --validate-only \
+            --classes "$RUNNER_TEMP/oidv7-classes.csv" \
+            --metadata "$RUNNER_TEMP/oidv7-validation-meta.csv" \
+            --labels "$RUNNER_TEMP/oidv7-human-validation.csv" \
+            --boxes "$RUNNER_TEMP/oidv7-validation-bbox.csv" \
+            > "$RUNNER_TEMP/cata2d-preflight.json"
+          python - "$RUNNER_TEMP/cata2d-preflight.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1], encoding="utf-8") as stream:
+              report = json.load(stream)
+          assert report["status"] == "PRE_INFERENCE_SOURCE_GATE"
+          assert report["public_images_selected"] == 320
+          assert report["excluded_previous_cat_a2c_ids"] == 48
+          assert report["ball_excluded_not_equivalent_to_sports_ball"] is True
+          assert report["motor_commands"] == report["sqlite_writes"] == 0
+          print(json.dumps(report, sort_keys=True))
+          PY
+      - name: Download frozen Apache-2.0 YOLOX weights after preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 180 \
+            --output "$RUNNER_TEMP/yolox_nano.onnx" \
+            "https://huggingface.co/skillsafe-ai/yolox-nano/resolve/8e308810ede488f742901a4ac597dc7796798e46/yolox_nano.onnx"
+          echo "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d  $RUNNER_TEMP/yolox_nano.onnx" | sha256sum --check
+      - name: Score independent real JPEGs without training or OEM control
+        shell: bash
+        env:
+          OMP_NUM_THREADS: "1"
+          OPENBLAS_NUM_THREADS: "1"
+        run: |
+          set -euo pipefail
+          python -m experiments.cata2d_openimages_bbox_public \
+            --approved-public-media \
+            --classes "$RUNNER_TEMP/oidv7-classes.csv" \
+            --metadata "$RUNNER_TEMP/oidv7-validation-meta.csv" \
+            --labels "$RUNNER_TEMP/oidv7-human-validation.csv" \
+            --boxes "$RUNNER_TEMP/oidv7-validation-bbox.csv" \
+            --model "$RUNNER_TEMP/yolox_nano.onnx" \
+            > "$RUNNER_TEMP/cata2d-public-report.json"
+          python - "$RUNNER_TEMP/cata2d-public-report.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1], encoding="utf-8") as stream:
+              r = json.load(stream)
+          assert r["public_images_selected"] == 320
+          assert r["inference_on_real_public_pixels"] is True
+          assert r["ball_excluded_not_equivalent_to_sports_ball"] is True
+          assert r["robot_rknn_validated"] is False
+          assert r["motor_commands"] == r["sqlite_writes"] == r["qwen_calls"] == 0
+          assert all(v["positive_images"] == v["negative_images"] == 40
+                     for v in r["classwise_results"].values())
+          print(json.dumps(r, sort_keys=True))
+          PY
+          cp "$RUNNER_TEMP/cata2d-public-report.json" cata2d-public-report.json
+      - name: Save aggregate only, no photos/IDs/boxes/weights
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cata2d-oidv7-public-aggregate
+          path: cata2d-public-report.json
+          if-no-files-found: error
+          retention-days: 14
