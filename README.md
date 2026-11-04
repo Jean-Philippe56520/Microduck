@@ -1,3 +1,13 @@
+# Reprise complémentaire — C/E-2, garde d'écriture MEM-1 sur fixtures (04/11/2026)
+
+**Base GitHub vérifiée avant ce lot :** `main@420664d97f33fff9ffeb8e4caea26f096799da59`, [#308 VIS-FOCUS-A2](https://github.com/Jean-Philippe56520/Microduck/pull/308) fusionnée après 9/9 CI. **PR #306** fermée sans fusion comme doublon historique de la [#307](https://github.com/Jean-Philippe56520/Microduck/pull/307) ; ses 12 tests ne sont pas sur `main`. **A2 reste `STOP_A2_SOURCE_NOT_QUALIFIED`**, aucune comparaison réelle 2/1,5/1 Hz ; **EX4-C2 reste en attente** d'un reçu OEM de fin et d'un effet indépendant, aucun apprentissage causal robot autorisé. Les 1 316 images COCO consommées ne sont pas rejouées.
+
+**Nouveau défaut logiciel indépendant, candidat C/E-2 sur branche `fix/ce2-mem1-corrected-goal-write-20261104` :** les **lecteurs** MEM-1 refusent déjà un objectif fictif `active=1` qui porte une `correction_reason`, mais les méthodes d'**écriture** `create/transition/link_attempt` ne refusaient pas cette contradiction avant faux doublon/changement d'état/lien EX1. [Porte fixée avant code](https://github.com/Jean-Philippe56520/Microduck/pull/294#issuecomment-6642577539), [rapport et tests positifs/négatifs](docs/ce2-mem1-corrected-goal-write-2026-11-04.md). Adaptation minimale des trois SELECT/contrôles existants et quatre tests adversariaux dans la même SQLite ; **CI du dernier SHA encore à vérifier avant toute fusion**. Cela ne livre ni nouvelle perception, ni suivi physique, ni geste, ni effet mesuré, ni modèle.
+
+**Garde-fous :** code OEM et gitlinks épinglés, 19+5+4 sources B10/B11, archive historique, `robotd` 50 Hz, `mediad`, Qwen PC facultatif, unique `ExperienceMemory` et droits de sûreté inchangés. `docs/plan-action.md` fait autorité ; les notes de reprise plus bas constituent un historique.
+
+---
+
 # Reprise active — VIS-FOCUS-A2 : source temporelle à qualifier (04/11/2026)
 
 **Dernier `main` confirmé avant ce lot documentaire :** `fce5d138bb1a1130091d921ba10352a8ec770400`. [#305 QUAL-R0](https://github.com/Jean-Philippe56520/Microduck/pull/305) fusionnée après **10/10 CI** ; [#307 VIS-FOCUS-A1](https://github.com/Jean-Philippe56520/Microduck/pull/307) fusionnée après **9/9 CI** au HEAD `de12252599b109c016b853d699998d2cc0a96442`. **15/15 tests spécialisés et 2 517 tests Python généraux réussis** sur des fixtures PC ; **pas** de perception multi-objets OEM, tracker physique, robot ou modèle validé. La tentative de toucher `autonomy.py` a été arrêtée à cause des empreintes historiques B10/B11 ; ce fichier a été rétabli exactement, le comparateur final restant `experiments/vis_focus_a1_host.py` **hors logiciel livré**. Les gitlinks OEM sont inchangés.
