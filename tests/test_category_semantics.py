@@ -226,6 +226,114 @@ class SemanticMemoryTests(unittest.TestCase):
         self.assertEqual((),self.semantic.recall(now_wall_epoch_s=WALL))
         self.assertFalse(self.remember(sid))
 
+    def test_cog_a3_r2_valid_recall_and_legitimate_correction_survive_restart(self):
+        # P1/P2: historical F1-C/F2-C mock evidence stays historical only.
+        from microduck_companion.memory_consolidation import recall_category
+
+        sid=self.record("ball")
+        self.assertTrue(self.remember(sid))
+        before=self.mem.conn.total_changes
+        (item,)=self.semantic.recall(
+            category="ball", now_wall_epoch_s=WALL)
+        result=recall_category(
+            self.semantic, category="ball", now_wall_epoch_s=WALL)
+        self.assertEqual("ball", item.category)
+        self.assertTrue(item.historical_only)
+        self.assertFalse(item.real_sensor_verified)
+        self.assertEqual("historical_mock_only", result.status)
+        self.assertEqual(1, result.evidence[0].observation_count)
+        self.assertFalse(result.physical_actions_authorized)
+        self.assertEqual(before, self.mem.conn.total_changes)
+
+        self.assertTrue(self.semantic.forget_observation(
+            sid, reason="source_retracted"))
+        before=self.mem.conn.total_changes
+        self.assertEqual((), self.semantic.recall(
+            category="ball", now_wall_epoch_s=WALL))
+        self.assertEqual("unknown", recall_category(
+            self.semantic, category="ball", now_wall_epoch_s=WALL).status)
+        self.assertEqual(before, self.mem.conn.total_changes)
+
+        self.mem.close()
+        reopened=ExperienceMemory(self.path)
+        try:
+            semantics=CategorySemantics(reopened)
+            before=reopened.conn.total_changes
+            self.assertEqual((), semantics.recall(
+                category="ball", now_wall_epoch_s=WALL))
+            self.assertEqual("unknown", recall_category(
+                semantics, category="ball", now_wall_epoch_s=WALL).status)
+            self.assertEqual(before, reopened.conn.total_changes)
+        finally:
+            reopened.close()
+
+    def test_cog_a3_r2_active_corrected_category_refused_before_and_after_restart(self):
+        # N1–N3: legal SQLite column values can contradict active=1.
+        # Both existing readers must fail closed without mutating evidence.
+        from microduck_companion.memory_consolidation import recall_category
+
+        sid=self.record("dog")
+        self.assertTrue(self.remember(sid))
+        for reason in ("source_retracted", "fixture_annotation_error"):
+            with self.subTest(reason=reason):
+                with self.mem.conn:
+                    self.mem.conn.execute(
+                        "UPDATE f4a_semantic_categories "
+                        "SET correction_reason=? WHERE observation_id=?",
+                        (reason, sid))
+                before=self.mem.conn.total_changes
+                with self.assertRaises(ValueError):
+                    self.semantic.recall(
+                        category="dog", now_wall_epoch_s=WALL)
+                with self.assertRaises(ValueError):
+                    self.semantic.recall(now_wall_epoch_s=WALL)
+                with self.assertRaises(ValueError):
+                    recall_category(
+                        self.semantic, category="dog",
+                        now_wall_epoch_s=WALL)
+                self.assertEqual(before, self.mem.conn.total_changes)
+                row=self.mem.conn.execute(
+                    "SELECT active,correction_reason "
+                    "FROM f4a_semantic_categories WHERE observation_id=?",
+                    (sid,)).fetchone()
+                self.assertEqual((1, reason), tuple(row))
+                with self.mem.conn:
+                    self.mem.conn.execute(
+                        "UPDATE f4a_semantic_categories SET correction_reason=NULL "
+                        "WHERE observation_id=?", (sid,))
+                self.assertEqual(1, len(self.semantic.recall(
+                    category="dog", now_wall_epoch_s=WALL)))
+
+        # Corruption persists through restart and still cannot be recalled.
+        with self.mem.conn:
+            self.mem.conn.execute(
+                "UPDATE f4a_semantic_categories "
+                "SET correction_reason='source_retracted' "
+                "WHERE observation_id=?", (sid,))
+        self.mem.close()
+        reopened=ExperienceMemory(self.path)
+        try:
+            semantics=CategorySemantics(reopened)
+            before=reopened.conn.total_changes
+            with self.assertRaises(ValueError):
+                semantics.recall(category="dog", now_wall_epoch_s=WALL)
+            with self.assertRaises(ValueError):
+                recall_category(semantics, category="dog",
+                                now_wall_epoch_s=WALL)
+            self.assertEqual(before, reopened.conn.total_changes)
+            with reopened.conn:
+                reopened.conn.execute(
+                    "UPDATE f4a_semantic_categories "
+                    "SET correction_reason=NULL WHERE observation_id=?",
+                    (sid,))
+            self.assertEqual(1, len(semantics.recall(
+                category="dog", now_wall_epoch_s=WALL)))
+            self.assertEqual(1, recall_category(
+                semantics, category="dog",
+                now_wall_epoch_s=WALL).evidence[0].observation_count)
+        finally:
+            reopened.close()
+
     def test_expired_or_future_evidence_never_accepted(self):
         sid=self.record("ball")
         self.assertFalse(self.remember(sid,WALL+3))
