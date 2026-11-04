@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import unittest
 
-from microduck_companion.autonomy import AutonomyBrain, MockFocusHint, Motivations
+from microduck_companion.autonomy import AutonomyBrain, Motivations
+from experiments.vis_focus_a1_host import HostFocusComparator, MockFocusHint
 from microduck_companion.episodic_memory import ExperienceMemory
 from microduck_companion.passive_memory import PassiveObservationJournal
 from microduck_companion.passive_sources import PassiveRead
@@ -36,6 +37,7 @@ class VisualFocusA1(unittest.TestCase):
         self.addCleanup(self.memory.close)
         self.journal = PassiveObservationJournal(self.memory)
         self.brain = AutonomyBrain(self.memory)
+        self.focus = HostFocusComparator()
 
     def evaluate(self, r, *, now=100.1):
         baseline = self.brain.propose_balanced_passive(
@@ -44,7 +46,7 @@ class VisualFocusA1(unittest.TestCase):
         )
         before = self.memory.conn.total_changes
         old_energy = self.brain.motives.energy
-        hint = self.brain.describe_mock_visual_focus(
+        hint = self.focus.describe_mock_visual_focus(
             r, baseline, now_monotonic_s=now,
         )
         self.assertEqual(before, self.memory.conn.total_changes)
@@ -231,10 +233,10 @@ class VisualFocusA1(unittest.TestCase):
     def test_invalid_inputs_refused_and_no_safety_or_oem_added(self):
         selected, _ = self.evaluate(frame(sighting()), now=100.1)
         with self.assertRaises(TypeError):
-            self.brain.describe_mock_visual_focus("not-a-read", selected,
+            self.focus.describe_mock_visual_focus("not-a-read", selected,
                                                   now_monotonic_s=101.)
         with self.assertRaises(ValueError):
-            self.brain.describe_mock_visual_focus(
+            self.focus.describe_mock_visual_focus(
                 frame(sighting()), selected, now_monotonic_s=float("nan"))
         _, hint = self.evaluate(frame(
             PerceptionEvent("safe_area", True, "mock", 101., 1., 1.),
