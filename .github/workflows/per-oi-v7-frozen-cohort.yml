@@ -1,0 +1,92 @@
+name: PER-OI-V7-COHORT-1 GT-only 42-photo freeze (NO MEDIA/MODEL)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "experiments/per_oi_v7_frozen_cohort.py"
+      - "tests/test_per_oi_v7_frozen_cohort.py"
+      - ".github/workflows/per-oi-v7-frozen-cohort.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-only-cohort:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Preserve OEM gitlinks; no motor/camera changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-tree HEAD upstream/microduck | grep -F '942e58e3aa6dbb28e7037203fff11866122c7567'
+          git ls-tree HEAD upstream/microduck_rl | grep -F 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Synthetic positive and negative source-only tests BEFORE external access
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q experiments/per_oi_v7_frozen_cohort.py tests/test_per_oi_v7_frozen_cohort.py
+          python -m unittest discover -s tests -p 'test_per_oi_v7_frozen_cohort.py' -v
+          python -m unittest discover -s tests -p 'test_per_oi_v7_source_inventory.py' -v
+      - name: Download ONLY THREE verified Open Images V7 official CSVs
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 1000000 \
+            -o "$RUNNER_TEMP/oid-classes.csv" \
+            'https://storage.googleapis.com/openimages/v7/oidv7-class-descriptions-boxable.csv'
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 40000000 \
+            -o "$RUNNER_TEMP/oid-images.csv" \
+            'https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv'
+          curl --fail --location --retry 2 --max-time 300 --max-filesize 180000000 \
+            -o "$RUNNER_TEMP/oid-boxes.csv" \
+            'https://storage.googleapis.com/openimages/v5/validation-annotations-bbox.csv'
+          echo "1839e0e7e84130ae281f7f67413768601b031581c0c42e7fc17527b8e2a99aa9  $RUNNER_TEMP/oid-classes.csv" | sha256sum --check
+          echo "ed93a0e121fe345effdfc7359b848dbc64a1ff6778c8c73563157cb500b33a17  $RUNNER_TEMP/oid-images.csv" | sha256sum --check
+          echo "d8bbd59410af14835d7733165a7bb8a3f0213981b22dd5077b0b9f7878991ff2  $RUNNER_TEMP/oid-boxes.csv" | sha256sum --check
+      - name: Freeze 42 IDs with official GT only, upload aggregate SHA but NEVER IDs or pixels
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 120s python -m experiments.per_oi_v7_frozen_cohort \
+            --approved-public-metadata \
+            --classes "$RUNNER_TEMP/oid-classes.csv" \
+            --images "$RUNNER_TEMP/oid-images.csv" \
+            --boxes "$RUNNER_TEMP/oid-boxes.csv" \
+            > "$RUNNER_TEMP/oi-v7-frozen-42-numeric-only.json"
+          python - "$RUNNER_TEMP/oi-v7-frozen-42-numeric-only.json" <<'PY'
+          import json,sys
+          with open(sys.argv[1],encoding="utf-8") as f:
+              r=json.load(f)
+          assert r["status"]=="GT_ONLY_42_ROSTER_FROZEN_NO_PIXELS_NO_MODEL"
+          assert r["cohort_images"]==42
+          assert len(r["assigned_per_label"])==7
+          assert set(r["assigned_per_label"].values())=={6}
+          assert len(r["roster_sha256"])==64
+          assert r["selected_target_boxes"]>=42
+          assert not r["cross_dataset_image_duplicate_absence_verified"]
+          assert not r["commercial_image_rights_individually_verified"]
+          assert not r["model_promoted"] and not r["robot_rknn_validated"]
+          assert r["images_fetched"]==r["model_inferences"]==0
+          assert r["motor_commands"]==r["sqlite_writes"]==r["qwen_calls"]==0
+          assert r["candidate_semantic_mapping"]["Tennis ball"]=="POSSIBLE_COCO_SPORTS_BALL_SUBTYPE_UNVERIFIED"
+          print(json.dumps(r,sort_keys=True))
+          PY
+          cp "$RUNNER_TEMP/oi-v7-frozen-42-numeric-only.json" oi-v7-frozen-42-numeric-only.json
+      - name: Publish numeric audit only (no ID, box, URL, JPEG, or weight)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oi-v7-frozen-42-metadata-only
+          path: oi-v7-frozen-42-numeric-only.json
+          if-no-files-found: error
+          retention-days: 14
