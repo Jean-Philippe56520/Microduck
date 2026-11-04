@@ -128,7 +128,7 @@ def _matched(case: PublicCase, predicted: tuple, width: int, height: int):
     matched = set()
     proposals = [p for p in predicted if p.class_idx == idx]
     for p in sorted(proposals, key=lambda x: -x.confidence):
-        remaining = [(iou(Box(case.category,p.box),Box(case.category,b)), i)
+        remaining = [(iou(Box(case.category,p.box,p.confidence),Box(case.category,b,1.0)), i)
                      for i,b in enumerate(truth) if i not in matched]
         score, key = max(remaining, default=(0.0, -1))
         if score >= MATCH_IOU:
