@@ -40,6 +40,20 @@ def archive(shards):
 
 
 class SamaSourceGateFixtures(unittest.TestCase):
+    def test_frozen_source_and_roster_sha_fail_closed(self):
+        from hashlib import sha256
+        from experiments.per_qual1_sama_gt_gate import (
+            _frozen_sha256, SAMA_ANNOTATION_ZIP_SHA256, FROZEN_COHORT_SHA256)
+        self.assertEqual(len(SAMA_ANNOTATION_ZIP_SHA256), 64)
+        self.assertEqual(len(FROZEN_COHORT_SHA256), 64)
+        raw=b"original public metadata"
+        digest=sha256(raw).hexdigest()
+        self.assertEqual(_frozen_sha256(raw, digest, "test source"),digest)
+        with self.assertRaisesRegex(SourceGateError,"frozen SHA256 mismatch"):
+            _frozen_sha256(raw+b"altered",digest,"test source")
+        with self.assertRaisesRegex(SourceGateError,"frozen SHA256 mismatch"):
+            _frozen_sha256(b"unexpected roster",FROZEN_COHORT_SHA256,"roster")
+
     def test_maximum_pairing_is_order_independent(self):
         from experiments.per_qual1_sama_gt_gate import _paired_iou50
         original = ((0., 0., 10., 10.), (2., 0., 12., 10.))
