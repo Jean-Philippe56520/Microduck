@@ -1,0 +1,125 @@
+name: PER-QUAL-1C2 42 NEW YOLOX JPEGs, dual official COCO and Sama GT IDs
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "experiments/per_qual1c2_yolox_paired_new42.py"
+      - "tests/test_per_qual1c2_yolox_paired_new42.py"
+      - ".github/workflows/per-qual1c2-yolox-new42.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  paired-new42-yolox-host:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    env:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Verify pinned OEM/RL unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-tree HEAD upstream/microduck | grep -F '942e58e3aa6dbb28e7037203fff11866122c7567'
+          git ls-tree HEAD upstream/microduck_rl | grep -F 'b02fdea4902c2b93b7d34a83a6f05da4ececb7d3'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install existing pinned CPU-only dependencies
+        run: python -m pip install --disable-pip-version-check Pillow==11.3.0 numpy==1.26.4 onnxruntime==1.21.0
+      - name: Prove distinct COCO category_id and YOLOX head_idx on offline fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q experiments/per_qual1c2_yolox_paired_new42.py tests/test_per_qual1c2_yolox_paired_new42.py
+          python -m unittest discover -s tests -p 'test_per_qual1c2_yolox_paired_new42.py' -v
+          python -m unittest discover -s tests -p 'test_per_qual1c1_new42_source.py' -v
+          python -m unittest discover -s tests -p 'test_per_qual1_sama_gt_gate.py' -v
+      - name: Fetch only previously frozen public COCO and Sama annotations
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 35000000 \
+            --output "$RUNNER_TEMP/instances_val2017.json" \
+            'https://huggingface.co/datasets/LibreYOLO/coco2017/resolve/main/instances_val2017.json'
+          echo "e8c7f7908f1d7278341fae127d0da654f102f11bd7b21d8aeefa635b8c810b6f  $RUNNER_TEMP/instances_val2017.json" | sha256sum --check
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 20000000 \
+            --output "$RUNNER_TEMP/sama-coco-val.zip" \
+            'https://sama-documentation-assets.s3.amazonaws.com/sama-coco/sama-coco-val.zip'
+          echo "c55454f6657ce63891783136cc5dfe5f1e9c5e1748c0d8ca08b456a804eab15f  $RUNNER_TEMP/sama-coco-val.zip" | sha256sum --check
+      - name: Verify new frozen roster and COCO IDs BEFORE ANY model/photo access
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 150s python -m experiments.per_qual1c2_yolox_paired_new42 \
+            --approved-public-media --validate-only \
+            --annotations "$RUNNER_TEMP/instances_val2017.json" \
+            --sama-zip "$RUNNER_TEMP/sama-coco-val.zip" \
+            > "$RUNNER_TEMP/perqual1c2-preflight.json"
+          python - "$RUNNER_TEMP/perqual1c2-preflight.json" <<'PY'
+          import json,sys
+          with open(sys.argv[1],encoding='utf-8') as fp: r=json.load(fp)
+          assert r['status']=='NEW_SOURCE_COHORT_SELECTED_NO_INFERENCE'
+          assert r['prior_coco_ids_excluded']==1274
+          assert r['photos_allocated']==42 and r['per_target_allocated']==6
+          assert r['cohort_sha256']=='04bae5d7af2e379b81762a75b7965e849d6d972d40dd56ce16bf28a984122b92'
+          assert r['source_sha256']=='c55454f6657ce63891783136cc5dfe5f1e9c5e1748c0d8ca08b456a804eab15f'
+          assert r['inferences_executed']==r['image_fetches']==r['motor_commands']==r['sqlite_writes']==r['qwen_calls']==0
+          assert not r['promotion'] and not r['robot_rknn_validated']
+          print('PER_QUAL1C2_SOURCE_AND_ID_GATE: PASS_BEFORE_IMAGES')
+          PY
+      - name: Download unchanged pinned YOLOX ONNX after preflight ONLY
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --max-time 180 --max-filesize 4500000 \
+            --output "$RUNNER_TEMP/yolox_nano.onnx" \
+            'https://huggingface.co/skillsafe-ai/yolox-nano/resolve/8e308810ede488f742901a4ac597dc7796798e46/yolox_nano.onnx'
+          echo "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d  $RUNNER_TEMP/yolox_nano.onnx" | sha256sum --check
+      - name: Exactly 42 NEW real public JPEGs, one YOLOX inference, two label sets
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout 1200s python -m experiments.per_qual1c2_yolox_paired_new42 \
+            --approved-public-media \
+            --annotations "$RUNNER_TEMP/instances_val2017.json" \
+            --sama-zip "$RUNNER_TEMP/sama-coco-val.zip" \
+            --model "$RUNNER_TEMP/yolox_nano.onnx" \
+            > "$RUNNER_TEMP/per-qual1c2-numeric.json"
+          python - "$RUNNER_TEMP/per-qual1c2-numeric.json" <<'PY'
+          import json,sys
+          with open(sys.argv[1],encoding='utf-8') as fp: r=json.load(fp)
+          assert r['status']=='HOST_PAIRED_GT_VALIDLY_SCORED'
+          assert r['decision']=='STOP_PROMOTION'
+          assert r['cohort_sha256']=='04bae5d7af2e379b81762a75b7965e849d6d972d40dd56ce16bf28a984122b92'
+          assert r['photos_allocated']==r['inferences_executed']==r['image_fetches']==42
+          assert r['prior_coco_ids_excluded']==1274
+          assert r['model_sha256']=='c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d'
+          assert len(r['classwise_scores'])==7
+          for name,s in r['classwise_scores'].items():
+              assert s['allocated_photos']==6 and s['evaluated_photos']==42
+              assert s['gt_coco_boxes']>=6 and s['gt_sama_boxes']>=6
+              assert 0<=s['matched_coco_iou50']<=s['gt_coco_boxes']
+              assert 0<=s['matched_sama_iou50']<=s['gt_sama_boxes']
+              assert s['proposals']>=s['matched_coco_iou50']
+              assert s['proposals']>=s['matched_sama_iou50']
+              assert 'false_positives' not in s
+          assert r['viewpoint_height']=='unknown'
+          assert r['motor_commands']==r['sqlite_writes']==r['qwen_calls']==0
+          assert not r['promotion'] and not r['robot_rknn_validated']
+          print(json.dumps(r,sort_keys=True))
+          PY
+          cp "$RUNNER_TEMP/per-qual1c2-numeric.json" per-qual1c2-numeric-only.json
+      - name: Publish numbers only, no pictures, individual IDs or model
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: per-qual1c2-two-gt-numeric-only
+          path: per-qual1c2-numeric-only.json
+          retention-days: 14
+          if-no-files-found: error
