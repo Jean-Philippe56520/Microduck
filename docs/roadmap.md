@@ -1,3 +1,13 @@
+## Priorité perception — PER-YOLOX-SM-0 : reconnaissance multiclasse, distincte du suivi temporel (04/11/2026)
+
+**Autorisation utilisateur** : comparer YOLOX-S et YOLOX-M Rockchip compatibles RK3566 annoncés, plutôt que d'arrêter toute perception parce que le corpus vidéo suivi A2 est indisponible. [Porte prospective #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6643049833) · [rapport expérimental](per-yolox-sm-rockchip-host-preflight-2026-11-04.md). Base avant branche `main@420664d97f33fff9ffeb8e4caea26f096799da59` ; #309 mémoire demeure un lot séparé.
+
+**Phase 0 active, sans JPEG :** Rockchip `rknn_model_zoo@837db8e`, 42 **nouvelles images** sélectionnées par GT COCO/Sama parmi 5 000 val après exclusion exacte de 1 316 anciennes ; **photos CC BY 2.0 uniquement**, GT et mapping COCO-ID/YOLOX-index contrôlés ; vérification SHA/3 sorties ONNX de S/M et smoke synthétique CPU. **Phase 1 conditionnelle :** épingler SHA des deux poids, Nano/S/M sur exactement 42 JPEG inédits, même GT indépendantes des prédictions et métriques IoU50/p50/p95/RSS hôte. Aucun score ni précision candidat revendiqués avant CI effective et pixels réels. La corrélation des deux annotations humaines est déclarée.
+
+**Promotion RKNN/robot :** seulement après gains démontrés et contrôle des droits des modèles, RSS/NPU/latence/température sur matériel avec robotd 50 Hz indépendant, mediad conservé. VIS-FOCUS-A2 reste **STOP** sur la continuité/occlusion temporelle ; EX4-C2 attend toujours preuve fin OEM + effet indépendant. Pas de second pilote, seconde caméra, deuxième SQLite, refonte OEM ou cadence adaptative.
+
+---
+
 ## Reprise active — VIS-FOCUS-A2 : source/GT temporelle avant tout nouvel essai (04/11/2026)
 
 **État GitHub vérifié** : QUAL-R0 [#305](https://github.com/Jean-Philippe56520/Microduck/pull/305) fusionnée (10/10 CI) ; VIS-FOCUS-A1 [#307](https://github.com/Jean-Philippe56520/Microduck/pull/307) fusionnée (9/9 CI) ; `main@fce5d138bb1a1130091d921ba10352a8ec770400` après #307. **15/15 tests A1 et 2 517 tests Python généraux réussis sur fixtures**, sans validation de perception/mémoire physique. Archives B10/B11, `autonomy.py` original et gitlinks OEM conservés. Ancien A1 « candidat » des sections suivantes = **historique**.
