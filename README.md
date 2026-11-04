@@ -1,3 +1,9 @@
+# Reprise après QUAL-R0 fusionnée — VIS-FOCUS-A1, témoin F1/F2 (04/11/2026)
+
+**État réellement vérifié :** [#305 QUAL-R0](https://github.com/Jean-Philippe56520/Microduck/pull/305) fusionnée après **10/10 CI vertes** sur `d53bc357e14cfb844eb9d7243a37de493db94cd2` ; nouveau `main@432c2e7e3628b2defdabd7fa9024f7f18af8b44a`. **VIS-FOCUS-A0 audité** dans [issue #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6640377031) : F1 porte plusieurs observations, F2-B classe déjà plusieurs catégories selon motivations et mémoire, mais pas deux **objets physiques** de même catégorie sur plusieurs images ; pas de track physique prouvé. **VIS-FOCUS-A1 candidat TEST-ONLY** : [12 fixtures et limites](docs/vis-focus-a1-existing-baseline-2026-11-04.md), 4 positifs/8 négatifs, fonctions F1/F2 existantes inchangées, CI à vérifier sur HEAD final et **pas de fusion avant toutes vertes**. Aucune reconnaissance réelle, nouveau tracker, modèle, SQLite, caméra/moteur ou OEM. 1 316 IDs COCO consommés, aucun rejeu. `STOP_PROMOTION` intact ; 2/1,5/1 Hz non mesurés sur séquences dans ce lot. [Plan d'action](docs/plan-action.md) autoritatif.
+
+---
+
 # Reprise de Kwipi — QUAL-R0, attention unique et perception multi-objets (04/11/2026)
 
 **Référence GitHub vérifiée avant ce lot :** `main@fec98d46de5787651ff1ba379887278b7edbe741` (#302 et #303 fusionnées). Vérifier à chaque reprise le **nouveau main réel, la PR QUAL-R0 et toutes ses CI** : un SHA ou un état candidat dans les sections historiques n'est pas le dernier état. [Plan autoritatif](docs/plan-action.md) · [qualification QUAL-R0](docs/qual-r0-host-scoring-contract-2026-11-04.md) · [préenregistrement #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6639358263).
