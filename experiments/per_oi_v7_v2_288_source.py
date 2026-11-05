@@ -195,6 +195,18 @@ def audit_flickr_identity_rows(rows, *, selected_ids: frozenset[str],
     historical = {}
     duplicate_source_rows = 0
     unreadable_source_rows = 0
+    reason_names = (
+        "original_and_landing_unreadable",
+        "original_unreadable_only",
+        "landing_unreadable_only",
+        "flickr_ids_disagree",
+        "original_md5_invalid",
+    )
+    # Aggregate counters only. Never retain/publish the offending IDs or URLs.
+    unreadable_reasons = {
+        group: {reason: 0 for reason in reason_names}
+        for group in ("selected", "historical")
+    }
 
     for row in rows:
         ident = row["ImageID"]
@@ -207,13 +219,32 @@ def audit_flickr_identity_rows(rows, *, selected_ids: frozenset[str],
         original = flickr_id(row["OriginalURL"])
         landing = flickr_id(row["OriginalLandingURL"])
         digest = _md5(row["OriginalMD5"])
-        if original is None or landing is None or original != landing or digest is None:
+        if original is None and landing is None:
+            reason = "original_and_landing_unreadable"
+        elif original is None:
+            reason = "original_unreadable_only"
+        elif landing is None:
+            reason = "landing_unreadable_only"
+        elif original != landing:
+            reason = "flickr_ids_disagree"
+        elif digest is None:
+            reason = "original_md5_invalid"
+        else:
+            reason = None
+        if reason is not None:
             unreadable_source_rows += 1
+            group = "selected" if ident in selected_ids else "historical"
+            unreadable_reasons[group][reason] += 1
             continue
         if ident in selected_ids:
             selected[ident] = (original, digest)
         else:
             historical[ident] = (original, digest)
+
+    if sum(sum(v.values()) for v in unreadable_reasons.values()) != unreadable_source_rows:
+        raise OpenImagesSourceStop("STOP_SOURCE: failure-reason count invariant")
+    selected_missing = len(selected_ids - seen)
+    historical_missing = len(historical_ids - seen)
 
     selected_sources = [photo for photo, _ in selected.values()]
     selected_md5s = [digest for _, digest in selected.values()]
@@ -248,6 +279,9 @@ def audit_flickr_identity_rows(rows, *, selected_ids: frozenset[str],
         "historical_ids_expected": 288,
         "historical_ids_with_consistent_flickr_and_md5": len(historical),
         "unreadable_source_rows": unreadable_source_rows,
+        "unreadable_source_reasons": unreadable_reasons,
+        "selected_metadata_rows_missing": selected_missing,
+        "historical_metadata_rows_missing": historical_missing,
         "duplicate_source_rows": duplicate_source_rows,
         "within_selected_same_flickr_photo_aliases": within_flickr_aliases,
         "within_selected_same_declared_md5_aliases": within_md5_aliases,
