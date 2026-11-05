@@ -98,6 +98,22 @@ jobs:
               assert all(set(reasons[group])==expected_reasons for group in reasons)
               assert all(type(n) is int and n>=0 for group in reasons.values() for n in group.values())
               assert sum(n for group in reasons.values() for n in group.values())==audit["unreadable_source_rows"]
+              shapes=audit["landing_unreadable_shape_categories"]
+              allowed_shapes={
+                  "flickr_page_host/photo_page_numeric",
+                  "flickr_page_host/photo_page_other",
+                  "flickr_page_host/legacy_photo_gne",
+                  "flickr_page_host/other",
+                  "flickr_shortlink_host/shortlink_base58",
+                  "flickr_shortlink_host/other",
+                  "other_host/other",
+                  "invalid_url/other",
+              }
+              assert set(shapes)=={"selected","historical"}
+              for group in shapes:
+                  assert set(shapes[group])<=allowed_shapes
+                  assert all(type(v) is int and v>0 for v in shapes[group].values())
+                  assert sum(shapes[group].values())==reasons[group]["landing_unreadable_only"]
               assert audit["selected_metadata_rows_missing"]>=0
               assert audit["historical_metadata_rows_missing"]>=0
               if audit["source_identity_clean"]:

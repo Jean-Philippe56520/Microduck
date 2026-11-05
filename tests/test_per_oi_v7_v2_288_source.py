@@ -380,4 +380,91 @@ class V2SourceTests(unittest.TestCase):
 
 
 
+    def test_positive_flickr_landing_shape_official_numeric_page(self):
+        self.assertEqual(
+            ("flickr_page_host", "photo_page_numeric"),
+            v2.classify_flickr_landing_shape("https://www.flickr.com/photos/a/123456789/"))
+
+    def test_positive_flickr_landing_shape_short_base58(self):
+        self.assertEqual(
+            ("flickr_shortlink_host", "shortlink_base58"),
+            v2.classify_flickr_landing_shape("https://flic.kr/p/2k66Q1F"))
+
+    def test_positive_flickr_landing_shape_legacy_gne(self):
+        self.assertEqual(
+            ("flickr_page_host", "legacy_photo_gne"),
+            v2.classify_flickr_landing_shape("http://flickr.com/photo.gne?other=1"))
+
+    def test_positive_flickr_landing_shape_unmatched_photo_page(self):
+        self.assertEqual(
+            ("flickr_page_host", "photo_page_other"),
+            v2.classify_flickr_landing_shape("https://www.flickr.com/photos/user/album/"))
+
+    def test_negative_flickr_landing_shape_spoofed_and_credentials(self):
+        cases = (
+            ("https://www.flickr.com.attacker.invalid/photos/a/123456789",
+             ("other_host", "other")),
+            ("https://user@www.flickr.com/photos/a/123456789",
+             ("invalid_url", "other")),
+            ("https://flickr.com:12345/photos/a/123456789",
+             ("invalid_url", "other")),
+            ("https://flickr.com/photos/a/123456789\n",
+             ("invalid_url", "other")),
+            ("https://flickr.com/photo.gne?id=1\t2",
+             ("invalid_url", "other")),
+        )
+        for uri,expected in cases:
+            with self.subTest(uri=uri):
+                self.assertEqual(expected, v2.classify_flickr_landing_shape(uri))
+
+    def test_negative_flickr_landing_shape_invalid_short_id_not_promoted(self):
+        for uri in (
+            "https://flic.kr/p/0OIl",
+            "https://flic.kr/ps/abcd",
+            "https://flic.kr/p/",
+        ):
+            with self.subTest(uri=uri):
+                self.assertEqual(
+                    ("flickr_shortlink_host", "other"),
+                    v2.classify_flickr_landing_shape(uri))
+
+    def test_positive_aggregates_three_historical_landing_shapes_no_ids(self):
+        rows, selected, historical = self._flickr_identity_cases()
+        positions=[i for i,row in enumerate(rows) if row["ImageID"] in historical][:3]
+        rows[positions[0]]["OriginalLandingURL"]="https://flic.kr/p/2k66Q1F"
+        rows[positions[1]]["OriginalLandingURL"]="https://www.flickr.com/photos/a/album/"
+        rows[positions[2]]["OriginalLandingURL"]="https://www.flickr.com/photo.gne?unused=yes"
+        r=self._identity_result(rows,selected,historical)
+        self.assertEqual("STOP_V2_FLICKR_IDENTITY_NOT_QUALIFIED",r["status"])
+        self.assertEqual(3,r["unreadable_source_rows"])
+        self.assertEqual(3,r["unreadable_source_reasons"]["historical"]["landing_unreadable_only"])
+        self.assertEqual({
+            "flickr_shortlink_host/shortlink_base58":1,
+            "flickr_page_host/photo_page_other":1,
+            "flickr_page_host/legacy_photo_gne":1,
+        },r["landing_unreadable_shape_categories"]["historical"])
+        self.assertEqual({},r["landing_unreadable_shape_categories"]["selected"])
+        self.assertEqual(285,r["historical_ids_with_consistent_flickr_and_md5"])
+
+    def test_negative_selected_landing_shape_not_counted_as_historical(self):
+        rows, selected, historical = self._flickr_identity_cases()
+        index=next(i for i,row in enumerate(rows) if row["ImageID"] in selected)
+        rows[index]["OriginalLandingURL"]="https://flic.kr/p/5E3a"
+        r=self._identity_result(rows,selected,historical)
+        self.assertEqual({
+            "flickr_shortlink_host/shortlink_base58":1,
+        },r["landing_unreadable_shape_categories"]["selected"])
+        self.assertEqual({},r["landing_unreadable_shape_categories"]["historical"])
+        self.assertFalse(r["source_identity_clean"])
+
+    def test_positive_clean_source_yields_empty_aggregate_shapes(self):
+        rows, selected, historical = self._flickr_identity_cases()
+        r=self._identity_result(rows,selected,historical)
+        self.assertEqual(
+            {"selected":{}, "historical":{}},
+            r["landing_unreadable_shape_categories"])
+        self.assertTrue(r["source_identity_clean"])
+
+
+
 if __name__=="__main__": unittest.main()

@@ -72,6 +72,63 @@ def flickr_id(uri: str) -> str | None:
     return None
 
 
+_FLICKR_BASE58 = frozenset(
+    "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
+)
+_LANDING_HOST_CLASSES = frozenset((
+    "flickr_page_host", "flickr_shortlink_host", "other_host", "invalid_url",
+))
+_LANDING_PATH_CLASSES = frozenset((
+    "photo_page_numeric", "photo_page_other", "shortlink_base58",
+    "legacy_photo_gne", "other",
+))
+
+
+def classify_flickr_landing_shape(uri: str) -> tuple[str, str]:
+    """Classify a public URL's STRUCTURE; NEVER accept it as a photo identity.
+
+    The known labels are fixed before seeing the three offending historic
+    URLs. The raw URI, domain, path, query and photo ID are not returned.
+    """
+    if (not isinstance(uri, str) or not 1 <= len(uri) <= 2048
+            or any(ord(c) < 33 or ord(c) > 126 for c in uri)):
+        return ("invalid_url", "other")
+    try:
+        parsed = urlsplit(uri)
+        if (parsed.scheme not in ("http", "https")
+                or not parsed.hostname or parsed.username or parsed.password
+                or parsed.port not in (None, 80, 443)):
+            return ("invalid_url", "other")
+        host = parsed.hostname.lower()
+    except ValueError:
+        return ("invalid_url", "other")
+
+    is_page = host == "flickr.com" or host.endswith(".flickr.com")
+    is_short = host in ("flic.kr", "www.flic.kr")
+    if not is_page and not is_short:
+        return ("other_host", "other")
+
+    if is_page:
+        if _LANDING.fullmatch(parsed.path):
+            shape = "photo_page_numeric"
+        elif parsed.path.startswith("/photos/"):
+            shape = "photo_page_other"
+        elif parsed.path == "/photo.gne":
+            shape = "legacy_photo_gne"
+        else:
+            shape = "other"
+        return ("flickr_page_host", shape)
+
+    path = parsed.path
+    # Documented short-photo form flic.kr/p/{base58-photo-id};
+    # classify only, no decoding, redirect resolution or identity promotion.
+    if path.startswith("/p/"):
+        token = path[3:].removesuffix("/")
+        if 2 <= len(token) <= 22 and all(ch in _FLICKR_BASE58 for ch in token):
+            return ("flickr_shortlink_host", "shortlink_base58")
+    return ("flickr_shortlink_host", "other")
+
+
 def coco_val_flickr_ids(path: Path, *, expected: int = COCO_VAL_IMAGES):
     """Read ONLY COCO validation annotations; do not treat COCO ImageID as Flickr ID."""
     try:
@@ -207,6 +264,9 @@ def audit_flickr_identity_rows(rows, *, selected_ids: frozenset[str],
         group: {reason: 0 for reason in reason_names}
         for group in ("selected", "historical")
     }
+    landing_unreadable_shapes = {
+        group: Counter() for group in ("selected", "historical")
+    }
 
     for row in rows:
         ident = row["ImageID"]
@@ -235,6 +295,14 @@ def audit_flickr_identity_rows(rows, *, selected_ids: frozenset[str],
             unreadable_source_rows += 1
             group = "selected" if ident in selected_ids else "historical"
             unreadable_reasons[group][reason] += 1
+            if reason == "landing_unreadable_only":
+                host_kind, path_kind = classify_flickr_landing_shape(
+                    row["OriginalLandingURL"])
+                if (host_kind not in _LANDING_HOST_CLASSES
+                        or path_kind not in _LANDING_PATH_CLASSES):
+                    raise OpenImagesSourceStop(
+                        "STOP_SOURCE: unknown landing shape category")
+                landing_unreadable_shapes[group][host_kind + "/" + path_kind] += 1
             continue
         if ident in selected_ids:
             selected[ident] = (original, digest)
@@ -243,6 +311,12 @@ def audit_flickr_identity_rows(rows, *, selected_ids: frozenset[str],
 
     if sum(sum(v.values()) for v in unreadable_reasons.values()) != unreadable_source_rows:
         raise OpenImagesSourceStop("STOP_SOURCE: failure-reason count invariant")
+    if any(
+        sum(landing_unreadable_shapes[group].values())
+        != unreadable_reasons[group]["landing_unreadable_only"]
+        for group in landing_unreadable_shapes
+    ):
+        raise OpenImagesSourceStop("STOP_SOURCE: landing shape partition mismatch")
     selected_missing = len(selected_ids - seen)
     historical_missing = len(historical_ids - seen)
 
@@ -280,6 +354,10 @@ def audit_flickr_identity_rows(rows, *, selected_ids: frozenset[str],
         "historical_ids_with_consistent_flickr_and_md5": len(historical),
         "unreadable_source_rows": unreadable_source_rows,
         "unreadable_source_reasons": unreadable_reasons,
+        "landing_unreadable_shape_categories": {
+            group: dict(sorted(counts.items()))
+            for group, counts in landing_unreadable_shapes.items()
+        },
         "selected_metadata_rows_missing": selected_missing,
         "historical_metadata_rows_missing": historical_missing,
         "duplicate_source_rows": duplicate_source_rows,
