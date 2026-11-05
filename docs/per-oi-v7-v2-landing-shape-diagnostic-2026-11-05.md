@@ -2,6 +2,16 @@
 
 **05/11/2026.** Porte fixée [avant code et nouveau test, issue #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6652318765). Base `main@4d4aca4d139dcd9c30b8baf6dde2d66b6c010a44` après [#317](https://github.com/Jean-Philippe56520/Microduck/pull/317) fusionnée **4/4 CI** au HEAD. `docs/plan-action.md` est l'autorité pour les décisions OEM.
 
+## Résultat réel source-only du 05/11/2026
+
+[CI spécialisée #41987775708](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41987775708) **SUCCESS** après fixtures positives/négatives sur les cinq CSV/JSON sources SHA-épinglées (sans JPEG). **SHA V2 inchangé** `282d67af8f97975b55149f4b104eaef79bcef1e94beb9522b207ff8a7193c28c` : 42/42 sources V2 complètement interprétables ; 285/288 anciens complets ; **3 landing-only historiques non reconnus**, classés anonymement comme suit :
+
+- **2** `flickr_page_host/other` : hôte Flickr reconnu, chemin ne correspondant à aucun des schémas préenregistrés ;
+- **1** `flickr_page_host/photo_page_other` : hôte Flickr reconnu, chemin sous `/photos/` mais pas de photo ID individuel analysable par le parseur actuel ;
+- **0** `flickr_shortlink_host/shortlink_base58`, `other_host` ou `invalid_url`.
+
+Le résultat **ne révèle aucune URL**, et les formes ne certifient ni accessibilité ni propriété/licence, ni correspondance avec les URL directes. **Aucun raccourci `flic.kr/p` n'explique les trois anomalies.** Le statut scientifique demeure `STOP_V2_FLICKR_IDENTITY_NOT_QUALIFIED`. Aucune extension permissive de `flickr_id` n'est effectuée. [Mesure et conditions de reprise #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6652395484). La CI générale de la PR doit encore être verte **au HEAD final** avant fusion technique, sans promouvoir les 42 photographies comme benchmark.
+
 ## Observation et hypothèse sans extrapolation
 
 Le roster Open Images V7 V2 de **42** scènes demeure gelé par SHA `282d67af8f97975b55149f4b104eaef79bcef1e94beb9522b207ff8a7193c28c`, avant toute inférence ou téléchargement de JPEG. La CI spécialisée [#317](https://github.com/Jean-Philippe56520/Microduck/pull/317) sur les cinq sources officielles épinglées mesure **3/288 sources OI historiques** classées `landing_unreadable_only` : URL photo Flickr directe parsable, URL landing non reconnue par l'extracteur actuel. **Ceci ne démontre pas** leur duplicité, l'absence de duplicité, leurs droits, ni même la forme de ces trois URL.
