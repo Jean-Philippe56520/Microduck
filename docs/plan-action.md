@@ -1,5 +1,7 @@
 ## PRIORITÉ DIRECTRICE — SIM-95, Kwipi virtuel fidèle et mesurable avant achat (05/11/2026)
 
+**Avancement SIM-1A/1B du 05/11/2026 — preuve distinguée :** #320 fusionnée et #321 `mediad.media.frame` fusionnée sur `main@25da24f8fc46533d3197b05c26465fd015e1cccf` ; #322, raccordement `mediad` UYVY → modèle YOLOX Nano CPU PC déjà épinglé → `AutonomyBrain` F2 **en projection explicitement mock**, **PR candidate / CI à vérifier**. Une lecture `robotd/tofd` incohérente doit bloquer la décision visuelle, l'âge réel du capteur doit survivre au modèle, et toute catégorie COCO reste une hypothèse. Voir [plan d'essai, positifs/négatifs et limite OEM](sim-1b-oem-camera-host-2026-11-05.md). **Aucune démonstration de chaîne MuJoCo vivante, de 2 Hz soutenus, de mémoire avantageuse ou de moteur autonome n'est encore obtenue.** Prochaine porte SIM-1 : exécuter une capture OEM vivante, comparer au témoin sans cible, mesurer la trace et STOP avant SIM-2. Ne pas substituer 3/3 ou 9/9 CI à la cible 95–100 % du simulateur.
+
 **Décision propriétaire explicite, priorité sur les reprises historiques ci-dessous.** Base GitHub contrôlée avant ce lot : `main@31f06dbf6738abb940f02733f1bf5e136c48436c`, [#319](https://github.com/Jean-Philippe56520/Microduck/pull/319) fusionnée (9/9 CI branche et CI Python post-fusion PASS). La présente mise à jour est **strictement documentaire** ; **aucune nouvelle fonctionnalité n'est déclarée livrée**.
 
 ### Cible et règle de preuve
