@@ -38,7 +38,7 @@ jobs:
       DUCK_SIM_VIEWER: "0"
       DUCK_SIM_CAMERAS: a
       DUCK_SIM_SCENE: ball
-      DUCK_SIM_KEYFRAME: SIT
+      DUCK_SIM_KEYFRAME: HOME
       GST_DEBUG_NO_COLOR: "1"
     steps:
       - uses: actions/checkout@v4

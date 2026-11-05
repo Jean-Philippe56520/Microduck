@@ -23,3 +23,9 @@
 ## Verdict
 
 **Non évalué avant premier lancement GitHub Actions.** Aucun pourcentage de réussite crédible sans exécuter S0–S2. L'exécution est enregistrée par le nouveau workflow isolé `.github/workflows/sim-1c-oem-live-camera.yml` sur la branche `test/sim-1c-oem-live-camera-20261105`; ne pas fusionner ce protocole pilote si le bilan est bloqué.
+
+## Diagnostic réel n°1, puis nouvelle tentative (établi avant reprise)
+
+**Essai initial** [#42037384120](https://github.com/Jean-Philippe56520/Microduck/actions/runs/42037384120) : plugin x86 vérifié, modèle SHA vérifié, filtre réseau PASS ; `duck-sim up` STOP. **Essai diagnostic** [#42038074738](https://github.com/Jean-Philippe56520/Microduck/actions/runs/42038074738) : `body.log` dit exactement `no keyframe 'SIT' in scene_ball.xml. It has:`. Le même `scene_ball.xml` constructeur explique en commentaire qu'il n'a **aucune keyframe** à cause du joint libre de la balle, et `pose_table()` OEM reconnaît explicitement `HOME` sans keyframe. **Le résultat précédent reste FAIL**, aucune trame, aucune inférence, aucune décision F2.
+
+**Nouvelle condition S0 avant lancement** : remplacer uniquement `DUCK_SIM_KEYFRAME=SIT` par `DUCK_SIM_KEYFRAME=HOME`, posture constructeur prédéfinie (pas de retouche XML, GT, modèle, seuil ou ONNX). Succès = les mêmes S0/S1/S2 que ci-dessus, **sans changer aucun critère de score** ; si un autre défaut survient, STOP et garder son journal. Posture HOME = simulation OEM mais **pas** preuve physique ou de sécurité d'une station debout autonome.
