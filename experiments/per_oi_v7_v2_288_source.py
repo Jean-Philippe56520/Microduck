@@ -374,7 +374,7 @@ def audit(classes: Path, images: Path, human: Path, boxes: Path, coco: Path):
         "coco_val_image_metadata": COCO_VAL_IMAGES,
         "coco_flickr_photo_ids_readable": COCO_VAL_IMAGES-unparsed,
         "coco_flickr_photo_ids_unknown": unparsed,
-        "source_flickr_identity_checked_for_selected": success,
+        "source_flickr_identity_checked_for_selected": source_success,
         "per_category_candidate_boxes": pool,
         "insufficient_category": insufficient,
         "cohort_images": len(chosen),
