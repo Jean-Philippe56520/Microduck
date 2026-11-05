@@ -285,4 +285,99 @@ class V2SourceTests(unittest.TestCase):
 
 
 
+    def test_positive_source_failure_diagnostic_is_empty_for_clean_330(self):
+        rows, selected, historical = self._flickr_identity_cases()
+        r = self._identity_result(rows, selected, historical)
+        self.assertEqual(0, r["unreadable_source_rows"])
+        self.assertEqual(0, r["historical_metadata_rows_missing"])
+        self.assertEqual(0, r["selected_metadata_rows_missing"])
+        self.assertEqual(0, sum(r["unreadable_source_reasons"]["historical"].values()))
+        self.assertEqual(0, sum(r["unreadable_source_reasons"]["selected"].values()))
+        self.assertTrue(r["source_identity_clean"])
+
+    def test_negative_historical_unreadable_original_url_is_counted(self):
+        rows, selected, historical = self._flickr_identity_cases()
+        i = next(k for k, row in enumerate(rows) if row["ImageID"] in historical)
+        rows[i]["OriginalURL"] = "https://unknown.example.net/image.jpeg"
+        r = self._identity_result(rows, selected, historical)
+        self.assertEqual(1, r["unreadable_source_reasons"]["historical"]["original_unreadable_only"])
+        self.assertEqual(1, r["unreadable_source_rows"])
+        self.assertFalse(r["source_identity_clean"])
+
+    def test_negative_historical_unreadable_landing_url_is_counted(self):
+        rows, selected, historical = self._flickr_identity_cases()
+        i = next(k for k, row in enumerate(rows) if row["ImageID"] in historical)
+        rows[i]["OriginalLandingURL"] = "https://unknown.example.net/photo"
+        r = self._identity_result(rows, selected, historical)
+        self.assertEqual(1, r["unreadable_source_reasons"]["historical"]["landing_unreadable_only"])
+        self.assertEqual(1, r["unreadable_source_rows"])
+        self.assertFalse(r["source_identity_clean"])
+
+    def test_negative_historical_both_urls_unreadable_prioritize_once(self):
+        rows, selected, historical = self._flickr_identity_cases()
+        i = next(k for k, row in enumerate(rows) if row["ImageID"] in historical)
+        rows[i]["OriginalURL"] = "https://other.example.net/"
+        rows[i]["OriginalLandingURL"] = "https://other.example.net/"
+        rows[i]["OriginalMD5"] = "invalid"
+        r = self._identity_result(rows, selected, historical)
+        self.assertEqual(1, r["unreadable_source_reasons"]["historical"]["original_and_landing_unreadable"])
+        self.assertEqual(1, r["unreadable_source_rows"])
+        self.assertEqual(1, sum(r["unreadable_source_reasons"]["historical"].values()))
+
+    def test_negative_disagreeing_historical_flickr_ids_get_separate_reason(self):
+        rows, selected, historical = self._flickr_identity_cases()
+        i = next(k for k, row in enumerate(rows) if row["ImageID"] in historical)
+        rows[i]["OriginalLandingURL"] = "https://www.flickr.com/photos/z/987654321/"
+        r = self._identity_result(rows, selected, historical)
+        self.assertEqual(1, r["unreadable_source_reasons"]["historical"]["flickr_ids_disagree"])
+        self.assertEqual(1, r["unreadable_source_rows"])
+        self.assertEqual(287, r["historical_ids_with_consistent_flickr_and_md5"])
+
+    def test_negative_invalid_historical_md5_separate_reason(self):
+        rows, selected, historical = self._flickr_identity_cases()
+        i = next(k for k, row in enumerate(rows) if row["ImageID"] in historical)
+        rows[i]["OriginalMD5"] = "invalid"
+        r = self._identity_result(rows, selected, historical)
+        self.assertEqual(1, r["unreadable_source_reasons"]["historical"]["original_md5_invalid"])
+        self.assertEqual(1, r["unreadable_source_rows"])
+        self.assertFalse(r["source_identity_complete"])
+
+    def test_negative_missing_historical_source_is_not_counted_as_bad_url(self):
+        rows, selected, historical = self._flickr_identity_cases()
+        missing = next(iter(historical))
+        rows = [row for row in rows if row["ImageID"] != missing]
+        r = self._identity_result(rows, selected, historical)
+        self.assertEqual(1, r["historical_metadata_rows_missing"])
+        self.assertEqual(0, r["unreadable_source_rows"])
+        self.assertEqual(0, sum(r["unreadable_source_reasons"]["historical"].values()))
+        self.assertFalse(r["source_identity_clean"])
+
+    def test_negative_selected_unreadable_source_does_not_pollute_historical(self):
+        rows, selected, historical = self._flickr_identity_cases()
+        i = next(k for k, row in enumerate(rows) if row["ImageID"] in selected)
+        rows[i]["OriginalLandingURL"] = "https://other.example.net/image"
+        r = self._identity_result(rows, selected, historical)
+        self.assertEqual(1, r["unreadable_source_reasons"]["selected"]["landing_unreadable_only"])
+        self.assertEqual(0, sum(r["unreadable_source_reasons"]["historical"].values()))
+        self.assertEqual(41, r["selected_ids_with_consistent_flickr_and_md5"])
+        self.assertFalse(r["source_identity_clean"])
+
+    def test_negative_multiple_distinct_reasons_sum_exactly_to_unreadable(self):
+        rows, selected, historical = self._flickr_identity_cases()
+        positions = [i for i,row in enumerate(rows) if row["ImageID"] in historical][:5]
+        rows[positions[0]]["OriginalURL"] = "https://bad.invalid/"
+        rows[positions[0]]["OriginalLandingURL"] = "https://bad.invalid/"
+        rows[positions[1]]["OriginalURL"] = "https://bad.invalid/"
+        rows[positions[2]]["OriginalLandingURL"] = "https://bad.invalid/"
+        rows[positions[3]]["OriginalLandingURL"] = "https://flickr.com/photos/u/123456789/"
+        rows[positions[4]]["OriginalMD5"] = "invalid"
+        r = self._identity_result(rows, selected, historical)
+        counts = r["unreadable_source_reasons"]["historical"]
+        self.assertEqual(5, r["unreadable_source_rows"])
+        self.assertEqual(5, sum(counts.values()))
+        self.assertEqual({reason: 1 for reason in counts}, counts)
+        self.assertEqual("STOP_V2_FLICKR_IDENTITY_NOT_QUALIFIED",r["status"])
+
+
+
 if __name__=="__main__": unittest.main()
