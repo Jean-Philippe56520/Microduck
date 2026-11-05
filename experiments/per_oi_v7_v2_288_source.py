@@ -180,6 +180,89 @@ def _eligible_images(images: Path, *, old: frozenset[str], coco_flickr: set[str]
              "excluded_coco_flickr_collisions":collided_coco})
 
 
+def audit_flickr_identity_rows(rows, *, selected_ids: frozenset[str],
+                               historical_ids: frozenset[str],
+                               coco_photo_ids: set[str]) -> dict:
+    """Verify Flickr photo identity and declared MD5, never photo rights or pixels.
+
+    The roster is PRE-EXISTING and unchanged. An alias under a different
+    Open Images ImageID must not masquerade as new independent evidence.
+    Only aggregate counts leave this function.
+    """
+    expected = selected_ids | historical_ids
+    seen = set()
+    selected = {}
+    historical = {}
+    duplicate_source_rows = 0
+    unreadable_source_rows = 0
+
+    for row in rows:
+        ident = row["ImageID"]
+        if ident not in expected:
+            continue
+        if ident in seen:
+            duplicate_source_rows += 1
+            continue
+        seen.add(ident)
+        original = flickr_id(row["OriginalURL"])
+        landing = flickr_id(row["OriginalLandingURL"])
+        digest = _md5(row["OriginalMD5"])
+        if original is None or landing is None or original != landing or digest is None:
+            unreadable_source_rows += 1
+            continue
+        if ident in selected_ids:
+            selected[ident] = (original, digest)
+        else:
+            historical[ident] = (original, digest)
+
+    selected_sources = [photo for photo, _ in selected.values()]
+    selected_md5s = [digest for _, digest in selected.values()]
+    historic_sources = {photo for photo, _ in historical.values()}
+    historic_md5s = {digest for _, digest in historical.values()}
+
+    within_flickr_aliases = len(selected_sources) - len(set(selected_sources))
+    within_md5_aliases = len(selected_md5s) - len(set(selected_md5s))
+    shared_flickr_with_old = sum(
+        photo in historic_sources for photo in selected_sources)
+    shared_md5_with_old = sum(
+        digest in historic_md5s for digest in selected_md5s)
+    shared_flickr_with_coco = sum(
+        photo in coco_photo_ids for photo in selected_sources)
+
+    complete = (
+        len(selected_ids) == EXPECTED_TOTAL and len(historical_ids) == 288
+        and not selected_ids.intersection(historical_ids)
+        and len(selected) == EXPECTED_TOTAL
+        and len(historical) == 288
+        and len(seen) == len(expected)
+        and unreadable_source_rows == 0 and duplicate_source_rows == 0)
+    clean = complete and not any((
+        within_flickr_aliases, within_md5_aliases,
+        shared_flickr_with_old, shared_md5_with_old, shared_flickr_with_coco))
+
+    return {
+        "status": ("V2_FLICKR_IDENTITY_CLEAN_METADATA_ONLY"
+                   if clean else "STOP_V2_FLICKR_IDENTITY_NOT_QUALIFIED"),
+        "selected_ids_expected": EXPECTED_TOTAL,
+        "selected_ids_with_consistent_flickr_and_md5": len(selected),
+        "historical_ids_expected": 288,
+        "historical_ids_with_consistent_flickr_and_md5": len(historical),
+        "unreadable_source_rows": unreadable_source_rows,
+        "duplicate_source_rows": duplicate_source_rows,
+        "within_selected_same_flickr_photo_aliases": within_flickr_aliases,
+        "within_selected_same_declared_md5_aliases": within_md5_aliases,
+        "selected_duplicated_flickr_with_historical": shared_flickr_with_old,
+        "selected_duplicated_md5_with_historical": shared_md5_with_old,
+        "selected_duplicated_flickr_with_coco_val": shared_flickr_with_coco,
+        "source_identity_complete": complete,
+        "source_identity_clean": clean,
+        "individual_image_rights_verified": False,
+        "perceptual_near_duplicates_verified": False,
+        "real_pixels_loaded": 0,
+        "model_inferences": 0,
+    }
+
+
 def _human_positive(human: Path, mids: dict[str,str], eligible: set[str]):
     by_mid={mid:name for name,mid in mids.items()}
     states={}
@@ -268,15 +351,23 @@ def audit(classes: Path, images: Path, human: Path, boxes: Path, coco: Path):
     boxes_per_case=_valid_boxes(boxes,mids,positive)
     chosen,pool,insufficient=select_v2(boxes_per_case,historical)
     cross_coco_complete=unparsed==0
-    success=bool(chosen) and cross_coco_complete and insufficient is None
+    source_success=bool(chosen) and cross_coco_complete and insufficient is None
     digest=(sha256("|".join(
         f"{label}/{ident}" for ident,label in chosen
-    ).encode("ascii")).hexdigest() if success else None)
-    if success and digest != FROZEN_V2_SHA256:
+    ).encode("ascii")).hexdigest() if source_success else None)
+    if source_success and digest != FROZEN_V2_SHA256:
         raise OpenImagesSourceStop("STOP_ROSTER: official V2 photo roster SHA drifted")
+    identity = (audit_flickr_identity_rows(
+        _rows(images, ("ImageID", "OriginalURL", "OriginalLandingURL", "OriginalMD5")),
+        selected_ids=frozenset(ident for ident, _ in chosen),
+        historical_ids=historical, coco_photo_ids=coco_ids)
+        if source_success else None)
+    identity_pass = source_success and identity is not None and identity["source_identity_clean"]
     return {
         "status": ("V2_GT_42_FROZEN_SOURCE_ONLY_NOT_LICENSED"
-                   if success else "STOP_V2_SOURCE_NOT_QUALIFIED"),
+                   if identity_pass else
+                   "STOP_V2_FLICKR_IDENTITY_NOT_QUALIFIED"
+                   if source_success else "STOP_V2_SOURCE_NOT_QUALIFIED"),
         "selection_seed": SEED,
         "source_sha256": hashes,
         "historical_openimages_ids_excluded": len(historical),
@@ -289,6 +380,7 @@ def audit(classes: Path, images: Path, human: Path, boxes: Path, coco: Path):
         "cohort_images": len(chosen),
         "roster_sha256": digest,
         "candidate_image_filters": exclusions,
+        "flickr_identity_audit": identity,
         "candidate_human_positive_with_box_count": len(boxes_per_case),
         "last_42_v1_roster_reused_as_a_selection": False,
         "historical_288_reinferred": False,
