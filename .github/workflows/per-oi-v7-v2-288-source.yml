@@ -65,6 +65,7 @@ jobs:
           import json,sys
           with open(sys.argv[1],encoding="utf-8") as fp: r=json.load(fp)
           assert r["status"] in ("V2_GT_42_FROZEN_SOURCE_ONLY_NOT_LICENSED",
+                                 "STOP_V2_FLICKR_IDENTITY_NOT_QUALIFIED",
                                  "STOP_V2_SOURCE_NOT_QUALIFIED")
           assert r["historical_openimages_ids_excluded"]==288
           assert r["coco_val_image_metadata"]==5000
@@ -76,12 +77,21 @@ jobs:
           assert r["historical_288_reinferred"] is False
           assert r["real_pixels_loaded"]==r["model_inferences"]==r["motor_commands"]==r["sqlite_writes"]==0
           assert r["cohort_images"] in (0,42)
-          if r["status"]=="V2_GT_42_FROZEN_SOURCE_ONLY_NOT_LICENSED":
+          if r["status"] in ("V2_GT_42_FROZEN_SOURCE_ONLY_NOT_LICENSED",
+                             "STOP_V2_FLICKR_IDENTITY_NOT_QUALIFIED"):
               assert r["cohort_images"]==42 and r["roster_sha256"]=="282d67af8f97975b55149f4b104eaef79bcef1e94beb9522b207ff8a7193c28c"
               assert r["coco_flickr_photo_ids_unknown"]==0
               assert r["insufficient_category"] is None
+              audit=r["flickr_identity_audit"]
+              assert audit["selected_ids_expected"]==42
+              assert audit["historical_ids_expected"]==288
+              assert audit["real_pixels_loaded"]==audit["model_inferences"]==0
+              assert not audit["individual_image_rights_verified"]
+              assert not audit["perceptual_near_duplicates_verified"]
+              assert audit["source_identity_clean"] == (r["status"]=="V2_GT_42_FROZEN_SOURCE_ONLY_NOT_LICENSED")
           else:
               assert r["roster_sha256"] is None
+              assert r["flickr_identity_audit"] is None
           print(json.dumps(r,sort_keys=True))
           PY
           cp "$RUNNER_TEMP/v2-source-numeric.json" v2-source-numeric-only.json
