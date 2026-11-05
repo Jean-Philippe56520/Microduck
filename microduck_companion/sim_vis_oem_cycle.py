@@ -27,7 +27,7 @@ from .yolox_attention_candidates import decode_candidates
 
 
 def uyvy_to_upright_jpeg(frame: EphemeralMediaFrame) -> tuple[bytes, int, int]:
-    """Decode OEM packed UYVY with BT.601 limited-range colour; rotate to upright.
+    """Decode OEM packed UYVY with BT.601 FULL-range colour; rotate upright.
 
     This is an ephemeral preprocessing copy for the PREEXISTING YOLOX JPEG
     input, not a second camera or a media recorder. Mount rotation follows
@@ -56,11 +56,13 @@ def uyvy_to_upright_jpeg(frame: EphemeralMediaFrame) -> tuple[bytes, int, int]:
     y[:, 0::2], y[:, 1::2] = pair[:, :, 1], pair[:, :, 3]
     u = np.repeat(pair[:, :, 0], 2, axis=1) - 128.0
     v = np.repeat(pair[:, :, 2], 2, axis=1) - 128.0
-    luma = 1.164383 * (y - 16.0)
+    # The PINNED OEM MuJoCo camera.to_uyvy uses full-range BT.601:
+    #   Y = .299 R + .587 G + .114 B (NO studio-range 16..235).
+    # Limited-range YUV would crush dark colours and distort YOLOX input.
     rgb = np.stack((
-        luma + 1.596027 * v,
-        luma - 0.391762 * u - 0.812968 * v,
-        luma + 2.017232 * u,
+        y + 1.402 * v,
+        y - 0.344136 * u - 0.714136 * v,
+        y + 1.772 * u,
     ), axis=-1)
     image = Image.fromarray(np.clip(np.rint(rgb), 0, 255).astype(np.uint8))
     if frame.rotate:
