@@ -102,11 +102,30 @@ def evaluate_simulated_camera_cycle(
     raw = session.run(None, {"images": tensor})[0]
     infer_ms = round((time.perf_counter() - started) * 1000, 3)
     regions = decode_candidates(raw, width=width, height=height, max_results=3)
+    # Map capture wall-clock to local monotonic time conservatively. This
+    # does NOT establish shared simulator timestamps or synchronize sockets.
+    decision_now = time.monotonic()
+    age_at_decision_s = time.time() - frame.captured_at_unix_us / 1_000_000
+    if not 0 <= age_at_decision_s <= 2.0:
+        raise MediaFrameError("frame expired or clock shifted during inference")
+    last_quality = telemetry.assess(now=decision_now, max_age_s=2.0).status
+    if last_quality != "coherent":
+        return {
+            "status": "STOP_UNSAFE_OR_INCOMPLETE_TELEMETRY",
+            "telemetry_quality": last_quality,
+            "intention": "idle",
+            "reason": "telemetry_expired_during_inference",
+            "inference_attempted": True,
+            "motor_commands_issued": 0,
+            "memory_writes": 0,
+        }
+    sample_at = decision_now - age_at_decision_s
+    if sample_at < 0:
+        raise MediaFrameError("wall-to-monotonic capture estimate unusable")
     # This existing F2 helper enforces all 'mock' flags, opens exactly one
     # ephemeral ExperienceMemory, and rejects invented semantic labels.
     f2 = mock_f2_from_regions(
-        regions, sample_at=max(0., now_monotonic_s - 0.05),
-        now=now_monotonic_s, claimed_source="mock",
+        regions, sample_at=sample_at, now=decision_now, claimed_source="mock",
     )
     if (f2["motor_commands_issued"] != 0 or f2["experience_writes"] != 0
             or f2["sensor_source_authenticated"]
@@ -120,6 +139,7 @@ def evaluate_simulated_camera_cycle(
         "camera_width_upright": width,
         "camera_height_upright": height,
         "captured_at_unix_us": frame.captured_at_unix_us,
+        "capture_age_s_at_decision": round(age_at_decision_s, 3),
         "model_sha256": MODEL_SHA256,
         "inference_ms_cpu_host": infer_ms,
         "regions_untrusted": regions,
