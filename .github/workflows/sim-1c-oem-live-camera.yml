@@ -93,7 +93,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/sim-1c-plugins"
           curl --fail --location --silent --show-error \
             --connect-timeout 10 --max-time 120 \
-            'https://raw.githubusercontent.com/pollen-robotics/reachy-mini-desktop-app/c6ea61a5d57dc069e01aab07c723402b3d8263f5/src-tauri/linux/gstreamer-plugins/x86_64/libgstrswebrtc.so' \
+            'https://github.com/pollen-robotics/reachy-mini-desktop-app/raw/c6ea61a5d57dc069e01aab07c723402b3d8263f5/src-tauri/linux/gstreamer-plugins/x86_64/libgstrswebrtc.so' \
             -o "$RUNNER_TEMP/sim-1c-plugins/libgstrswebrtc.so"
           echo "3045989c437be6f7859262f1970c550d6fc92d9ea9b59e49a05d5ec7bc4afbe9  $RUNNER_TEMP/sim-1c-plugins/libgstrswebrtc.so" | sha256sum -c -
           echo "GST_PLUGIN_PATH=$RUNNER_TEMP/sim-1c-plugins" >> "$GITHUB_ENV"
