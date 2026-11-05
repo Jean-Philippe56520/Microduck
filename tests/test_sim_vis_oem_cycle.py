@@ -61,7 +61,7 @@ class SimVisOemCycleTests(unittest.TestCase):
     def test_full_range_of_neutral_luma_and_mount_rotation(self):
         from PIL import Image
 
-        for luma, expected in ((16, 0), (235, 255)):
+        for luma, expected in ((16, 16), (128, 128), (235, 235)):
             with self.subTest(luma=luma):
                 jpeg, w, h = uyvy_to_upright_jpeg(
                     frame(width=64, height=32, rotate=90, luma=luma)
@@ -71,6 +71,23 @@ class SimVisOemCycleTests(unittest.TestCase):
                 with Image.open(BytesIO(jpeg)) as image:
                     pixel = image.convert("RGB").getpixel((16, 32))
                 self.assertTrue(all(abs(v - expected) <= 2 for v in pixel))
+
+    def test_pinned_oem_bt601_full_range_red_is_not_studio_range(self):
+        from PIL import Image
+
+        # OEM camera.py: red RGB(255,0,0) -> UYVY approximately
+        # U=84, Y=76, V=255, Y=76 using its full-range coefficients.
+        red_uyvy = bytes((84, 76, 255, 76)) * (64 * 32 // 2)
+        f = EphemeralMediaFrame(
+            64, 32, 0, int(time.time() * 1_000_000), red_uyvy, None,
+        )
+        jpeg, w, h = uyvy_to_upright_jpeg(f)
+        self.assertEqual((w, h), (64, 32))
+        with Image.open(BytesIO(jpeg)) as image:
+            pixel = image.convert("RGB").getpixel((32, 16))
+        self.assertGreaterEqual(pixel[0], 248)
+        self.assertLessEqual(pixel[1], 6)
+        self.assertLessEqual(pixel[2], 6)
 
     def test_visible_region_yields_mock_unknown_inspection(self):
         at = time.monotonic()
