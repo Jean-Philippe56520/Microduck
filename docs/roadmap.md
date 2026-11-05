@@ -1,3 +1,24 @@
+## Direction active — SIM-95 : Kwipi virtuel avant achat du robot (05/11/2026)
+
+**Cette direction annule la priorité opérationnelle des anciennes reprises ci-dessous, sans annuler leurs preuves ni leurs STOP.** État vérifié avant documentation : `main@31f06dbf6738abb940f02733f1bf5e136c48436c`, [#319](https://github.com/Jean-Philippe56520/Microduck/pull/319) fusionnée (9/9 CI branche ; CI Python post-fusion verte). [Plan d'action = autorité](plan-action.md). **Cible utilisateur : 95–100 % des scénarios V1 définis d'avance et représentatifs des conditions OEM en simulation**, non 95 % de code/CI, ni garantie physique. Les scénarios non testables fidèlement et les échecs restent déclarés, pas soustraits discrètement ; sécurité critique 100 %.
+
+| Phase de reprise | Livrable vérifiable | Statut au 05/11 |
+| --- | --- | --- |
+| SIM-0 — audit des composants | Inventaire du chemin MuJoCo OEM → perception/télémétrie → F2/mémoire → intention → acte/effet, séparation mock/OEM ; manque précis et témoin | **À effectuer**, sans répéter les audits historiques |
+| SIM-1 — démo lisible | Trace horodatée d'un vrai scénario OEM MuJoCo avec cible/unknown, intérêt/idle, GT indépendante réservée à l'évaluation, témoin avec/sans mémoire, refus de faux capteur | **À intégrer/valider**, pas de boucle complète livrée |
+| SIM-2 — cognition sur cycles | Continuité de focus incertain, 2 Hz, multiobjets, souvenirs, correction et inaction sur scénarios nouveaux, cas négatifs | **Non validé de bout en bout** |
+| SIM-3 — comportements et effet | Skills OEM existants, stop/fin OEM, effet indépendant, traitement du non-progrès ; résolution SIM-E2/#101 et EX4-C2 | **Bloqué pour revendications de locomotion et causalité** |
+| SIM-4 — acceptation V1 simulée | Matrice verrouillée positive/négative/sûreté/ressources/offline, couverture et succès mesurés, inconnus robot visibles | **À définir et exécuter**, objectif 95–100 % non atteint |
+| Réception du robot | NPU/RK3566, thermie, énergie, vraie caméra/ToF/IMU, moteurs à 50 Hz, sûreté physique | **Pas de matériel ; jamais déduit des phases PC** |
+
+**Points déjà réussis à conserver** : MuJoCo OEM / `robotd` / ToF et contrôles bornés spécifiques ; [SIM-VIS-D](sim-vis-d-new-oem-scenes-f2-fixture-2026-10-30.md) balle localisée et `inspect unknown` via mock seulement, pilier échoué ; [SIM-S1](sim-s1-passive-memory-ablation-2026-10-30.md) aucune différence mémorielle sur 6 cycles OEM ; Nano/S/M chargés sur WSL avec ABI et SHA OK (20,0/211,3/517,1 ms **un premier appel synthétique**, pas benchmark NPU). Pas de modèle multicatégorie embarqué adopté, de fin/effet OEM généralisés, de suivi physique ou d'autonomie intégrée.
+
+**Chantier mis en pause, pas abandonné :** Dollar Street 96/142 reste figé et sans inférence ; crédits individuels et disjonction non vérifiés après inventaire des JSON et fichiers auxiliaires. Open Images V2 possède son STOP distinct. Ne pas rouvrir ces blocages documentaires pour obtenir artificiellement une avancée de la simulation ; reprendre uniquement si source externe nouvelle suffisante. [Suivi #78](https://github.com/Jean-Philippe56520/Microduck/issues/78). Aucun poids, licence, média, modèle OEM, moteur, gitlink ni secret modifié.
+
+**Prochaine conversation :** vérifier `main`, CI et fichiers d'autorité, auditer SIM-0 et choisir un **seul** lot intégrateur utile dont les scénarios positif/négatif, le témoin et les critères sont fixés avant essai. Montrer d'abord **ce que le Kwipi virtuel fait et ne fait pas**, puis coder seulement l'écart prouvé. Ne pas commencer par lancer un nouveau corpus ou créer un second simulateur.
+
+---
+
 ## Reprise active — pilote Dollar Street 96 / YOLOX PC prêt côté bibliothèques (05/11/2026)
 
 Au début de cette mise à jour : `main@b22c019577786d2e5ec486546f7507fb2ae0ae4a`, [#318](https://github.com/Jean-Philippe56520/Microduck/pull/318) **fusionnée** ; les références « candidate » plus bas sont historiques. Nouvel audit **réel déclaré par l'opérateur WSL2, non reproduit en CI** : 27 519 photos/JSON, 32 096/32 099 boîtes valides ; cohorte complémentaire **96 JPEG distincts (8×12), 142 boîtes cibles**, SHA de sélection `eb8fe1aca071094d2847a75f8974f8cb378ae4f801b3a9582e14fb2f55a6e884`, manifeste privé ; 96 headers/GT cohérents, 0 hash modifié, 0 paire dHash Hamming ≤3 parmi les 96, 96 sans orientation EXIF. **0 inférence et 0 test robot.** [Preuves/limites #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6654227781).
