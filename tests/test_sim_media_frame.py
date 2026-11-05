@@ -16,7 +16,7 @@ from microduck_companion.sim_media_frame import (
 UNIX = hasattr(socket, "AF_UNIX")
 
 
-def response(*, stamp=None, width=4, height=2, data=b"\\x01" * 16,
+def response(*, stamp=None, width=4, height=2, data=b"0123456789abcdef",
              updates=None):
     header = {
         "width": width, "height": height, "format": "UYVY",
