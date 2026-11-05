@@ -128,8 +128,20 @@ jobs:
           set -euo pipefail
           export DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"
           export PYTHONPATH="$GITHUB_WORKSPACE:$DUCK_SIM_RL/src"
-          timeout --signal=TERM --kill-after=15s 18m \
-            upstream/microduck/scripts/duck-sim up
+          if ! timeout --signal=TERM --kill-after=15s 18m \
+              upstream/microduck/scripts/duck-sim up; then
+            echo "STOP_SIM1C_BODY_SERVER_STARTUP"
+            # Diagnostic only: the OEM body server writes its traceback to
+            # this local log. Never upload raw images, environment or tokens.
+            if test -f "$DUCK_SIM_STATE/body.log"; then
+              echo "BEGIN_OEM_BODY_LOG_TAIL"
+              tail -n 85 "$DUCK_SIM_STATE/body.log"
+              echo "END_OEM_BODY_LOG_TAIL"
+            else
+              echo "STOP_SIM1C_BODY_LOG_ABSENT"
+            fi
+            exit 1
+          fi
           upstream/microduck/scripts/duck-sim status
           upstream/microduck/scripts/duck-sim ctl health
           # A socket path is NOT authentication; read its metadata once.
