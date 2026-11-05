@@ -79,7 +79,7 @@ class SimVisOemCycleTests(unittest.TestCase):
             frame(), coherent(at), model, now_monotonic_s=at,
         )
         self.assertEqual(model.calls, 1)
-        self.assertEqual(report["status"], "HOST_SIM_MEDIAD_PIXELS_TO_MOCK_F2")
+        self.assertEqual(report["status"], "HOST_UNVERIFIED_CAMERA_FRAME_TO_MOCK_F2")
         self.assertEqual(report["telemetry_quality"], "coherent")
         self.assertTrue(report["regions_untrusted"])
         self.assertEqual(report["f2_mock_projection"]["intention"], "inspect")
