@@ -192,4 +192,97 @@ class V2SourceTests(unittest.TestCase):
         self.assertEqual(1,stats["excluded_coco_flickr_collisions"])
 
 
+    def _flickr_identity_cases(self):
+        """Pure fixtures: 42 selected, 288 old under different Open Images IDs."""
+        selected=frozenset(f"{i+1:016x}" for i in range(42))
+        historical=frozenset(f"{i+1000:016x}" for i in range(288))
+        rows=[]
+        for i,ident in enumerate(sorted(selected | historical)):
+            photo=str(90000000+i)
+            rows.append({
+                "ImageID":ident,
+                "OriginalURL":f"https://farm1.staticflickr.com/11/{photo}_abcd.jpg",
+                "OriginalLandingURL":f"https://www.flickr.com/photos/a/{photo}/",
+                "OriginalMD5":base64.b64encode((i+1).to_bytes(16,"big")).decode(),
+            })
+        return rows,selected,historical
+
+    def _identity_result(self, rows, selected, historical, coco=()):
+        return v2.audit_flickr_identity_rows(
+            rows,selected_ids=selected,historical_ids=historical,
+            coco_photo_ids=set(coco))
+
+    def test_positive_identity_unique_across_exact_42_and_288(self):
+        rows,selected,historical=self._flickr_identity_cases()
+        result=self._identity_result(rows,selected,historical)
+        self.assertEqual("V2_FLICKR_IDENTITY_CLEAN_METADATA_ONLY",result["status"])
+        self.assertEqual(42,result["selected_ids_with_consistent_flickr_and_md5"])
+        self.assertEqual(288,result["historical_ids_with_consistent_flickr_and_md5"])
+        self.assertTrue(result["source_identity_clean"])
+        self.assertFalse(result["individual_image_rights_verified"])
+        self.assertFalse(result["perceptual_near_duplicates_verified"])
+        self.assertEqual(0,result["real_pixels_loaded"])
+
+    def test_negative_same_flickr_under_distinct_selected_ids(self):
+        rows,selected,historical=self._flickr_identity_cases()
+        rows[0]["OriginalURL"]=rows[1]["OriginalURL"]
+        rows[0]["OriginalLandingURL"]=rows[1]["OriginalLandingURL"]
+        result=self._identity_result(rows,selected,historical)
+        self.assertEqual(1,result["within_selected_same_flickr_photo_aliases"])
+        self.assertFalse(result["source_identity_clean"])
+
+    def test_negative_historical_flickr_alias_even_with_distinct_md5(self):
+        rows,selected,historical=self._flickr_identity_cases()
+        i=next(i for i,r in enumerate(rows) if r["ImageID"] in historical)
+        j=next(i for i,r in enumerate(rows) if r["ImageID"] in selected)
+        rows[j]["OriginalURL"]=rows[i]["OriginalURL"]
+        rows[j]["OriginalLandingURL"]=rows[i]["OriginalLandingURL"]
+        result=self._identity_result(rows,selected,historical)
+        self.assertEqual(1,result["selected_duplicated_flickr_with_historical"])
+        self.assertEqual(0,result["selected_duplicated_md5_with_historical"])
+        self.assertFalse(result["source_identity_clean"])
+
+    def test_negative_historical_md5_alias_even_with_distinct_flickr(self):
+        rows,selected,historical=self._flickr_identity_cases()
+        i=next(i for i,r in enumerate(rows) if r["ImageID"] in historical)
+        j=next(i for i,r in enumerate(rows) if r["ImageID"] in selected)
+        rows[j]["OriginalMD5"]=rows[i]["OriginalMD5"]
+        result=self._identity_result(rows,selected,historical)
+        self.assertEqual(1,result["selected_duplicated_md5_with_historical"])
+        self.assertEqual(0,result["selected_duplicated_flickr_with_historical"])
+        self.assertFalse(result["source_identity_clean"])
+
+    def test_negative_two_source_urls_disagree_on_flickr(self):
+        rows,selected,historical=self._flickr_identity_cases()
+        j=next(i for i,r in enumerate(rows) if r["ImageID"] in selected)
+        rows[j]["OriginalLandingURL"]="https://www.flickr.com/photos/a/999999999/"
+        result=self._identity_result(rows,selected,historical)
+        self.assertEqual(1,result["unreadable_source_rows"])
+        self.assertFalse(result["source_identity_complete"])
+
+    def test_negative_missing_historical_metadata_never_becomes_zero_collision(self):
+        rows,selected,historical=self._flickr_identity_cases()
+        missing=next(iter(historical))
+        rows=[row for row in rows if row["ImageID"]!=missing]
+        result=self._identity_result(rows,selected,historical)
+        self.assertEqual(287,result["historical_ids_with_consistent_flickr_and_md5"])
+        self.assertFalse(result["source_identity_clean"])
+
+    def test_negative_coco_photo_alias_rejected(self):
+        rows,selected,historical=self._flickr_identity_cases()
+        j=next(i for i,r in enumerate(rows) if r["ImageID"] in selected)
+        coco={v2.flickr_id(rows[j]["OriginalURL"])}
+        result=self._identity_result(rows,selected,historical,coco=coco)
+        self.assertEqual(1,result["selected_duplicated_flickr_with_coco_val"])
+        self.assertFalse(result["source_identity_clean"])
+
+    def test_negative_duplicate_metadata_row_rejected(self):
+        rows,selected,historical=self._flickr_identity_cases()
+        rows.append(dict(rows[0]))
+        result=self._identity_result(rows,selected,historical)
+        self.assertEqual(1,result["duplicate_source_rows"])
+        self.assertFalse(result["source_identity_clean"])
+
+
+
 if __name__=="__main__": unittest.main()
