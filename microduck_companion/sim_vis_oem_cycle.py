@@ -132,10 +132,11 @@ def evaluate_simulated_camera_cycle(
             or f2["known_category_promoted"]):
         raise MediaFrameError("mock F2 result claimed unsupported authority")
     return {
-        "status": "HOST_SIM_MEDIAD_PIXELS_TO_MOCK_F2",
+        "status": "HOST_UNVERIFIED_CAMERA_FRAME_TO_MOCK_F2",
         "telemetry_quality": assessment.status,
         "telemetry_claim": assessment.source,
         "frame_claim": frame.evidence["source_claim"],
+        "oem_process_identity_verified": False,
         "camera_width_upright": width,
         "camera_height_upright": height,
         "captured_at_unix_us": frame.captured_at_unix_us,
@@ -201,7 +202,7 @@ def main(argv: list[str] | None = None) -> int:
                           "motor_commands_issued": 0}), file=sys.stderr)
         return 1
     print(json.dumps(trace, ensure_ascii=False, sort_keys=True, indent=2))
-    return 0 if trace["status"] == "HOST_SIM_MEDIAD_PIXELS_TO_MOCK_F2" else 1
+    return 0 if trace["status"] == "HOST_UNVERIFIED_CAMERA_FRAME_TO_MOCK_F2" else 1
 
 
 if __name__ == "__main__":
