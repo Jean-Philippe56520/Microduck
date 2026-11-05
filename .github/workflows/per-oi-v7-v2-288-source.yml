@@ -89,6 +89,21 @@ jobs:
               assert not audit["individual_image_rights_verified"]
               assert not audit["perceptual_near_duplicates_verified"]
               assert audit["source_identity_clean"] == (r["status"]=="V2_GT_42_FROZEN_SOURCE_ONLY_NOT_LICENSED")
+              reasons=audit["unreadable_source_reasons"]
+              expected_reasons={
+                  "original_and_landing_unreadable", "original_unreadable_only",
+                  "landing_unreadable_only", "flickr_ids_disagree", "original_md5_invalid",
+              }
+              assert set(reasons)=={"selected","historical"}
+              assert all(set(reasons[group])==expected_reasons for group in reasons)
+              assert all(type(n) is int and n>=0 for group in reasons.values() for n in group.values())
+              assert sum(n for group in reasons.values() for n in group.values())==audit["unreadable_source_rows"]
+              assert audit["selected_metadata_rows_missing"]>=0
+              assert audit["historical_metadata_rows_missing"]>=0
+              if audit["source_identity_clean"]:
+                  assert audit["unreadable_source_rows"]==0
+                  assert audit["selected_metadata_rows_missing"]==0
+                  assert audit["historical_metadata_rows_missing"]==0
           else:
               assert r["roster_sha256"] is None
               assert r["flickr_identity_audit"] is None
