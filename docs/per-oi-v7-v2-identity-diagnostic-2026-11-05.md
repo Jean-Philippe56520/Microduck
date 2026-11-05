@@ -1,5 +1,7 @@
 # PER-OI-V7-V2-ID-2 — cause des trois identités historiques non vérifiables
 
+**Premier résultat CI réelle :** [#41986436911](https://github.com/Jean-Philippe56520/Microduck/actions/runs/41986436911) **SUCCESS spécialisée**, cinq sources épinglées, roster inchangé, **3/288 historiques non vérifiables**, toutes les trois classées `landing_unreadable_only` : `OriginalURL` interprétable comme photo Flickr, mais `OriginalLandingURL` **non reconnue par le parseur**. Les quatre autres causes sont à zéro comme **premier motif** de rejet. Aucun ID/URL individuel publié, aucune ligne de métadonnées absente ou dupliquée, 42/42 sources V2 intégralement lisibles. **Statut scientifique : `STOP_V2_FLICKR_IDENTITY_NOT_QUALIFIED`**. Cette répartition exclusive ne prouve pas l'intégrité du MD5 des trois historiques déjà bloquées par leur landing. La CI générale doit encore être vérifiée au HEAD final ; aucune licence individuelle/photographie ni précision YOLOX mesurée. [Compte rendu mesuré et limites #78](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6652214896).
+
 **05/11/2026. Protocole [préenregistré AVANT code](https://github.com/Jean-Philippe56520/Microduck/issues/78#issuecomment-6652159663).** Base GitHub réelle `main@7f47a79ae54c6b33972e031e09e7265b9da51877` après [#316](https://github.com/Jean-Philippe56520/Microduck/pull/316) fusionnée (4/4 CI sur HEAD). `docs/plan-action.md` fait autorité ; ne pas modifier le classement des preuves.
 
 ## Manque prouvé
