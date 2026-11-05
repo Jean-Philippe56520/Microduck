@@ -1,0 +1,201 @@
+# SIM-1C: ONE attempted *live* OEM MuJoCo camera -> mediad -> YOLOX -> MOCK F2.
+# Preregistered BEFORE this workflow was added:
+# docs/sim-1c-oem-live-camera-preregister-2026-11-05.md
+# STOP if exact OEM pins, third-party plugin digest, frame, telemetry or ONNX fail.
+# No persistent images, motor commands from Companion, model tuning, robot/NPU.
+name: SIM-1C OEM live mediad camera and passive brain trial
+
+on:
+  push:
+    branches:
+      - test/sim-1c-oem-live-camera-20261105
+    paths:
+      - ".github/workflows/sim-1c-oem-live-camera.yml"
+      - "docs/sim-1c-oem-live-camera-preregister-2026-11-05.md"
+      - "microduck_companion/sim_vis_oem_cycle.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sim-1c-oem-camera-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  live-camera:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      MUJOCO_GL: osmesa
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      PYTHONUNBUFFERED: "1"
+      DUCK_SIM_STATE: /tmp/kwipi-sim-1c-camera
+      DUCK_SIM_PORT: "17841"
+      DUCK_SIM_FRAME_PORT: "17941"
+      DUCK_SIM_DUCKS: "1"
+      DUCK_SIM_VIEWER: "0"
+      DUCK_SIM_CAMERAS: a
+      DUCK_SIM_SCENE: ball
+      DUCK_SIM_KEYFRAME: SIT
+      GST_DEBUG_NO_COLOR: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Exact OEM gitlinks and strictly scoped source gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream/microduck rev-parse HEAD)" = "942e58e3aa6dbb28e7037203fff11866122c7567"
+          test "$(git -C upstream/microduck_rl rev-parse HEAD)" = "b02fdea4902c2b93b7d34a83a6f05da4ececb7d3"
+          test -f upstream/microduck/scripts/duck-sim
+          test -f upstream/microduck_rl/src/mjlab_microduck/robot/microduck/scene_ball.xml
+          test -f docs/sim-1c-oem-live-camera-preregister-2026-11-05.md
+          echo "S0_SOURCE_PINS: PASS"
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "upstream/microduck_rl/uv.lock"
+
+      - name: System build, official GStreamer and offscreen MuJoCo dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            libudev-dev pkg-config libasound2-dev \
+            libosmesa6 libgl1-mesa-dri \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            libgstreamer-plugins-bad1.0-dev \
+            gstreamer1.0-tools gstreamer1.0-plugins-base \
+            gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
+            gstreamer1.0-plugins-ugly gstreamer1.0-nice \
+            libnice10
+          uv python install 3.12
+          uv venv --python 3.12 upstream/microduck_rl/.venv
+          uv pip install --python upstream/microduck_rl/.venv/bin/python \
+            'mujoco==3.10.0' 'numpy==2.5.4' 'onnxruntime==1.28.0' \
+            'Pillow==11.3.0' 'PyOpenGL==3.1.10'
+          export PYTHONPATH="$GITHUB_WORKSPACE/upstream/microduck_rl/src:$GITHUB_WORKSPACE"
+          upstream/microduck_rl/.venv/bin/python -c 'import mjlab_microduck.sim.body_server, onnxruntime, PIL'
+          echo "S0_OFFSCREEN_RL_RUNTIME: PASS"
+
+      - name: Verify official Pollen Reachy x86 plugin SHA; diagnostic only, not OEM promotion
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/sim-1c-plugins"
+          curl --fail --location --silent --show-error \
+            --connect-timeout 10 --max-time 120 \
+            'https://raw.githubusercontent.com/pollen-robotics/reachy-mini-desktop-app/c6ea61a5d57dc069e01aab07c723402b3d8263f5/src-tauri/linux/gstreamer-plugins/x86_64/libgstrswebrtc.so' \
+            -o "$RUNNER_TEMP/sim-1c-plugins/libgstrswebrtc.so"
+          echo "3045989c437be6f7859262f1970c550d6fc92d9ea9b59e49a05d5ec7bc4afbe9  $RUNNER_TEMP/sim-1c-plugins/libgstrswebrtc.so" | sha256sum -c -
+          echo "GST_PLUGIN_PATH=$RUNNER_TEMP/sim-1c-plugins" >> "$GITHUB_ENV"
+          GST_PLUGIN_PATH="$RUNNER_TEMP/sim-1c-plugins" gst-inspect-1.0 webrtcsink >/dev/null
+          echo "S0_THIRD_PARTY_DIAGNOSTIC_PLUGIN: loaded_not_OEM_0_15_3"
+
+      - name: Fetch only approved SHA-pinned Nano ONNX for CPU host
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error \
+            --connect-timeout 10 --max-time 120 \
+            'https://huggingface.co/skillsafe-ai/yolox-nano/resolve/8e308810ede488f742901a4ac597dc7796798e46/yolox_nano.onnx' \
+            -o "$RUNNER_TEMP/sim-1c-yolox.onnx"
+          echo "c789161ed43c8269fcd4e67c67eeeb4e80c622da2eb296a20bc6007bd18a0b7d  $RUNNER_TEMP/sim-1c-yolox.onnx" | sha256sum -c -
+          echo "S0_HOST_MODEL_SHA: PASS"
+
+      - name: Guard the OEM's unauthenticated WebRTC and console listeners
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v iptables
+          # OEM duck-sim defaults mediad listeners to 0.0.0.0. Keep loopback
+          # on this ephemeral single-duck CI host, drop other inbound traffic.
+          sudo iptables -I INPUT ! -i lo -p tcp --dport 8080 -j DROP
+          sudo iptables -I INPUT ! -i lo -p tcp --dport 8443 -j DROP
+          echo "S0_WEBRTC_INBOUND_FILTER: PASS"
+
+      - name: Start actual pinned OEM daemon trio and demand one live frame
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"
+          export PYTHONPATH="$GITHUB_WORKSPACE:$DUCK_SIM_RL/src"
+          timeout --signal=TERM --kill-after=15s 18m \
+            upstream/microduck/scripts/duck-sim up
+          upstream/microduck/scripts/duck-sim status
+          upstream/microduck/scripts/duck-sim ctl health
+          # A socket path is NOT authentication; read its metadata once.
+          for i in 1 2 3 4 5; do
+            if test -S "$DUCK_SIM_STATE/duck-a-frame.sock"; then break; fi
+            sleep 2
+          done
+          test -S "$DUCK_SIM_STATE/duck-a-frame.sock"
+          upstream/microduck_rl/.venv/bin/python -m microduck_companion.sim_media_frame \
+            --state-dir "$DUCK_SIM_STATE" > "$RUNNER_TEMP/sim-1c-frame-metadata.json"
+          echo "S1_ACTUAL_MEDIAD_FRAME: PASS"
+
+      - name: One real OEM MuJoCo/mediad frame, real Nano inference, mock F2 decision
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"
+          export PYTHONPATH="$GITHUB_WORKSPACE:$DUCK_SIM_RL/src"
+          upstream/microduck_rl/.venv/bin/python -m microduck_companion.sim_vis_oem_cycle \
+            --state-dir "$DUCK_SIM_STATE" --model "$RUNNER_TEMP/sim-1c-yolox.onnx" \
+            > "$RUNNER_TEMP/sim-1c-f2-report.json"
+          upstream/microduck_rl/.venv/bin/python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          report = json.loads((Path(os.environ["RUNNER_TEMP"]) / "sim-1c-f2-report.json").read_text())
+          assert report["status"] == "HOST_UNVERIFIED_CAMERA_FRAME_TO_MOCK_F2"
+          assert report["telemetry_quality"] == "coherent"
+          assert report["motor_commands_issued"] == 0
+          assert report["f2_mock_projection"]["motor_commands_issued"] == 0
+          assert report["f2_mock_projection"]["experience_writes"] == 0
+          assert not report["sensor_source_authenticated"]
+          assert not report["semantic_category_verified"]
+          assert not report["same_mujoco_step_verified"]
+          assert not report["media_written_to_disk"]
+          assert report["f2_mock_projection"]["intention"] in ("idle", "inspect")
+          assert len(report["regions_untrusted"]) <= 3
+          print("S2_ACTUAL_DAEMONS_TO_MOCK_F2: PASS")
+          print(json.dumps({
+              "status": report["status"], "telemetry_quality": report["telemetry_quality"],
+              "regions": len(report["regions_untrusted"]),
+              "intention": report["f2_mock_projection"]["intention"],
+              "captured_at_unix_us": report["captured_at_unix_us"],
+              "capture_age_s_at_decision": report["capture_age_s_at_decision"],
+              "inference_ms_cpu_host": report["inference_ms_cpu_host"],
+              "semantic_category_verified": False,
+              "same_step_verified": False,
+              "motor_commands": 0,
+          }, sort_keys=True))
+          PY
+
+      - name: Stop only services launched by official duck-sim
+        if: always()
+        shell: bash
+        run: |
+          export DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"
+          export PYTHONPATH="$GITHUB_WORKSPACE:$DUCK_SIM_RL/src"
+          upstream/microduck/scripts/duck-sim down || true
+
+      - name: Archive only metadata, never pixels, models, media or private data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-1c-oem-live-metadata-only
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            ${{ runner.temp }}/sim-1c-frame-metadata.json
+            ${{ runner.temp }}/sim-1c-f2-report.json
