@@ -15,6 +15,10 @@ import statistics
 import sys
 import time
 
+from experiments.sim1d_launch_context import (
+    LaunchContextError, verify_launch_context,
+)
+
 from microduck_companion.sim_bridge import read_simulator_telemetry
 from microduck_companion.sim_media_frame import (
     MediaFrameError, acquire_simulated_oem_frame,
@@ -56,6 +60,7 @@ def run_series(
     acquire=acquire_simulated_oem_frame,
     evaluate=evaluate_simulated_camera_cycle,
     count: int = CYCLES,
+    verify_context=verify_launch_context,
 ) -> dict:
     """Measure a bounded series; failed frames never become a valid denominator.
 
@@ -66,6 +71,18 @@ def run_series(
         raise ValueError("invalid preregistered world or fixture count")
     if not isinstance(state_dir, Path) or not state_dir.is_absolute():
         raise ValueError("state dir must be absolute")
+    try:
+        launch_context = verify_context(state_dir, world_case)
+    except LaunchContextError:
+        return {
+            "status": "STOP_ACTIVE_WORLD_UNVERIFIED",
+            "world_case_requested": world_case,
+            "world_contains_ball_xml": None,
+            "launch_context_verified": False,
+            "requested_cycles": count, "completed_cycles": 0,
+            "motor_commands_issued": 0, "experience_writes": 0,
+            "image_written": False, "samples": [],
+        }
     samples: list[dict] = []
     error = None
     started = clock()
@@ -149,6 +166,14 @@ def run_series(
             error = {"status": "STOP_OEM_READER_OR_MODEL", "cycle": i,
                      "error_type": type(exc).__name__, "detail": str(exc)[:150]}
             break
+    context_stable = False
+    try:
+        context_stable = verify_context(state_dir, world_case) == launch_context
+    except LaunchContextError:
+        pass
+    if not context_stable:
+        error = {"status": "STOP_ACTIVE_WORLD_CHANGED",
+                 "cycle": len(samples), "previous_error": error}
     capture_intervals = [
         (b["capture_us"] - a["capture_us"]) / 1_000_000
         for a, b in zip(samples, samples[1:])
@@ -166,11 +191,16 @@ def run_series(
             error["status"] if error else "FAIL_2HZ_CAPTURE_CADENCE"
         ),
         "world_case": world_case,
-        "world_contains_ball_xml": WORLDS[world_case],
-        "world_truth_source": "pinned_oem_scene_xml_not_frame_gt",
+        "world_case_requested": world_case,
+        "world_contains_ball_xml": (
+            launch_context["launch_scene_contains_ball_xml"] if context_stable else None
+        ),
+        "world_truth_source": "linux_launch_context_checked_not_pixel_gt",
+        "launch_context_verified": context_stable,
+        "launch_context": launch_context,
         "frame_ball_visibility_known": False,
         "pixel_gt_synchronised": False,
-        "scene_xml_changed": False,
+        "scene_xml_changed": False if context_stable else None,
         "requested_visual_hz": 2.0,
         "visual_period_s": PERIOD_S,
         "requested_cycles": count,

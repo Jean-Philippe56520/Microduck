@@ -5,6 +5,8 @@ from pathlib import Path
 from types import SimpleNamespace
 import unittest
 
+from experiments.sim1d_launch_context import LaunchContextError
+
 from experiments.sim1d_oem_2hz_series import (
     CYCLES, PERIOD_S, SUCCESS, run_series,
 )
@@ -24,11 +26,23 @@ class VirtualClock:
 
 
 def harness(*, world_case="ball", bad_quality=None, duplicate=False,
-            unsafe=False, skip_frame=False, overrun=False, score=0.4):
+            unsafe=False, skip_frame=False, overrun=False, score=0.4,
+            missing_context=False, changed_context=False, lost_context=False):
     clock = VirtualClock()
     read_calls = []
     frame_calls = []
     model_calls = []
+    context_calls = []
+
+    def verify_context(state_dir, case):
+        context_calls.append((state_dir, case))
+        if missing_context or (lost_context and len(context_calls) == 2):
+            raise LaunchContextError("fixture launch cannot be verified")
+        return {
+            "source": "offline_fixture_not_OEM",
+            "launch_scene_contains_ball_xml": case == "ball",
+            "process_start": len(context_calls) if changed_context else 1,
+        }
 
     def read(state_dir, *, timeout_s, hz):
         read_calls.append((str(state_dir), timeout_s, hz))
@@ -84,6 +98,7 @@ def harness(*, world_case="ball", bad_quality=None, duplicate=False,
         Path("/tmp/kwipi-sim1d-fixture"), object(), world_case=world_case,
         count=CYCLES, clock=clock.monotonic, pause=clock.sleep,
         observe=read, acquire=acquire, evaluate=evaluate,
+        verify_context=verify_context,
     )
     return result, read_calls, frame_calls, model_calls
 
@@ -153,6 +168,32 @@ class Sim1DBoundedSeriesTests(unittest.TestCase):
         self.assertEqual(report["completed_cycles"], 1)
         self.assertFalse(report["capture_interval_criteria_met"])
         self.assertGreater(report["error"]["start_delay_s"], 0.125)
+
+    def test_unverified_context_stops_before_any_observation_or_inference(self):
+        report, reads, frames, models = harness(missing_context=True)
+        self.assertEqual(report["status"], "STOP_ACTIVE_WORLD_UNVERIFIED")
+        self.assertEqual(report["completed_cycles"], 0)
+        self.assertIsNone(report["world_contains_ball_xml"])
+        self.assertFalse(report["launch_context_verified"])
+        self.assertEqual((reads, frames, models), ([], [], []))
+
+    def test_changed_context_never_passes_despite_ten_completed_cycles(self):
+        report, reads, frames, models = harness(changed_context=True)
+        self.assertEqual(report["status"], "STOP_ACTIVE_WORLD_CHANGED")
+        self.assertEqual(report["completed_cycles"], 10)
+        self.assertEqual(len(models), 10)
+        self.assertIsNone(report["scene_xml_changed"])
+        self.assertIsNone(report["world_contains_ball_xml"])
+        self.assertFalse(report["launch_context_verified"])
+        self.assertFalse(report["capture_interval_criteria_met"])
+
+    def test_lost_context_preserves_previous_stop_without_promoting_world(self):
+        report, *_ = harness(lost_context=True, unsafe=True)
+        self.assertEqual(report["status"], "STOP_ACTIVE_WORLD_CHANGED")
+        self.assertEqual(report["error"]["previous_error"]["status"],
+                         "STOP_UNSUPPORTED_F2_AUTHORITY")
+        self.assertIsNone(report["world_contains_ball_xml"])
+        self.assertFalse(report["launch_context_verified"])
 
     def test_no_credit_for_invalid_case_or_diluted_sample_count(self):
         for case, count in (("video", 10), ("ball", 1), ("ball", 11)):
