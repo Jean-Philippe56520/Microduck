@@ -10,6 +10,7 @@ on:
     branches:
       - test/sim-1c-oem-live-camera-20261105
       - test/sim1d-oem-2hz-ball-absent-20261106
+      - test/sim1db-home-control-20261106
     paths:
       - ".github/workflows/sim-1c-oem-live-camera.yml"
       - "docs/sim-1c-oem-live-camera-preregister-2026-11-05.md"
@@ -21,6 +22,11 @@ on:
     inputs:
       run_sim1d:
         description: "Enable the preregistered 10+10-cycle OEM camera trial"
+        required: false
+        type: boolean
+        default: false
+      run_sim1db:
+        description: "SIM-1D/B1: HOME/HOME control, not recognition or synced GT"
         required: false
         type: boolean
         default: false
@@ -37,6 +43,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
+      SIM1DB: ${{ github.ref_name == 'test/sim1db-home-control-20261106' || inputs.run_sim1db }}
       MUJOCO_GL: osmesa
       OMP_NUM_THREADS: "1"
       OPENBLAS_NUM_THREADS: "1"
@@ -67,6 +74,9 @@ jobs:
           test -f docs/sim-1c-oem-live-camera-preregister-2026-11-05.md
           grep -q 'include file="ball.xml"' upstream/microduck_rl/src/mjlab_microduck/robot/microduck/scene_ball.xml
           ! grep -q 'include file="ball.xml"' upstream/microduck_rl/src/mjlab_microduck/robot/microduck/scene.xml
+          if [ "$SIM1DB" = true ]; then
+            test -f docs/sim-1db-home-control-preregister-2026-11-06.md
+          fi
           echo "S0_SOURCE_PINS: PASS"
 
       - uses: dtolnay/rust-toolchain@stable
@@ -97,7 +107,58 @@ jobs:
           export PYTHONPATH="$GITHUB_WORKSPACE/upstream/microduck_rl/src:$GITHUB_WORKSPACE"
           upstream/microduck_rl/.venv/bin/python -c 'import mjlab_microduck.sim.body_server, onnxruntime, PIL'
           echo "S0_OFFSCREEN_RL_RUNTIME: PASS"
-          upstream/microduck_rl/.venv/bin/python -m unittest discover -s tests -p test_sim1d_oem_2hz_series.py -v
+          upstream/microduck_rl/.venv/bin/python -m unittest discover -s tests -p 'test_sim1d*.py' -v
+
+      - name: SIM-1D/B1 common scene source and bounded wrong-label test preparation
+        if: env.SIM1DB == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          upstream/microduck_rl/.venv/bin/python - <<'PYGATE'
+          import os
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          root = Path("upstream/microduck_rl/src/mjlab_microduck/robot/microduck")
+          a, b = (ET.parse(root / name).getroot() for name in ("scene_ball.xml", "scene.xml"))
+          # HOME ignores the named keyframes. Compare all remaining scene fields.
+          for node in (a, b):
+              node.attrib.pop("model")
+              for child in list(node):
+                  if child.tag == "keyframe" or (child.tag == "include" and child.get("file") == "ball.xml"):
+                      node.remove(child)
+          def canonical(node):
+              return (node.tag, tuple(sorted(node.attrib.items())),
+                      " ".join((node.text or "").split()), tuple(canonical(c) for c in node))
+          assert canonical(a) == canonical(b), "STOP_COMMON_SCENE_DIFFERS"
+          print("SIM1DB_COMMON_ROBOT_DECOR_LIGHT: PASS_SOURCE_ONLY")
+          PYGATE
+          cat > "$RUNNER_TEMP/sim1db-label-negative.py" <<'PYNEG'
+          import json
+          import os
+          from pathlib import Path
+          import sys
+          from experiments.sim1d_launch_context import verify_launch_context
+          from experiments.sim1d_oem_2hz_series import run_series
+          actual = sys.argv[1]
+          assert actual in ("ball", "empty")
+          state = Path(os.environ["DUCK_SIM_STATE"])
+          context = verify_launch_context(state, actual)
+          assert context["initial_keyframe"] == "HOME"
+          def forbidden(*args, **kwargs):
+              raise AssertionError("negative label reached acquisition or inference")
+          wrong = "empty" if actual == "ball" else "ball"
+          report = run_series(state, object(), world_case=wrong,
+                              observe=forbidden, acquire=forbidden, evaluate=forbidden)
+          assert report["status"] == "STOP_ACTIVE_WORLD_UNVERIFIED"
+          assert report["completed_cycles"] == 0 and report["world_contains_ball_xml"] is None
+          assert report["motor_commands_issued"] == 0 and report["experience_writes"] == 0
+          assert report["image_written"] is False and report["samples"] == []
+          report["actual_case_checked"] = actual
+          report["actual_initial_keyframe"] = context["initial_keyframe"]
+          path = Path(os.environ["RUNNER_TEMP"]) / ("sim-1db-" + actual + "-negative.json")
+          path.write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
+          print("SIM1DB_WRONG_LABEL_" + actual.upper() + ": PASS_ZERO_ACQUISITION")
+          PYNEG
 
       - name: Verify official Pollen Reachy x86 plugin SHA; diagnostic only, not OEM promotion
         shell: bash
@@ -168,6 +229,7 @@ jobs:
           echo "S1_ACTUAL_MEDIAD_FRAME: PASS"
 
       - name: One real OEM MuJoCo/mediad frame, real Nano inference, mock F2 decision
+        if: env.SIM1DB != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -207,17 +269,20 @@ jobs:
           PY
 
       - name: SIM-1D ten genuine camera-F2 cycles in OEM ball scene at fixed 2Hz
-        if: github.ref_name == 'test/sim1d-oem-2hz-ball-absent-20261106' || inputs.run_sim1d
+        if: github.ref_name == 'test/sim1d-oem-2hz-ball-absent-20261106' || inputs.run_sim1d || env.SIM1DB == 'true'
         shell: bash
         run: |
           set -euo pipefail
           export DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"
           export PYTHONPATH="$GITHUB_WORKSPACE:$DUCK_SIM_RL/src"
+          if [ "$SIM1DB" = true ]; then
+            upstream/microduck_rl/.venv/bin/python "$RUNNER_TEMP/sim1db-label-negative.py" ball
+          fi
           upstream/microduck_rl/.venv/bin/python -m experiments.sim1d_oem_2hz_series --state-dir "$DUCK_SIM_STATE" --model "$RUNNER_TEMP/sim-1c-yolox.onnx" --world-case ball --output "$RUNNER_TEMP/sim-1d-ball-2hz.json"
           echo "SIM1D_BALL_10_CYCLES: PASS"
 
       - name: SIM-1D restart official OEM empty scene and measure ten cycles
-        if: github.ref_name == 'test/sim1d-oem-2hz-ball-absent-20261106' || inputs.run_sim1d
+        if: github.ref_name == 'test/sim1d-oem-2hz-ball-absent-20261106' || inputs.run_sim1d || env.SIM1DB == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -226,10 +291,69 @@ jobs:
           upstream/microduck/scripts/duck-sim down
           export DUCK_SIM_SCENE=""
           export DUCK_SIM_KEYFRAME="SIT"
+          if [ "$SIM1DB" = true ]; then export DUCK_SIM_KEYFRAME="HOME"; fi
           timeout --signal=TERM --kill-after=15s 18m upstream/microduck/scripts/duck-sim up
           upstream/microduck/scripts/duck-sim status
+          if [ "$SIM1DB" = true ]; then
+            upstream/microduck_rl/.venv/bin/python "$RUNNER_TEMP/sim1db-label-negative.py" empty
+          fi
           upstream/microduck_rl/.venv/bin/python -m experiments.sim1d_oem_2hz_series --state-dir "$DUCK_SIM_STATE" --model "$RUNNER_TEMP/sim-1c-yolox.onnx" --world-case empty --output "$RUNNER_TEMP/sim-1d-empty-2hz.json"
           echo "SIM1D_EMPTY_10_CYCLES: PASS"
+
+      - name: SIM-1D/B1 paired HOME result, explicitly no pixel ground truth
+        if: always() && env.SIM1DB == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PYSUM'
+          import json
+          import os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"])
+          rows = []
+          for case in ("ball", "empty"):
+              paths = (root / ("sim-1d-" + case + "-2hz.json"), root / ("sim-1db-" + case + "-negative.json"))
+              report, negative = (json.loads(p.read_text()) if p.is_file() else {} for p in paths)
+              context = report.get("launch_context", {})
+              ok = (report.get("status") == "PASS_2HZ_OEM_READONLY_MOCK_F2"
+                    and report.get("launch_context_verified") is True
+                    and report.get("world_case_requested") == case
+                    and report.get("world_contains_ball_xml") is (case == "ball")
+                    and report.get("completed_cycles") == 10
+                    and report.get("requested_cycles") == 10
+                    and report.get("motor_commands_issued") == 0
+                    and report.get("experience_writes") == 0
+                    and report.get("semantic_category_verified") is False
+                    and report.get("pixel_gt_synchronised") is False
+                    and report.get("image_written") is False
+                    and context.get("initial_keyframe") == "HOME"
+                    and negative.get("status") == "STOP_ACTIVE_WORLD_UNVERIFIED"
+                    and negative.get("completed_cycles") == 0
+                    and negative.get("actual_case_checked") == case
+                    and negative.get("actual_initial_keyframe") == "HOME")
+              row = {"case": case, "pass_initial_home_protocol": ok,
+                     "series_status": report.get("status", "NOT_EXECUTED"),
+                     "initial_keyframe": context.get("initial_keyframe"),
+                     "completed_cycles": report.get("completed_cycles", 0),
+                     "frames_with_regions_unverified": sum(s["regions_untrusted_count"] > 0 for s in report.get("samples", [])),
+                     "inspect_unknown": report.get("f2_inspect_unknown_count"),
+                     "idle": report.get("f2_idle_count"),
+                     "camera_interval_s": report.get("camera_interval_s"),
+                     "inference_ms_cpu_host": report.get("inference_ms_cpu_host"),
+                     "total_cycle_duration_s": report.get("total_cycle_duration_s"),
+                     "capture_age_s": report.get("capture_age_s"),
+                     "wrong_label_status": negative.get("status", "NOT_EXECUTED")}
+              rows.append(row)
+          passed = all(row["pass_initial_home_protocol"] for row in rows)
+          result = {"status": "PASS_MATCHED_HOME_INITIALISATION_ONLY" if passed else "STOP_INCOMPLETE_HOME_PAIR",
+                    "rows": rows, "pixel_gt_synchronised": False,
+                    "actual_camera_pose_matched": False, "ball_recognition_verified": False,
+                    "memory_effect_verified": False, "robot_validated": False}
+          text = json.dumps(result, indent=2, allow_nan=False)
+          (root / "sim-1db-home-pair.json").write_text(text + "\n")
+          print(text)
+          raise SystemExit(0 if passed else 1)
+          PYSUM
 
       - name: Stop only services launched by official duck-sim
         if: always()
@@ -251,3 +375,6 @@ jobs:
             ${{ runner.temp }}/sim-1c-f2-report.json
             ${{ runner.temp }}/sim-1d-ball-2hz.json
             ${{ runner.temp }}/sim-1d-empty-2hz.json
+            ${{ runner.temp }}/sim-1db-ball-negative.json
+            ${{ runner.temp }}/sim-1db-empty-negative.json
+            ${{ runner.temp }}/sim-1db-home-pair.json
