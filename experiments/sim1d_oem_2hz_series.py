@@ -176,7 +176,7 @@ def run_series(
         "requested_cycles": count,
         "completed_cycles": len(samples),
         "unique_frame_timestamps": len({
-            row["capture_us"] for row in samples,
+            row["capture_us"] for row in samples
         }),
         "on_time_samples": len([
             row for row in samples
