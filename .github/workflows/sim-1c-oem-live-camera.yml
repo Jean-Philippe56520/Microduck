@@ -3,17 +3,27 @@
 # docs/sim-1c-oem-live-camera-preregister-2026-11-05.md
 # STOP if exact OEM pins, third-party plugin digest, frame, telemetry or ONNX fail.
 # No persistent images, motor commands from Companion, model tuning, robot/NPU.
-name: SIM-1C OEM live mediad camera and passive brain trial
+name: SIM-1C/1D OEM live camera 2Hz paired-world diagnostic
 
 on:
   push:
     branches:
       - test/sim-1c-oem-live-camera-20261105
+      - test/sim1d-oem-2hz-ball-absent-20261106
     paths:
       - ".github/workflows/sim-1c-oem-live-camera.yml"
       - "docs/sim-1c-oem-live-camera-preregister-2026-11-05.md"
       - "microduck_companion/sim_vis_oem_cycle.py"
+      - "experiments/sim1d_oem_2hz_series.py"
+      - "tests/test_sim1d_oem_2hz_series.py"
+      - "docs/sim-1d-2hz-oem-paired-preregister-2026-11-06.md"
   workflow_dispatch:
+    inputs:
+      run_sim1d:
+        description: "Enable the preregistered 10+10-cycle OEM camera trial"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -55,6 +65,8 @@ jobs:
           test -f upstream/microduck/scripts/duck-sim
           test -f upstream/microduck_rl/src/mjlab_microduck/robot/microduck/scene_ball.xml
           test -f docs/sim-1c-oem-live-camera-preregister-2026-11-05.md
+          grep -q 'include file="ball.xml"' upstream/microduck_rl/src/mjlab_microduck/robot/microduck/scene_ball.xml
+          ! grep -q 'include file="ball.xml"' upstream/microduck_rl/src/mjlab_microduck/robot/microduck/scene.xml
           echo "S0_SOURCE_PINS: PASS"
 
       - uses: dtolnay/rust-toolchain@stable
@@ -85,6 +97,7 @@ jobs:
           export PYTHONPATH="$GITHUB_WORKSPACE/upstream/microduck_rl/src:$GITHUB_WORKSPACE"
           upstream/microduck_rl/.venv/bin/python -c 'import mjlab_microduck.sim.body_server, onnxruntime, PIL'
           echo "S0_OFFSCREEN_RL_RUNTIME: PASS"
+          upstream/microduck_rl/.venv/bin/python -m unittest discover -s tests -p test_sim1d_oem_2hz_series.py -v
 
       - name: Verify official Pollen Reachy x86 plugin SHA; diagnostic only, not OEM promotion
         shell: bash
@@ -193,6 +206,31 @@ jobs:
           }, sort_keys=True))
           PY
 
+      - name: SIM-1D ten genuine camera-F2 cycles in OEM ball scene at fixed 2Hz
+        if: github.ref_name == 'test/sim1d-oem-2hz-ball-absent-20261106' || inputs.run_sim1d
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"
+          export PYTHONPATH="$GITHUB_WORKSPACE:$DUCK_SIM_RL/src"
+          upstream/microduck_rl/.venv/bin/python -m experiments.sim1d_oem_2hz_series --state-dir "$DUCK_SIM_STATE" --model "$RUNNER_TEMP/sim-1c-yolox.onnx" --world-case ball --output "$RUNNER_TEMP/sim-1d-ball-2hz.json"
+          echo "SIM1D_BALL_10_CYCLES: PASS"
+
+      - name: SIM-1D restart official OEM empty scene and measure ten cycles
+        if: github.ref_name == 'test/sim1d-oem-2hz-ball-absent-20261106' || inputs.run_sim1d
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"
+          export PYTHONPATH="$GITHUB_WORKSPACE:$DUCK_SIM_RL/src"
+          upstream/microduck/scripts/duck-sim down
+          export DUCK_SIM_SCENE=""
+          export DUCK_SIM_KEYFRAME="SIT"
+          timeout --signal=TERM --kill-after=15s 18m upstream/microduck/scripts/duck-sim up
+          upstream/microduck/scripts/duck-sim status
+          upstream/microduck_rl/.venv/bin/python -m experiments.sim1d_oem_2hz_series --state-dir "$DUCK_SIM_STATE" --model "$RUNNER_TEMP/sim-1c-yolox.onnx" --world-case empty --output "$RUNNER_TEMP/sim-1d-empty-2hz.json"
+          echo "SIM1D_EMPTY_10_CYCLES: PASS"
+
       - name: Stop only services launched by official duck-sim
         if: always()
         shell: bash
@@ -205,9 +243,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: sim-1c-oem-live-metadata-only
+          name: sim-1c-and-1d-oem-metadata-only
           if-no-files-found: warn
           retention-days: 7
           path: |
             ${{ runner.temp }}/sim-1c-frame-metadata.json
             ${{ runner.temp }}/sim-1c-f2-report.json
+            ${{ runner.temp }}/sim-1d-ball-2hz.json
+            ${{ runner.temp }}/sim-1d-empty-2hz.json
