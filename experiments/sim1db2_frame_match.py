@@ -47,7 +47,7 @@ def _real(v, *, low=-1e9, high=1e9):
 
 def validate_record(r: dict, case: str) -> None:
     if (type(r) is not dict or set(r) != FIELDS or r["schema"] != SCHEMA
-            or r["case"] != case or type(r["render_seq"]) is not int
+            or r["case"] != case or type(r["schema"]) is not int\n            or type(r["width"]) is not int or type(r["height"]) is not int\n            or type(r["rotation_degrees"]) is not int\n            or type(r["render_seq"]) is not int
             or r["render_seq"] < 1 or not _real(r["sim_time_s"], low=0)
             or type(r["uyvy_sha256"]) is not str or not SHA.fullmatch(r["uyvy_sha256"])
             or r["width"] != 640 or r["height"] != 360
@@ -83,7 +83,7 @@ def validate_record(r: dict, case: str) -> None:
 
 
 def read_sidecar(path: Path, *, case: str) -> list[dict]:
-    if type(path) is not Path or case not in ("ball", "empty"):
+    if not isinstance(path, Path) or case not in ("ball", "empty"):
         raise B2GTError("invalid sidecar request")
     meta = path.lstat()
     if not stat.S_ISREG(meta.st_mode) or not 0 < meta.st_size <= MAX_BYTES:
