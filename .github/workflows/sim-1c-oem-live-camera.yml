@@ -11,6 +11,7 @@ on:
       - test/sim-1c-oem-live-camera-20261105
       - test/sim1d-oem-2hz-ball-absent-20261106
       - test/sim1db-home-control-20261106
+      - test/sim1db2-exact-gt-20261107
     paths:
       - ".github/workflows/sim-1c-oem-live-camera.yml"
       - "docs/sim-1c-oem-live-camera-preregister-2026-11-05.md"
@@ -18,6 +19,10 @@ on:
       - "experiments/sim1d_oem_2hz_series.py"
       - "tests/test_sim1d_oem_2hz_series.py"
       - "docs/sim-1d-2hz-oem-paired-preregister-2026-11-06.md"
+      - "docs/sim-1db2-exact-gt-preregister-2026-11-07.md"
+      - "experiments/sim1db2*.py"
+      - "experiments/sim1db2_hook/sitecustomize.py"
+      - "tests/test_sim1db2_frame_match.py"
   workflow_dispatch:
     inputs:
       run_sim1d:
@@ -44,6 +49,7 @@ jobs:
     timeout-minutes: 45
     env:
       SIM1DB: ${{ github.ref_name == 'test/sim1db-home-control-20261106' || inputs.run_sim1db }}
+      SIM1DB2: ${{ github.ref_name == 'test/sim1db2-exact-gt-20261107' }}
       MUJOCO_GL: osmesa
       OMP_NUM_THREADS: "1"
       OPENBLAS_NUM_THREADS: "1"
@@ -76,6 +82,12 @@ jobs:
           ! grep -q 'include file="ball.xml"' upstream/microduck_rl/src/mjlab_microduck/robot/microduck/scene.xml
           if [ "$SIM1DB" = true ]; then
             test -f docs/sim-1db-home-control-preregister-2026-11-06.md
+          fi
+          if [ "$SIM1DB2" = true ]; then
+            test -f docs/sim-1db2-exact-gt-preregister-2026-11-07.md
+            test -f experiments/sim1db2_hook/sitecustomize.py
+            test "$(git hash-object upstream/microduck_rl/src/mjlab_microduck/sim/camera.py)" = "5769a9eb9967737a82ba146d2e0c9db0ceef6eb2"
+            echo "B2_PINNED_CAMERA_SOURCE: PASS_NOT_PATCHED"
           fi
           echo "S0_SOURCE_PINS: PASS"
 
@@ -202,6 +214,12 @@ jobs:
           set -euo pipefail
           export DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"
           export PYTHONPATH="$GITHUB_WORKSPACE:$DUCK_SIM_RL/src"
+          if [ "$SIM1DB2" = true ]; then
+            export KWIPI_B2_INSTRUMENT=1 KWIPI_B2_CASE=ball
+            export KWIPI_B2_ARM="$RUNNER_TEMP/sim1db2-ball.arm"
+            export KWIPI_B2_SIDECAR="$RUNNER_TEMP/sim1db2-ball-sidecar.ndjson"
+            export PYTHONPATH="$GITHUB_WORKSPACE/experiments/sim1db2_hook:$PYTHONPATH"
+          fi
           if ! timeout --signal=TERM --kill-after=15s 18m \
               upstream/microduck/scripts/duck-sim up; then
             echo "STOP_SIM1C_BODY_SERVER_STARTUP"
@@ -216,6 +234,7 @@ jobs:
             fi
             exit 1
           fi
+          if [ "$SIM1DB2" = true ]; then unset KWIPI_B2_INSTRUMENT; fi
           upstream/microduck/scripts/duck-sim status
           upstream/microduck/scripts/duck-sim ctl health
           # A socket path is NOT authentication; read its metadata once.
@@ -229,7 +248,7 @@ jobs:
           echo "S1_ACTUAL_MEDIAD_FRAME: PASS"
 
       - name: One real OEM MuJoCo/mediad frame, real Nano inference, mock F2 decision
-        if: env.SIM1DB != 'true'
+        if: env.SIM1DB != 'true' && env.SIM1DB2 != 'true'
         shell: bash
         run: |
           set -euo pipefail
