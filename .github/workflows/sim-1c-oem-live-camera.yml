@@ -374,6 +374,84 @@ jobs:
           raise SystemExit(0 if passed else 1)
           PYSUM
 
+      - name: SIM-1D/B2 instrumented BALL - four exact mediad frames and independent geom GT
+        if: env.SIM1DB2 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/upstream/microduck_rl/src"
+          upstream/microduck_rl/.venv/bin/python -m experiments.sim1db2_live --state "$DUCK_SIM_STATE" --sidecar "$RUNNER_TEMP/sim1db2-ball-sidecar.ndjson" --arm "$RUNNER_TEMP/sim1db2-ball.arm" --model "$RUNNER_TEMP/sim-1c-yolox.onnx" --case ball --output "$RUNNER_TEMP/sim1db2-ball-result.json"
+          upstream/microduck/scripts/duck-sim ctl health
+          if grep -q 'behind real time' "$DUCK_SIM_STATE/body.log"; then
+            echo "STOP_B2_BODY_BEHIND_REAL_TIME_BALL"
+            exit 1
+          fi
+          echo "B2_BALL_INSTRUMENTED_EXACT_GT: PASS"
+
+      - name: SIM-1D/B2 instrumented EMPTY - new OEM HOME launch and four zero-ball GT frames
+        if: env.SIM1DB2 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"
+          export PYTHONPATH="$GITHUB_WORKSPACE:$DUCK_SIM_RL/src"
+          upstream/microduck/scripts/duck-sim down
+          export DUCK_SIM_SCENE="" DUCK_SIM_KEYFRAME=HOME
+          export KWIPI_B2_INSTRUMENT=1 KWIPI_B2_CASE=empty
+          export KWIPI_B2_ARM="$RUNNER_TEMP/sim1db2-empty.arm"
+          export KWIPI_B2_SIDECAR="$RUNNER_TEMP/sim1db2-empty-sidecar.ndjson"
+          export PYTHONPATH="$GITHUB_WORKSPACE/experiments/sim1db2_hook:$PYTHONPATH"
+          timeout --signal=TERM --kill-after=15s 18m upstream/microduck/scripts/duck-sim up
+          unset KWIPI_B2_INSTRUMENT
+          upstream/microduck/scripts/duck-sim status
+          upstream/microduck/scripts/duck-sim ctl health
+          upstream/microduck_rl/.venv/bin/python -m experiments.sim1db2_live --state "$DUCK_SIM_STATE" --sidecar "$RUNNER_TEMP/sim1db2-empty-sidecar.ndjson" --arm "$RUNNER_TEMP/sim1db2-empty.arm" --model "$RUNNER_TEMP/sim-1c-yolox.onnx" --case empty --output "$RUNNER_TEMP/sim1db2-empty-result.json"
+          upstream/microduck/scripts/duck-sim ctl health
+          if grep -q 'behind real time' "$DUCK_SIM_STATE/body.log"; then
+            echo "STOP_B2_BODY_BEHIND_REAL_TIME_EMPTY"
+            exit 1
+          fi
+          echo "B2_EMPTY_INSTRUMENTED_EXACT_GT: PASS"
+
+      - name: SIM-1D/B2 exact-frame summary never claims uninstrumented OEM recognition
+        if: always() && env.SIM1DB2 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PYB2SUMMARY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"])
+          rows = []
+          for case in ("ball", "empty"):
+              path = root / ("sim1db2-" + case + "-result.json")
+              report = json.loads(path.read_text()) if path.is_file() else {}
+              ok = (report.get("status") == "PASS_B2_INSTRUMENTED_EXACT_FRAME_GT_HOST_ONLY"
+                    and report.get("completed_cycles") == 4
+                    and report.get("gt_exact_frame_matches") == 4
+                    and report.get("case") == case
+                    and report.get("visible_witness") is (case == "ball")
+                    and report.get("pixel_gt_injected_into_f2") is False
+                    and report.get("semantic_category_verified") is False
+                    and report.get("motor_commands_companion") == 0
+                    and report.get("experience_writes") == 0
+                    and report.get("image_persisted") is False
+                    and report.get("oem_gitlinks_changed") is False
+                    and report.get("render_p95_ms", 9999) <= 40.0)
+              rows.append({"case": case, "eligible_instrumented_gt": ok,
+                           "cycles": report.get("completed_cycles", 0),
+                           "render_p95_ms": report.get("render_p95_ms"),
+                           "gt_visibility": report.get("visible_witness")})
+          passed = all(x["eligible_instrumented_gt"] for x in rows)
+          result = {"status": "PASS_B2_INSTRUMENTED_GT_ONLY" if passed else
+                    "STOP_B2_FRAME_GT_NOT_PROVEN", "rows": rows,
+                    "oem_camera_intact": False, "robot_validated": False,
+                    "real_detection_accuracy_claim": False, "v1_95_percent": False}
+          (root / "sim1db2-pair-summary.json").write_text(json.dumps(result, indent=2) + "\n")
+          print(json.dumps(result, indent=2))
+          raise SystemExit(0 if passed else 1)
+          PYB2SUMMARY
+
       - name: Stop only services launched by official duck-sim
         if: always()
         shell: bash
@@ -397,3 +475,8 @@ jobs:
             ${{ runner.temp }}/sim-1db-ball-negative.json
             ${{ runner.temp }}/sim-1db-empty-negative.json
             ${{ runner.temp }}/sim-1db-home-pair.json
+            ${{ runner.temp }}/sim1db2-ball-result.json
+            ${{ runner.temp }}/sim1db2-empty-result.json
+            ${{ runner.temp }}/sim1db2-pair-summary.json
+            ${{ runner.temp }}/sim1db2-ball-sidecar.ndjson
+            ${{ runner.temp }}/sim1db2-empty-sidecar.ndjson
