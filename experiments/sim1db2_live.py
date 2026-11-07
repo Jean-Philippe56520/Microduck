@@ -52,10 +52,19 @@ def run(state: Path, sidecar: Path, arm: Path, model: Path, *,
     session = _open_pinned_model(model)
     samples = []
     recorded = []
-    start = time.monotonic()
     # Only activate the double-render camera after the stock daemons have booted.
+    # The OEM FrameServer may still hold a pre-arm latest frame, so do NOT
+    # start the four measured requests until a new instrumented render exists.
     arm.open("x").close()
     try:
+        deadline = time.monotonic() + 1.0
+        while not sidecar.exists() and time.monotonic() < deadline:
+            time.sleep(0.025)
+        if not sidecar.exists():
+            raise B2GTError("STOP_B2_INSTRUMENTED_RENDER_NOT_STARTED")
+        if not read_sidecar(sidecar, case=case):
+            raise B2GTError("STOP_B2_NO_COMPLETE_RENDER")
+        start = time.monotonic()
         for i in range(COUNT):
             due = start + i * PERIOD
             time.sleep(max(0.0, due - time.monotonic()))
