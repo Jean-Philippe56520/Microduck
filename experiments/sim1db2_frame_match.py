@@ -85,10 +85,17 @@ def validate_record(r: dict, case: str) -> None:
 def read_sidecar(path: Path, *, case: str) -> list[dict]:
     if not isinstance(path, Path) or case not in ("ball", "empty"):
         raise B2GTError("invalid sidecar request")
-    meta = path.lstat()
-    if not stat.S_ISREG(meta.st_mode) or not 0 < meta.st_size <= MAX_BYTES:
-        raise B2GTError("sidecar unavailable or oversized")
-    raw = path.read_bytes()
+    # Read a bounded prefix from one no-follow fd as the camera appends.
+    # This avoids a spurious change while path.read_bytes() races an append.
+    import os
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    try:
+        meta = os.fstat(fd)
+        if not stat.S_ISREG(meta.st_mode) or not 0 < meta.st_size <= MAX_BYTES:
+            raise B2GTError("sidecar unavailable or oversized")
+        raw = os.read(fd, meta.st_size)
+    finally:
+        os.close(fd)
     if len(raw) != meta.st_size or not raw.endswith(b"\n"):
         raise B2GTError("torn or changed sidecar")
     lines = raw.splitlines()
