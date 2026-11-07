@@ -88,7 +88,10 @@ def read_sidecar(path: Path, *, case: str) -> list[dict]:
     # Read a bounded prefix from one no-follow fd as the camera appends.
     # This avoids a spurious change while path.read_bytes() races an append.
     import os
-    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    except OSError as exc:
+        raise B2GTError("sidecar missing or unsafe") from exc
     try:
         meta = os.fstat(fd)
         if not stat.S_ISREG(meta.st_mode) or not 0 < meta.st_size <= MAX_BYTES:
