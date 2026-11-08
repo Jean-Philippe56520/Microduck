@@ -11,6 +11,7 @@ on:
       - test/sim-1c-oem-live-camera-20261105
       - test/sim1d-oem-2hz-ball-absent-20261106
       - test/sim1db-home-control-20261106
+      - test/sim1db2e1-deferred-gt-20261108
     paths:
       - ".github/workflows/sim-1c-oem-live-camera.yml"
       - "docs/sim-1c-oem-live-camera-preregister-2026-11-05.md"
@@ -18,6 +19,10 @@ on:
       - "experiments/sim1d_oem_2hz_series.py"
       - "tests/test_sim1d_oem_2hz_series.py"
       - "docs/sim-1d-2hz-oem-paired-preregister-2026-11-06.md"
+      - "docs/sim-1db2-e1-deferred-gt-preregister-2026-11-08.md"
+      - "experiments/sim1db2e1*.py"
+      - "experiments/sim1db2e1_hook/sitecustomize.py"
+      - "tests/test_sim1db2e1_frame_match.py"
   workflow_dispatch:
     inputs:
       run_sim1d:
@@ -44,6 +49,7 @@ jobs:
     timeout-minutes: 45
     env:
       SIM1DB: ${{ github.ref_name == 'test/sim1db-home-control-20261106' || inputs.run_sim1db }}
+      SIM1DB2E1: ${{ github.ref_name == 'test/sim1db2e1-deferred-gt-20261108' }}
       MUJOCO_GL: osmesa
       OMP_NUM_THREADS: "1"
       OPENBLAS_NUM_THREADS: "1"
@@ -76,6 +82,12 @@ jobs:
           ! grep -q 'include file="ball.xml"' upstream/microduck_rl/src/mjlab_microduck/robot/microduck/scene.xml
           if [ "$SIM1DB" = true ]; then
             test -f docs/sim-1db-home-control-preregister-2026-11-06.md
+          fi
+          if [ "$SIM1DB2E1" = true ]; then
+            test -f docs/sim-1db2-e1-deferred-gt-preregister-2026-11-08.md
+            test -f experiments/sim1db2e1_hook/sitecustomize.py
+            test "$(git hash-object upstream/microduck_rl/src/mjlab_microduck/sim/camera.py)" = "5769a9eb9967737a82ba146d2e0c9db0ceef6eb2"
+            echo "E1_PINNED_OEM_CAMERA_NOT_PATCHED: PASS_SOURCE"
           fi
           echo "S0_SOURCE_PINS: PASS"
 
@@ -202,6 +214,13 @@ jobs:
           set -euo pipefail
           export DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"
           export PYTHONPATH="$GITHUB_WORKSPACE:$DUCK_SIM_RL/src"
+          if [ "$SIM1DB2E1" = true ]; then
+            export KWIPI_B2E1_INSTRUMENT=1 KWIPI_B2E1_CASE=ball
+            export KWIPI_B2E1_PYTHON="$DUCK_SIM_RL/.venv/bin/python"
+            export KWIPI_B2E1_ARM="$RUNNER_TEMP/sim1db2e1-ball.arm"
+            export KWIPI_B2E1_SIDECAR="$RUNNER_TEMP/sim1db2e1-ball-sidecar.ndjson"
+            export PYTHONPATH="$GITHUB_WORKSPACE/experiments/sim1db2e1_hook:$PYTHONPATH"
+          fi
           if ! timeout --signal=TERM --kill-after=15s 18m \
               upstream/microduck/scripts/duck-sim up; then
             echo "STOP_SIM1C_BODY_SERVER_STARTUP"
@@ -216,6 +235,7 @@ jobs:
             fi
             exit 1
           fi
+          if [ "$SIM1DB2E1" = true ]; then unset KWIPI_B2E1_INSTRUMENT; fi
           upstream/microduck/scripts/duck-sim status
           upstream/microduck/scripts/duck-sim ctl health
           # A socket path is NOT authentication; read its metadata once.
@@ -229,7 +249,7 @@ jobs:
           echo "S1_ACTUAL_MEDIAD_FRAME: PASS"
 
       - name: One real OEM MuJoCo/mediad frame, real Nano inference, mock F2 decision
-        if: env.SIM1DB != 'true'
+        if: env.SIM1DB != 'true' && env.SIM1DB2E1 != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -355,6 +375,122 @@ jobs:
           raise SystemExit(0 if passed else 1)
           PYSUM
 
+      - name: SIM-1D/B2-E1 BALL four 2Hz real mediad frames and single-render exact pose sidecar
+        if: env.SIM1DB2E1 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"
+          export PYTHONPATH="$GITHUB_WORKSPACE:$DUCK_SIM_RL/src"
+          upstream/microduck_rl/.venv/bin/python -m experiments.sim1db2e1_live --state "$DUCK_SIM_STATE" --sidecar "$RUNNER_TEMP/sim1db2e1-ball-sidecar.ndjson" --arm "$RUNNER_TEMP/sim1db2e1-ball.arm" --model "$RUNNER_TEMP/sim-1c-yolox.onnx" --case ball --output "$RUNNER_TEMP/sim1db2e1-ball-live.json"
+          upstream/microduck/scripts/duck-sim ctl health
+          if grep -q 'behind real time' "$DUCK_SIM_STATE/body.log"; then
+            echo "STOP_E1_BALL_BEHIND_REAL_TIME"
+            exit 1
+          fi
+          echo "E1_BALL_LIVE_POSE_ONLY: PASS_NO_GT"
+
+      - name: SIM-1D/B2-E1 stop OEM daemon then verify exact RGB replay and independent ball geom GT
+        if: env.SIM1DB2E1 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"
+          export PYTHONPATH="$GITHUB_WORKSPACE:$DUCK_SIM_RL/src"
+          upstream/microduck/scripts/duck-sim down
+          test ! -S "$DUCK_SIM_STATE/duck-a.sock"
+          upstream/microduck_rl/.venv/bin/python -m experiments.sim1db2e1_offline_gt --scene "$DUCK_SIM_RL/src/mjlab_microduck/robot/microduck/scene_ball.xml" --case ball --input "$RUNNER_TEMP/sim1db2e1-ball-live.json" --output "$RUNNER_TEMP/sim1db2e1-ball-gt.json"
+          echo "E1_BALL_OFFLINE_EXACT_GT: PASS"
+
+      - name: SIM-1D/B2-E1 EMPTY new official HOME launch four mediad frames with single-render sidecar
+        if: env.SIM1DB2E1 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"
+          export PYTHONPATH="$GITHUB_WORKSPACE:$DUCK_SIM_RL/src"
+          export DUCK_SIM_SCENE="" DUCK_SIM_KEYFRAME=HOME
+          export KWIPI_B2E1_INSTRUMENT=1 KWIPI_B2E1_CASE=empty
+          export KWIPI_B2E1_PYTHON="$DUCK_SIM_RL/.venv/bin/python"
+          export KWIPI_B2E1_ARM="$RUNNER_TEMP/sim1db2e1-empty.arm"
+          export KWIPI_B2E1_SIDECAR="$RUNNER_TEMP/sim1db2e1-empty-sidecar.ndjson"
+          export PYTHONPATH="$GITHUB_WORKSPACE/experiments/sim1db2e1_hook:$PYTHONPATH"
+          timeout --signal=TERM --kill-after=15s 18m upstream/microduck/scripts/duck-sim up
+          unset KWIPI_B2E1_INSTRUMENT
+          upstream/microduck/scripts/duck-sim status
+          upstream/microduck/scripts/duck-sim ctl health
+          export PYTHONPATH="$GITHUB_WORKSPACE:$DUCK_SIM_RL/src"
+          upstream/microduck_rl/.venv/bin/python -m experiments.sim1db2e1_live --state "$DUCK_SIM_STATE" --sidecar "$RUNNER_TEMP/sim1db2e1-empty-sidecar.ndjson" --arm "$RUNNER_TEMP/sim1db2e1-empty.arm" --model "$RUNNER_TEMP/sim-1c-yolox.onnx" --case empty --output "$RUNNER_TEMP/sim1db2e1-empty-live.json"
+          upstream/microduck/scripts/duck-sim ctl health
+          if grep -q 'behind real time' "$DUCK_SIM_STATE/body.log"; then
+            echo "STOP_E1_EMPTY_BEHIND_REAL_TIME"
+            exit 1
+          fi
+          echo "E1_EMPTY_LIVE_POSE_ONLY: PASS_NO_GT"
+
+      - name: SIM-1D/B2-E1 stop OEM daemon then verify exact RGB replay and zero-ball geom GT
+        if: env.SIM1DB2E1 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DUCK_SIM_RL="$GITHUB_WORKSPACE/upstream/microduck_rl"
+          export PYTHONPATH="$GITHUB_WORKSPACE:$DUCK_SIM_RL/src"
+          upstream/microduck/scripts/duck-sim down
+          test ! -S "$DUCK_SIM_STATE/duck-a.sock"
+          upstream/microduck_rl/.venv/bin/python -m experiments.sim1db2e1_offline_gt --scene "$DUCK_SIM_RL/src/mjlab_microduck/robot/microduck/scene.xml" --case empty --input "$RUNNER_TEMP/sim1db2e1-empty-live.json" --output "$RUNNER_TEMP/sim1db2e1-empty-gt.json"
+          echo "E1_EMPTY_OFFLINE_EXACT_GT: PASS"
+
+      - name: SIM-1D/B2-E1 summary refuses any unpaired or unqualified frame
+        if: always() && env.SIM1DB2E1 == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'E1SUMMARY'
+          import json
+          import os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"])
+          rows = []
+          for case in ("ball", "empty"):
+              live_path = root / ("sim1db2e1-" + case + "-live.json")
+              gt_path = root / ("sim1db2e1-" + case + "-gt.json")
+              live = json.loads(live_path.read_text()) if live_path.is_file() else {}
+              gt = json.loads(gt_path.read_text()) if gt_path.is_file() else {}
+              samples = gt.get("samples", [])
+              ok = (live.get("status") == "PASS_E1_MEDIAD_EXACT_POSE_CAPTURE_ONLY"
+                    and live.get("completed_cycles") == 4
+                    and live.get("render_p95_ms", 9999) <= 40.0
+                    and live.get("same_step_pixel_gt_verified") is False
+                    and gt.get("status") == "PASS_E1_OFFLINE_EXACT_FRAME_GT_REPLAY"
+                    and gt.get("matched_frames") == 4 and len(samples) == 4
+                    and all(x.get("replayed_rgb_exact_uyvy_sha256") is True
+                            and x.get("camera_pose_exact") is True
+                            and ((x.get("ball_visible_pixels", 0) >= 80)
+                                 if case == "ball" else
+                                 (x.get("ball_visible_pixels") == 0))
+                            for x in samples)
+                    and gt.get("semantic_category_verified") is False
+                    and gt.get("gt_provided_to_agent") is False
+                    and live.get("motor_commands_companion") == 0
+                    and live.get("experience_writes") == 0
+                    and live.get("image_persisted") is False)
+              rows.append({"case": case, "eligible_instrumented_gt": ok,
+                           "live_cycles": live.get("completed_cycles", 0),
+                           "replay_matched": gt.get("matched_frames", 0),
+                           "render_p95_ms": live.get("render_p95_ms")})
+          passed = all(x["eligible_instrumented_gt"] for x in rows)
+          result = {"status": "PASS_E1_INSTRUMENTED_OFFLINE_FRAME_GT_ONLY"
+                    if passed else "STOP_E1_EXACT_GT_NOT_PROVEN",
+                    "rows": rows,
+                    "uninstrumented_oem_camera_verified": False,
+                    "semantic_recognition_verified": False,
+                    "robot_validated": False, "v1_95_percent": False}
+          (root / "sim1db2e1-summary.json").write_text(
+              json.dumps(result, indent=2) + "\n")
+          print(json.dumps(result, indent=2))
+          raise SystemExit(0 if passed else 1)
+          E1SUMMARY
+
       - name: Stop only services launched by official duck-sim
         if: always()
         shell: bash
@@ -378,3 +514,8 @@ jobs:
             ${{ runner.temp }}/sim-1db-ball-negative.json
             ${{ runner.temp }}/sim-1db-empty-negative.json
             ${{ runner.temp }}/sim-1db-home-pair.json
+            ${{ runner.temp }}/sim1db2e1-ball-live.json
+            ${{ runner.temp }}/sim1db2e1-ball-gt.json
+            ${{ runner.temp }}/sim1db2e1-empty-live.json
+            ${{ runner.temp }}/sim1db2e1-empty-gt.json
+            ${{ runner.temp }}/sim1db2e1-summary.json
